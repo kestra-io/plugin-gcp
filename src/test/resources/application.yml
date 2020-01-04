@@ -7,3 +7,9 @@ kestra:
     type: local
     local:
       base-path: /tmp/unittest
+  tasks:
+    gcs:
+      bucket: "kestra-unit-test"
+    bigquery:
+      project: "kestra-unit-test"
+      dataset: "kestra_unit_test"

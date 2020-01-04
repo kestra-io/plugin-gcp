@@ -13,7 +13,7 @@ on:
 
 jobs:
   check:
-    name: Check
+    name: Check & Publish
     runs-on: ubuntu-latest
 
     steps:
@@ -43,5 +43,30 @@ jobs:
 
       # Gradle check
       - name: Build with Gradle
-        run: ./gradlew check --no-daemon
+        env:
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+        run: |
+          echo $GOOGLE_SERVICE_ACCOUNT | base64 -d > ~/.gcp-service-account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/.gcp-service-account.json
+          ./gradlew check --refresh-dependencies --no-daemon
 
+      # Publish package
+      - name: Publish package
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_KEY: ${{ secrets.BINTRAY_KEY }}
+        run: ./gradlew bintrayUpload --parallel --no-daemon
+
+      # Slack
+      - name: Slack notification
+        uses: 8398a7/action-slack@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          username: Github Actions
+          icon_emoji: ':octocat:'
+          channel: '#kestra'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

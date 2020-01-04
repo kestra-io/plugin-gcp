@@ -3,6 +3,7 @@ buildscript {
         kestraVersion = "0.1.+"
         micronautVersion = "1.2.8"
         lombokVersion = "1.18.10"
+        gcpVersion = "1.102.0"
         githubUrl = "kestra-io/" + project.name
     }
 }
@@ -23,7 +24,7 @@ repositories {
 }
 
 sourceCompatibility = 11
-group "io.kestra.task.templates"
+group "org.kestra.task.gcp"
 
 tasks.withType(JavaCompile){
     options.encoding = "UTF-8"
@@ -33,6 +34,7 @@ tasks.withType(JavaCompile){
 configurations {
     libs
 }
+configurations.implementation.extendsFrom(configurations.libs)
 
 dependencies {
     // micronaut
@@ -54,10 +56,8 @@ dependencies {
     implementation group: "org.kestra", name: "core", version: kestraVersion
 
     // libs
-    // use "libs" to include all your needed dependencies in final jar
-    libs group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
-
-    configurations.implementation.extendsFrom(configurations.libs)
+    libs "com.google.cloud:google-cloud-bigquery:$gcpVersion"
+    libs "com.google.cloud:google-cloud-storage:$gcpVersion"
 }
 
 
@@ -78,15 +78,13 @@ testlogger {
 }
 
 dependencies {
-    // test deps needed only for ExampleRunnerTest
-    testImplementation group: "org.kestra", name: "repository-memory", version: kestraVersion
-    testImplementation group: "org.kestra", name: "runner-memory", version: kestraVersion
     testImplementation group: "org.kestra", name: "storage-local", version: kestraVersion
 
-    // test
     testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.2"
     testImplementation "org.hamcrest:hamcrest:2.2"
     testImplementation "org.hamcrest:hamcrest-library:2.2"
+
+    testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id', version: '1.1.0'
 }
 
 /**********************************************************************************************************************\
