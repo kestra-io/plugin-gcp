@@ -1,5 +1,6 @@
 package org.kestra.task.gcp.gcs;
 
+import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
@@ -8,8 +9,10 @@ import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunOutput;
 import org.kestra.core.storages.StorageInterface;
+import org.kestra.core.storages.StorageObject;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Objects;
@@ -38,18 +41,30 @@ class CopyTest {
             )
         );
 
-        storageInterface.put(
-            new URI("file/storage/get.yml"),
-            new FileInputStream(Objects.requireNonNull(CopyTest.class.getClassLoader().getResource("application.yml")).getFile())
+        String in = FriendlyId.createFriendlyId();
+        String out = FriendlyId.createFriendlyId();
+
+        StorageObject source = storageInterface.put(
+            new URI("/" + FriendlyId.createFriendlyId()),
+            new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
+                .getResource("application.yml"))
+                .toURI()))
         );
 
+        Upload upload = Upload.builder()
+            .from(source.getUri().toString())
+            .to("gs://{{bucket}}/tasks/gcp/copy/" + in + ".yml")
+            .build();
+
+        upload.run(runContext);
+
         Copy task = Copy.builder()
-            .from("gs://{{bucket}}/file/storage/get.yml")
-            .to("gs://{{bucket}}/file/storage/get2.yml")
+            .from("gs://{{bucket}}/tasks/gcp/copy/" + in + ".yml")
+            .to("gs://{{bucket}}/tasks/gcp/copy/" + out + ".yml")
             .build();
 
         RunOutput run = task.run(runContext);
 
-        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" + bucket + "/file/storage/get2.yml")));
+        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" + bucket + "/tasks/gcp/copy/" + out + ".yml")));
     }
 }

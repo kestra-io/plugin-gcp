@@ -40,26 +40,30 @@ class UploadTest {
                 .toURI()))
         );
 
+        String out = FriendlyId.createFriendlyId();
+
         Upload task = Upload.builder()
             .from(source.getUri().toString())
-            .to("gs://{{bucket}}/tasks/gcp/upload/get2.yml")
+            .to("gs://{{bucket}}/tasks/gcp/upload/" + out + ".yml")
             .build();
 
         RunOutput run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/get2.yml")));
+        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/"+ out + ".yml")));
     }
 
     @Test
     void fromRemoteUrl() throws Exception {
+        String out = FriendlyId.createFriendlyId();
+
         Upload task = Upload.builder()
             .from("http://www.google.com")
-            .to("gs://{{bucket}}/tasks/gcp/upload/google.html")
+            .to("gs://{{bucket}}/tasks/gcp/upload/" + out + ".html")
             .build();
 
         RunOutput run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/google.html")));
+        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/" + out + ".html")));
     }
 
     private RunContext runContext() {
