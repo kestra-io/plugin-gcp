@@ -29,6 +29,8 @@ import java.util.stream.StreamSupport;
 public class Query extends Task implements RunnableTask {
     private String sql;
 
+    private String projectId;
+
     @Builder.Default
     private boolean legacySql = false;
 
@@ -56,7 +58,7 @@ public class Query extends Task implements RunnableTask {
 
     @Override
     public RunOutput run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of();
+        BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
         String sql = runContext.render(this.sql);
 

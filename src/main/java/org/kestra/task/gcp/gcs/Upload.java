@@ -3,6 +3,7 @@ package org.kestra.task.gcp.gcs;
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -24,10 +25,11 @@ import java.nio.ByteBuffer;
 public class Upload extends Task implements RunnableTask {
     private String from;
     private String to;
+    private String projectId;
 
     @Override
     public RunOutput run(RunContext runContext) throws Exception {
-        Connection connection = new Connection();
+        Storage connection = new Connection().of(runContext.render(this.projectId));
 
         Logger logger = runContext.logger(this.getClass());
         URI from = new URI(runContext.render(this.from));
@@ -41,7 +43,7 @@ public class Upload extends Task implements RunnableTask {
 
         InputStream data = runContext.uriToInputStream(from);
 
-        try (WriteChannel writer = connection.of().writer(destination)) {
+        try (WriteChannel writer = connection.writer(destination)) {
             byte[] buffer = new byte[10_240];
 
             int limit;

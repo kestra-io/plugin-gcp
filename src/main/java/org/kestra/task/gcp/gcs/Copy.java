@@ -22,13 +22,14 @@ import java.net.URI;
 public class Copy extends Task implements RunnableTask {
     private String from;
     private String to;
+    private String projectId;
 
     @Builder.Default
     private boolean delete = false;
 
     @Override
     public RunOutput run(RunContext runContext) throws Exception {
-        Connection connection = new Connection();
+        Storage connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
         URI from = new URI(runContext.render(this.from));
         URI to = new URI(runContext.render(this.to));
@@ -37,7 +38,7 @@ public class Copy extends Task implements RunnableTask {
 
         logger.debug("Moving from '{}' to '{}'", from, to);
 
-        Blob result = connection.of()
+        Blob result = connection
             .copy(Storage.CopyRequest.newBuilder()
                 .setSource(source)
                 .setTarget(BlobId.of(to.getAuthority(), to.getPath().substring(1)))
@@ -46,7 +47,7 @@ public class Copy extends Task implements RunnableTask {
             .getResult();
 
         if (this.delete) {
-            connection.of().delete(source);
+            connection.delete(source);
         }
 
         return RunOutput

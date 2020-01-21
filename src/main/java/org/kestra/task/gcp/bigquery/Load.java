@@ -25,9 +25,11 @@ import java.nio.channels.Channels;
 public class Load extends AbstractLoad implements RunnableTask {
     private String from;
 
+    private String projectId;
+
     @Override
     public RunOutput run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of();
+        BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
 
         WriteChannelConfiguration.Builder builder = WriteChannelConfiguration

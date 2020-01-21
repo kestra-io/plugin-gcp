@@ -9,6 +9,7 @@ kestra:
       base-path: /tmp/unittest
   tasks:
     gcs:
+      project: "kestra-unit-test"
       bucket: "kestra-unit-test"
     bigquery:
       project: "kestra-unit-test"

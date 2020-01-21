@@ -25,9 +25,11 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask {
      */
     private List<String> from;
 
+    private String projectId;
+
     @Override
     public RunOutput run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of();
+        BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
 
         List<String> from = runContext.render(this.from);
