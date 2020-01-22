@@ -53,7 +53,7 @@ public class Load extends AbstractLoad implements RunnableTask {
             }
         }
 
-        return this.execute(logger, configuration, writer.getJob());
+        return this.execute(runContext, logger, configuration, writer.getJob());
     }
 
     public enum Format {

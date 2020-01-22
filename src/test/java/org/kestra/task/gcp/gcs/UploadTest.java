@@ -5,11 +5,13 @@ import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
+import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunOutput;
 import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.storages.StorageObject;
 import org.junit.jupiter.api.Test;
+import org.kestra.core.utils.TestsUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -43,11 +45,13 @@ class UploadTest {
         String out = FriendlyId.createFriendlyId();
 
         Upload task = Upload.builder()
+            .id(UploadTest.class.getSimpleName())
+            .type(Upload.class.getName())
             .from(source.getUri().toString())
-            .to("gs://{{bucket}}/tasks/gcp/upload/" + out + ".yml")
+            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
             .build();
 
-        RunOutput run = task.run(runContext());
+        RunOutput run = task.run(runContext(task));
 
         assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/"+ out + ".yml")));
     }
@@ -57,18 +61,21 @@ class UploadTest {
         String out = FriendlyId.createFriendlyId();
 
         Upload task = Upload.builder()
+            .id(UploadTest.class.getSimpleName())
+            .type(Upload.class.getName())
             .from("http://www.google.com")
-            .to("gs://{{bucket}}/tasks/gcp/upload/" + out + ".html")
+            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".html")
             .build();
 
-        RunOutput run = task.run(runContext());
+        RunOutput run = task.run(runContext(task));
 
         assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/" + out + ".html")));
     }
 
-    private RunContext runContext() {
-        return new RunContext(
+    private RunContext runContext(Task task) {
+        return TestsUtils.mockRunContext(
             this.applicationContext,
+            task,
             ImmutableMap.of(
                 "bucket", this.bucket
             )

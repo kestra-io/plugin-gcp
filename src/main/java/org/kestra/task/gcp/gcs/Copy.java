@@ -6,6 +6,7 @@ import com.google.cloud.storage.Storage;
 import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -45,6 +46,8 @@ public class Copy extends Task implements RunnableTask {
                 .build()
             )
             .getResult();
+
+        runContext.metric(Counter.of("file.size", result.getSize()));
 
         if (this.delete) {
             connection.delete(source);

@@ -7,6 +7,7 @@ import com.google.cloud.storage.Storage;
 import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -43,14 +44,18 @@ public class Upload extends Task implements RunnableTask {
 
         InputStream data = runContext.uriToInputStream(from);
 
+        long size = 0;
         try (WriteChannel writer = connection.writer(destination)) {
             byte[] buffer = new byte[10_240];
 
             int limit;
             while ((limit = data.read(buffer)) >= 0) {
                 writer.write(ByteBuffer.wrap(buffer, 0, limit));
+                size += limit;
             }
         }
+
+        runContext.metric(Counter.of("file.size", size));
 
         return RunOutput
             .builder()

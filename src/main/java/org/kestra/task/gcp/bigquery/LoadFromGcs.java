@@ -44,7 +44,7 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask {
 
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
-        return this.execute(logger, configuration, loadJob);
+        return this.execute(runContext, logger, configuration, loadJob);
     }
 
     public enum Format {

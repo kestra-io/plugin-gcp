@@ -4,6 +4,9 @@ import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.ArrayUtils;
+import org.kestra.core.models.executions.metrics.Counter;
+import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -11,6 +14,7 @@ import org.kestra.core.runners.RunOutput;
 import org.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -105,7 +109,7 @@ public class Query extends Task implements RunnableTask {
         queryJob = queryJob.waitFor();
         Connection.handleErrors(queryJob, logger);
 
-        JobStatistics.QueryStatistics stats = queryJob.getStatistics();
+        this.metrics(runContext, queryJob.getStatistics());
 
         RunOutput.RunOutputBuilder output = RunOutput.builder();
 
@@ -122,6 +126,48 @@ public class Query extends Task implements RunnableTask {
         return output.build();
     }
 
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats) {
+        String[] tags = {
+            "statement_type", stats.getStatementType().name(),
+            "fetch", this.fetch || this.fetchOne ? "true" : "false"
+        };
+
+        if (this.destinationTable != null) {
+            ArrayUtils.addAll(tags, "destination_table", this.destinationTable);
+        }
+
+        if (stats.getEstimatedBytesProcessed() != null) {
+            runContext.metric(Counter.of("estimated.bytes.processed", stats.getEstimatedBytesProcessed(), tags));
+        }
+
+        if (stats.getNumDmlAffectedRows() != null) {
+            runContext.metric(Counter.of("num.dml.affected.rows", stats.getNumDmlAffectedRows(), tags));
+        }
+
+        if (stats.getTotalBytesBilled() != null) {
+            runContext.metric(Counter.of("total.bytes.billed", stats.getTotalBytesBilled(), tags));
+        }
+
+        if (stats.getTotalBytesProcessed() != null) {
+            runContext.metric(Counter.of("total.bytes.processed", stats.getTotalBytesProcessed(), tags));
+        }
+
+        if (stats.getTotalPartitionsProcessed() != null) {
+            runContext.metric(Counter.of("total.partitions.processed", stats.getTotalPartitionsProcessed(), tags));
+        }
+
+        if (stats.getTotalSlotMs() != null) {
+            runContext.metric(Counter.of("total.slot.ms", stats.getTotalSlotMs(), tags));
+        }
+
+        if (stats.getNumChildJobs() != null) {
+            runContext.metric(Counter.of("num.child.jobs", stats.getNumChildJobs(), tags));
+        }
+
+        runContext
+            .metric(Counter.of("cache.hit", stats.getCacheHit() ? 1 : 0, tags))
+            .metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
+    }
 
     private List<Map<String, Object>> fetchResult(TableResult result) {
         return StreamSupport

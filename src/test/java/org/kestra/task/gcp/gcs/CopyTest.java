@@ -6,10 +6,12 @@ import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
+import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunOutput;
 import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.storages.StorageObject;
+import org.kestra.core.utils.TestsUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -28,19 +30,11 @@ class CopyTest {
     @Inject
     private ApplicationContext applicationContext;
 
-
     @Value("${kestra.tasks.gcs.bucket}")
     private String bucket;
 
     @Test
     void run() throws Exception {
-        RunContext runContext = new RunContext(
-            this.applicationContext,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
-        );
-
         String in = FriendlyId.createFriendlyId();
         String out = FriendlyId.createFriendlyId();
 
@@ -52,19 +46,33 @@ class CopyTest {
         );
 
         Upload upload = Upload.builder()
+            .id(CopyTest.class.getSimpleName())
+            .type(Upload.class.getName())
             .from(source.getUri().toString())
-            .to("gs://{{bucket}}/tasks/gcp/copy/" + in + ".yml")
+            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
             .build();
 
-        upload.run(runContext);
+        upload.run(runContext(upload));
 
         Copy task = Copy.builder()
-            .from("gs://{{bucket}}/tasks/gcp/copy/" + in + ".yml")
-            .to("gs://{{bucket}}/tasks/gcp/copy/" + out + ".yml")
+            .id(CopyTest.class.getSimpleName())
+            .type(Copy.class.getName())
+            .from("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
+            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml")
             .build();
 
-        RunOutput run = task.run(runContext);
+        RunOutput run = task.run(runContext(task));
 
         assertThat(run.getOutputs().get("uri"), is(new URI("gs://" + bucket + "/tasks/gcp/copy/" + out + ".yml")));
+    }
+
+    private RunContext runContext(Task task) {
+        return TestsUtils.mockRunContext(
+            this.applicationContext,
+            task,
+            ImmutableMap.of(
+                "bucket", this.bucket
+            )
+        );
     }
 }

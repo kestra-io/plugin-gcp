@@ -4,12 +4,16 @@ import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.executions.metrics.Counter;
+import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
+import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunOutput;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
 @SuperBuilder
@@ -109,12 +113,13 @@ abstract public class AbstractLoad extends Task implements RunnableTask {
         }
     }
 
-    protected RunOutput execute(Logger logger, LoadConfiguration configuration, Job job) throws InterruptedException, IOException {
+    protected RunOutput execute(RunContext runContext, Logger logger, LoadConfiguration configuration, Job job) throws InterruptedException, IOException {
         Connection.handleErrors(job, logger);
         job = job.waitFor();
         Connection.handleErrors(job, logger);
 
         JobStatistics.LoadStatistics stats = job.getStatistics();
+        this.metrics(runContext, stats);
 
         //noinspection ConstantConditions
         return RunOutput.builder()
@@ -126,6 +131,34 @@ abstract public class AbstractLoad extends Task implements RunnableTask {
                 "jobId", job.getJobId().getJob()
             ))
             .build();
+    }
+
+    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats) {
+        String[] tags = {"destination_table", this.destinationTable};
+
+        if (stats.getOutputRows() != null) {
+            runContext.metric(Counter.of("output.rows", stats.getOutputRows(), tags));
+        }
+
+        if (stats.getOutputBytes() != null) {
+            runContext.metric(Counter.of("output.bytes", stats.getOutputBytes(), tags));
+        }
+
+        if (stats.getBadRecords() != null) {
+            runContext.metric(Counter.of("bad.records", stats.getBadRecords(), tags));
+        }
+
+        if (stats.getInputBytes() != null) {
+            runContext.metric(Counter.of("input.bytes", stats.getInputBytes(), tags));
+        }
+
+        if (stats.getInputFiles() != null) {
+            runContext.metric(Counter.of("input.files", stats.getInputFiles(), tags));
+        }
+
+
+        runContext.metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
+
     }
 
     public enum Format {
