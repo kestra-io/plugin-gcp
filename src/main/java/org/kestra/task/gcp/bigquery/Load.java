@@ -3,11 +3,13 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.TableDataWriteChannel;
 import com.google.cloud.bigquery.WriteChannelConfiguration;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
@@ -22,13 +24,13 @@ import java.nio.channels.Channels;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class Load extends AbstractLoad implements RunnableTask {
+public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     private String from;
 
     private String projectId;
 
     @Override
-    public RunOutput run(RunContext runContext) throws Exception {
+    public Output run(RunContext runContext) throws Exception {
         BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
 
@@ -54,71 +56,5 @@ public class Load extends AbstractLoad implements RunnableTask {
         }
 
         return this.execute(runContext, logger, configuration, writer.getJob());
-    }
-
-    public enum Format {
-        CSV,
-        JSON,
-        AVRO,
-        PARQUET,
-        ORC,
-        // GOOGLE_SHEETS,
-        // BIGTABLE,
-        // DATASTORE_BACKUP,
-    }
-
-    @Builder
-    @ToString
-    @EqualsAndHashCode
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CsvOptions {
-        private Boolean allowJaggedRows;
-        private Boolean allowQuotedNewLines;
-        private String encoding;
-        private String fieldDelimiter;
-        private String quote;
-        private Long skipLeadingRows;
-
-        private com.google.cloud.bigquery.CsvOptions to() {
-            com.google.cloud.bigquery.CsvOptions.Builder builder = com.google.cloud.bigquery.CsvOptions.newBuilder();
-
-            if (this.allowJaggedRows != null) {
-                builder.setAllowJaggedRows(this.allowJaggedRows);
-            }
-
-            if (this.allowQuotedNewLines != null) {
-                builder.setAllowQuotedNewLines(this.allowQuotedNewLines);
-            }
-
-            if (this.encoding != null) {
-                builder.setEncoding(this.encoding);
-            }
-
-            if (this.fieldDelimiter != null) {
-                builder.setFieldDelimiter(this.fieldDelimiter);
-            }
-
-            if (this.quote != null) {
-                builder.setQuote(this.quote);
-            }
-
-            if (this.skipLeadingRows != null) {
-                builder.setSkipLeadingRows(this.skipLeadingRows);
-            }
-
-            return builder.build();
-        }
-    }
-
-    @Builder
-    @ToString
-    @EqualsAndHashCode
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class AvroOptions {
-        private Boolean useAvroLogicalTypes;
     }
 }

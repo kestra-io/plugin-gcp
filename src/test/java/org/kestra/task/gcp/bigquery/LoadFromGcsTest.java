@@ -10,7 +10,6 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.kestra.core.utils.TestsUtils;
 
 import javax.inject.Inject;
@@ -48,7 +47,7 @@ class LoadFromGcsTest {
 
         RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
 
-        RunOutput run = task.run(runContext);
-        assertThat(run.getOutputs().get("rows"), is(50L));
+        AbstractLoad.Output run = task.run(runContext);
+        assertThat(run.getRows(), is(50L));
     }
 }

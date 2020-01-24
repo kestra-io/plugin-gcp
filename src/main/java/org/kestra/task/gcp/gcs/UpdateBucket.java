@@ -10,7 +10,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.slf4j.Logger;
 
 @SuperBuilder
@@ -18,9 +17,9 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class UpdateBucket extends AbstractBucket implements RunnableTask {
+public class UpdateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Override
-    public RunOutput run(RunContext runContext) throws Exception {
+    public AbstractBucket.Output run(RunContext runContext) throws Exception {
         Storage connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
         BucketInfo bucketInfo = this.bucketInfo(runContext);
@@ -28,9 +27,6 @@ public class UpdateBucket extends AbstractBucket implements RunnableTask {
         logger.debug("Updating bucket '{}'", bucketInfo);
         Bucket bucket = connection.update(bucketInfo);
 
-        return RunOutput
-            .builder()
-            .outputs(this.outputs(bucket))
-            .build();
+        return Output.of(bucket);
     }
 }

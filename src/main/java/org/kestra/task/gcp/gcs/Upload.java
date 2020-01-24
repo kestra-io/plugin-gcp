@@ -4,14 +4,12 @@ import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
-import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
@@ -23,13 +21,13 @@ import java.nio.ByteBuffer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class Upload extends Task implements RunnableTask {
+public class Upload extends Task implements RunnableTask<Upload.Output> {
     private String from;
     private String to;
     private String projectId;
 
     @Override
-    public RunOutput run(RunContext runContext) throws Exception {
+    public Output run(RunContext runContext) throws Exception {
         Storage connection = new Connection().of(runContext.render(this.projectId));
 
         Logger logger = runContext.logger(this.getClass());
@@ -57,9 +55,15 @@ public class Upload extends Task implements RunnableTask {
 
         runContext.metric(Counter.of("file.size", size));
 
-        return RunOutput
+        return Output
             .builder()
-            .outputs(ImmutableMap.of("uri", new URI("gs://" + destination.getBucket() + "/" + destination.getName())))
+            .uri(new URI("gs://" + destination.getBucket() + "/" + destination.getName()))
             .build();
+    }
+
+    @Builder
+    @Getter
+    public static class Output implements org.kestra.core.models.tasks.Output {
+        private URI uri;
     }
 }

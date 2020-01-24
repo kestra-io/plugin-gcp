@@ -1,7 +1,6 @@
 package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
-import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.ArrayUtils;
@@ -10,10 +9,10 @@ import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -30,7 +29,7 @@ import java.util.stream.StreamSupport;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class Query extends Task implements RunnableTask {
+public class Query extends Task implements RunnableTask<Query.Output> {
     private String sql;
 
     private String projectId;
@@ -61,9 +60,43 @@ public class Query extends Task implements RunnableTask {
     private JobInfo.CreateDisposition createDisposition;
 
     @Override
-    public RunOutput run(RunContext runContext) throws Exception {
+    public Query.Output run(RunContext runContext) throws Exception {
         BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
+
+        JobConfiguration jobConfiguration = this.jobConfiguration(runContext);
+
+        logger.debug("Starting query\n{}", JacksonMapper.log(jobConfiguration));
+
+        Job queryJob = connection
+            .create(JobInfo.newBuilder(jobConfiguration)
+                .setJobId(Connection.jobId(runContext))
+                .build()
+            );
+
+        Connection.handleErrors(queryJob, logger);
+        queryJob = queryJob.waitFor();
+        Connection.handleErrors(queryJob, logger);
+
+        this.metrics(runContext, queryJob.getStatistics(), queryJob);
+
+        Output.OutputBuilder output = Output.builder()
+            .jobId(queryJob.getJobId().getJob());
+
+        if (this.fetch || this.fetchOne) {
+            TableResult result = queryJob.getQueryResults();
+
+            if (fetch) {
+                output.rows(this.fetchResult(result));
+            } else {
+                output.row(this.fetchResult(result).get(0));
+            }
+        }
+
+        return output.build();
+    }
+
+    protected JobConfiguration jobConfiguration(RunContext runContext) throws IOException {
         String sql = runContext.render(this.sql);
 
         QueryJobConfiguration.Builder builder = QueryJobConfiguration.newBuilder(sql)
@@ -96,40 +129,23 @@ public class Query extends Task implements RunnableTask {
             builder.setCreateDisposition(this.createDisposition);
         }
 
-        QueryJobConfiguration jobConfiguration = builder.build();
-        logger.debug("Starting query\n{}", JacksonMapper.log(jobConfiguration));
-
-        Job queryJob = connection
-            .create(JobInfo.newBuilder(jobConfiguration)
-                .setJobId(Connection.jobId(runContext))
-                .build()
-            );
-
-        Connection.handleErrors(queryJob, logger);
-        queryJob = queryJob.waitFor();
-        Connection.handleErrors(queryJob, logger);
-
-        this.metrics(runContext, queryJob.getStatistics());
-
-        RunOutput.RunOutputBuilder output = RunOutput.builder();
-
-        if (this.fetch || this.fetchOne) {
-            TableResult result = queryJob.getQueryResults();
-
-            if (fetch) {
-                output.outputs(ImmutableMap.of("rows", this.fetchResult(result)));
-            } else {
-                output.outputs(ImmutableMap.of("row", this.fetchResult(result).get(0)));
-            }
-        }
-
-        return output.build();
+        return builder.build();
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats) {
+    @Builder
+    @Getter
+    public static class Output implements org.kestra.core.models.tasks.Output {
+        private String jobId;
+        private List<Map<String, Object>> rows;
+        private Map<String, Object> row;
+    }
+
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) {
         String[] tags = {
             "statement_type", stats.getStatementType().name(),
-            "fetch", this.fetch || this.fetchOne ? "true" : "false"
+            "fetch", this.fetch || this.fetchOne ? "true" : "false",
+            "projectId", queryJob.getJobId().getProject(),
+            "location", queryJob.getJobId().getLocation(),
         };
 
         if (this.destinationTable != null) {

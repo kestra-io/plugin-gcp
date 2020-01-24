@@ -3,11 +3,7 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.Acl;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.EncryptionConfiguration;
-import com.google.common.collect.ImmutableMap;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
@@ -22,7 +18,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractDataset extends Task implements RunnableTask {
+abstract public class AbstractDataset extends Task implements RunnableTask<AbstractDataset.Output> {
     @NotNull
     protected String name;
     protected String projectId;
@@ -73,23 +69,23 @@ abstract public class AbstractDataset extends Task implements RunnableTask {
         return builder.build();
     }
 
-    protected Map<String, Object> outputs(DatasetInfo dataset) {
-        ImmutableMap.Builder<String, Object> builder = ImmutableMap.<String, Object>builder()
-            .put("dataset", dataset.getDatasetId().getDataset())
-            .put("project", dataset.getDatasetId().getProject());
+    @Builder
+    @Getter
+    public static class Output implements org.kestra.core.models.tasks.Output {
+        private String dataset;
+        private String project;
+        private String friendlyName;
+        private String description;
+        private String location;
 
-        if (dataset.getFriendlyName() != null) {
-            builder.put("friendlyName", dataset.getFriendlyName());
+        public static Output of(DatasetInfo dataset) {
+            return Output.builder()
+                .dataset(dataset.getDatasetId().getDataset())
+                .project(dataset.getDatasetId().getProject())
+                .friendlyName(dataset.getFriendlyName())
+                .description(dataset.getDescription())
+                .location(dataset.getLocation())
+                .build();
         }
-
-        if (dataset.getDescription() != null) {
-            builder.put("description", dataset.getDescription());
-        }
-
-        if (dataset.getLocation() != null) {
-            builder.put("location", dataset.getLocation());
-        }
-
-        return builder.build();
     }
 }

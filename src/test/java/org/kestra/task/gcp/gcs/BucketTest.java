@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 
 import javax.inject.Inject;
 
@@ -52,9 +51,9 @@ class BucketTest {
     @Order(1)
     void create() throws Exception {
         CreateBucket task = createBuilder().build();
-        RunOutput run = task.run(runContext());
+        AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("bucket"), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
     }
 
     @Test
@@ -75,9 +74,9 @@ class BucketTest {
             .ifExists(CreateBucket.IfExists.SKIP)
             .build();
 
-        RunOutput run = task.run(runContext());
+        AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("bucket"), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
     }
 
     @Test
@@ -88,10 +87,10 @@ class BucketTest {
             .ifExists(CreateBucket.IfExists.UPDATE)
             .build();
 
-        RunOutput run = task.run(runContext());
+        AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("bucket"), is(runContext().getVariables().get("bucket")));
-        assertThat(run.getOutputs().get("indexPage"), is("createUpdate"));
+        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getIndexPage(), is("createUpdate"));
     }
 
     @Test
@@ -105,10 +104,10 @@ class BucketTest {
             .indexPage("update")
             .build();
 
-        RunOutput run = task.run(runContext());
+        AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("bucket"), is(runContext().getVariables().get("bucket")));
-        assertThat(run.getOutputs().get("indexPage"), is("update"));
+        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getIndexPage(), is("update"));
     }
 
     @Test
@@ -121,7 +120,7 @@ class BucketTest {
             .projectId("{{project}}")
             .build();
 
-        RunOutput run = task.run(runContext());
-        assertThat(run.getOutputs().get("bucket"), is(runContext().getVariables().get("bucket")));
+        DeleteBucket.Output run = task.run(runContext());
+        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
     }
 }

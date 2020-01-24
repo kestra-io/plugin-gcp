@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 
 import javax.inject.Inject;
 
@@ -52,9 +51,9 @@ class DatasetTest {
     @Order(1)
     void create() throws Exception {
         CreateDataset task = createBuilder().build();
-        RunOutput run = task.run(runContext());
+        AbstractDataset.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("dataset"), is(runContext().getVariables().get("dataset")));
+        assertThat(run.getDataset(), is(runContext().getVariables().get("dataset")));
     }
 
     @Test
@@ -75,9 +74,9 @@ class DatasetTest {
             .ifExists(CreateDataset.IfExists.SKIP)
             .build();
 
-        RunOutput run = task.run(runContext());
+        AbstractDataset.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("dataset"), is(runContext().getVariables().get("dataset")));
+        assertThat(run.getDataset(), is(runContext().getVariables().get("dataset")));
     }
 
     @Test
@@ -88,10 +87,10 @@ class DatasetTest {
             .ifExists(CreateDataset.IfExists.UPDATE)
             .build();
 
-        RunOutput run = task.run(runContext());
+        AbstractDataset.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("dataset"), is(runContext().getVariables().get("dataset")));
-        assertThat(run.getOutputs().get("description"), is("createUpdate"));
+        assertThat(run.getDataset(), is(runContext().getVariables().get("dataset")));
+        assertThat(run.getDescription(), is("createUpdate"));
     }
 
     @Test
@@ -105,10 +104,10 @@ class DatasetTest {
             .description("update")
             .build();
 
-        RunOutput run = task.run(runContext());
+        AbstractDataset.Output run = task.run(runContext());
 
-        assertThat(run.getOutputs().get("dataset"), is(runContext().getVariables().get("dataset")));
-        assertThat(run.getOutputs().get("description"), is("update"));
+        assertThat(run.getDataset(), is(runContext().getVariables().get("dataset")));
+        assertThat(run.getDescription(), is("update"));
     }
 
     @Test
@@ -122,7 +121,7 @@ class DatasetTest {
             .deleteContents(true)
             .build();
 
-        RunOutput run = task.run(runContext());
-        assertThat(run.getOutputs().get("dataset"), is(runContext().getVariables().get("dataset")));
+        DeleteDataset.Output run = task.run(runContext());
+        assertThat(run.getDataset(), is(runContext().getVariables().get("dataset")));
     }
 }

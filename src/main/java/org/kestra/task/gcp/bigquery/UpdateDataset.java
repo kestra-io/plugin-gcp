@@ -10,7 +10,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.slf4j.Logger;
 
 @SuperBuilder
@@ -18,9 +17,9 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class UpdateDataset extends AbstractDataset implements RunnableTask {
+public class UpdateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Override
-    public RunOutput run(RunContext runContext) throws Exception {
+    public AbstractDataset.Output run(RunContext runContext) throws Exception {
         BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
         DatasetInfo datasetInfo = this.datasetInfo(runContext);
@@ -29,9 +28,6 @@ public class UpdateDataset extends AbstractDataset implements RunnableTask {
 
         Dataset dataset = connection.update(datasetInfo);
 
-        return RunOutput
-            .builder()
-            .outputs(this.outputs(dataset))
-            .build();
+        return AbstractDataset.Output.of(dataset);
     }
 }

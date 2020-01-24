@@ -1,7 +1,6 @@
 package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
-import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.executions.metrics.Counter;
@@ -9,7 +8,6 @@ import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -21,7 +19,7 @@ import java.util.List;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractLoad extends Task implements RunnableTask {
+abstract public class AbstractLoad extends Task implements RunnableTask<AbstractLoad.Output> {
     protected String destinationTable;
 
     private List<String> clusteringFields;
@@ -47,7 +45,6 @@ abstract public class AbstractLoad extends Task implements RunnableTask {
     private CsvOptions csvOptions;
 
     private AvroOptions avroOptions;
-
 
     @SuppressWarnings("DuplicatedCode")
     protected void setOptions(LoadConfiguration.Builder builder) {
@@ -113,28 +110,37 @@ abstract public class AbstractLoad extends Task implements RunnableTask {
         }
     }
 
-    protected RunOutput execute(RunContext runContext, Logger logger, LoadConfiguration configuration, Job job) throws InterruptedException, IOException {
+    protected Output execute(RunContext runContext, Logger logger, LoadConfiguration configuration, Job job) throws InterruptedException, IOException {
         Connection.handleErrors(job, logger);
         job = job.waitFor();
         Connection.handleErrors(job, logger);
 
         JobStatistics.LoadStatistics stats = job.getStatistics();
-        this.metrics(runContext, stats);
+        this.metrics(runContext, stats, job);
 
-        //noinspection ConstantConditions
-        return RunOutput.builder()
-            .outputs(ImmutableMap.of(
-                "destinationTable", configuration.getDestinationTable().getProject() + "." +
-                    configuration.getDestinationTable().getDataset() + "." +
-                    configuration.getDestinationTable().getTable(),
-                "rows", stats.getOutputRows(),
-                "jobId", job.getJobId().getJob()
-            ))
+        return Output.builder()
+            .jobId(job.getJobId().getJob())
+            .rows(stats.getOutputRows())
+            .destinationTable(configuration.getDestinationTable().getProject() + "." +
+                configuration.getDestinationTable().getDataset() + "." +
+                configuration.getDestinationTable().getTable())
             .build();
     }
 
-    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats) {
-        String[] tags = {"destination_table", this.destinationTable};
+    @Builder
+    @Getter
+    public static class Output implements org.kestra.core.models.tasks.Output {
+        private String jobId;
+        private String destinationTable;
+        private Long rows;
+    }
+
+    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) {
+        String[] tags = {
+            "destination_table", this.destinationTable,
+            "projectId", job.getJobId().getProject(),
+            "location", job.getJobId().getLocation(),
+        };
 
         if (stats.getOutputRows() != null) {
             runContext.metric(Counter.of("output.rows", stats.getOutputRows(), tags));
@@ -158,7 +164,6 @@ abstract public class AbstractLoad extends Task implements RunnableTask {
 
 
         runContext.metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
-
     }
 
     public enum Format {

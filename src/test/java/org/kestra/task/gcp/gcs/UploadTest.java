@@ -5,12 +5,11 @@ import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
+import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.storages.StorageObject;
-import org.junit.jupiter.api.Test;
 import org.kestra.core.utils.TestsUtils;
 
 import javax.inject.Inject;
@@ -51,9 +50,9 @@ class UploadTest {
             .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
             .build();
 
-        RunOutput run = task.run(runContext(task));
+        Upload.Output run = task.run(runContext(task));
 
-        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/"+ out + ".yml")));
+        assertThat(run.getUri(), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/"+ out + ".yml")));
     }
 
     @Test
@@ -67,9 +66,9 @@ class UploadTest {
             .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".html")
             .build();
 
-        RunOutput run = task.run(runContext(task));
+        Upload.Output run = task.run(runContext(task));
 
-        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/" + out + ".html")));
+        assertThat(run.getUri(), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/" + out + ".html")));
     }
 
     private RunContext runContext(Task task) {

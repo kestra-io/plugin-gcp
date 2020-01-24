@@ -1,11 +1,7 @@
 package org.kestra.task.gcp.gcs;
 
 import com.google.cloud.storage.*;
-import com.google.common.collect.ImmutableMap;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
@@ -22,7 +18,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractBucket extends Task implements RunnableTask {
+abstract public class AbstractBucket extends Task implements RunnableTask<AbstractBucket.Output> {
     @NotNull
     protected String name;
     protected String projectId;
@@ -113,28 +109,23 @@ abstract public class AbstractBucket extends Task implements RunnableTask {
         return builder.build();
     }
 
+    @Builder
+    @Getter
+    public static class Output implements org.kestra.core.models.tasks.Output {
+        private String bucket;
+        private URI bucketUri;
+        private String location;
+        private String indexPage;
+        private String notFoundPage;
 
-    protected Map<String, Object> outputs(Bucket bucket) throws URISyntaxException {
-        ImmutableMap.Builder<String, Object> builder = ImmutableMap.<String, Object>builder()
-            .put("bucket", bucket.getName())
-            .put("bucketUri", new URI("gs://" + bucket.getName()));
-
-        if (bucket.getLocation() != null) {
-            builder.put("location", bucket.getLocation());
+        public static Output of(Bucket bucket) throws URISyntaxException {
+            return Output.builder()
+                .bucket(bucket.getName())
+                .bucketUri(new URI("gs://" + bucket.getName()))
+                .location(bucket.getLocation())
+                .indexPage(bucket.getIndexPage())
+                .notFoundPage(bucket.getNotFoundPage())
+                .build();
         }
-
-        if (bucket.getIndexPage() != null) {
-            builder.put("indexPage", bucket.getIndexPage());
-        }
-
-        if (bucket.getNotFoundPage() != null) {
-            builder.put("notFoundPage", bucket.getNotFoundPage());
-        }
-
-
-        return builder.build();
     }
-
-
-
 }

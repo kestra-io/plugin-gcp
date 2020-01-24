@@ -8,7 +8,6 @@ import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.storages.StorageObject;
 import org.kestra.core.utils.TestsUtils;
@@ -61,9 +60,9 @@ class CopyTest {
             .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml")
             .build();
 
-        RunOutput run = task.run(runContext(task));
+        Copy.Output run = task.run(runContext(task));
 
-        assertThat(run.getOutputs().get("uri"), is(new URI("gs://" + bucket + "/tasks/gcp/copy/" + out + ".yml")));
+        assertThat(run.getUri(), is(new URI("gs://" + bucket + "/tasks/gcp/copy/" + out + ".yml")));
     }
 
     private RunContext runContext(Task task) {

@@ -2,27 +2,21 @@ package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
-import com.google.common.collect.ImmutableMap;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.slf4j.Logger;
 
 import javax.validation.constraints.NotNull;
-import java.net.URI;
 
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class DeleteDataset extends Task implements RunnableTask {
+public class DeleteDataset extends Task implements RunnableTask<DeleteDataset.Output> {
     @NotNull
     private String name;
     private String projectId;
@@ -30,7 +24,7 @@ public class DeleteDataset extends Task implements RunnableTask {
 
 
     @Override
-    public RunOutput run(RunContext runContext) throws Exception {
+    public Output run(RunContext runContext) throws Exception {
         BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
         String name = runContext.render(this.name);
@@ -49,9 +43,15 @@ public class DeleteDataset extends Task implements RunnableTask {
             throw new BigQueryException(404, "Couldn't find dataset '" + name + "'");
         }
 
-        return RunOutput
+        return Output
             .builder()
-            .outputs(ImmutableMap.of("dataset", name))
+            .dataset(name)
             .build();
+    }
+
+    @Builder
+    @Getter
+    public static class Output implements org.kestra.core.models.tasks.Output {
+        private String dataset;
     }
 }

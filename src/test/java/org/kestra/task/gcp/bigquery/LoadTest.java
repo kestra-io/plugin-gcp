@@ -7,7 +7,6 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
-import org.kestra.core.runners.RunOutput;
 import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.storages.StorageObject;
 import org.kestra.core.utils.TestsUtils;
@@ -59,9 +58,9 @@ class LoadTest {
 
         RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
 
-        RunOutput run = task.run(runContext);
+        AbstractLoad.Output run = task.run(runContext);
 
-        assertThat(run.getOutputs().get("rows"), is(5L));
+        assertThat(run.getRows(), is(5L));
     }
 
     @Test
@@ -87,7 +86,7 @@ class LoadTest {
 
         RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
 
-        RunOutput run = task.run(runContext);
-        assertThat(run.getOutputs().get("rows"), is(5L));
+        AbstractLoad.Output run = task.run(runContext);
+        assertThat(run.getRows(), is(5L));
     }
 }
