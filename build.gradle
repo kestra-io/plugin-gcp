@@ -12,6 +12,7 @@ plugins {
     id "java-library"
     id "idea"
     id "com.adarshr.test-logger" version "2.0.0"
+    id "com.github.johnrengelman.shadow" version "5.2.0"
     id "maven-publish"
     id "com.jfrog.bintray" version "1.8.4"
     id 'net.researchgate.release' version '2.8.1'
@@ -40,24 +41,19 @@ dependencies {
     // micronaut
     annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
     annotationProcessor "io.micronaut:micronaut-inject-java"
-    implementation platform("io.micronaut:micronaut-bom:$micronautVersion")
-    implementation "io.micronaut:micronaut-inject"
-
-    testAnnotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
-    testAnnotationProcessor "io.micronaut:micronaut-inject-java"
-    testImplementation platform("io.micronaut:micronaut-bom:$micronautVersion")
-    testImplementation "io.micronaut.test:micronaut-test-junit5"
+    compileOnly platform("io.micronaut:micronaut-bom:$micronautVersion")
+    compileOnly "io.micronaut:micronaut-inject"
 
     // lombok
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
     compileOnly "org.projectlombok:lombok:$lombokVersion"
 
     // kestra
-    implementation group: "org.kestra", name: "core", version: kestraVersion
+    compileOnly group: "org.kestra", name: "core", version: kestraVersion
 
     // libs
-    libs "com.google.cloud:google-cloud-bigquery:$gcpVersion"
-    libs "com.google.cloud:google-cloud-storage:$gcpVersion"
+    implementation "com.google.cloud:google-cloud-bigquery:$gcpVersion"
+    implementation "com.google.cloud:google-cloud-storage:$gcpVersion"
 }
 
 
@@ -78,6 +74,12 @@ testlogger {
 }
 
 dependencies {
+    testAnnotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
+    testAnnotationProcessor "io.micronaut:micronaut-inject-java"
+    testImplementation platform("io.micronaut:micronaut-bom:$micronautVersion")
+    testImplementation "io.micronaut.test:micronaut-test-junit5"
+
+
     testImplementation group: "org.kestra", name: "storage-local", version: kestraVersion
 
     testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.2"
@@ -90,10 +92,9 @@ dependencies {
 /**********************************************************************************************************************\
  * Publish
  **********************************************************************************************************************/
-jar {
-    from {
-        configurations.libs.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+shadowJar {
+    archiveClassifier.set(null)
+    mergeServiceFiles()
 }
 
 javadoc {
@@ -118,11 +119,10 @@ publishing {
         BintrayMavenPublication(MavenPublication) {
             version project.version
 
-            from components.java
-
             groupId project.group
             artifactId project.name
 
+            artifact shadowJar
             artifact sourcesJar
             artifact javadocJar
         }
