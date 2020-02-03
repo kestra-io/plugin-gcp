@@ -86,7 +86,7 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
     public static class Output implements org.kestra.core.models.tasks.Output {
         @OutputProperty(
             description = "The destination full uri",
-            body = "The full url will be in like `gs://{bucket}/{path}/{file}`"
+            body = {"The full url will be in like `gs://{bucket}/{path}/{file}`"}
         )
         private URI uri;
     }

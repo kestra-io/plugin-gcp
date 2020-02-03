@@ -63,7 +63,7 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
         }
 
         if (this.storageClass != null) {
-            builder.setStorageClass(this.storageClass);
+            builder.setStorageClass(com.google.cloud.storage.StorageClass.valueOf(this.storageClass.toString()));
         }
 
         if (this.location != null) {
@@ -127,5 +127,13 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
                 .notFoundPage(bucket.getNotFoundPage())
                 .build();
         }
+    }
+
+    public enum StorageClass {
+        REGIONAL,
+        MULTI_REGIONAL,
+        NEARLINE,
+        COLDLINE,
+        STANDARD
     }
 }

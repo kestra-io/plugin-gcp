@@ -32,11 +32,6 @@ tasks.withType(JavaCompile) {
     options.compilerArgs.add("-parameters")
 }
 
-configurations {
-    libs
-}
-configurations.implementation.extendsFrom(configurations.libs)
-
 dependencies {
     // micronaut
     annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
@@ -79,7 +74,6 @@ dependencies {
     testImplementation platform("io.micronaut:micronaut-bom:$micronautVersion")
     testImplementation "io.micronaut.test:micronaut-test-junit5"
 
-
     testImplementation group: "org.kestra", name: "storage-local", version: kestraVersion
 
     testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.2"
@@ -92,6 +86,16 @@ dependencies {
 /**********************************************************************************************************************\
  * Publish
  **********************************************************************************************************************/
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Title": project.name,
+                "X-Kestra-Group": project.group,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 shadowJar {
     archiveClassifier.set(null)
     mergeServiceFiles()
