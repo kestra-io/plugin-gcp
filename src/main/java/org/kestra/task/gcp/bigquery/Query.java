@@ -64,7 +64,7 @@ public class Query extends Task implements RunnableTask<Query.Output> {
         BigQuery connection = new Connection().of(runContext.render(this.projectId));
         Logger logger = runContext.logger(this.getClass());
 
-        JobConfiguration jobConfiguration = this.jobConfiguration(runContext);
+        QueryJobConfiguration jobConfiguration = this.jobConfiguration(runContext);
 
         logger.debug("Starting query\n{}", JacksonMapper.log(jobConfiguration));
 
@@ -96,7 +96,7 @@ public class Query extends Task implements RunnableTask<Query.Output> {
         return output.build();
     }
 
-    protected JobConfiguration jobConfiguration(RunContext runContext) throws IOException {
+    protected QueryJobConfiguration jobConfiguration(RunContext runContext) throws IOException {
         String sql = runContext.render(this.sql);
 
         QueryJobConfiguration.Builder builder = QueryJobConfiguration.newBuilder(sql)
