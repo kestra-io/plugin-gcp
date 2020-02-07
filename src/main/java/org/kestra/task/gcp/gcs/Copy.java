@@ -6,6 +6,7 @@ import com.google.cloud.storage.Storage;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.annotations.Documentation;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.executions.metrics.Counter;
@@ -24,6 +25,13 @@ import java.net.URI;
 @Documentation(
     description = "Copy a file between bucket",
     body = "Copy the file between Internal Storage or Google Cloud Storage file"
+)
+@Example(
+    title = "Move a file between bucket path",
+    code = {
+        "from: \"{{ inputs.file.uri }}\"",
+        "delete: true"
+    }
 )
 public class Copy extends Task implements RunnableTask<Copy.Output> {
     @InputProperty(

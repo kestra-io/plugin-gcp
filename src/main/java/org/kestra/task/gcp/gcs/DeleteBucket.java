@@ -4,6 +4,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -17,6 +18,12 @@ import java.net.URI;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    title = "Delete a bucket",
+    code = {
+        "name: \"my-bucket\""
+    }
+)
 public class DeleteBucket extends Task implements RunnableTask<DeleteBucket.Output> {
     @NotNull
     protected String name;

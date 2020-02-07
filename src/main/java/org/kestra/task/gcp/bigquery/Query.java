@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.ArrayUtils;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
@@ -29,6 +30,46 @@ import java.util.stream.StreamSupport;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    title = "Create a table with a custom query",
+    code = {
+        "destinationTable: \"my_project.my_dataset.my_table\"",
+        "writeDisposition: WRITE_APPEND",
+        "sql: |",
+        "  SELECT ",
+        "    \"hello\" as string,",
+        "    NULL AS `nullable`,",
+        "    1 as int,",
+        "    1.25 AS float,",
+        "    DATE(\"2008-12-25\") AS date,",
+        "    DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,",
+        "    TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,",
+        "    TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,",
+        "    ST_GEOGPOINT(50.6833, 2.9) AS geopoint,",
+        "    ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,",
+        "    STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
+    }
+)
+@Example(
+    full = true,
+    title = "Execute a query and fetch results sets on another task",
+    code = {
+        "tasks:",
+        "- id: fetch",
+        "  type: org.kestra.task.gcp.bigquery.Query",
+        "  fetch: true",
+        "  sql: |",
+        "    SELECT 1 as id, \"John\" as name",
+        "    UNION ALL",
+        "    SELECT 2 as id, \"Doe\" as name",
+        "- id: use-fetched-data",
+        "  type: org.kestra.core.tasks.debugs.Return",
+        "  format: |",
+        "    {{#each outputs.fetch.rows}}",
+        "    id : {{ this.id }}, name: {{ this.name }}",
+        "    {{/each}}"
+    }
+)
 public class Query extends Task implements RunnableTask<Query.Output> {
     private String sql;
 

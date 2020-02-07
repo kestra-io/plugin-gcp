@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -17,6 +18,14 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    title = "Update some bucket labels",
+    code = {
+        "name: \"my-bucket\"",
+        "labels:",
+        "  my-label: my-value"
+    }
+)
 public class UpdateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Override
     public AbstractBucket.Output run(RunContext runContext) throws Exception {

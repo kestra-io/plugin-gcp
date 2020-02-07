@@ -6,6 +6,7 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
@@ -21,6 +22,12 @@ import java.nio.ByteBuffer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    code = {
+        "from: \"{{ inputs.file.uri }}\"",
+        "to: \"gs://my_bucket/dir/file.csv\""
+    }
+)
 public class Upload extends Task implements RunnableTask<Upload.Output> {
     private String from;
     private String to;

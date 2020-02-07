@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -16,12 +17,18 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    title = "Delete a dataset",
+    code = {
+        "name: \"my-bucket\"",
+        "deleteContents: true"
+    }
+)
 public class DeleteDataset extends Task implements RunnableTask<DeleteDataset.Output> {
     @NotNull
     private String name;
     private String projectId;
     private Boolean deleteContents;
-
 
     @Override
     public Output run(RunContext runContext) throws Exception {

@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
@@ -21,6 +22,17 @@ import java.util.List;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    title = "Load an avro file from a gcs bucket",
+    code = {
+        "from:",
+        "  - \"{{ outputs.avro-to-gcs.uri }}\"",
+        "destinationTable: \"my_project.my_dataset.my_table\"",
+        "format: AVRO",
+        "avroOptions:",
+        "  useAvroLogicalTypes: true"
+    }
+)
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     /**
      * Sets the fully-qualified URIs that point to source data in Google Cloud Storage (e.g.

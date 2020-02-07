@@ -6,6 +6,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -17,6 +18,15 @@ import java.io.IOException;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    title = "Create a new bucket with some options",
+    code = {
+        "name: \"my-bucket\"",
+        "versioningEnabled: true",
+        "labels: ",
+        "  my-label: my-value"
+    }
+)
 public class CreateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Builder.Default
     private IfExists ifExists = IfExists.ERROR;

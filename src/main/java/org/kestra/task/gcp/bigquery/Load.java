@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
@@ -24,6 +25,16 @@ import java.nio.channels.Channels;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Example(
+    title = "Load an csv file from an input file",
+    code = {
+        "from: \"{{ inputs.file.uri }}\"",
+        "destinationTable: \"my_project.my_dataset.my_table\"",
+        "format: CSV",
+        "csvOptions:",
+        "  fieldDelimiter: \";\""
+    }
+)
 public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     private String from;
 
