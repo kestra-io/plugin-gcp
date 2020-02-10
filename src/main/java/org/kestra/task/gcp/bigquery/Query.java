@@ -181,7 +181,7 @@ public class Query extends Task implements RunnableTask<Query.Output> {
         private Map<String, Object> row;
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) {
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IOException {
         String[] tags = {
             "statement_type", stats.getStatementType().name(),
             "fetch", this.fetch || this.fetchOne ? "true" : "false",
@@ -190,7 +190,7 @@ public class Query extends Task implements RunnableTask<Query.Output> {
         };
 
         if (this.destinationTable != null) {
-            ArrayUtils.addAll(tags, "destination_table", this.destinationTable);
+            ArrayUtils.addAll(tags, "destination_table", runContext.render(this.destinationTable));
         }
 
         if (stats.getEstimatedBytesProcessed() != null) {

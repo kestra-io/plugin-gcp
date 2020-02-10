@@ -135,9 +135,9 @@ abstract public class AbstractLoad extends Task implements RunnableTask<Abstract
         private Long rows;
     }
 
-    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) {
+    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) throws IOException {
         String[] tags = {
-            "destination_table", this.destinationTable,
+            "destination_table", runContext.render(this.destinationTable),
             "projectId", job.getJobId().getProject(),
             "location", job.getJobId().getLocation(),
         };
