@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -17,6 +18,9 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Documentation(
+    description = "Update a dataset."
+)
 public class UpdateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {

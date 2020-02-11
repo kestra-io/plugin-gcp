@@ -6,7 +6,9 @@ import com.google.cloud.bigquery.Dataset;
 import com.google.cloud.bigquery.DatasetInfo;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -18,6 +20,9 @@ import java.io.IOException;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Documentation(
+    description = "Create a dataset or update if it already exists."
+)
 @Example(
     title = "Create a dataset if not exits",
     code = {
@@ -28,6 +33,9 @@ import java.io.IOException;
 )
 public class CreateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Builder.Default
+    @InputProperty(
+        description = "Policy to apply if a dataset already exists."
+    )
     private IfExists ifExists = IfExists.ERROR;
 
     @Override

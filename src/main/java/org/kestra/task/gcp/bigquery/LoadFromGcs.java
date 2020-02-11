@@ -9,7 +9,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
@@ -33,14 +35,28 @@ import java.util.List;
         "  useAvroLogicalTypes: true"
     }
 )
+@Documentation(
+    description = "Load data from GCS (Google Cloud Storage) to BigQuery"
+)
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     /**
      * Sets the fully-qualified URIs that point to source data in Google Cloud Storage (e.g.
      * gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the
      * 'bucket' name.
      */
+    @InputProperty(
+        description = "Google Cloud Storage source data",
+        body = "The fully-qualified URIs that point to source data in Google Cloud Storage (e.g.\n" +
+            " gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the\n" +
+            " 'bucket' name.",
+        dynamic = true
+    )
     private List<String> from;
 
+    @InputProperty(
+        description = "The GCP project id",
+        dynamic = true
+    )
     private String projectId;
 
     @Override

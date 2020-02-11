@@ -3,6 +3,8 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.InputProperty;
+import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
@@ -20,30 +22,83 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 abstract public class AbstractLoad extends Task implements RunnableTask<AbstractLoad.Output> {
+    @InputProperty(
+        description = "The table where to put query results",
+        body = "If not provided a new table is created.",
+        dynamic = true
+    )
     protected String destinationTable;
 
+    @InputProperty(
+        description = "The clustering specification for the destination table"
+    )
     private List<String> clusteringFields;
 
+    @InputProperty(
+        description = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
+        body = "Schema update options are supported in two cases: when\n" +
+            " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination\n" +
+            " table is a partition of a table, specified by partition decorators. For normal tables,\n" +
+            " WRITE_TRUNCATE will always overwrite the schema."
+    )
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
+    @InputProperty(
+        description = "The time partitioning specification for the destination table"
+    )
     private String timePartitioningField;
 
+    @InputProperty(
+        description = "The action that should occur if the destination table already exists"
+    )
     private JobInfo.WriteDisposition writeDisposition;
 
+    @InputProperty(
+        description = "[Experimental] Automatic inference of the options and schema for CSV and JSON sources"
+    )
     private Boolean autodetect;
 
+    @InputProperty(
+        description = "Whether the job is allowed to create tables"
+    )
     private JobInfo.CreateDisposition createDisposition;
 
+    @InputProperty(
+        description = "Whether BigQuery should allow extra values that are not represented in the table schema",
+        body = " If true, the extra values are ignored. If false, records with extra columns\n" +
+            " are treated as bad records, and if there are too many bad records, an invalid error is\n" +
+            " returned in the job result. By default unknown values are not allowed."
+    )
     private Boolean ignoreUnknownValues;
 
+    @InputProperty(
+        description = "The maximum number of bad records that BigQuery can ignore when running the job",
+        body = " If the number of bad records exceeds this value, an invalid error is returned in the job result.\n" +
+            " By default no bad record is ignored."
+    )
     private Integer maxBadRecords;
 
+    @InputProperty(
+        description = "The schema for the destination table",
+        body = "The schema can be omitted if the destination table\n" +
+            " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. \n" +
+            " DATASTORE_BACKUP format option)."
+    )
     private Schema schema;
 
+    @InputProperty(
+        description = "The source format, and possibly some parsing options, of the external data"
+    )
     private Format format;
 
+    @InputProperty(
+        description = "Csv parsing options"
+    )
     private CsvOptions csvOptions;
 
+    @InputProperty(
+        description = "Avro parsing options"
+    )
     private AvroOptions avroOptions;
 
     @SuppressWarnings("DuplicatedCode")
@@ -130,8 +185,19 @@ abstract public class AbstractLoad extends Task implements RunnableTask<Abstract
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
+        @OutputProperty(
+            description = "The job id"
+        )
         private String jobId;
+
+        @OutputProperty(
+            description = "Destination table"
+        )
         private String destinationTable;
+
+        @OutputProperty(
+            description = "Output rows count"
+        )
         private Long rows;
     }
 
@@ -184,11 +250,60 @@ abstract public class AbstractLoad extends Task implements RunnableTask<Abstract
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CsvOptions {
+        @InputProperty(
+            description = "Whether BigQuery should accept rows that are missing trailing optional columns",
+            body = "If true, BigQuery treats missing trailing columns as null values. If {@code false}, records\n" +
+                " with missing trailing columns are treated as bad records, and if there are too many bad\n" +
+                " records, an invalid error is returned in the job result. By default, rows with missing\n" +
+                " trailing columns are considered bad records.",
+            dynamic = true
+        )
         private Boolean allowJaggedRows;
+
+        @InputProperty(
+            description = "Whether BigQuery should allow quoted data sections that contain newline characters in a CSV file",
+            body = "By default quoted newline are not allowed.",
+            dynamic = true
+        )
         private Boolean allowQuotedNewLines;
+
+        @InputProperty(
+            description = "The character encoding of the data",
+            body = "The supported values are UTF-8 or ISO-8859-1. The\n" +
+                " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split\n" +
+                " using the values set in {@link #setQuote(String)} and {@link #setFieldDelimiter(String)}.",
+            dynamic = true
+        )
         private String encoding;
+
+        @InputProperty(
+            description = "The separator for fields in a CSV file",
+            body = "BigQuery converts the string to ISO-8859-1\n" +
+                " encoding, and then uses the first byte of the encoded string to split the data in its raw,\n" +
+                " binary state. BigQuery also supports the escape sequence \"\\t\" to specify a tab separator. The\n" +
+                " default value is a comma (',').",
+            dynamic = true
+        )
         private String fieldDelimiter;
+
+        @InputProperty(
+            description = "The value that is used to quote data sections in a CSV file",
+            body = "BigQuery converts the\n" +
+                " string to ISO-8859-1 encoding, and then uses the first byte of the encoded string to split\n" +
+                " the data in its raw, binary state. The default value is a double-quote ('\"'). If your data\n" +
+                " does not contain quoted sections, set the property value to an empty string. If your data\n" +
+                " contains quoted newline characters, you must also set {@link\n" +
+                " #setAllowQuotedNewLines(boolean)} property to {@code true}.",
+            dynamic = true
+        )
         private String quote;
+
+        @InputProperty(
+            description = "The number of rows at the top of a CSV file that BigQuery will skip when reading the data",
+            body = "The default value is 0. This property is useful if you have header rows in the file\n" +
+                " that should be skipped.",
+            dynamic = true
+        )
         private Long skipLeadingRows;
 
         private com.google.cloud.bigquery.CsvOptions to() {
@@ -229,6 +344,13 @@ abstract public class AbstractLoad extends Task implements RunnableTask<Abstract
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AvroOptions {
+
+        @InputProperty(
+            description = "If Format option is set to AVRO, you can interpret logical types into their corresponding\n" +
+                " types (such as TIMESTAMP) instead of only using their raw types (such as INTEGER)",
+            body = "The value may be null.",
+            dynamic = true
+        )
         private Boolean useAvroLogicalTypes;
     }
 }

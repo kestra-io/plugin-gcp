@@ -6,6 +6,8 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Documentation;
+import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
@@ -28,9 +30,26 @@ import java.nio.ByteBuffer;
         "to: \"gs://my_bucket/dir/file.csv\""
     }
 )
+@Documentation(
+    description = "Upload a file to a GCS bucket."
+)
 public class Upload extends Task implements RunnableTask<Upload.Output> {
+    @InputProperty(
+        description = "The file to copy",
+        dynamic = true
+    )
     private String from;
+
+    @InputProperty(
+        description = "The destination path",
+        dynamic = true
+    )
     private String to;
+
+    @InputProperty(
+        description = "The GCP project id",
+        dynamic = true
+    )
     private String projectId;
 
     @Override

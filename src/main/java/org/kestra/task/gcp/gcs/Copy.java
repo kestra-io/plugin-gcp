@@ -47,13 +47,13 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
     private String to;
 
     @InputProperty(
-        description = "The google project id to use",
+        description = "The GCP project id",
         dynamic = true
     )
     private String projectId;
 
     @InputProperty(
-        description = "Delete the from files on success copy"
+        description = "Whether to delete the source files (from parameter) on success copy"
     )
     @Builder.Default
     private boolean delete = false;
@@ -94,7 +94,7 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
     public static class Output implements org.kestra.core.models.tasks.Output {
         @OutputProperty(
             description = "The destination full uri",
-            body = {"The full url will be in like `gs://{bucket}/{path}/{file}`"}
+            body = {"The full url will be like `gs://{bucket}/{path}/{file}`"}
         )
         private URI uri;
     }
