@@ -6,7 +6,9 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -27,8 +29,14 @@ import java.io.IOException;
         "  my-label: my-value"
     }
 )
+@Documentation(
+    description = "Create a bucket or update if it already exists."
+)
 public class CreateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Builder.Default
+    @InputProperty(
+        description = "Policy to apply if a bucket already exists."
+    )
     private IfExists ifExists = IfExists.ERROR;
 
     @Override
@@ -43,7 +51,7 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
         return Output.of(bucket);
     }
 
-    private Bucket create(Storage connection, RunContext runContext, BucketInfo bucketInfo ) throws IOException {
+    private Bucket create(Storage connection, RunContext runContext, BucketInfo bucketInfo) throws IOException {
         Bucket bucket;
         try {
             bucket = connection.create(bucketInfo);

@@ -4,7 +4,10 @@ import com.google.cloud.bigquery.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.ArrayUtils;
+import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.InputProperty;
+import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
@@ -70,34 +73,79 @@ import java.util.stream.StreamSupport;
         "    {{/each}}"
     }
 )
+@Documentation(
+    description = "Execute BigQuery SQL query in a specific BigQuery database"
+)
 public class Query extends Task implements RunnableTask<Query.Output> {
+    @InputProperty(
+        description = "The sql query to run",
+        dynamic = true
+    )
     private String sql;
 
+    @InputProperty(
+        description = "The GCP project id",
+        dynamic = true
+    )
     private String projectId;
 
     @Builder.Default
+    @InputProperty(
+        description = "Whether to use BigQuery's legacy SQL dialect for this query",
+        body = "By default this property is set to false."
+    )
     private boolean legacySql = false;
 
     @Builder.Default
+    @InputProperty(
+        description = "Whether to Fetch the data from the query result to the task output"
+    )
     private boolean fetch = false;
 
     @Builder.Default
+    @InputProperty(
+        description = "Whether to Fetch only one data row from the query result to the task output"
+    )
     private boolean fetchOne = false;
 
-    private List<String> positionalParameters;
+    // private List<String> positionalParameters;
 
-    private Map<String, String> namedParameters;
+    // private Map<String, String> namedParameters;
 
+    @InputProperty(
+        description = "The clustering specification for the destination table"
+    )
     private List<String> clusteringFields;
 
+    @InputProperty(
+        description = "The table where to put query results",
+        body = "If not provided a new table is created.",
+        dynamic = true
+    )
     private String destinationTable;
 
+    @InputProperty(
+        description = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
+        body = " Schema update options are supported in two cases: when\n" +
+            " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination\n" +
+            " table is a partition of a table, specified by partition decorators. For normal tables,\n" +
+            " WRITE_TRUNCATE will always overwrite the schema."
+    )
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
+    @InputProperty(
+        description = "The time partitioning specification for the destination table"
+    )
     private String timePartitioningField;
 
+    @InputProperty(
+        description = "The action that should occur if the destination table already exists"
+    )
     private JobInfo.WriteDisposition writeDisposition;
 
+    @InputProperty(
+        description = "Whether the job is allowed to create tables"
+    )
     private JobInfo.CreateDisposition createDisposition;
 
     @Override
@@ -176,8 +224,21 @@ public class Query extends Task implements RunnableTask<Query.Output> {
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
+        @OutputProperty(
+            description = "The job id"
+        )
         private String jobId;
+
+        @OutputProperty(
+            description = "List containing the fetched data",
+            body = "Only populated if 'fetch' parameter is set to true."
+        )
         private List<Map<String, Object>> rows;
+
+        @OutputProperty(
+            description = "Map containing the first row of fetched data",
+            body = "Only populated if 'fetchOne' parameter is set to true."
+        )
         private Map<String, Object> row;
     }
 

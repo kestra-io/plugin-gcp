@@ -8,7 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
@@ -35,9 +37,21 @@ import java.nio.channels.Channels;
         "  fieldDelimiter: \";\""
     }
 )
+@Documentation(
+    description = "Load data from local file to BigQuery"
+)
 public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
+
+    @InputProperty(
+        description = "The fully-qualified URIs that point to source data",
+        dynamic = true
+    )
     private String from;
 
+    @InputProperty(
+        description = "The GCP project id",
+        dynamic = true
+    )
     private String projectId;
 
     @Override

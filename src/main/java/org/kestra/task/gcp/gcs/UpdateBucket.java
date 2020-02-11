@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
@@ -25,6 +26,9 @@ import org.slf4j.Logger;
         "labels:",
         "  my-label: my-value"
     }
+)
+@Documentation(
+    description = "Update a bucket."
 )
 public class UpdateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Override
