@@ -21,7 +21,7 @@
 ### Cloud Storage
 * `org.kestra.task.gcp.gcs.Copy`: Copy files between buckets & buckets directory 
 * `org.kestra.task.gcp.gcs.Upload`: Upload files to bucket 
-
+* `org.kestra.task.gcp.gcs.Download`: Download files from bucket 
 
 ### Cloud Storage Bucket
 * `org.kestra.task.gcp.gcs.CreateBucket`: Create a new Cloud Storage bucket
