@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.storages.StorageInterface;
-import org.kestra.core.storages.StorageObject;
 import org.kestra.core.utils.TestsUtils;
 
 import java.io.File;
@@ -18,7 +17,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URL;
 import java.util.Objects;
 import javax.inject.Inject;
 
@@ -42,7 +40,7 @@ class DownloadTest {
             .getResource("application.yml"))
             .toURI());
 
-        StorageObject source = storageInterface.put(
+        URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(file)
         );
@@ -52,7 +50,7 @@ class DownloadTest {
         Upload upload = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(source.getUri().toString())
+            .from(source.toString())
             .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
             .build();
 

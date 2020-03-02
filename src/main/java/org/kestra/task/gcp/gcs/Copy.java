@@ -29,7 +29,7 @@ import java.net.URI;
 @Example(
     title = "Move a file between bucket path",
     code = {
-        "from: \"{{ inputs.file.uri }}\"",
+        "from: \"{{ inputs.file }}\"",
         "delete: true"
     }
 )

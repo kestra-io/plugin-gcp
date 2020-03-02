@@ -74,7 +74,7 @@ public class Download extends Task implements RunnableTask<Download.Output> {
             .builder()
             .bucket(source.getBucket())
             .path(source.getName())
-            .uri(runContext.putTempFile(tempFile).getUri())
+            .uri(runContext.putTempFile(tempFile))
             .build();
     }
 

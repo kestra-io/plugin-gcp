@@ -8,14 +8,13 @@ import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.storages.StorageInterface;
-import org.kestra.core.storages.StorageObject;
 import org.kestra.core.utils.TestsUtils;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Objects;
+import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,7 +34,7 @@ class LoadTest {
 
     @Test
     void fromCsv() throws Exception {
-        StorageObject source = storageInterface.put(
+        URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
                 .getResource("bigquery/insurance_sample.csv"))
@@ -45,7 +44,7 @@ class LoadTest {
         Load task = Load.builder()
             .id(LoadTest.class.getSimpleName())
             .type(Load.class.getName())
-            .from(source.getUri().toString())
+            .from(source.toString())
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.CSV)
             .autodetect(true)
@@ -65,7 +64,7 @@ class LoadTest {
 
     @Test
     void fromAvro() throws Exception {
-        StorageObject source = storageInterface.put(
+        URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
                 .getResource("bigquery/insurance_sample.avro"))
@@ -75,7 +74,7 @@ class LoadTest {
         Load task = Load.builder()
             .id(LoadTest.class.getSimpleName())
             .type(Load.class.getName())
-            .from(source.getUri().toString())
+            .from(source.toString())
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.AVRO)
             .avroOptions(AbstractLoad.AvroOptions.builder()

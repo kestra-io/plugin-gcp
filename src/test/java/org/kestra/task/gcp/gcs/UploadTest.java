@@ -9,14 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.storages.StorageInterface;
-import org.kestra.core.storages.StorageObject;
 import org.kestra.core.utils.TestsUtils;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Objects;
+import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -34,7 +33,7 @@ class UploadTest {
 
     @Test
     void fromStorage() throws Exception {
-        StorageObject source = storageInterface.put(
+        URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
                 .getResource("application.yml"))
@@ -46,7 +45,7 @@ class UploadTest {
         Upload task = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(source.getUri().toString())
+            .from(source.toString())
             .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
             .build();
 

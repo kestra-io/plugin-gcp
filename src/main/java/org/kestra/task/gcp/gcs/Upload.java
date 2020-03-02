@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
 @NoArgsConstructor
 @Example(
     code = {
-        "from: \"{{ inputs.file.uri }}\"",
+        "from: \"{{ inputs.file }}\"",
         "to: \"gs://my_bucket/dir/file.csv\""
     }
 )

@@ -30,7 +30,7 @@ import java.nio.channels.Channels;
 @Example(
     title = "Load an csv file from an input file",
     code = {
-        "from: \"{{ inputs.file.uri }}\"",
+        "from: \"{{ inputs.file }}\"",
         "destinationTable: \"my_project.my_dataset.my_table\"",
         "format: CSV",
         "csvOptions:",
