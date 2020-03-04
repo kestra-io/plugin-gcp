@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 public class UpdateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of(runContext.render(this.projectId));
+        BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger(this.getClass());
         DatasetInfo datasetInfo = this.datasetInfo(runContext);
 

@@ -20,19 +20,13 @@ import java.util.Map;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractDataset extends Task implements RunnableTask<AbstractDataset.Output> {
+abstract public class AbstractDataset extends AbstractBigquery implements RunnableTask<AbstractDataset.Output> {
     @NotNull
     @InputProperty(
         description = "The dataset's user-defined id",
         dynamic = true
     )
     protected String name;
-
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
-    )
-    protected String projectId;
 
     @InputProperty(
         description = "The dataset's access control configuration"

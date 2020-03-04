@@ -30,20 +30,13 @@ import javax.validation.constraints.NotNull;
 @Documentation(
     description = "Delete a dataset."
 )
-public class DeleteDataset extends Task implements RunnableTask<DeleteDataset.Output> {
+public class DeleteDataset extends AbstractBigquery implements RunnableTask<DeleteDataset.Output> {
     @NotNull
     @InputProperty(
         description = "The dataset's user-defined id",
         dynamic = true
     )
     private String name;
-
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
-    )
-    private String projectId;
-
 
     @InputProperty(
         description = "Whether to delete a dataset even if non-empty",
@@ -54,7 +47,7 @@ public class DeleteDataset extends Task implements RunnableTask<DeleteDataset.Ou
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of(runContext.render(this.projectId));
+        BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger(this.getClass());
         String name = runContext.render(this.name);
 

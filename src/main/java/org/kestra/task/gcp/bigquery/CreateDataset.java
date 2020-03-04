@@ -40,7 +40,7 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
 
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of(runContext.render(this.projectId));
+        BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger(this.getClass());
         DatasetInfo datasetInfo = this.datasetInfo(runContext);
 

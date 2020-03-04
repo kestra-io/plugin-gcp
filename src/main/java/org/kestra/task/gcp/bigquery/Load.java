@@ -48,15 +48,9 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
     )
     private String from;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
-    )
-    private String projectId;
-
     @Override
     public Output run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of(runContext.render(this.projectId));
+        BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger(this.getClass());
 
         WriteChannelConfiguration.Builder builder = WriteChannelConfiguration

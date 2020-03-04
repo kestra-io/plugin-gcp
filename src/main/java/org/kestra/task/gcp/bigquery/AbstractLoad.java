@@ -21,7 +21,7 @@ import java.util.List;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractLoad extends Task implements RunnableTask<AbstractLoad.Output> {
+abstract public class AbstractLoad extends AbstractBigquery implements RunnableTask<AbstractLoad.Output> {
     @InputProperty(
         description = "The table where to put query results",
         body = "If not provided a new table is created.",

@@ -76,18 +76,12 @@ import java.util.stream.StreamSupport;
 @Documentation(
     description = "Execute BigQuery SQL query in a specific BigQuery database"
 )
-public class Query extends Task implements RunnableTask<Query.Output> {
+public class Query extends AbstractBigquery implements RunnableTask<Query.Output> {
     @InputProperty(
         description = "The sql query to run",
         dynamic = true
     )
     private String sql;
-
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
-    )
-    private String projectId;
 
     @Builder.Default
     @InputProperty(
@@ -150,7 +144,7 @@ public class Query extends Task implements RunnableTask<Query.Output> {
 
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
-        BigQuery connection = new Connection().of(runContext.render(this.projectId));
+        BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger(this.getClass());
 
         QueryJobConfiguration jobConfiguration = this.jobConfiguration(runContext);

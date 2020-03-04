@@ -8,19 +8,21 @@ import org.slf4j.Logger;
 import java.io.IOException;
 
 public class Connection extends AbstractConnection {
-    public BigQuery of(String projectId) {
+    public BigQuery of(String projectId, String location) {
         return BigQueryOptions
             .newBuilder()
             .setProjectId(projectId)
+            .setLocation(location)
             .build()
             .getService();
     }
 
-    public BigQuery of(String serviceAccount, String projectId) {
+    public BigQuery of(String serviceAccount, String projectId, String location) {
         return BigQueryOptions
             .newBuilder()
             .setCredentials(this.credentials(serviceAccount))
             .setProjectId(projectId)
+            .setLocation(location)
             .build()
             .getService();
     }
