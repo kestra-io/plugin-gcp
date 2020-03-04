@@ -47,17 +47,21 @@ public class Connection extends AbstractConnection {
         if (queryJob == null) {
             throw new IllegalArgumentException("Job no longer exists");
         } else if (queryJob.getStatus().getError() != null) {
-            queryJob
-                .getStatus()
-                .getExecutionErrors()
-                .forEach(bigQueryError -> {
-                    logger.error(
-                        "Error query with error [\n - {}\n]",
-                        bigQueryError.toString()
-                    );
-                });
+            if (queryJob.getStatus().getExecutionErrors() != null) {
+                queryJob
+                    .getStatus()
+                    .getExecutionErrors()
+                    .forEach(bigQueryError -> {
+                        logger.error(
+                            "Error query with error [\n - {}\n]",
+                            bigQueryError.toString()
+                        );
+                    });
+            }
 
-            throw new IOException(queryJob.getStatus().getError().toString());
+            if (queryJob.getStatus().getError() != null) {
+                throw new IOException(queryJob.getStatus().getError().toString());
+            }
         }
     }
 }

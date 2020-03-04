@@ -282,9 +282,11 @@ public class Query extends Task implements RunnableTask<Query.Output> {
             runContext.metric(Counter.of("num.child.jobs", stats.getNumChildJobs(), tags));
         }
 
-        runContext
-            .metric(Counter.of("cache.hit", stats.getCacheHit() ? 1 : 0, tags))
-            .metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
+        if (stats.getCacheHit() != null) {
+            runContext.metric(Counter.of("cache.hit", stats.getCacheHit() ? 1 : 0, tags));
+        }
+
+        runContext.metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
     }
 
     private List<Map<String, Object>> fetchResult(TableResult result) {

@@ -8,25 +8,24 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
+import io.micronaut.http.hateoas.JsonError;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.utils.TestsUtils;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
 class QueryTest {
@@ -113,5 +112,66 @@ class QueryTest {
 
         Query.Output run = task.run(runContext);
         assertThat(run.getJobId(), is(notNullValue()));
+    }
+
+    @Test
+    void error() {
+        Query task = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .sql("SELECT * from `{{execution.id}}`")
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
+
+        IOException e = assertThrows(IOException.class, () -> {
+            task.run(runContext);
+        });
+
+        assertThat(e.getMessage(), containsString("missing dataset while no default dataset"));
+    }
+
+    @Test
+    void script() throws Exception {
+        Query task = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .sql("{{#each inputs.loop}}" +
+                "SELECT" +
+                "  \"{{execution.id}}\" as execution_id," +
+                "  TIMESTAMP \"{{instantFormat execution.startDate \"yyyy-MM-dd HH:mm:ss.SSSSSS\"}}\" as execution_date," +
+                "  {{@key}} as counter;" +
+                "{{/each}}"
+            )
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of(
+            "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
+        ));
+
+        Query.Output run = task.run(runContext);
+        assertThat(run.getJobId(), is(notNullValue()));
+    }
+
+    @Test
+    void scriptError() {
+        Query task = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .sql("{{#each inputs.loop}}" +
+                "SELECT * from `{{execution.id}}`;" +
+                "{{/each}}"
+            )
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of(
+            "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
+        ));
+
+        IOException e = assertThrows(IOException.class, () -> {
+            task.run(runContext);
+        });
+
+        assertThat(e.getMessage(), containsString("missing dataset while no default dataset"));
     }
 }
