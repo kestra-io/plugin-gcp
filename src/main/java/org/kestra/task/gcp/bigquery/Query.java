@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.ArrayUtils;
+import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.annotations.InputProperty;
@@ -11,12 +12,10 @@ import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
-import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -179,7 +178,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         return output.build();
     }
 
-    protected QueryJobConfiguration jobConfiguration(RunContext runContext) throws IOException {
+    protected QueryJobConfiguration jobConfiguration(RunContext runContext) throws IllegalVariableEvaluationException {
         String sql = runContext.render(this.sql);
 
         QueryJobConfiguration.Builder builder = QueryJobConfiguration.newBuilder(sql)
@@ -236,7 +235,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         private Map<String, Object> row;
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IOException {
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
         String[] tags = {
             "statement_type", stats.getStatementType().name(),
             "fetch", this.fetch || this.fetchOne ? "true" : "false",

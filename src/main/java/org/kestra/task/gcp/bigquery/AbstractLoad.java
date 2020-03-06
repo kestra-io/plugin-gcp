@@ -3,12 +3,12 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
-import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
@@ -165,7 +165,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         }
     }
 
-    protected Output execute(RunContext runContext, Logger logger, LoadConfiguration configuration, Job job) throws InterruptedException, IOException {
+    protected Output execute(RunContext runContext, Logger logger, LoadConfiguration configuration, Job job) throws InterruptedException, IOException, IllegalVariableEvaluationException{
         Connection.handleErrors(job, logger);
         job = job.waitFor();
         Connection.handleErrors(job, logger);
@@ -201,7 +201,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private Long rows;
     }
 
-    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) throws IOException {
+    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) throws IllegalVariableEvaluationException {
         String[] tags = {
             "destination_table", runContext.render(this.destinationTable),
             "projectId", job.getJobId().getProject(),

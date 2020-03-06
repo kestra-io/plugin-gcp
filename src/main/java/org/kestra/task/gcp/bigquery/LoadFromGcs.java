@@ -53,12 +53,6 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
     )
     private List<String> from;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
-    )
-    private String projectId;
-
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);

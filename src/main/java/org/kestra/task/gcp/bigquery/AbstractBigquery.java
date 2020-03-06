@@ -6,11 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
-
-import java.io.IOException;
 
 @SuperBuilder
 @ToString
@@ -35,7 +34,7 @@ abstract public class AbstractBigquery extends Task {
     )
     protected String location;
 
-    protected BigQuery connection(RunContext runContext) throws IOException {
+    protected BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException {
         return new Connection().of(
             runContext.render(this.projectId),
             runContext.render(this.location)

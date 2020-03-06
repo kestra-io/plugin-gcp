@@ -6,14 +6,13 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
-
-import java.io.IOException;
 
 @SuperBuilder
 @ToString
@@ -51,7 +50,7 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
         return Output.of(bucket);
     }
 
-    private Bucket create(Storage connection, RunContext runContext, BucketInfo bucketInfo) throws IOException {
+    private Bucket create(Storage connection, RunContext runContext, BucketInfo bucketInfo) throws IllegalVariableEvaluationException {
         Bucket bucket;
         try {
             bucket = connection.create(bucketInfo);

@@ -1,6 +1,7 @@
 package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
+import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.runners.RunContext;
 import org.kestra.task.gcp.AbstractConnection;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ public class Connection extends AbstractConnection {
             .getService();
     }
 
-    public static JobId jobId(RunContext runContext) throws IOException {
+    public static JobId jobId(RunContext runContext) throws IllegalVariableEvaluationException {
         return JobId.of(runContext
             .render("{{flow.namespace}}.{{flow.id}}_{{execution.id}}_{{taskrun.id}}")
             .replace(".", "-")

@@ -6,14 +6,13 @@ import com.google.cloud.bigquery.Dataset;
 import com.google.cloud.bigquery.DatasetInfo;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
-
-import java.io.IOException;
 
 @SuperBuilder
 @ToString
@@ -51,7 +50,7 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
         return AbstractDataset.Output.of(dataset);
     }
 
-    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo) throws IOException {
+    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo) throws IllegalVariableEvaluationException {
         Dataset dataset;
         try {
             dataset = connection.create(datasetInfo);
