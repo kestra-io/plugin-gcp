@@ -7,6 +7,7 @@ import org.kestra.task.gcp.AbstractConnection;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class Connection extends AbstractConnection {
     public BigQuery of(String projectId, String location) {
@@ -30,7 +31,7 @@ public class Connection extends AbstractConnection {
 
     public static JobId jobId(RunContext runContext) throws IllegalVariableEvaluationException {
         return JobId.of(runContext
-            .render("{{flow.namespace}}.{{flow.id}}_{{execution.id}}_{{taskrun.id}}")
+            .render("{{flow.namespace}}.{{flow.id}}_{{execution.id}}_{{taskrun.id}}_" + UUID.randomUUID())
             .replace(".", "-")
         );
     }
