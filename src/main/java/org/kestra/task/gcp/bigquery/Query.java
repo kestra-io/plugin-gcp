@@ -239,7 +239,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         String[] tags = {
             "statement_type", stats.getStatementType().name(),
             "fetch", this.fetch || this.fetchOne ? "true" : "false",
-            "projectId", queryJob.getJobId().getProject(),
+            "project_id", queryJob.getJobId().getProject(),
             "location", queryJob.getJobId().getLocation(),
         };
 

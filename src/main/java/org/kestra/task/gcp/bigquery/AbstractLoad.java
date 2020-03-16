@@ -204,7 +204,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) throws IllegalVariableEvaluationException {
         String[] tags = {
             "destination_table", runContext.render(this.destinationTable),
-            "projectId", job.getJobId().getProject(),
+            "project_id", job.getJobId().getProject(),
             "location", job.getJobId().getLocation(),
         };
 

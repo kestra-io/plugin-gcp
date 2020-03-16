@@ -11,6 +11,8 @@ kestra:
     gcs:
       project: "kestra-unit-test"
       bucket: "kestra-unit-test"
+      filename: "${random.shortuuid}"
     bigquery:
       project: "kestra-unit-test"
       dataset: "kestra_unit_test"
+      table: "${random.shortuuid}"
