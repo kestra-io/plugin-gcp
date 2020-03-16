@@ -3,17 +3,26 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.CharStreams;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.utils.TestsUtils;
+import org.kestra.core.models.tasks.Task;
+import org.kestra.core.storages.StorageInterface;
+import org.kestra.task.gcp.gcs.Download;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import java.util.Collections;
 import java.util.UUID;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -22,6 +31,9 @@ import static org.hamcrest.Matchers.is;
 public class ExtractToGcsTest extends AbstractBigquery{
 	@Inject
 	private ApplicationContext applicationContext;
+
+	@Inject
+	private StorageInterface storageInterface;
 
 	@Value("${kestra.tasks.bigquery.project}")
 	private String project;
@@ -65,13 +77,7 @@ public class ExtractToGcsTest extends AbstractBigquery{
 				"(product STRING, quantity INT64)" +
 				";" +
 				"INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)\n" +
-				"VALUES('top load washer', 10),\n" +
-				"      ('front load washer', 20),\n" +
-				"      ('dryer', 30),\n" +
-				"      ('refrigerator', 10),\n" +
-				"      ('microwave', 20),\n" +
-				"      ('dishwasher', 30),\n" +
-				"      ('oven', 5)\n" +
+				"VALUES('top load washer', 10)\n" +
 				";");
 
 		// Extract task
@@ -86,13 +92,41 @@ public class ExtractToGcsTest extends AbstractBigquery{
 				.build();
 
 		RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
+		ExtractToGcs.Output extractOutput = task.run(runContext);
 
-		ExtractToGcs.Output run = task.run(runContext);
-		assertThat(run.getFileCounts().get(0), is(1L));
+		// Download task
+		String testString = "product,quantity\n" +
+				"top load washer,10\n";
+
+		Download downloadTask = Download.builder()
+            .id(ExtractToGcsTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .from(extractOutput.getDestinationUris().get(0))
+            .build();
+
+        Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
+        InputStream get = storageInterface.get(downloadOutput.getUri());
+
+        // Tests
+		assertThat(extractOutput.getFileCounts().get(0), is(1L));
+        assertThat(
+            CharStreams.toString(new InputStreamReader(get)),
+            is(testString)
+        );
 
 		// Clean sample table
 		query("DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
 
 	}
+
+	private RunContext runContext(Task task) {
+        return TestsUtils.mockRunContext(
+            this.applicationContext,
+            task,
+            ImmutableMap.of(
+                "bucket", this.bucket
+            )
+        );
+    }
 }
 
