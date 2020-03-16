@@ -46,7 +46,7 @@ import java.time.Duration;
         }
 )
 @Documentation(
-        description = "Load data from GCS (Google Cloud Storage) to BigQuery"
+        description = "Extract data from BigQuery table to GCS (Google Cloud Storage)"
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
 
@@ -57,6 +57,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 	String sourceTable;
 
     @InputProperty(
+            dynamic = true,
             description = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
                     "the extracted table should be written."
     )
@@ -107,7 +108,8 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
                     "a different key.\n" +
                     "\n" +
                     "Parameters:\n" +
-                    "    labels - labels or null for none "
+                    "    labels - labels or null for none ",
+		    dynamic = true
     )
     Map<String,String> labels;
 
@@ -171,40 +173,43 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
     private void metrics(RunContext runContext, JobStatistics.ExtractStatistics stats, Job job) throws IllegalVariableEvaluationException {
         String[] tags = {
                 "source_table", runContext.render(this.sourceTable),
-                "projectId", job.getJobId().getProject(),
+                "project_id", job.getJobId().getProject(),
                 "location", job.getJobId().getLocation(),
         };
 
         if (stats.getDestinationUriFileCounts() != null) {
             // Sum of the number of files extracted
             long fileCounts = stats.getDestinationUriFileCounts().stream().mapToLong(Long::longValue).sum();
-            runContext.metric(Counter.of("output.fileCounts", fileCounts, tags));
+            runContext.metric(Counter.of("output.file_counts", fileCounts, tags));
         }
 
         runContext.metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
     }
 
     protected ExtractJobConfiguration buildExtractJob(RunContext runContext) throws IllegalVariableEvaluationException {
-        ExtractJobConfiguration.Builder builder = ExtractJobConfiguration.newBuilder(Connection.tableId(this.sourceTable), this.destinationUris);
+        ExtractJobConfiguration.Builder builder = ExtractJobConfiguration
+                .newBuilder(Connection.tableId(
+                        runContext.render(this.sourceTable)),
+                        runContext.render(this.destinationUris));
 
-        if (this.sourceTable != null){
-        	builder.setSourceTable(Connection.tableId(this.sourceTable));
+        if (runContext.render(this.sourceTable) != null){
+        	builder.setSourceTable(Connection.tableId(runContext.render(this.sourceTable)));
         }
 
-        if (this.destinationUris != null){
-            builder.setDestinationUris(this.destinationUris);
+        if (runContext.render(this.destinationUris) != null){
+            builder.setDestinationUris(runContext.render(this.destinationUris));
         }
 
-        if (this.compression != null) {
-            builder.setCompression(runContext.render(this.compression));
+        if (runContext.render(this.compression) != null) {
+            builder.setCompression(runContext.render(runContext.render(this.compression)));
         }
 
-        if (this.fieldDelimiter != null) {
-            builder.setFieldDelimiter(this.fieldDelimiter);
+        if (runContext.render(this.fieldDelimiter) != null) {
+            builder.setFieldDelimiter(runContext.render(this.fieldDelimiter));
         }
 
-        if (this.format != null) {
-            builder.setFormat(this.format);
+        if (runContext.render(this.format) != null) {
+            builder.setFormat(runContext.render(this.format));
         }
 
         if (this.printHeader != null) {
