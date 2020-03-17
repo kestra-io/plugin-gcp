@@ -99,20 +99,20 @@ public class ExtractToGcsTest extends AbstractBigquery{
 				"top load washer,10\n";
 
 		Download downloadTask = Download.builder()
-            .id(ExtractToGcsTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(extractOutput.getDestinationUris().get(0))
-            .build();
+			.id(ExtractToGcsTest.class.getSimpleName())
+			.type(Download.class.getName())
+			.from(extractOutput.getDestinationUris().get(0))
+			.build();
 
-        Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
-        InputStream get = storageInterface.get(downloadOutput.getUri());
+		Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
+		InputStream get = storageInterface.get(downloadOutput.getUri());
 
-        // Tests
+		// Tests
 		assertThat(extractOutput.getFileCounts().get(0), is(1L));
-        assertThat(
-            CharStreams.toString(new InputStreamReader(get)),
-            is(testString)
-        );
+		assertThat(
+			CharStreams.toString(new InputStreamReader(get)),
+			is(testString)
+		);
 
 		// Clean sample table
 		query("DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
