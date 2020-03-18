@@ -62,41 +62,41 @@ public class ExtractToGcsTest extends AbstractBigquery{
 
 	private Job query(String query) throws InterruptedException {
 		return this.connection
-				.create(JobInfo
-						.newBuilder(QueryJobConfiguration.newBuilder(query).build())
-						.setJobId(JobId.of(UUID.randomUUID().toString()))
-						.build()
-				)
-				.waitFor();
+			.create(JobInfo
+				.newBuilder(QueryJobConfiguration.newBuilder(query).build())
+				.setJobId(JobId.of(UUID.randomUUID().toString()))
+				.build()
+			)
+			.waitFor();
 	}
 
 	@Test
 	void toCsv() throws Exception {
 		// Sample table
 		query("CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
-				"(product STRING, quantity INT64)" +
-				";" +
-				"INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)\n" +
-				"VALUES('top load washer', 10)\n" +
-				";");
+			"(product STRING, quantity INT64)" +
+			";" +
+			"INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
+			"VALUES('top load washer', 10)" +
+			";");
 
 		// Extract task
 		ExtractToGcs task = ExtractToGcs.builder()
-				.id(ExtractToGcsTest.class.getSimpleName())
-				.type(ExtractToGcs.class.getName())
-				.destinationUris(Collections.singletonList(
-						"gs://" + this.bucket + "/" + this.filename
-				))
-				.sourceTable(this.project + "." + this.dataset + "." + this.table)
-				.printHeader(printHeader)
-				.build();
+			.id(ExtractToGcsTest.class.getSimpleName())
+			.type(ExtractToGcs.class.getName())
+			.destinationUris(Collections.singletonList(
+				"gs://" + this.bucket + "/" + this.filename
+			))
+			.sourceTable(this.project + "." + this.dataset + "." + this.table)
+			.printHeader(printHeader)
+			.build();
 
 		RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
 		ExtractToGcs.Output extractOutput = task.run(runContext);
 
 		// Download task
 		String testString = "product,quantity\n" +
-				"top load washer,10\n";
+			"top load washer,10\n";
 
 		Download downloadTask = Download.builder()
 			.id(ExtractToGcsTest.class.getSimpleName())

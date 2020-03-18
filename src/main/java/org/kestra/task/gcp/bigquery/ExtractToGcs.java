@@ -1,4 +1,3 @@
-
 package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.BigQuery;
@@ -36,85 +35,83 @@ import java.time.Duration;
 @Getter
 @NoArgsConstructor
 @Example(
-        title = "Extract a BigQuery table to a gcs bucket",
-        code = {
-                "destinationUris: gs://bucket_name/filename.csv",
-                "sourceTable: \"my_project.my_dataset.my_table\"",
-                "format: CSV",
-                "fieldDelimiter: ';'",
-                "printHeader: true"
-        }
+    title = "Extract a BigQuery table to a gcs bucket",
+    code = {
+        "destinationUris: gs://bucket_name/filename.csv",
+        "sourceTable: \"my_project.my_dataset.my_table\"",
+        "format: CSV",
+        "fieldDelimiter: ';'",
+        "printHeader: true"
+    }
 )
 @Documentation(
-        description = "Extract data from BigQuery table to GCS (Google Cloud Storage)"
+    description = "Extract data from BigQuery table to GCS (Google Cloud Storage)"
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
 
     @InputProperty(
-            dynamic = true,
-            description = "The table to export."
+        dynamic = true,
+        description = "The table to export."
     )
 	private String sourceTable;
 
     @InputProperty(
-            dynamic = true,
-            description = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
-                    "the extracted table should be written."
+        dynamic = true,
+        description = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
+            "the extracted table should be written."
     )
 	private List<String> destinationUris;
 
     @InputProperty(
-            dynamic = true,
-            description = "the compression value to use for exported files. If not set exported files " +
-                    "are not compressed. "
+        dynamic = true,
+        description = "the compression value to use for exported files. If not set exported files " +
+            "are not compressed. "
     )
     private String compression;
 
     @InputProperty(
-            dynamic = true,
-            description = "The delimiter to use between fields in the exported data. By default \",\" is used."
+        dynamic = true,
+        description = "The delimiter to use between fields in the exported data. By default \",\" is used."
     )
     private String fieldDelimiter;
 
     @InputProperty(
-            dynamic = true,
-            description = "The exported file format. If not set table is exported in CSV format. "
+        dynamic = true,
+        description = "The exported file format. If not set table is exported in CSV format. "
     )
     private String format;
 
     @InputProperty(
-            description = "[Optional] Flag if format is set to \"AVRO\".",
-            body = "[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
-                    "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
-                    "types (timestamp-micros), instead of only using their raw types (avro-long).\n" +
-                    "\n" +
-                    "Parameters:\n" +
-                    "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "
+        description = "[Optional] Flag if format is set to \"AVRO\".",
+        body = "[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
+            "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
+            "types (timestamp-micros), instead of only using their raw types (avro-long)." +
+            "Parameters:" +
+            "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "
     )
     private Boolean useAvroLogicalTypes;
 
     @InputProperty(
-            description = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
-                    "BigQuery may attempt to terminate the job."
+        description = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
+            "BigQuery may attempt to terminate the job."
     )
     private Long jobTimeoutMs;
 
     @InputProperty(
-            description = "The labels associated with this job.",
-            body = "The labels associated with this job. You can use these to organize and group your jobs. Label " +
-                    "keys and values can be no longer than 63 characters, can only contain lowercase letters, " +
-                    "numeric characters, underscores and dashes. International characters are allowed. Label " +
-                    "values are optional. Label keys must start with a letter and each label in the list must have " +
-                    "a different key.\n" +
-                    "\n" +
-                    "Parameters:\n" +
-                    "    labels - labels or null for none ",
-		    dynamic = true
+        description = "The labels associated with this job.",
+        body = "The labels associated with this job. You can use these to organize and group your jobs. Label " +
+            "keys and values can be no longer than 63 characters, can only contain lowercase letters, " +
+            "numeric characters, underscores and dashes. International characters are allowed. Label " +
+            "values are optional. Label keys must start with a letter and each label in the list must have " +
+            "a different key." +
+            "Parameters:" +
+            "    labels - labels or null for none ",
+        dynamic = true
     )
     private Map<String,String> labels;
 
     @InputProperty(
-            description = "Whether to print out a header row in the results. By default an header is printed."
+        description = "Whether to print out a header row in the results. By default an header is printed."
     )
     private Boolean printHeader;
 
@@ -141,28 +138,28 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         this.metrics(runContext, stats, job);
 
         return Output.builder()
-                .jobId(job.getJobId().getJob())
-                .sourceTable(configuration.getSourceTable().getTable())
-                .destinationUris(configuration.getDestinationUris())
-		        .fileCounts(stats.getDestinationUriFileCounts())
-                .build();
+            .jobId(job.getJobId().getJob())
+            .sourceTable(configuration.getSourceTable().getTable())
+            .destinationUris(configuration.getDestinationUris())
+            .fileCounts(stats.getDestinationUriFileCounts())
+            .build();
     }
 
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
         @OutputProperty(
-                description = "The job id"
+            description = "The job id"
         )
         private String jobId;
 
         @OutputProperty(
-                description = "source Table"
+            description = "source Table"
         )
         private String sourceTable;
 
         @OutputProperty(
-                description = "The destination URI file"
+            description = "The destination URI file"
         )
         private List<String> destinationUris;
 
@@ -172,9 +169,9 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
     private void metrics(RunContext runContext, JobStatistics.ExtractStatistics stats, Job job) throws IllegalVariableEvaluationException {
         String[] tags = {
-                "source_table", runContext.render(this.sourceTable),
-                "project_id", job.getJobId().getProject(),
-                "location", job.getJobId().getLocation(),
+            "source_table", runContext.render(this.sourceTable),
+            "project_id", job.getJobId().getProject(),
+            "location", job.getJobId().getLocation(),
         };
 
         if (stats.getDestinationUriFileCounts() != null) {
@@ -188,9 +185,9 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
     protected ExtractJobConfiguration buildExtractJob(RunContext runContext) throws IllegalVariableEvaluationException {
         ExtractJobConfiguration.Builder builder = ExtractJobConfiguration
-                .newBuilder(Connection.tableId(
-                        runContext.render(this.sourceTable)),
-                        runContext.render(this.destinationUris));
+            .newBuilder(Connection.tableId(
+                runContext.render(this.sourceTable)),
+                runContext.render(this.destinationUris));
 
         if (runContext.render(this.sourceTable) != null){
         	builder.setSourceTable(Connection.tableId(runContext.render(this.sourceTable)));
