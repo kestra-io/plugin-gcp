@@ -54,33 +54,33 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
             dynamic = true,
             description = "The table to export."
     )
-	String sourceTable;
+	private String sourceTable;
 
     @InputProperty(
             dynamic = true,
             description = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
                     "the extracted table should be written."
     )
-	List<String> destinationUris;
+	private List<String> destinationUris;
 
     @InputProperty(
             dynamic = true,
             description = "the compression value to use for exported files. If not set exported files " +
                     "are not compressed. "
     )
-    String compression;
+    private String compression;
 
     @InputProperty(
             dynamic = true,
             description = "The delimiter to use between fields in the exported data. By default \",\" is used."
     )
-    String fieldDelimiter;
+    private String fieldDelimiter;
 
     @InputProperty(
             dynamic = true,
             description = "The exported file format. If not set table is exported in CSV format. "
     )
-    String format;
+    private String format;
 
     @InputProperty(
             description = "[Optional] Flag if format is set to \"AVRO\".",
@@ -91,13 +91,13 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
                     "Parameters:\n" +
                     "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "
     )
-    Boolean useAvroLogicalTypes;
+    private Boolean useAvroLogicalTypes;
 
     @InputProperty(
             description = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
                     "BigQuery may attempt to terminate the job."
     )
-    Long jobTimeoutMs;
+    private Long jobTimeoutMs;
 
     @InputProperty(
             description = "The labels associated with this job.",
@@ -111,12 +111,12 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
                     "    labels - labels or null for none ",
 		    dynamic = true
     )
-    Map<String,String> labels;
+    private Map<String,String> labels;
 
     @InputProperty(
             description = "Whether to print out a header row in the results. By default an header is printed."
     )
-    Boolean printHeader;
+    private Boolean printHeader;
 
     @Override
     public ExtractToGcs.Output run(RunContext runContext) throws Exception {
