@@ -83,11 +83,11 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
     @InputProperty(
         description = "[Optional] Flag if format is set to \"AVRO\".",
-        body = "[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
+        body = {"[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
             "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
-            "types (timestamp-micros), instead of only using their raw types (avro-long)." +
-            "Parameters:" +
-            "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "
+            "types (timestamp-micros), instead of only using their raw types (avro-long).",
+            "Parameters:",
+            "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "}
     )
     private Boolean useAvroLogicalTypes;
 
@@ -99,13 +99,13 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
     @InputProperty(
         description = "The labels associated with this job.",
-        body = "The labels associated with this job. You can use these to organize and group your jobs. Label " +
+        body = {"The labels associated with this job. You can use these to organize and group your jobs. Label " +
             "keys and values can be no longer than 63 characters, can only contain lowercase letters, " +
             "numeric characters, underscores and dashes. International characters are allowed. Label " +
             "values are optional. Label keys must start with a letter and each label in the list must have " +
-            "a different key." +
-            "Parameters:" +
-            "    labels - labels or null for none ",
+            "a different key.",
+            "Parameters:",
+            "    labels - labels or null for none "},
         dynamic = true
     )
     private Map<String,String> labels;
