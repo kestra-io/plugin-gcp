@@ -53,14 +53,14 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         dynamic = true,
         description = "The table to export."
     )
-	private String sourceTable;
+    private String sourceTable;
 
     @InputProperty(
         dynamic = true,
         description = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
             "the extracted table should be written."
     )
-	private List<String> destinationUris;
+    private List<String> destinationUris;
 
     @InputProperty(
         dynamic = true,
@@ -190,7 +190,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
                 runContext.render(this.destinationUris));
 
         if (runContext.render(this.sourceTable) != null){
-        	builder.setSourceTable(Connection.tableId(runContext.render(this.sourceTable)));
+            builder.setSourceTable(Connection.tableId(runContext.render(this.sourceTable)));
         }
 
         if (runContext.render(this.destinationUris) != null){

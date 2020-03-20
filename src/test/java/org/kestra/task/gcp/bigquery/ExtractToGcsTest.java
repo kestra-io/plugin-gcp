@@ -29,97 +29,97 @@ import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 public class ExtractToGcsTest extends AbstractBigquery{
-	@Inject
-	private ApplicationContext applicationContext;
+    @Inject
+    private ApplicationContext applicationContext;
 
-	@Inject
-	private StorageInterface storageInterface;
+    @Inject
+    private StorageInterface storageInterface;
 
-	@Value("${kestra.tasks.bigquery.project}")
-	private String project;
+    @Value("${kestra.tasks.bigquery.project}")
+    private String project;
 
-	@Value("${kestra.tasks.bigquery.dataset}")
-	private String dataset;
+    @Value("${kestra.tasks.bigquery.dataset}")
+    private String dataset;
 
-	@Value("${kestra.tasks.bigquery.table}")
-	private String table;
+    @Value("${kestra.tasks.bigquery.table}")
+    private String table;
 
-	@Value("${kestra.tasks.gcs.bucket}")
-	private String bucket;
+    @Value("${kestra.tasks.gcs.bucket}")
+    private String bucket;
 
-	@Value("${kestra.tasks.gcs.filename}")
-	private String filename;
+    @Value("${kestra.tasks.gcs.filename}")
+    private String filename;
 
-	@Value("true")
-	private Boolean printHeader;
+    @Value("true")
+    private Boolean printHeader;
 
-	private BigQuery connection;
+    private BigQuery connection;
 
-	@BeforeEach
-	private void init()  {
-		this.connection = new Connection().of(projectId, "EU");
-	}
+    @BeforeEach
+    private void init()  {
+        this.connection = new Connection().of(projectId, "EU");
+    }
 
-	private Job query(String query) throws InterruptedException {
-		return this.connection
-			.create(JobInfo
-				.newBuilder(QueryJobConfiguration.newBuilder(query).build())
-				.setJobId(JobId.of(UUID.randomUUID().toString()))
-				.build()
-			)
-			.waitFor();
-	}
+    private Job query(String query) throws InterruptedException {
+        return this.connection
+            .create(JobInfo
+                .newBuilder(QueryJobConfiguration.newBuilder(query).build())
+                .setJobId(JobId.of(UUID.randomUUID().toString()))
+                .build()
+            )
+            .waitFor();
+    }
 
-	@Test
-	void toCsv() throws Exception {
-		// Sample table
-		query("CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
-			"(product STRING, quantity INT64)" +
-			";" +
-			"INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
-			"VALUES('top load washer', 10)" +
-			";");
+    @Test
+    void toCsv() throws Exception {
+        // Sample table
+        query("CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
+            "(product STRING, quantity INT64)" +
+            ";" +
+            "INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
+            "VALUES('top load washer', 10)" +
+            ";");
 
-		// Extract task
-		ExtractToGcs task = ExtractToGcs.builder()
-			.id(ExtractToGcsTest.class.getSimpleName())
-			.type(ExtractToGcs.class.getName())
-			.destinationUris(Collections.singletonList(
-				"gs://" + this.bucket + "/" + this.filename
-			))
-			.sourceTable(this.project + "." + this.dataset + "." + this.table)
-			.printHeader(printHeader)
-			.build();
+        // Extract task
+        ExtractToGcs task = ExtractToGcs.builder()
+            .id(ExtractToGcsTest.class.getSimpleName())
+            .type(ExtractToGcs.class.getName())
+            .destinationUris(Collections.singletonList(
+                "gs://" + this.bucket + "/" + this.filename
+            ))
+            .sourceTable(this.project + "." + this.dataset + "." + this.table)
+            .printHeader(printHeader)
+            .build();
 
-		RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
-		ExtractToGcs.Output extractOutput = task.run(runContext);
+        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
+        ExtractToGcs.Output extractOutput = task.run(runContext);
 
-		// Download task
-		String testString = "product,quantity\n" +
-			"top load washer,10\n";
+        // Download task
+        String testString = "product,quantity\n" +
+            "top load washer,10\n";
 
-		Download downloadTask = Download.builder()
-			.id(ExtractToGcsTest.class.getSimpleName())
-			.type(Download.class.getName())
-			.from(extractOutput.getDestinationUris().get(0))
-			.build();
+        Download downloadTask = Download.builder()
+            .id(ExtractToGcsTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .from(extractOutput.getDestinationUris().get(0))
+            .build();
 
-		Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
-		InputStream get = storageInterface.get(downloadOutput.getUri());
+        Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
+        InputStream get = storageInterface.get(downloadOutput.getUri());
 
-		// Tests
-		assertThat(extractOutput.getFileCounts().get(0), is(1L));
-		assertThat(
-			CharStreams.toString(new InputStreamReader(get)),
-			is(testString)
-		);
+        // Tests
+        assertThat(extractOutput.getFileCounts().get(0), is(1L));
+        assertThat(
+            CharStreams.toString(new InputStreamReader(get)),
+            is(testString)
+        );
 
-		// Clean sample table
-		query("DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
+        // Clean sample table
+        query("DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
 
-	}
+    }
 
-	private RunContext runContext(Task task) {
+    private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
             this.applicationContext,
             task,
