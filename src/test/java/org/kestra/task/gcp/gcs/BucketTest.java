@@ -1,7 +1,6 @@
 package org.kestra.task.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
-import com.google.cloud.storage.StorageException;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
@@ -61,7 +60,7 @@ class BucketTest {
     void createException() {
         CreateBucket task = createBuilder().build();
 
-        assertThrows(StorageException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             task.run(runContext());
         });
     }
