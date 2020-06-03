@@ -3,7 +3,6 @@ package org.kestra.task.gcp.gcs;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageException;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -51,25 +50,21 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
     }
 
     private Bucket create(Storage connection, RunContext runContext, BucketInfo bucketInfo) throws IllegalVariableEvaluationException {
-        Bucket bucket;
-        try {
-            bucket = connection.create(bucketInfo);
-        } catch (StorageException exception) {
-            boolean exists = exception.getCode() == 409;
-            if (!exists) {
-                throw exception;
-            }
+        Bucket bucket = connection.get(bucketInfo.getName());
 
-            if (this.ifExists == IfExists.UPDATE) {
-                bucket = connection.update(bucketInfo);
-            } else if (this.ifExists == IfExists.SKIP) {
-                bucket = connection.get(runContext.render(this.name));
-            } else {
-                throw exception;
-            }
+        // Bucket does not exist, we try to create it
+        if (bucket == null) {
+            return connection.create(bucketInfo);
         }
 
-        return bucket;
+        // Bucket exists, we check the ifExists policy
+        if (this.ifExists == IfExists.UPDATE) {
+            return connection.update(bucketInfo);
+        } else if (this.ifExists == IfExists.SKIP) {
+            return bucket;
+        } else {
+            throw new RuntimeException("Bucket " + bucketInfo.getName() + " already exists and ifExists policy is set to ERROR !");
+        }
     }
 
     public enum IfExists {
