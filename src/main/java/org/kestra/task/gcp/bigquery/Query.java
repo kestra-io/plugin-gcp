@@ -1,6 +1,7 @@
 package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
+import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.ArrayUtils;
@@ -167,11 +168,12 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
         if (this.fetch || this.fetchOne) {
             TableResult result = queryJob.getQueryResults();
+            List<Map<String, Object>> fetch = this.fetchResult(result);
 
-            if (fetch) {
-                output.rows(this.fetchResult(result));
+            if (this.fetch) {
+                output.rows(fetch);
             } else {
-                output.row(this.fetchResult(result).get(0));
+                output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
             }
         }
 
