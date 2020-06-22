@@ -94,7 +94,7 @@ class QueryTest {
             .sql("{{#each inputs.loop}}" +
                 "SELECT" +
                 "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{instantFormat execution.startDate \"yyyy-MM-dd HH:mm:ss.SSSSSS\"}}\" as execution_date," +
+                "  TIMESTAMP \"{{dateFormat execution.startDate \"yyyy-MM-dd HH:mm:ss.SSSSSS\"}}\" as execution_date," +
                 "  {{@key}} as counter" +
                 "{{#unless @last}}\nUNION ALL\n{{/unless}}" +
                 "{{/each}}"
@@ -139,7 +139,7 @@ class QueryTest {
             .sql("{{#each inputs.loop}}" +
                 "SELECT" +
                 "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{instantFormat execution.startDate \"yyyy-MM-dd HH:mm:ss.SSSSSS\"}}\" as execution_date," +
+                "  TIMESTAMP \"{{dateFormat execution.startDate \"yyyy-MM-dd HH:mm:ss.SSSSSS\"}}\" as execution_date," +
                 "  {{@key}} as counter;" +
                 "{{/each}}"
             )
