@@ -37,7 +37,8 @@ import java.time.Duration;
 @Example(
     title = "Extract a BigQuery table to a gcs bucket",
     code = {
-        "destinationUris: gs://bucket_name/filename.csv",
+        "destinationUris: ",
+        "  - \"gs://bucket_name/filename.csv\"",
         "sourceTable: \"my_project.my_dataset.my_table\"",
         "format: CSV",
         "fieldDelimiter: ';'",
