@@ -86,19 +86,22 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     @Builder.Default
     @InputProperty(
         description = "Whether to use BigQuery's legacy SQL dialect for this query",
-        body = "By default this property is set to false."
+        body = "By default this property is set to false.",
+        dynamic = false
     )
     private boolean legacySql = false;
 
     @Builder.Default
     @InputProperty(
-        description = "Whether to Fetch the data from the query result to the task output"
+        description = "Whether to Fetch the data from the query result to the task output",
+        dynamic = false
     )
     private boolean fetch = false;
 
     @Builder.Default
     @InputProperty(
-        description = "Whether to Fetch only one data row from the query result to the task output"
+        description = "Whether to Fetch only one data row from the query result to the task output",
+        dynamic = false
     )
     private boolean fetchOne = false;
 
@@ -107,7 +110,8 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     // private Map<String, String> namedParameters;
 
     @InputProperty(
-        description = "The clustering specification for the destination table"
+        description = "The clustering specification for the destination table",
+        dynamic = false
     )
     private List<String> clusteringFields;
 
@@ -123,22 +127,26 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         body = " Schema update options are supported in two cases: when\n" +
             " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination\n" +
             " table is a partition of a table, specified by partition decorators. For normal tables,\n" +
-            " WRITE_TRUNCATE will always overwrite the schema."
+            " WRITE_TRUNCATE will always overwrite the schema.",
+        dynamic = false
     )
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
     @InputProperty(
-        description = "The time partitioning specification for the destination table"
+        description = "The time partitioning specification for the destination table",
+        dynamic = false
     )
     private String timePartitioningField;
 
     @InputProperty(
-        description = "The action that should occur if the destination table already exists"
+        description = "The action that should occur if the destination table already exists",
+        dynamic = false
     )
     private JobInfo.WriteDisposition writeDisposition;
 
     @InputProperty(
-        description = "Whether the job is allowed to create tables"
+        description = "Whether the job is allowed to create tables",
+        dynamic = false
     )
     private JobInfo.CreateDisposition createDisposition;
 

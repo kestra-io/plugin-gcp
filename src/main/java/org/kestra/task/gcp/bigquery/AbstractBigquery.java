@@ -28,8 +28,7 @@ abstract public class AbstractBigquery extends Task {
         body = "This property is experimental\n" +
             " and might be subject to change or removed.\n" +
             " \n" +
-            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset\n" +
-            "      Location</a>",
+            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>",
         dynamic = true
     )
     protected String location;
