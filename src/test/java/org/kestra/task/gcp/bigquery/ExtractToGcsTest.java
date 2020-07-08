@@ -1,28 +1,24 @@
 package org.kestra.task.gcp.bigquery;
 
-import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
-import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.kestra.core.runners.RunContext;
-import org.kestra.core.utils.TestsUtils;
-import org.kestra.core.models.tasks.Task;
-import org.kestra.core.storages.StorageInterface;
-import org.kestra.task.gcp.gcs.Download;
 import org.junit.jupiter.api.Test;
+import org.kestra.core.models.tasks.Task;
+import org.kestra.core.runners.RunContext;
+import org.kestra.core.runners.RunContextFactory;
+import org.kestra.core.storages.StorageInterface;
+import org.kestra.core.utils.TestsUtils;
+import org.kestra.task.gcp.gcs.Download;
 
-import javax.inject.Inject;
-import java.util.Collections;
-import java.util.UUID;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Objects;
+import java.util.Collections;
+import java.util.UUID;
+import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -30,7 +26,7 @@ import static org.hamcrest.Matchers.is;
 @MicronautTest
 public class ExtractToGcsTest extends AbstractBigquery{
     @Inject
-    private ApplicationContext applicationContext;
+    private RunContextFactory runContextFactory;
 
     @Inject
     private StorageInterface storageInterface;
@@ -91,7 +87,7 @@ public class ExtractToGcsTest extends AbstractBigquery{
             .printHeader(printHeader)
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         ExtractToGcs.Output extractOutput = task.run(runContext);
 
         // Download task
@@ -121,7 +117,7 @@ public class ExtractToGcsTest extends AbstractBigquery{
 
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
-            this.applicationContext,
+            this.runContextFactory,
             task,
             ImmutableMap.of(
                 "bucket", this.bucket

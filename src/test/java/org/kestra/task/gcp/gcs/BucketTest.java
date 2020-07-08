@@ -2,7 +2,6 @@ package org.kestra.task.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.MethodOrderer;
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.kestra.core.runners.RunContext;
+import org.kestra.core.runners.RunContextFactory;
 
 import javax.inject.Inject;
 
@@ -20,22 +20,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @MicronautTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BucketTest {
-    private static String randomId = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
+    private static final String RANDOM_ID = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
 
     @Inject
-    private ApplicationContext applicationContext;
+    private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.gcs.project}")
     private String project;
 
     private RunContext runContext() {
-        return new RunContext(
-            this.applicationContext,
-            ImmutableMap.of(
-                "project", this.project,
-                "bucket", randomId
-            )
-        );
+        return runContextFactory.of(ImmutableMap.of(
+            "project", this.project,
+            "bucket", RANDOM_ID
+        ));
     }
 
     private CreateBucket.CreateBucketBuilder<?, ?> createBuilder() {

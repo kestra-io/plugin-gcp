@@ -2,11 +2,11 @@ package org.kestra.task.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
+import org.kestra.core.runners.RunContextFactory;
 import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.utils.TestsUtils;
 
@@ -23,8 +23,9 @@ import static org.hamcrest.Matchers.is;
 class LoadTest {
     @Inject
     private StorageInterface storageInterface;
+
     @Inject
-    private ApplicationContext applicationContext;
+    private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.bigquery.project}")
     private String project;
@@ -55,7 +56,7 @@ class LoadTest {
             )
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         AbstractLoad.Output run = task.run(runContext);
 
@@ -83,7 +84,7 @@ class LoadTest {
             )
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         AbstractLoad.Output run = task.run(runContext);
         assertThat(run.getRows(), is(5L));

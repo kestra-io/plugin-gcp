@@ -2,12 +2,12 @@ package org.kestra.task.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
+import org.kestra.core.runners.RunContextFactory;
 import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.utils.TestsUtils;
 
@@ -26,7 +26,7 @@ class UploadTest {
     private StorageInterface storageInterface;
 
     @Inject
-    private ApplicationContext applicationContext;
+    private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.gcs.bucket}")
     private String bucket;
@@ -72,7 +72,7 @@ class UploadTest {
 
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
-            this.applicationContext,
+            this.runContextFactory,
             task,
             ImmutableMap.of(
                 "bucket", this.bucket

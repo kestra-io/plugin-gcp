@@ -6,20 +6,22 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
-import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.http.hateoas.JsonError;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
+import org.kestra.core.runners.RunContextFactory;
 import org.kestra.core.utils.TestsUtils;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import javax.inject.Inject;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -30,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @MicronautTest
 class QueryTest {
     @Inject
-    private ApplicationContext applicationContext;
+    private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.bigquery.project}")
     private String project;
@@ -41,26 +43,23 @@ class QueryTest {
     @Test
     @SuppressWarnings("unchecked")
     void fetch() throws Exception {
-        RunContext runContext = new RunContext(
-            this.applicationContext,
-            ImmutableMap.of(
-                "sql", "SELECT " +
-                    "  \"hello\" as string," +
-                    "  NULL AS `nullable`," +
-                    "  1 as int," +
-                    "  1.25 AS float," +
-                    "  DATE(\"2008-12-25\") AS date," +
-                    "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime," +
-                    "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time," +
-                    "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp," +
-                    "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint," +
-                    "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`," +
-                    "  STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`",
-                "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "org.kestra.tests"),
-                "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
-                "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
-            )
-        );
+        RunContext runContext = runContextFactory.of(ImmutableMap.of(
+            "sql", "SELECT " +
+                "  \"hello\" as string," +
+                "  NULL AS `nullable`," +
+                "  1 as int," +
+                "  1.25 AS float," +
+                "  DATE(\"2008-12-25\") AS date," +
+                "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime," +
+                "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time," +
+                "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp," +
+                "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint," +
+                "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`," +
+                "  STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`",
+            "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "org.kestra.tests"),
+            "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
+            "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
+        ));
 
         Query task = Query.builder()
             .sql("{{sql}}")
@@ -106,7 +105,7 @@ class QueryTest {
             .writeDisposition(JobInfo.WriteDisposition.WRITE_APPEND)
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of(
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
             "loop", ContiguousSet.create(Range.closed(1, 25), DiscreteDomain.integers())
         ));
 
@@ -122,7 +121,7 @@ class QueryTest {
             .sql("SELECT * from `{{execution.id}}`")
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         IOException e = assertThrows(IOException.class, () -> {
             task.run(runContext);
@@ -145,7 +144,7 @@ class QueryTest {
             )
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of(
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
             "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
         ));
 
@@ -164,7 +163,7 @@ class QueryTest {
             )
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(applicationContext, task, ImmutableMap.of(
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
             "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
         ));
 
