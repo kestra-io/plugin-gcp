@@ -54,7 +54,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         Logger logger = runContext.logger(this.getClass());
 
         WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
-            .newBuilder(Connection.tableId(this.destinationTable));
+            .newBuilder(Connection.tableId(runContext.render(this.destinationTable)));
 
         this.setOptions(builder);
 
