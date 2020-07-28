@@ -8,10 +8,10 @@ import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
-import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +31,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     @InputProperty(
         description = "The dataset's access control configuration"
     )
-    protected List<Acl> acl;
+    protected List<AccessControl> acl;
 
     @InputProperty(
         description = "The default lifetime of all tables in the dataset, in milliseconds",
@@ -102,7 +102,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         DatasetInfo.Builder builder = DatasetInfo.newBuilder(runContext.render(this.name));
 
         if (this.acl != null) {
-            builder.setAcl(this.acl);
+            builder.setAcl(mapAcls(this.acl));
         }
 
         if (this.defaultTableLifetime != null) {
@@ -134,6 +134,95 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         }
 
         return builder.build();
+    }
+
+    private List<Acl> mapAcls(List<AccessControl> accessControls) {
+        if (accessControls == null) {
+            return null;
+        }
+
+        List<Acl> acls = new ArrayList<>();
+        for (AccessControl accessControl : accessControls) {
+            acls.add(mapAcl(accessControl));
+        }
+
+        return acls;
+    }
+
+    private Acl mapAcl(AccessControl accessControl) {
+        if (accessControl == null || accessControl.getEntity() == null || accessControl.getRole() == null) {
+            return null;
+        }
+
+        switch (accessControl.getEntity().getType()) {
+            case USER:
+                return Acl.of(new Acl.User(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+            case GROUP:
+                return Acl.of(new Acl.Group(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+            case DOMAIN:
+                return Acl.of(new Acl.Domain(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+            case IAM_MEMBER:
+                return Acl.of(new Acl.IamMember(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+            default:
+                return null;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Getter
+    public static class AccessControl {
+        @NotNull
+        @InputProperty(
+            description = "The entity",
+            dynamic = false
+        )
+        private Entity entity;
+
+        @SuppressWarnings("unused")
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        @Getter
+        public static class Entity {
+            @NotNull
+            @InputProperty(
+                description = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)",
+                dynamic = false
+            )
+            private Type type;
+
+            @NotNull
+            @InputProperty(
+                description = "The value for the entity (ex : user email if the type is USER ...)",
+                dynamic = false
+            )
+            private String value;
+
+            @SuppressWarnings("unused")
+            public enum Type {
+                DOMAIN,
+                GROUP,
+                USER,
+                IAM_MEMBER
+            }
+        }
+
+        @NotNull
+        @InputProperty(
+            description = "The role to assign to the entity",
+            dynamic = false
+        )
+        private Role role;
+
+        @SuppressWarnings("unused")
+        public enum Role {
+            READER,
+            WRITER,
+            OWNER
+        }
     }
 
     @Builder

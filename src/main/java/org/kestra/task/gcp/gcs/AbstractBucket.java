@@ -15,6 +15,7 @@ import org.kestra.core.runners.RunContext;
 import javax.validation.constraints.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -103,7 +104,7 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
             " href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">\n" +
             " About Access Control Lists</a>"
     )
-    protected List<Acl> acl;
+    protected List<AccessControl> acl;
 
     @InputProperty(
         description = "The default access control configuration",
@@ -114,7 +115,7 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
             "     href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">\n" +
             "     About Access Control Lists</a>"
     )
-    protected List<Acl> defaultAcl;
+    protected List<AccessControl> defaultAcl;
 
     @InputProperty(
         description = "The labels of this bucket"
@@ -188,11 +189,11 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
         }
 
         if (this.acl != null) {
-            builder.setAcl(this.acl);
+            builder.setAcl(mapAcls(this.acl));
         }
 
         if (this.defaultAcl != null) {
-            builder.setDefaultAcl(this.defaultAcl);
+            builder.setDefaultAcl(mapAcls(this.defaultAcl));
         }
 
         if (this.labels != null) {
@@ -220,6 +221,94 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
         }
 
         return builder.build();
+    }
+
+
+    private List<Acl> mapAcls(List<AccessControl> accessControls) {
+        if (accessControls == null) {
+            return null;
+        }
+
+        List<Acl> acls = new ArrayList<>();
+        for (AccessControl accessControl : accessControls) {
+            acls.add(mapAcl(accessControl));
+        }
+
+        return acls;
+    }
+
+    private Acl mapAcl(AccessControl accessControl) {
+        if (accessControl == null || accessControl.getEntity() == null || accessControl.getRole() == null) {
+            return null;
+        }
+
+        switch (accessControl.getEntity().getType()) {
+            case USER:
+                return Acl.of(new Acl.User(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+            case GROUP:
+                return Acl.of(new Acl.Group(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+            case DOMAIN:
+                return Acl.of(new Acl.Domain(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+            default:
+                return null;
+        }
+    }
+
+
+    @SuppressWarnings("unused")
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Getter
+    public static class AccessControl {
+        @NotNull
+        @InputProperty(
+            description = "The entity",
+            dynamic = false
+        )
+        private Entity entity;
+
+        @SuppressWarnings("unused")
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        @Getter
+        public static class Entity {
+            @NotNull
+            @InputProperty(
+                description = "The type of the entity (USER, GROUP or DOMAIN)",
+                dynamic = false
+            )
+            private Type type;
+
+            @NotNull
+            @InputProperty(
+                description = "The value for the entity (ex : user email if the type is USER ...)",
+                dynamic = false
+            )
+            private String value;
+
+            @SuppressWarnings("unused")
+            public enum Type {
+                DOMAIN,
+                GROUP,
+                USER
+            }
+        }
+
+        @NotNull
+        @InputProperty(
+            description = "The role to assign to the entity",
+            dynamic = false
+        )
+        private Role role;
+
+        @SuppressWarnings("unused")
+        public enum Role {
+            READER,
+            WRITER,
+            OWNER
+        }
     }
 
     @Builder
