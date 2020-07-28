@@ -1,7 +1,10 @@
 package org.kestra.task.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
+import com.google.cloud.bigquery.Acl;
+import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
+import com.google.cloud.bigquery.Dataset;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
@@ -13,9 +16,10 @@ import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
@@ -30,9 +34,13 @@ class DatasetTest {
     private String project;
 
     private RunContext runContext() {
+        return runContext(randomId);
+    }
+
+    private RunContext runContext(String datasetId) {
         return runContextFactory.of(ImmutableMap.of(
             "project", this.project,
-            "dataset", randomId
+            "dataset", datasetId
         ));
     }
 
@@ -120,5 +128,56 @@ class DatasetTest {
 
         DeleteDataset.Output run = task.run(runContext());
         assertThat(run.getDataset(), is(runContext().getVariables().get("dataset")));
+    }
+
+    @Test
+    @Order(7)
+    void acl() throws Exception {
+
+        final String datasetId = "tu_createUpdateAcl_2HJEINNICW";
+
+        CreateDataset task = createBuilder()
+            .description(datasetId)
+            .ifExists(CreateDataset.IfExists.UPDATE)
+            .acl(Arrays.asList(
+                AbstractDataset.AccessControl.builder()
+                    .entity(AbstractDataset.AccessControl.Entity.builder()
+                        .type(AbstractDataset.AccessControl.Entity.Type.GROUP)
+                        .value("frlm-full-ddpddf@leroymerlin.fr").build())
+                    .role(AbstractDataset.AccessControl.Role.READER)
+                    .build(),
+                AbstractDataset.AccessControl.builder()
+                    .entity(AbstractDataset.AccessControl.Entity.builder()
+                        .type(AbstractDataset.AccessControl.Entity.Type.GROUP)
+                        .value("frlm-full-ddpdat@leroymerlin.fr").build())
+                    .role(AbstractDataset.AccessControl.Role.READER)
+                    .build(),
+                AbstractDataset.AccessControl.builder()
+                    .entity(AbstractDataset.AccessControl.Entity.builder()
+                        .type(AbstractDataset.AccessControl.Entity.Type.USER)
+                        .value("inhabitant-squad@lmfr-ddp-host-dev.iam.gserviceaccount.com").build())
+                    .role(AbstractDataset.AccessControl.Role.OWNER)
+                    .build()
+            ))
+            .build();
+
+        RunContext rc = runContext(datasetId);
+        AbstractDataset.Output run = task.run(rc);
+
+        assertThat(run.getDataset(), is(rc.getVariables().get("dataset")));
+        assertThat(run.getDescription(), is(datasetId));
+
+        BigQuery connection = new Connection().of(run.getProject(), "EU");
+
+        // Test bigquery dataset acl ...
+        Dataset dataset = connection.getDataset(run.getDataset());
+
+        assertThat(null, not(dataset.getAcl()));
+        assertThat(dataset.getAcl(), hasItems(
+            Acl.of(new Acl.Group("frlm-full-ddpddf@leroymerlin.fr"), Acl.Role.READER),
+            Acl.of(new Acl.Group("frlm-full-ddpdat@leroymerlin.fr"), Acl.Role.READER),
+            Acl.of(new Acl.User("inhabitant-squad@lmfr-ddp-host-dev.iam.gserviceaccount.com"), Acl.Role.OWNER)
+            )
+        );
     }
 }
