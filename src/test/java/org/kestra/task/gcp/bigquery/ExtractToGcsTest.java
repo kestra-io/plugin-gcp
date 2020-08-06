@@ -53,7 +53,7 @@ public class ExtractToGcsTest extends AbstractBigquery{
 
     @BeforeEach
     private void init()  {
-        this.connection = new Connection().of(projectId, "EU");
+        this.connection = new BigQueryService().of(projectId, "EU");
     }
 
     private Job query(String query) throws InterruptedException {

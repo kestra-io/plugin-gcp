@@ -1,8 +1,6 @@
 package org.kestra.task.gcp.bigquery;
 
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.TableDataWriteChannel;
-import com.google.cloud.bigquery.WriteChannelConfiguration;
+import com.google.cloud.bigquery.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -54,7 +52,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         Logger logger = runContext.logger(this.getClass());
 
         WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
-            .newBuilder(Connection.tableId(runContext.render(this.destinationTable)));
+            .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)));
 
         this.setOptions(builder);
 
@@ -74,6 +72,8 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
             }
         }
 
-        return this.execute(runContext, logger, configuration, writer.getJob());
+        Job job = this.waitForJob(logger, writer::getJob);
+
+        return this.outputs(runContext, configuration, job);
     }
 }

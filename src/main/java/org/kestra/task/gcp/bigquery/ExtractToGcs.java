@@ -1,32 +1,23 @@
 package org.kestra.task.gcp.bigquery;
 
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.Job;
-import com.google.cloud.bigquery.JobInfo;
-import com.google.cloud.bigquery.JobStatistics;
-import com.google.cloud.bigquery.ExtractJobConfiguration;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import com.google.cloud.bigquery.*;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.OutputProperty;
-import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
+import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
-import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.time.Duration;
 
 
 @SuperBuilder
@@ -130,10 +121,10 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         return this.execute(runContext, logger, configuration, extractJob);
     }
 
-    protected ExtractToGcs.Output execute(RunContext runContext, Logger logger, ExtractJobConfiguration configuration, Job job) throws InterruptedException, IOException, IllegalVariableEvaluationException {
-        Connection.handleErrors(job, logger);
+    protected ExtractToGcs.Output execute(RunContext runContext, Logger logger, ExtractJobConfiguration configuration, Job job) throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
+        BigQueryService.handleErrors(job, logger);
         job = job.waitFor();
-        Connection.handleErrors(job, logger);
+        BigQueryService.handleErrors(job, logger);
 
         JobStatistics.ExtractStatistics stats = job.getStatistics();
         this.metrics(runContext, stats, job);
@@ -186,12 +177,13 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
     protected ExtractJobConfiguration buildExtractJob(RunContext runContext) throws IllegalVariableEvaluationException {
         ExtractJobConfiguration.Builder builder = ExtractJobConfiguration
-            .newBuilder(Connection.tableId(
-                runContext.render(this.sourceTable)),
-                runContext.render(this.destinationUris));
+            .newBuilder(
+                BigQueryService.tableId(runContext.render(this.sourceTable)),
+                runContext.render(this.destinationUris)
+            );
 
         if (runContext.render(this.sourceTable) != null){
-            builder.setSourceTable(Connection.tableId(runContext.render(this.sourceTable)));
+            builder.setSourceTable(BigQueryService.tableId(runContext.render(this.sourceTable)));
         }
 
         if (runContext.render(this.destinationUris) != null){

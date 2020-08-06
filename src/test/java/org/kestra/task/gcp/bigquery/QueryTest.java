@@ -8,19 +8,19 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
+import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.FailsafeException;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
 import org.kestra.core.utils.TestsUtils;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
+@Slf4j
 class QueryTest {
     @Inject
     private RunContextFactory runContextFactory;
@@ -123,11 +124,11 @@ class QueryTest {
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
-        IOException e = assertThrows(IOException.class, () -> {
+        FailsafeException e = assertThrows(FailsafeException.class, () -> {
             task.run(runContext);
         });
 
-        assertThat(e.getMessage(), containsString("missing dataset while no default dataset"));
+        assertThat(e.getCause().getMessage(), containsString("missing dataset while no default dataset"));
     }
 
     @Test
@@ -153,6 +154,47 @@ class QueryTest {
     }
 
     @Test
+    void retry() throws Exception {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        String table = project + "." + dataset + "." + FriendlyId.createFriendlyId();
+
+        List<Callable<Query.Output>> tasks = new ArrayList<>();
+
+        for (int i = 0; i < 50; i++) {
+            Query task = Query.builder()
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql("SELECT \"" + i + "\" as value")
+                .destinationTable(table)
+                .createDisposition(JobInfo.CreateDisposition.CREATE_IF_NEEDED)
+                .writeDisposition(JobInfo.WriteDisposition.WRITE_TRUNCATE)
+                .build();
+
+            RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+            tasks.add(() -> task.run(runContext));
+        }
+
+        List<Future<Query.Output>> futures = executorService.invokeAll(tasks);
+        executorService.shutdown();
+
+        List<Query.Output> results = futures
+            .stream()
+            .map(outputFuture -> {
+                try {
+                    return outputFuture.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    log.error("Failed on ", e);
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+        assertThat(results.size(), is(tasks.size()));
+    }
+
+    @Test
     void scriptError() {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
@@ -167,10 +209,10 @@ class QueryTest {
             "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
         ));
 
-        IOException e = assertThrows(IOException.class, () -> {
+        FailsafeException e = assertThrows(FailsafeException.class, () -> {
             task.run(runContext);
         });
 
-        assertThat(e.getMessage(), containsString("missing dataset while no default dataset"));
+        assertThat(e.getCause().getMessage(), containsString("missing dataset while no default dataset"));
     }
 }

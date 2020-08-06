@@ -167,7 +167,7 @@ class DatasetTest {
         assertThat(run.getDataset(), is(rc.getVariables().get("dataset")));
         assertThat(run.getDescription(), is(datasetId));
 
-        BigQuery connection = new Connection().of(run.getProject(), "EU");
+        BigQuery connection = new BigQueryService().of(run.getProject(), "EU");
 
         // Test bigquery dataset acl ...
         Dataset dataset = connection.getDataset(run.getDataset());

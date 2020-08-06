@@ -6,10 +6,9 @@ import org.kestra.core.runners.RunContext;
 import org.kestra.task.gcp.AbstractConnection;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.util.UUID;
 
-public class Connection extends AbstractConnection {
+public class BigQueryService extends AbstractConnection {
     public BigQuery of(String projectId, String location) {
         return BigQueryOptions
             .newBuilder()
@@ -47,24 +46,29 @@ public class Connection extends AbstractConnection {
         }
     }
 
-    public static void handleErrors(Job queryJob, Logger logger) throws IOException {
-        if (queryJob == null) {
+
+    public static void handleErrors(Job job, Logger logger) throws BigQueryException {
+        if (job == null) {
             throw new IllegalArgumentException("Job no longer exists");
-        } else if (queryJob.getStatus().getError() != null) {
-            if (queryJob.getStatus().getExecutionErrors() != null) {
-                queryJob
+        } else if (job.getStatus().getError() != null) {
+            if (job.getStatus().getExecutionErrors() != null) {
+                job
                     .getStatus()
                     .getExecutionErrors()
                     .forEach(bigQueryError -> {
-                        logger.error(
-                            "Error query with error [\n - {}\n]",
+                        logger.warn(
+                            "Error on job '{}' query with error [\n - {}\n]",
+                            job.getJobId().getJob(),
                             bigQueryError.toString()
                         );
                     });
             }
 
-            if (queryJob.getStatus().getError() != null) {
-                throw new IOException(queryJob.getStatus().getError().toString());
+            if (job.getStatus().getError() != null) {
+                throw new BigQueryException(
+                    job.getStatus().getError(),
+                    job.getStatus().getExecutionErrors()
+                );
             }
         }
     }

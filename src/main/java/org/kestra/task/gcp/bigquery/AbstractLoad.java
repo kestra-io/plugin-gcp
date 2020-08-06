@@ -10,9 +10,7 @@ import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
-import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
@@ -165,11 +163,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         }
     }
 
-    protected Output execute(RunContext runContext, Logger logger, LoadConfiguration configuration, Job job) throws InterruptedException, IOException, IllegalVariableEvaluationException{
-        Connection.handleErrors(job, logger);
-        job = job.waitFor();
-        Connection.handleErrors(job, logger);
-
+    protected Output outputs(RunContext runContext, LoadConfiguration configuration, Job job) throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
         JobStatistics.LoadStatistics stats = job.getStatistics();
         this.metrics(runContext, stats, job);
 

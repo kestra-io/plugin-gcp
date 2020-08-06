@@ -159,15 +159,14 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
         logger.debug("Starting query\n{}", JacksonMapper.log(jobConfiguration));
 
-        Job queryJob = connection
-            .create(JobInfo.newBuilder(jobConfiguration)
-                .setJobId(Connection.jobId(runContext))
-                .build()
-            );
-
-        Connection.handleErrors(queryJob, logger);
-        queryJob = queryJob.waitFor();
-        Connection.handleErrors(queryJob, logger);
+        Job queryJob = this.waitForJob(
+            logger,
+            () -> connection
+                .create(JobInfo.newBuilder(jobConfiguration)
+                    .setJobId(BigQueryService.jobId(runContext))
+                    .build()
+                )
+        );
 
         this.metrics(runContext, queryJob.getStatistics(), queryJob);
 
@@ -199,7 +198,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         }
 
         if (this.destinationTable != null) {
-            builder.setDestinationTable(Connection.tableId(runContext.render(this.destinationTable)));
+            builder.setDestinationTable(BigQueryService.tableId(runContext.render(this.destinationTable)));
         }
 
         if (this.schemaUpdateOptions != null) {
