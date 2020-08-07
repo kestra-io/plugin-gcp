@@ -28,11 +28,15 @@ public class BigQueryService extends AbstractConnection {
             .getService();
     }
 
-    public static JobId jobId(RunContext runContext) throws IllegalVariableEvaluationException {
-        return JobId.of(runContext
-            .render("{{flow.namespace}}.{{flow.id}}_{{execution.id}}_{{taskrun.id}}_" + UUID.randomUUID())
-            .replace(".", "-")
-        );
+    public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
+        return JobId.newBuilder()
+            .setProject(runContext.render(abstractBigquery.getProjectId()))
+            .setLocation(runContext.render(abstractBigquery.getLocation()))
+            .setJob(runContext
+                .render("{{flow.namespace}}.{{flow.id}}_{{execution.id}}_{{taskrun.id}}_" + UUID.randomUUID())
+                .replace(".", "-")
+            )
+            .build();
     }
 
     public static TableId tableId(String table) {
@@ -45,7 +49,6 @@ public class BigQueryService extends AbstractConnection {
             throw new IllegalArgumentException("Invalid table name '" + table + "'");
         }
     }
-
 
     public static void handleErrors(Job job, Logger logger) throws BigQueryException {
         if (job == null) {

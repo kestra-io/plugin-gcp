@@ -163,7 +163,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             logger,
             () -> connection
                 .create(JobInfo.newBuilder(jobConfiguration)
-                    .setJobId(BigQueryService.jobId(runContext))
+                    .setJobId(BigQueryService.jobId(runContext, this))
                     .build()
                 )
         );
