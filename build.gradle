@@ -51,7 +51,7 @@ dependencies {
     api "androidx.annotation:annotation:1.1.0"
     api 'net.jodah:failsafe:2.4.0'
     api 'com.google.cloud:google-cloud-storage:1.111.2'
-    api 'com.google.cloud:google-cloud-bigquery:1.116.8'
+    api 'com.google.cloud:google-cloud-bigquery:1.116.9'
 }
 
 
