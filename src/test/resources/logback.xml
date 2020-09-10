@@ -18,4 +18,5 @@
 
     <logger name="org.kestra" level="INFO" />
     <logger name="flow" level="INFO" />
+
 </configuration>

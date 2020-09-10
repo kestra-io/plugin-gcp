@@ -153,7 +153,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
 
         QueryJobConfiguration jobConfiguration = this.jobConfiguration(runContext);
 
@@ -168,14 +168,27 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
                 )
         );
 
-        this.metrics(runContext, queryJob.getStatistics(), queryJob);
+        JobStatistics.QueryStatistics queryJobStatistics = queryJob.getStatistics();
+
+        this.metrics(runContext, queryJobStatistics, queryJob);
 
         Output.OutputBuilder output = Output.builder()
             .jobId(queryJob.getJobId().getJob());
 
         if (this.fetch || this.fetchOne) {
             TableResult result = queryJob.getQueryResults();
+            String[] tags = this.tags(queryJobStatistics, queryJob);
+
             List<Map<String, Object>> fetch = this.fetchResult(result);
+
+            if (result.getTotalRows() > fetch.size()) {
+                throw new IllegalStateException("Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows());
+            }
+
+            runContext.metric(Counter.of("total.rows", result.getTotalRows(), tags));
+            runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
+            output.size(fetch.size());
+
 
             if (this.fetch) {
                 output.rows(fetch);
@@ -242,15 +255,25 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             body = "Only populated if 'fetchOne' parameter is set to true."
         )
         private Map<String, Object> row;
+
+        @OutputProperty(
+            description = "The size of the rows fetch",
+            body = "Only populated if 'fetchOne' or 'fetch' parameter is set to true."
+        )
+        private Integer size;
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
-        String[] tags = {
+    private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
+        return new String[]{
             "statement_type", stats.getStatementType().name(),
             "fetch", this.fetch || this.fetchOne ? "true" : "false",
             "project_id", queryJob.getJobId().getProject(),
             "location", queryJob.getJobId().getLocation(),
         };
+    }
+
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
+        String[] tags = this.tags(stats, queryJob);
 
         if (this.destinationTable != null) {
             ArrayUtils.addAll(tags, "destination_table", runContext.render(this.destinationTable));

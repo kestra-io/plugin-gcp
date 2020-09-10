@@ -10,6 +10,7 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.FailsafeException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
@@ -28,6 +29,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.kestra.core.utils.Rethrow.throwRunnable;
 
 @MicronautTest
 @Slf4j
@@ -84,6 +86,21 @@ class QueryTest {
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("x"), is(4L));
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("y"), is(0L));
         assertThat((List<Long>) ((Map<String, Object>) rows.get(0).get("struct")).get("z"), containsInAnyOrder(1L, 2L, 3L));
+    }
+
+    @Test
+    void fetchLongPage() throws Exception {
+        Query task = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .sql("SELECT repository_forks FROM `bigquery-public-data.samples.github_timeline` LIMIT 100000")
+            .fetch(true)
+            .build();
+
+        Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+
+        List<Map<String, Object>> rows = run.getRows();
+        assertThat(rows.size(), is(100000));
     }
 
     @Test
@@ -214,5 +231,44 @@ class QueryTest {
         });
 
         assertThat(e.getCause().getMessage(), containsString("missing dataset while no default dataset"));
+    }
+
+    @Test
+    @Disabled
+    void concurrency() throws Exception {
+        String table = this.dataset + "." + FriendlyId.createFriendlyId();
+
+        Query create = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .sql("CREATE TABLE " + table + " AS SELECT 1 AS number")
+            .build();
+
+        create.run(TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of()));
+
+        ExecutorService executorService = Executors.newFixedThreadPool(250);
+
+        final int COUNT = 1000;
+
+        CountDownLatch countDownLatch = new CountDownLatch(COUNT);
+
+        Query task = Query.builder()
+            .id("test")
+            .type(Query.class.getName())
+            .sql("SELECT * FROM " + table + ";")
+            .fetchOne(true)
+            .build();
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        for (int i = 0; i < COUNT; i++) {
+            executorService.execute(throwRunnable(() -> {
+                Query.Output result = task.run(runContext);
+                assertThat(result.getRow().get("number"), is(1L));
+
+                countDownLatch.countDown();
+            }));
+        }
+
+        countDownLatch.await();
     }
 }
