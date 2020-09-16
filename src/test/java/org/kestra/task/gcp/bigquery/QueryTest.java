@@ -47,17 +47,17 @@ class QueryTest {
     @SuppressWarnings("unchecked")
     void fetch() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of(
-            "sql", "SELECT " +
-                "  \"hello\" as string," +
-                "  NULL AS `nullable`," +
-                "  1 as int," +
-                "  1.25 AS float," +
-                "  DATE(\"2008-12-25\") AS date," +
-                "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime," +
-                "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time," +
-                "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp," +
-                "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint," +
-                "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`," +
+            "sql", "SELECT \n" +
+                "  \"hello\" as string,\n" +
+                "  NULL AS `nullable`,\n" +
+                "  1 as int,\n" +
+                "  1.25 AS float,\n" +
+                "  DATE(\"2008-12-25\") AS date,\n" +
+                "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
+                "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
+                "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
+                "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
+                "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
                 "  STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`",
             "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "org.kestra.tests"),
             "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),

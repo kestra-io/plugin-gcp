@@ -157,7 +157,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
         QueryJobConfiguration jobConfiguration = this.jobConfiguration(runContext);
 
-        logger.debug("Starting query\n{}", JacksonMapper.log(jobConfiguration));
+        logger.debug("Starting query: {}", jobConfiguration.getQuery());
 
         Job queryJob = this.waitForJob(
             logger,
