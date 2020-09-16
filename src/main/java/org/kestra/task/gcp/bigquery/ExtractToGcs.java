@@ -110,7 +110,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
     @Override
     public ExtractToGcs.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
 
         ExtractJobConfiguration configuration = this.buildExtractJob(runContext);
 

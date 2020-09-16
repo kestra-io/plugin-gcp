@@ -40,7 +40,7 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
     @Override
     public AbstractBucket.Output run(RunContext runContext) throws Exception {
         Storage connection = new Connection().of(runContext.render(this.projectId));
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
         BucketInfo bucketInfo = this.bucketInfo(runContext);
 
         logger.debug("Creating bucket '{}'", bucketInfo);

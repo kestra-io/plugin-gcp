@@ -56,7 +56,7 @@ public class Upload extends Task implements RunnableTask<Upload.Output> {
     public Output run(RunContext runContext) throws Exception {
         Storage connection = new Connection().of(runContext.render(this.projectId));
 
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));
         URI to = new URI(runContext.render(this.to));
 

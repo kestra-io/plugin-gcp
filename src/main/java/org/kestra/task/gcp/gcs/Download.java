@@ -49,7 +49,7 @@ public class Download extends Task implements RunnableTask<Download.Output> {
     public Output run(RunContext runContext) throws Exception {
         Storage connection = new Connection().of(runContext.render(this.projectId));
 
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));
 
         BlobId source = BlobId.of(

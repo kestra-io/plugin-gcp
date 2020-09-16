@@ -47,7 +47,7 @@ public class DeleteBucket extends Task implements RunnableTask<DeleteBucket.Outp
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = new Connection().of(runContext.render(this.projectId));
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
         String name = runContext.render(this.name);
 
         logger.debug("Deleting bucket '{}'", name);

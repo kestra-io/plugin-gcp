@@ -48,7 +48,7 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
         String name = runContext.render(this.name);
 
         logger.debug("Deleting dataset '{}'", name);

@@ -25,7 +25,7 @@ public class UpdateDataset extends AbstractDataset implements RunnableTask<Abstr
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
         DatasetInfo datasetInfo = this.datasetInfo(runContext);
 
         logger.debug("Updating dataset '{}'", datasetInfo);

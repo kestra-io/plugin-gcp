@@ -49,7 +49,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
-        Logger logger = runContext.logger(this.getClass());
+        Logger logger = runContext.logger();
 
         WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
             .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)));
