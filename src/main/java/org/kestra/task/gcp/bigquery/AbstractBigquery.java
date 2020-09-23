@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import javax.validation.Valid;
@@ -69,6 +70,16 @@ abstract public class AbstractBigquery extends Task {
         "jobBackendError"
     );
 
+    @Valid
+    @Builder.Default
+    @InputProperty(
+        description = "The message valid for a automatic retry.",
+        dynamic = false
+    )
+    protected List<String> retryMessages = Collections.singletonList(
+        "due to concurrent update"
+    );
+
     protected BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException {
         return new BigQueryService().of(
             runContext.render(this.projectId),
@@ -76,22 +87,10 @@ abstract public class AbstractBigquery extends Task {
         );
     }
 
-    public Job waitForJob(Logger logger, Callable<Job> createJob) {
+    protected Job waitForJob(Logger logger, Callable<Job> createJob) {
         return Failsafe
             .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto())
-                .handleIf(failure -> {
-                    if (this.retryReasons == null || this.retryReasons.size() == 0) {
-                        return false;
-                    }
-
-                    if (!(failure instanceof BigQueryException)) {
-                        return false;
-                    }
-
-                    BigQueryError error = ((BigQueryException) failure).getError();
-
-                    return this.retryReasons.contains(error.getReason());
-                })
+                .handleIf(this::shouldRetry)
                 .onFailure(event -> logger.error(
                     "Stop retry, attempts {} elapsed {} seconds",
                     event.getAttemptCount(),
@@ -133,5 +132,27 @@ abstract public class AbstractBigquery extends Task {
 
                 return job;
             });
+    }
+
+    private boolean shouldRetry(Throwable failure) {
+        if (!(failure instanceof BigQueryException)) {
+            return false;
+        }
+
+        BigQueryError error = ((BigQueryException) failure).getError();
+
+        if (this.retryReasons != null && this.retryReasons.contains(error.getReason())) {
+            return true;
+        }
+
+        if (this.retryMessages != null) {
+            for (String message: this.retryMessages) {
+                if (error.getMessage().contains(message)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
