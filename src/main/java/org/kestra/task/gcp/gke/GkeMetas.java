@@ -6,6 +6,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.container.v1.ClusterManagerClient;
 import com.google.cloud.container.v1.ClusterManagerSettings;
+import com.google.container.v1.ClientCertificateConfig;
 import com.google.container.v1.Cluster;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -28,9 +29,9 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Example(
-    title = "Get a cluster access token",
+    title = "Get a cluster meta data set",
     code = {
-        "name: \"my-bucket\"",
+        "clusterId: \"\"",
         "deleteContents: true"
     }
 )
@@ -63,15 +64,62 @@ public class GkeMetas extends Task implements RunnableTask<GkeMetas.Output> {
         try (ClusterManagerClient client = ClusterManagerClient.create(clusterManagerSettings)) {
             Cluster cluster = client.getCluster(projectId, zone, clusterId);
 
+            ClusterMetaData clusterMetaData = ClusterMetaData.builder()
+                .location(cluster.getLocation())
+                .description(cluster.getDescription())
+                .network(cluster.getNetwork())
+                .name(cluster.getName())
+                .ipV4(cluster.getClusterIpv4Cidr())
+                .subNetwork(cluster.getSubnetwork())
+                .endpoint(cluster.getEndpoint())
+                .zone(zone)
+                .project(projectId)
+                .createTime(cluster.getCreateTime())
+                .nodeCount(cluster.getNodePoolsCount())
+                .serviceAccount(cluster.getNodeConfig().getServiceAccount())
+                .machineType(cluster.getNodeConfig().getMachineType())
+                .username(cluster.getMasterAuth().getUsername())
+                .password(cluster.getMasterAuth().getPassword())
+                .clusterCertificat(cluster.getMasterAuth().getClusterCaCertificate())
+                .clientCertificat(cluster.getMasterAuth().getClientCertificate())
+                .clientCertificatConfig(cluster.getMasterAuth().getClientCertificateConfig())
+                .loggingService(cluster.getLoggingService())
+                .monitoringService(cluster.getMonitoringService())
+                .link(cluster.getSelfLink())
+                .build();
 
-
-
-            String key = cluster.getLocation();
             return Output
                 .builder()
-                .token(key)
+                .clusterMetaData(clusterMetaData)
                 .build();
         }
+    }
+
+    @Builder
+    @Getter
+    public static class ClusterMetaData {
+        private String location;
+        private String network;
+        private String name;
+        private String description;
+        private String ipV4;
+        private String subNetwork;
+        private String endpoint;
+        private String zone;
+        private String project;
+        private String createTime;
+        private int nodeCount;
+        private String serviceAccount;
+        private String machineType;
+        private String username;
+        private String password;
+        private String clusterCertificat;
+        private String clientKey;
+        private String clientCertificat;
+        private ClientCertificateConfig clientCertificatConfig;
+        private String loggingService;
+        private String monitoringService;
+        private String link;
     }
 
     @Builder
@@ -81,6 +129,6 @@ public class GkeMetas extends Task implements RunnableTask<GkeMetas.Output> {
         @OutputProperty(
             description = "A cluster token to control it"
         )
-        private Cluster token;
+        private ClusterMetaData clusterMetaData;
     }
 }
