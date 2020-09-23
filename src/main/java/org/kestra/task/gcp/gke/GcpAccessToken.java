@@ -21,18 +21,18 @@ import javax.validation.constraints.NotNull;
 @Example(
     title = "Get a cluster access token",
     code = {
-        "name: \"my-bucket\"",
-        "deleteContents: true"
+        "name: \"gcp-access-token\""
     }
 )
 @Documentation(
     description = "Delete a dataset."
 )
-public class GCPAccessToken extends Task implements RunnableTask<GCPAccessToken.Output> {
+public class GcpAccessToken extends Task implements RunnableTask<GcpAccessToken.Output> {
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         AccessToken accessToken = GoogleCredentials.getApplicationDefault().refreshAccessToken();
+
 
         return Output
             .builder()

@@ -26,13 +26,13 @@ class AccessTokenTest {
     @Test
     void getMetas() throws Exception {
 
-        GCPAccessToken task = GCPAccessToken.builder()
+        GcpAccessToken task = GcpAccessToken.builder()
             .id(AccessTokenTest.class.getSimpleName())
             .type(Load.class.getName())
             .build();
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
-        GCPAccessToken.Output run = task.run(runContext);
+        GcpAccessToken.Output run = task.run(runContext);
 
         AccessToken accessToken = run.getAccessToken();
         assertThat(accessToken, notNullValue());

@@ -30,9 +30,10 @@ import javax.validation.constraints.NotNull;
 @Example(
     title = "Fetch a gke cluster metadata",
     code = {
-        "clusterId: \"my-cluster\"",
-        "clusterId: \"my-cluster\"",
-        "zone:  \"europe-west1\""
+        "name: \"gke-metas\"",
+        "projectId: my-project-id",
+        "zone: eu-west-1c",
+        "clusterId: my-cluster-id",
     }
 )
 @Documentation(
@@ -61,7 +62,6 @@ public class GkeMetas extends Task implements RunnableTask<GkeMetas.Output> {
     @Override
     public Output run(RunContext runContext) throws Exception {
         Cluster cluster = fetch(runContext);
-
         return Output
             .builder()
             .location(cluster.getLocation())
