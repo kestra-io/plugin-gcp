@@ -1,6 +1,7 @@
 package org.kestra.task.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
+import com.google.cloud.bigquery.JobException;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -226,11 +227,11 @@ class QueryTest {
             "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
         ));
 
-        FailsafeException e = assertThrows(FailsafeException.class, () -> {
+        JobException e = assertThrows(JobException.class, () -> {
             task.run(runContext);
         });
 
-        assertThat(e.getCause().getMessage(), containsString("missing dataset while no default dataset"));
+        assertThat(e.getMessage(), containsString("missing dataset while no default dataset"));
     }
 
     @Test

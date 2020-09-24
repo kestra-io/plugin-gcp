@@ -5,12 +5,15 @@ import com.google.auth.oauth2.GoogleCredentials;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.annotations.Documentation;
-import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 
+import java.util.Collections;
+import java.util.List;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 @SuperBuilder
@@ -19,16 +22,28 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Documentation(
-    description = "Fetch an OAuth access token.",
-    body = {
-
-    }
+    description = "Fetch an OAuth access token."
 )
 public class OauthAccessToken extends Task implements RunnableTask<OauthAccessToken.Output> {
+    @InputProperty(
+        description = "The scopes requested for the access token.",
+        body = {
+            "Full list can be found [here](https://developers.google.com/identity/protocols/oauth2/scopes)",
+            "",
+            "default is `[\"https://www.googleapis.com/auth/cloud-platform\"]"
+        },
+        dynamic = true
+    )
+    @NotEmpty
+    private final List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        AccessToken accessToken = GoogleCredentials.getApplicationDefault().refreshAccessToken();
+        AccessToken accessToken = GoogleCredentials
+            .getApplicationDefault()
+            .createScoped(runContext.render(this.scopes))
+            .refreshAccessToken();
 
         return Output
             .builder()

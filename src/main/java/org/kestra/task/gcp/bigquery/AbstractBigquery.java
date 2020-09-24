@@ -3,6 +3,7 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobException;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import net.jodah.failsafe.Failsafe;
@@ -124,6 +125,14 @@ abstract public class AbstractBigquery extends Task {
                         );
 
                         throw new BigQueryException(bqException.getError());
+                    } else if (exception instanceof JobException) {
+                        JobException bqException = (JobException) exception;
+
+                        logger.warn(
+                            "Error query on job '{}' with error [\n - {}\n]",
+                            job.getJobId().getJob(),
+                            bqException.toString()
+                        );
                     }
 
                     throw exception;
