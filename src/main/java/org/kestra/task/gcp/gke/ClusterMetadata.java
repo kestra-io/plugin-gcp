@@ -5,7 +5,6 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.container.v1.ClusterManagerClient;
 import com.google.cloud.container.v1.ClusterManagerSettings;
 import com.google.container.v1.Cluster;
-import com.google.protobuf.ByteString;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -39,7 +38,7 @@ import javax.validation.constraints.NotNull;
 @Documentation(
     description = "Delete a dataset."
 )
-public class GkeMetas extends Task implements RunnableTask<GkeMetas.Output> {
+public class ClusterMetadata extends Task implements RunnableTask<ClusterMetadata.Output> {
     @NotNull
     @InputProperty(
         description = "Cluster id where meta data are fetch",

@@ -1,4 +1,4 @@
-package org.kestra.task.gcp.gke;
+package org.kestra.task.gcp.auth;
 
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -18,21 +18,17 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Get a cluster access token",
-    code = {
-        "name: \"gcp-access-token\""
+@Documentation(
+    description = "Fetch an OAuth access token.",
+    body = {
+
     }
 )
-@Documentation(
-    description = "Delete a dataset."
-)
-public class GcpAccessToken extends Task implements RunnableTask<GcpAccessToken.Output> {
+public class OauthAccessToken extends Task implements RunnableTask<OauthAccessToken.Output> {
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         AccessToken accessToken = GoogleCredentials.getApplicationDefault().refreshAccessToken();
-
 
         return Output
             .builder()
@@ -45,8 +41,8 @@ public class GcpAccessToken extends Task implements RunnableTask<GcpAccessToken.
     public static class Output implements org.kestra.core.models.tasks.Output {
         @NotNull
         @OutputProperty(
-            description = "A cluster token to control it"
+            description = "A oauth access token for the current user"
         )
-        private AccessToken accessToken;
+        private final AccessToken accessToken;
     }
 }

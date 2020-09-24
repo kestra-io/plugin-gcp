@@ -18,14 +18,14 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 @MicronautTest
-class GkeMetasTest {
+class ClusterMetadataTest {
     @Inject
     private RunContextFactory runContextFactory;
 
     @Test
     void run() throws Exception {
-        GkeMetas task = spy(GkeMetas.builder()
-            .id(GkeMetasTest.class.getSimpleName())
+        ClusterMetadata task = spy(ClusterMetadata.builder()
+            .id(ClusterMetadataTest.class.getSimpleName())
             .type(Load.class.getName())
             .zone("my-zone")
             .clusterId("my-cluster")
@@ -37,7 +37,7 @@ class GkeMetasTest {
             .fetch(any());
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
-        GkeMetas.Output run = task.run(runContext);
+        ClusterMetadata.Output run = task.run(runContext);
 
         assertThat(run.getName(), is("my-cluster"));
     }
