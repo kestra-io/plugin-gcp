@@ -10,6 +10,8 @@ import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
+import java.util.Objects;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -39,14 +41,16 @@ public class TableMetadata extends AbstractTable {
 
         Table table = connection.getTable(tableId);
 
-        if (ifNotExists == IfNotExists.ERROR && table == null) {
-            throw new IllegalArgumentException("Unable to find table '" + tableId.getProject() + ":" + tableId.getDataset() + "." + tableId.getTable() + "'");
-        } else if (ifNotExists == IfNotExists.SKIP) {
-            return Output.builder()
-                .build();
+        if (table == null) {
+            if (ifNotExists == IfNotExists.ERROR) {
+                throw new IllegalArgumentException("Unable to find table '" + tableId.getProject() + ":" + tableId.getDataset() + "." + tableId.getTable() + "'");
+            } else if (ifNotExists == IfNotExists.SKIP) {
+                return Output.builder()
+                    .build();
+            }
         }
 
-        return Output.of(table);
+        return Output.of(Objects.requireNonNull(table));
     }
 
     public enum IfNotExists {
