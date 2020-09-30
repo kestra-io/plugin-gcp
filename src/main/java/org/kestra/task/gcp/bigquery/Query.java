@@ -134,7 +134,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
     @InputProperty(
         description = "The time partitioning specification for the destination table",
-        dynamic = false
+        dynamic = true
     )
     private String timePartitioningField;
 
@@ -189,7 +189,6 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
             output.size(fetch.size());
 
-
             if (this.fetch) {
                 output.rows(fetch);
             } else {
@@ -207,7 +206,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             .setUseLegacySql(this.legacySql);
 
         if (this.clusteringFields != null) {
-            builder.setClustering(Clustering.newBuilder().setFields(this.clusteringFields).build());
+            builder.setClustering(Clustering.newBuilder().setFields(runContext.render(this.clusteringFields)).build());
         }
 
         if (this.destinationTable != null) {
@@ -220,7 +219,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
         if (this.timePartitioningField != null) {
             builder.setTimePartitioning(TimePartitioning.newBuilder(TimePartitioning.Type.DAY)
-                .setField(this.timePartitioningField)
+                .setField(runContext.render(this.timePartitioningField))
                 .build()
             );
         }

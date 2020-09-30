@@ -21,9 +21,10 @@ import org.slf4j.Logger;
 public class TableMetadata extends AbstractTable {
     @Builder.Default
     @InputProperty(
-        description = "Policy to apply if a table don't exists."
+        description = "Policy to apply if a table don't exists.",
+        body = "If the policy is `SKIP`, the output will contain only null value, otherwize an error is raised."
     )
-    private final IfExists ifExists = IfExists.ERROR;
+    private final IfNotExists ifNotExists = IfNotExists.ERROR;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -38,9 +39,9 @@ public class TableMetadata extends AbstractTable {
 
         Table table = connection.getTable(tableId);
 
-        if (ifExists == IfExists.ERROR && table == null) {
+        if (ifNotExists == IfNotExists.ERROR && table == null) {
             throw new IllegalArgumentException("Unable to find table '" + tableId.getProject() + ":" + tableId.getDataset() + "." + tableId.getTable() + "'");
-        } else if (ifExists == IfExists.SKIP) {
+        } else if (ifNotExists == IfNotExists.SKIP) {
             return Output.builder()
                 .build();
         }
@@ -48,7 +49,7 @@ public class TableMetadata extends AbstractTable {
         return Output.of(table);
     }
 
-    public enum IfExists {
+    public enum IfNotExists {
         ERROR,
         SKIP
     }

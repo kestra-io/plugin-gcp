@@ -4,17 +4,12 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.http.HttpRequest;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.test.annotation.MicronautTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.kestra.core.models.flows.Flow;
-import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
 
-import java.util.Collections;
 import java.util.UUID;
 import javax.inject.Inject;
 
@@ -141,7 +136,7 @@ class TableMetadataTest {
             .projectId(this.project)
             .dataset(this.dataset)
             .table(friendlyId)
-            .ifExists(TableMetadata.IfExists.SKIP)
+            .ifNotExists(TableMetadata.IfNotExists.SKIP)
             .build();
 
         TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));
