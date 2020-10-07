@@ -18,7 +18,7 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractTable extends AbstractBigquery implements RunnableTask<AbstractTable.Output> {
+abstract public class AbstractTable extends AbstractBigquery {
     @NotNull
     @InputProperty(
         description = "The dataset's user-defined id",

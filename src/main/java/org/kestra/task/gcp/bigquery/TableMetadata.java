@@ -7,6 +7,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.InputProperty;
+import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
@@ -20,7 +21,7 @@ import java.util.Objects;
 @Documentation(
     description = "Get table metadata"
 )
-public class TableMetadata extends AbstractTable {
+public class TableMetadata extends AbstractTable implements RunnableTask<AbstractTable.Output> {
     @Builder.Default
     @InputProperty(
         description = "Policy to apply if a table don't exists.",
