@@ -7,16 +7,21 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
+import com.google.common.io.CharStreams;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.FailsafeException;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
+import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.utils.TestsUtils;
 
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -38,28 +43,35 @@ class QueryTest {
     @Inject
     private RunContextFactory runContextFactory;
 
+    @Inject
+    private StorageInterface storageInterface;
+
     @Value("${kestra.tasks.bigquery.project}")
     private String project;
 
     @Value("${kestra.tasks.bigquery.dataset}")
     private String dataset;
 
+    static String sql() {
+        return "SELECT \n" +
+            "  \"hello\" as string,\n" +
+            "  NULL AS `nullable`,\n" +
+            "  1 as int,\n" +
+            "  1.25 AS float,\n" +
+            "  DATE(\"2008-12-25\") AS date,\n" +
+            "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
+            "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
+            "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
+            "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
+            "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
+            "  STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`";
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     void fetch() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of(
-            "sql", "SELECT \n" +
-                "  \"hello\" as string,\n" +
-                "  NULL AS `nullable`,\n" +
-                "  1 as int,\n" +
-                "  1.25 AS float,\n" +
-                "  DATE(\"2008-12-25\") AS date,\n" +
-                "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
-                "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
-                "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
-                "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
-                "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
-                "  STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`",
+            "sql", sql(),
             "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "org.kestra.tests"),
             "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
             "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
@@ -87,6 +99,26 @@ class QueryTest {
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("x"), is(4L));
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("y"), is(0L));
         assertThat((List<Long>) ((Map<String, Object>) rows.get(0).get("struct")).get("z"), containsInAnyOrder(1L, 2L, 3L));
+    }
+
+    @Test
+    void store() throws Exception {
+        Query task = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .sql(sql() + "\n UNION ALL \n " + sql())
+            .store(true)
+            .build();
+
+        Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+
+        assertThat(
+            CharStreams.toString(new InputStreamReader(storageInterface.get(run.getUri()))),
+            is(StringUtils.repeat(
+                "{date:\"2008-12-25\",struct:{x:4,y:0,z:[1,2,3]},datetime:\"2008-12-25T15:30:00.123456Z\",string:\"hello\",nullable:null,array:[1,2,3],geopoint:[50.6833e0,2.9e0],time:\"15:30:00.123456\",float:1.25e0,int:1,timestamp:\"2008-12-25T15:30:00.123Z\"}\n",
+                2
+            ))
+        );
     }
 
     @Test

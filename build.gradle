@@ -51,12 +51,10 @@ dependencies {
     api "androidx.annotation:annotation:1.1.0"
     api 'net.jodah:failsafe:2.4.0'
 
-
-
     api group: 'com.google.api', name: 'gax-grpc', version: '1.58.2'
     api group: 'com.google.api', name: 'gax', version: '1.58.2'
     api 'com.google.cloud:google-cloud-storage:1.113.1'
-    api 'com.google.cloud:google-cloud-bigquery:1.119.0'
+    api 'com.google.cloud:google-cloud-bigquery:1.120.0'
     api 'com.google.cloud:google-cloud-container:1.0.4'
 }
 
@@ -87,6 +85,8 @@ dependencies {
     testImplementation platform("io.micronaut:micronaut-bom:$micronautVersion")
     testImplementation "io.micronaut.test:micronaut-test-junit5"
 
+    testImplementation group: "org.kestra", name: "repository-memory", version: kestraVersion
+    testImplementation group: "org.kestra", name: "runner-memory", version: kestraVersion
     testImplementation group: "org.kestra", name: "storage-local", version: kestraVersion
 
     testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.2"
@@ -158,6 +158,7 @@ bintray {
         name = project.name
         repo = 'maven'
         publicDownloadNumbers = true
+        licenses = ['Apache-2.0']
         version {
             name = project.version
             released = new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ")

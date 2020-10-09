@@ -2,6 +2,9 @@ package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.ArrayUtils;
@@ -14,9 +17,12 @@ import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
+import org.kestra.core.serializers.FileSerde;
 import org.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
+import java.io.*;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -100,6 +106,13 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
     @Builder.Default
     @InputProperty(
+        description = "Whether to store the data from the query result into an ion serialized data file",
+        dynamic = false
+    )
+    private boolean store = false;
+
+    @Builder.Default
+    @InputProperty(
         description = "Whether to Fetch only one data row from the query result to the task output",
         dynamic = false
     )
@@ -175,24 +188,35 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         Output.OutputBuilder output = Output.builder()
             .jobId(queryJob.getJobId().getJob());
 
-        if (this.fetch || this.fetchOne) {
+        if (this.fetch || this.fetchOne || this.store) {
             TableResult result = queryJob.getQueryResults();
             String[] tags = this.tags(queryJobStatistics, queryJob);
 
-            List<Map<String, Object>> fetch = this.fetchResult(result);
-
-            if (result.getTotalRows() > fetch.size()) {
-                throw new IllegalStateException("Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows());
-            }
-
             runContext.metric(Counter.of("total.rows", result.getTotalRows(), tags));
-            runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
-            output.size(fetch.size());
 
-            if (this.fetch) {
-                output.rows(fetch);
+            if (this.store) {
+                Map.Entry<URI, Long> store = this.storeResult(result, runContext);
+
+                runContext.metric(Counter.of("fetch.rows", store.getValue(), tags));
+                output
+                    .uri(store.getKey())
+                    .size(store.getValue());
+
             } else {
-                output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
+                List<Map<String, Object>> fetch = this.fetchResult(result);
+
+                if (result.getTotalRows() > fetch.size()) {
+                    throw new IllegalStateException("Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows());
+                }
+
+                runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
+                output.size((long) fetch.size());
+
+                if (this.fetch) {
+                    output.rows(fetch);
+                } else {
+                    output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
+                }
             }
         }
 
@@ -259,7 +283,13 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             description = "The size of the rows fetch",
             body = "Only populated if 'fetchOne' or 'fetch' parameter is set to true."
         )
-        private Integer size;
+        private Long size;
+
+        @OutputProperty(
+            description = "The uri of store result",
+            body = "Only populated if 'store' is set to true."
+        )
+        private URI uri;
     }
 
     private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
@@ -318,6 +348,41 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             .stream(result.getValues().spliterator(), false)
             .map(fieldValues -> this.convertRows(result, fieldValues))
             .collect(Collectors.toList());
+    }
+
+    private Map.Entry<URI, Long> storeResult(TableResult result, RunContext runContext) throws IOException {
+        // temp file
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
+
+        try (
+            OutputStream output = new FileOutputStream(tempFile);
+        ) {
+            Flowable<Object> flowable = Flowable
+                .create(
+                    s -> {
+                        StreamSupport
+                            .stream(result.getValues().spliterator(), false)
+                            .forEach(fieldValues -> {
+                                s.onNext(this.convertRows(result, fieldValues));
+                            });
+
+                        s.onComplete();
+                    },
+                    BackpressureStrategy.BUFFER
+                )
+                .doOnNext(row -> FileSerde.write(output, row));
+
+            // metrics & finalize
+            Single<Long> count = flowable.count();
+            Long lineCount = count.blockingGet();
+
+            output.flush();
+
+            return new AbstractMap.SimpleEntry<>(
+                runContext.putTempFile(tempFile),
+                lineCount
+            );
+        }
     }
 
     private Map<String, Object> convertRows(TableResult result, FieldValueList fieldValues) {
