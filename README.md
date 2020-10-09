@@ -1,7 +1,9 @@
 # Kestra Google Cloud Platform Tasks
 
 <p align="center">
-  <img width="460" src="https://github.com/kestra-io/kestra/raw/master/ui/src/assets/logo.svg?sanitize=true"  alt="Kestra workflow orchestrator" />
+  <a href="https://kestra.io">
+    <img width="460" src="https://github.com/kestra-io/kestra/raw/master/ui/src/assets/logo.svg?sanitize=true"  alt="Kestra workflow orchestrator" />
+  </a>
 </p>
 
 > Tasks to interract with Google Cloud Platform
@@ -23,6 +25,8 @@
 * `org.kestra.task.gcp.gcs.Upload`: Upload files to bucket 
 * `org.kestra.task.gcp.gcs.Download`: Download files from bucket 
 * `org.kestra.task.gcp.gcs.Delete`: Delete a file from bucket 
+* `org.kestra.task.gcp.gcs.List`: List files on a bucket 
+* `org.kestra.task.gcp.gcs.Trigger`: Trigger flow on files 
 
 ### Cloud Storage Bucket
 * `org.kestra.task.gcp.gcs.CreateBucket`: Create a new Cloud Storage bucket

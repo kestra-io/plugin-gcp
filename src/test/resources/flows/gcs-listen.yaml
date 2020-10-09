@@ -1,0 +1,15 @@
+id: gcs-listen
+namespace: org.kestra.tests
+
+triggers:
+  - id: watch
+    type: org.kestra.task.gcp.gcs.Trigger
+    from: "gs://{{ globals.bucket }}/tasks/gcp/upload/{{ globals.random }}/"
+    interval: PT10S
+    action: MOVE
+    moveDirectory: "gs://{{ globals.bucket }}/tasks/gcp/move/"
+
+tasks:
+  - id: end
+    type: org.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

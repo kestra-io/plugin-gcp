@@ -1,6 +1,7 @@
 package org.kestra.task.gcp.gcs;
 
 import com.google.cloud.ReadChannel;
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import lombok.*;
@@ -17,7 +18,9 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.channels.FileChannel;
 
 @SuperBuilder
 @ToString
@@ -45,6 +48,28 @@ public class Download extends Task implements RunnableTask<Download.Output> {
     )
     private String projectId;
 
+    static File download(Storage connection, BlobId source) throws IOException {
+        Blob blob = connection.get(source);
+        if (blob == null) {
+            throw new IllegalArgumentException("Unable to find blob on bucket '" +  source.getBucket() +"' with path '" +  source.getName() +"'");
+        }
+        ReadChannel readChannel = blob.reader();
+
+        File tempFile = File.createTempFile(
+            Download.class.getSimpleName().toLowerCase() + "_",
+            "." + FilenameUtils.getExtension(source.getName())
+        );
+
+        try (
+            FileOutputStream fileOuputStream = new FileOutputStream(tempFile);
+            FileChannel channel = fileOuputStream.getChannel()
+        ) {
+            channel.transferFrom(readChannel, 0, Long.MAX_VALUE);
+        }
+
+        return tempFile;
+    }
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = new Connection().of(runContext.render(this.projectId));
@@ -57,17 +82,7 @@ public class Download extends Task implements RunnableTask<Download.Output> {
             from.getPath().substring(1)
         );
 
-        ReadChannel readChannel = connection.get(source).reader();
-
-        File tempFile = File.createTempFile(
-            this.getClass().getSimpleName().toLowerCase() + "_",
-            "." + FilenameUtils.getExtension(from.getPath())
-        );
-
-        FileOutputStream fileOuputStream = new FileOutputStream(tempFile);
-        fileOuputStream.getChannel().transferFrom(readChannel, 0, Long.MAX_VALUE);
-        fileOuputStream.close();
-
+        File tempFile = download(connection, source);
         logger.debug("Download from '{}'", from);
 
         return Output
@@ -94,6 +109,6 @@ public class Download extends Task implements RunnableTask<Download.Output> {
         @OutputProperty(
             description = "The url of the downloaded file on kestra storage "
         )
-        private URI uri;
+        private final URI uri;
     }
 }

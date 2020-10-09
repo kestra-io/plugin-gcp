@@ -16,3 +16,7 @@ kestra:
       project: "kestra-unit-test"
       dataset: "kestra_unit_test"
       table: "${random.shortuuid}"
+  variables:
+    globals:
+      bucket: kestra-unit-test
+      random: "${random.shortuuid}"
