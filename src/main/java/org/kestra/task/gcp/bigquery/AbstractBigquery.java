@@ -45,7 +45,6 @@ abstract public class AbstractBigquery extends Task {
     protected String location;
 
     @Valid
-    @Builder.Default
     @InputProperty(
         description = "Automatic retry for retryable bigquery exceptions",
         body = {"Some exceptions (espacially rate limit) are not retried by default by BigQuery client, we use by " +
@@ -53,12 +52,7 @@ abstract public class AbstractBigquery extends Task {
             "The default values are Exponential of 5 seconds for max 15 minutes and 10 attempts"},
         dynamic = false
     )
-    protected AbstractRetry retryAuto = Exponential.builder()
-        .type("exponential")
-        .interval(Duration.ofSeconds(5))
-        .maxDuration(Duration.ofMinutes(15))
-        .maxAttempt(10)
-        .build();
+    protected AbstractRetry retryAuto;
 
     @Valid
     @Builder.Default
@@ -91,7 +85,13 @@ abstract public class AbstractBigquery extends Task {
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob) {
         return Failsafe
-            .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto())
+            .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
+                    .type("exponential")
+                    .interval(Duration.ofSeconds(5))
+                    .maxDuration(Duration.ofMinutes(15))
+                    .maxAttempt(10)
+                    .build()
+                )
                 .handleIf(this::shouldRetry)
                 .onFailure(event -> logger.error(
                     "Stop retry, attempts {} elapsed {} seconds",
