@@ -67,7 +67,8 @@ import static org.kestra.core.utils.Rethrow.throwFunction;
 )
 public class Trigger extends AbstractTrigger implements PollingTriggerInterface {
     @Schema(
-        title = "The interval between test of triggers"
+        title = "The interval between test of triggers",
+        description = "The interval are expressed with ISO 8601 Durations: https://en.wikipedia.org/wiki/ISO_8601#Durations"
     )
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
@@ -105,13 +106,20 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
     private final List.Filter filter = List.Filter.BOTH;
 
     @Schema(
-        title = "The listing type you want (like directory or recursive)"
+        title = "The listing type you want (like directory or recursive)",
+        description = "if DIRECTORY, will only list objects in the specified directory\n" +
+            "if RECURSIVE, will list objects in the specified directory recursively\n" +
+            "Default value is DIRECTORY\n" +
+            "When using RECURSIVE value, be carefull to move your files to a location not in the `from` scope"
     )
     @Builder.Default
     private final List.ListingType listingType = List.ListingType.DIRECTORY;
 
     @Schema(
         title = "A regexp to filter on full path"
+        description = "ex:\n"+
+            "`regExp: .*` to match all files\n"+
+            "`regExp: .*2020-01-0.\\\\.csv` to match files between 01 and 09 of january ending with `.csv`"
     )
     @PluginProperty(dynamic = true)
     private String regExp;
