@@ -56,7 +56,7 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
         description = "Whether to delete the source files (from parameter) on success copy"
     )
     @Builder.Default
-    private boolean delete = false;
+    private final boolean delete = false;
 
     @Override
     public Copy.Output run(RunContext runContext) throws Exception {
@@ -66,6 +66,10 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
         URI to = new URI(runContext.render(this.to));
 
         BlobId source = BlobId.of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(), from.getPath().substring(1));
+
+        if (from.toString().equals(to.toString())) {
+            throw new IllegalArgumentException("Invalid copy to same path '" + to.toString());
+        }
 
         logger.debug("Moving from '{}' to '{}'", from, to);
 

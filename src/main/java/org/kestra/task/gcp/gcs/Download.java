@@ -33,7 +33,7 @@ import java.nio.channels.FileChannel;
     }
 )
 @Documentation(
-    description = "Download a file to a GCS bucket."
+    description = "Download a file from a GCS bucket."
 )
 public class Download extends Task implements RunnableTask<Download.Output> {
     @InputProperty(

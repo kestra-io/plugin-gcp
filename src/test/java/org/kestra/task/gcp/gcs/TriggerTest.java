@@ -8,7 +8,6 @@ import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.models.executions.Execution;
-import org.kestra.core.models.tasks.Task;
 import org.kestra.core.models.triggers.TriggerContext;
 import org.kestra.core.queues.QueueFactoryInterface;
 import org.kestra.core.queues.QueueInterface;
@@ -21,11 +20,11 @@ import org.kestra.core.schedulers.Scheduler;
 import org.kestra.core.services.FlowListenersService;
 import org.kestra.core.utils.ExecutorsUtils;
 import org.kestra.core.utils.TestsUtils;
+import org.kestra.task.gcp.gcs.models.Blob;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -114,7 +113,7 @@ class TriggerTest {
             queueCount.await();
 
             @SuppressWarnings("unchecked")
-            java.util.List<URI> trigger = ((java.util.Map<String, java.util.List<URI>>) last.get().getVariables().get("trigger")).get("uri");
+            java.util.List<Blob> trigger = ((java.util.Map<String, java.util.List<Blob>>) last.get().getVariables().get("trigger")).get("blobs");
 
             assertThat(trigger.size(), is(2));
         }
@@ -126,7 +125,7 @@ class TriggerTest {
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
             .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
-            .action(Trigger.Action.MOVE)
+            .action(Downloads.Action.MOVE)
             .moveDirectory("gs://" + bucket + "/test/move")
             .build();
 
@@ -139,7 +138,7 @@ class TriggerTest {
         assertThat(execution.isPresent(), is(true));
 
         @SuppressWarnings("unchecked")
-        java.util.List<URI> urls = ((java.util.Map<String, java.util.List<URI>>) execution.get().getVariables().get("trigger")).get("uri");
+        java.util.List<Blob> urls = ((java.util.Map<String, java.util.List<Blob>>) execution.get().getVariables().get("trigger")).get("blobs");
         assertThat(urls.size(), is(1));
 
         assertThrows(IllegalArgumentException.class, () -> {

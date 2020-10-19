@@ -17,6 +17,7 @@ import org.kestra.core.models.triggers.PollingTriggerInterface;
 import org.kestra.core.models.triggers.TriggerContext;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.utils.IdUtils;
+import org.kestra.task.gcp.gcs.models.Blob;
 
 import java.net.URI;
 import java.time.Duration;
@@ -50,7 +51,7 @@ import static org.kestra.core.utils.Rethrow.throwFunction;
         "      - id: return",
         "        type: org.kestra.core.tasks.debugs.Return",
         "        format: \"{{taskrun.value}}\"",
-        "    value: \"{{ jq trigger '.uri' true }}\"",
+        "    value: \"{{ jq trigger '.blobs[].uri' true }}\"",
         "",
         "triggers:",
         "  - id: watch",
@@ -80,7 +81,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
         dynamic = true
     )
     @NotNull
-    private Action action;
+    private Downloads.Action action;
 
     @InputProperty(
         description = "The destination directory in case off `MOVE` ",
@@ -93,12 +94,6 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
         dynamic = true
     )
     private String projectId;
-
-    @InputProperty(
-        description = "If set to `true`, lists all versions of a blob. The default is `false`.",
-        dynamic = true
-    )
-    private Boolean allVersions;
 
     @InputProperty(
         description = "The filter files or directory"
@@ -125,7 +120,6 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
             .type(List.class.getName())
             .from(this.from)
             .projectId(this.projectId)
-            .allVersions(this.allVersions)
             .filter(this.filter)
             .listingType(this.listingType)
             .regExp(this.regExp)
@@ -140,43 +134,26 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
 
         Storage connection = new Connection().of(runContext.render(this.projectId));
 
-        java.util.List<URI> list = run
+        java.util.List<Blob> list = run
             .getBlobs()
             .stream()
-            .map(throwFunction(blob -> runContext.putTempFile(
-                Download.download(connection, BlobId.of(blob.getBucket(), blob.getName())),
-                executionId,
-                this
-            )))
+            .map(throwFunction(blob -> {
+                URI uri = runContext.putTempFile(
+                    Download.download(connection, BlobId.of(blob.getBucket(), blob.getName())),
+                    executionId,
+                    this
+                );
+
+                return blob.withUri(uri);
+            }))
             .collect(Collectors.toList());
 
-        if (this.action == Action.DELETE) {
-            run
-                .getBlobs()
-                .forEach(throwConsumer(blob -> {
-                    Delete delete = Delete.builder()
-                        .id(this.id)
-                        .type(Delete.class.getName())
-                        .uri(blob.getUri().toString())
-                        .build();
-                    delete.run(runContext);
-                }));
-        } else if (this.action == Action.MOVE) {
-            run
-                .getBlobs()
-                .forEach(throwConsumer(blob -> {
-                    Copy copy = Copy.builder()
-                        .id(this.id)
-                        .type(Copy.class.getName())
-                        .from(blob.getUri().toString())
-                        .to(StringUtils.stripEnd(runContext.render(this.moveDirectory) + "/", "/")
-                            + "/" + FilenameUtils.getName(blob.getName())
-                        )
-                        .delete(true)
-                        .build();
-                    copy.run(runContext);
-                }));
-        }
+        Downloads.archive(
+            run.getBlobs(),
+            this.action,
+            this.moveDirectory,
+            runContext
+        );
 
         Execution execution = Execution.builder()
             .id(executionId)
@@ -186,16 +163,11 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
             .state(new State())
             .variables(ImmutableMap.of(
                 "trigger", ImmutableMap.of(
-                     "uri", list
+                     "blobs", list
                 )
             ))
             .build();
 
         return Optional.of(execution);
-    }
-
-    public enum Action {
-        MOVE,
-        DELETE
     }
 }
