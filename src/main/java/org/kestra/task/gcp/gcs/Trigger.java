@@ -5,12 +5,11 @@ import com.google.cloud.storage.Storage;
 import com.google.common.collect.ImmutableMap;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.executions.Execution;
+import org.kestra.core.models.executions.ExecutionTrigger;
 import org.kestra.core.models.flows.State;
 import org.kestra.core.models.triggers.AbstractTrigger;
 import org.kestra.core.models.triggers.PollingTriggerInterface;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 import javax.annotation.RegEx;
 import javax.validation.constraints.NotNull;
 
-import static org.kestra.core.utils.Rethrow.throwConsumer;
 import static org.kestra.core.utils.Rethrow.throwFunction;
 
 @SuperBuilder
@@ -161,11 +159,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
             .flowId(context.getFlowId())
             .flowRevision(context.getFlowRevision())
             .state(new State())
-            .variables(ImmutableMap.of(
-                "trigger", ImmutableMap.of(
-                     "blobs", list
-                )
-            ))
+            .trigger(ExecutionTrigger.builder()
+                .id(this.id)
+                .type(this.type)
+                .variables(ImmutableMap.of(
+                    "blobs", list
+                ))
+                .build()
+            )
             .build();
 
         return Optional.of(execution);
