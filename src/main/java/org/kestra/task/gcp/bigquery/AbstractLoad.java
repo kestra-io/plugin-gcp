@@ -89,7 +89,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
     @Schema(
         title = "The schema for the destination table",
-        description = "Must be a JSON String\n\nThe schema can be omitted if the destination table\n" +
+        description = "The schema can be omitted if the destination table\n" +
             " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. \n" +
             " DATASTORE_BACKUP format option)."
     )

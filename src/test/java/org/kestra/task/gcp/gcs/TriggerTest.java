@@ -113,7 +113,7 @@ class TriggerTest {
             queueCount.await();
 
             @SuppressWarnings("unchecked")
-            java.util.List<Blob> trigger = ((java.util.Map<String, java.util.List<Blob>>) last.get().getVariables().get("trigger")).get("blobs");
+            java.util.List<Blob> trigger = (java.util.List<Blob>) last.get().getTrigger().getVariables().get("blobs");
 
             assertThat(trigger.size(), is(2));
         }
@@ -138,7 +138,7 @@ class TriggerTest {
         assertThat(execution.isPresent(), is(true));
 
         @SuppressWarnings("unchecked")
-        java.util.List<Blob> urls = ((java.util.Map<String, java.util.List<Blob>>) execution.get().getVariables().get("trigger")).get("blobs");
+        java.util.List<Blob> urls = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
         assertThat(urls.size(), is(1));
 
         assertThrows(IllegalArgumentException.class, () -> {

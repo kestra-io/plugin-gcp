@@ -3,6 +3,9 @@ package org.kestra.task.gcp.bigquery.models;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
+import org.kestra.core.serializers.JacksonMapper;
+
+import java.util.Map;
 
 @Getter
 @Builder
@@ -11,7 +14,7 @@ public class TableDefinition {
     private final Type type;
 
     @Schema(title = "Returns the table's schema.")
-    private final com.google.cloud.bigquery.Schema schema;
+    private final Map<String, Object> schema;
 
     @Schema(title = "Returns the table definition if the type is `TABLE`")
     private final StandardTableDefinition standardTableDefinition;
@@ -28,7 +31,7 @@ public class TableDefinition {
     public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(T tableDefinition) {
         TableDefinitionBuilder tableDefinitionBuilder = TableDefinition.builder()
             .type(Type.valueOf(tableDefinition.getType().toString()))
-            .schema(tableDefinition.getSchema());
+            .schema(JacksonMapper.toMap(tableDefinition.getSchema()));
 
         if (tableDefinition instanceof com.google.cloud.bigquery.ViewDefinition) {
             var viewDefinition = ((com.google.cloud.bigquery.ViewDefinition) tableDefinition);
