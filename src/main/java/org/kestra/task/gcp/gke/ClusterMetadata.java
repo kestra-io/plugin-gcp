@@ -5,13 +5,13 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.container.v1.ClusterManagerClient;
 import com.google.cloud.container.v1.ClusterManagerSettings;
 import com.google.container.v1.Cluster;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -26,36 +26,40 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Fetch a gke cluster metadata",
-    code = {
-        "name: \"gke-metas\"",
-        "projectId: my-project-id",
-        "zone: eu-west-1c",
-        "clusterId: my-cluster-id",
+@Plugin(
+    examples = {
+        @Example(
+            title = "Fetch a gke cluster metadata",
+            code = {
+                "name: \"gke-metas\"",
+                "projectId: my-project-id",
+                "zone: eu-west-1c",
+                "clusterId: my-cluster-id",
+            }
+        )
     }
 )
-@Documentation(
-    description = "Delete a dataset."
+@Schema(
+    title = "Delete a dataset."
 )
 public class ClusterMetadata extends Task implements RunnableTask<ClusterMetadata.Output> {
     @NotNull
-    @InputProperty(
-        description = "Cluster id where meta data are fetch",
-        dynamic = true
+    @Schema(
+        title = "Cluster id where meta data are fetch"
     )
+    @PluginProperty(dynamic = true)
     private String clusterId;
 
-    @InputProperty(
-        description = "Cluster zone in GCP",
-        dynamic = true
+    @Schema(
+        title = "Cluster zone in GCP"
     )
+    @PluginProperty(dynamic = true)
     private String zone;
 
-    @InputProperty(
-        description = "Project ID in GCP were is located cluster",
-        dynamic = true
+    @Schema(
+        title = "Project ID in GCP were is located cluster"
     )
+    @PluginProperty(dynamic = true)
     private String projectId;
 
     @Override
@@ -135,12 +139,10 @@ public class ClusterMetadata extends Task implements RunnableTask<ClusterMetadat
     @Builder
     @Getter
     public static class MasterAuth {
-        @OutputProperty(
-            description = "The username to use for HTTP basic authentication to the master endpoint.",
-            body = {
-                "For clusters v1.6.0 and later, basic authentication can be disabled by",
+        @Schema(
+            title = "The username to use for HTTP basic authentication to the master endpoint.",
+            description = "For clusters v1.6.0 and later, basic authentication can be disabled by" +
                 "leaving username unspecified (or setting it to the empty string)."
-            }
         )
         private final String username;
         private final String password;

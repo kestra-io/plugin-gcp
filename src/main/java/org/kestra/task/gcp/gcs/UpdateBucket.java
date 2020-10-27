@@ -3,13 +3,14 @@ package org.kestra.task.gcp.gcs;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.Plugin;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -19,16 +20,20 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Update some bucket labels",
-    code = {
-        "name: \"my-bucket\"",
-        "labels:",
-        "  my-label: my-value"
+@Plugin(
+    examples = {
+        @Example(
+            title = "Update some bucket labels",
+            code = {
+                "name: \"my-bucket\"",
+                "labels:",
+                "  my-label: my-value"
+            }
+        )
     }
 )
-@Documentation(
-    description = "Update a bucket."
+@Schema(
+    title = "Update a bucket."
 )
 public class UpdateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Override

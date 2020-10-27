@@ -5,23 +5,25 @@ import com.google.common.collect.ImmutableMap;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.ArrayUtils;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.FileSerde;
-import org.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,128 +41,132 @@ import java.util.stream.StreamSupport;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Create a table with a custom query",
-    code = {
-        "destinationTable: \"my_project.my_dataset.my_table\"",
-        "writeDisposition: WRITE_APPEND",
-        "sql: |",
-        "  SELECT ",
-        "    \"hello\" as string,",
-        "    NULL AS `nullable`,",
-        "    1 as int,",
-        "    1.25 AS float,",
-        "    DATE(\"2008-12-25\") AS date,",
-        "    DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,",
-        "    TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,",
-        "    TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,",
-        "    ST_GEOGPOINT(50.6833, 2.9) AS geopoint,",
-        "    ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,",
-        "    STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
+@Plugin(
+    examples = {
+        @Example(
+            title = "Create a table with a custom query",
+            code = {
+                "destinationTable: \"my_project.my_dataset.my_table\"",
+                "writeDisposition: WRITE_APPEND",
+                "sql: |",
+                "  SELECT ",
+                "    \"hello\" as string,",
+                "    NULL AS `nullable`,",
+                "    1 as int,",
+                "    1.25 AS float,",
+                "    DATE(\"2008-12-25\") AS date,",
+                "    DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,",
+                "    TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,",
+                "    TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,",
+                "    ST_GEOGPOINT(50.6833, 2.9) AS geopoint,",
+                "    ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,",
+                "    STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
+            }
+        ),
+        @Example(
+            full = true,
+            title = "Execute a query and fetch results sets on another task",
+            code = {
+                "tasks:",
+                "- id: fetch",
+                "  type: org.kestra.task.gcp.bigquery.Query",
+                "  fetch: true",
+                "  sql: |",
+                "    SELECT 1 as id, \"John\" as name",
+                "    UNION ALL",
+                "    SELECT 2 as id, \"Doe\" as name",
+                "- id: use-fetched-data",
+                "  type: org.kestra.core.tasks.debugs.Return",
+                "  format: |",
+                "    {{#each outputs.fetch.rows}}",
+                "    id : {{ this.id }}, name: {{ this.name }}",
+                "    {{/each}}"
+            }
+        )
     }
 )
-@Example(
-    full = true,
-    title = "Execute a query and fetch results sets on another task",
-    code = {
-        "tasks:",
-        "- id: fetch",
-        "  type: org.kestra.task.gcp.bigquery.Query",
-        "  fetch: true",
-        "  sql: |",
-        "    SELECT 1 as id, \"John\" as name",
-        "    UNION ALL",
-        "    SELECT 2 as id, \"Doe\" as name",
-        "- id: use-fetched-data",
-        "  type: org.kestra.core.tasks.debugs.Return",
-        "  format: |",
-        "    {{#each outputs.fetch.rows}}",
-        "    id : {{ this.id }}, name: {{ this.name }}",
-        "    {{/each}}"
-    }
-)
-@Documentation(
-    description = "Execute BigQuery SQL query in a specific BigQuery database"
+@Schema(
+    title = "Execute BigQuery SQL query in a specific BigQuery database"
 )
 public class Query extends AbstractBigquery implements RunnableTask<Query.Output> {
-    @InputProperty(
-        description = "The sql query to run",
-        dynamic = true
+    @Schema(
+        title = "The sql query to run"
     )
+    @PluginProperty(dynamic = true)
     private String sql;
 
     @Builder.Default
-    @InputProperty(
-        description = "Whether to use BigQuery's legacy SQL dialect for this query",
-        body = "By default this property is set to false.",
-        dynamic = false
+    @Schema(
+        title = "Whether to use BigQuery's legacy SQL dialect for this query",
+        description = "By default this property is set to false."
     )
+    @PluginProperty(dynamic = true)
     private boolean legacySql = false;
 
     @Builder.Default
-    @InputProperty(
-        description = "Whether to Fetch the data from the query result to the task output",
-        dynamic = false
+    @Schema(
+        title = "Whether to Fetch the data from the query result to the task output"
     )
+    @PluginProperty(dynamic = true)
     private boolean fetch = false;
 
     @Builder.Default
-    @InputProperty(
-        description = "Whether to store the data from the query result into an ion serialized data file",
-        dynamic = false
+    @Schema(
+        title = "Whether to store the data from the query result into an ion serialized data file"
     )
+    @PluginProperty(dynamic = true)
     private boolean store = false;
 
     @Builder.Default
-    @InputProperty(
-        description = "Whether to Fetch only one data row from the query result to the task output",
-        dynamic = false
+    @Schema(
+        title = "Whether to Fetch only one data row from the query result to the task output"
     )
+    @PluginProperty(dynamic = true)
     private boolean fetchOne = false;
 
     // private List<String> positionalParameters;
 
     // private Map<String, String> namedParameters;
 
-    @InputProperty(
-        description = "The clustering specification for the destination table",
-        dynamic = false
+    @Schema(
+        title = "The clustering specification for the destination table"
     )
+    @PluginProperty(dynamic = true)
     private List<String> clusteringFields;
 
-    @InputProperty(
-        description = "The table where to put query results",
-        body = "If not provided a new table is created.",
-        dynamic = true
+    @Schema(
+        title = "The table where to put query results",
+        description = "If not provided a new table is created."
     )
+    @PluginProperty(dynamic = true)
     private String destinationTable;
 
-    @InputProperty(
-        description = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
-        body = " Schema update options are supported in two cases: when\n" +
+    @Schema(
+        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
+        description = " Schema update options are supported in two cases: when\n" +
             " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination\n" +
             " table is a partition of a table, specified by partition decorators. For normal tables,\n" +
-            " WRITE_TRUNCATE will always overwrite the schema.",
-        dynamic = false
+            " WRITE_TRUNCATE will always overwrite the schema."
     )
+    @PluginProperty(dynamic = true)
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
-    @InputProperty(
-        description = "The time partitioning specification for the destination table",
-        dynamic = true
+    @Schema(
+        title = "The time partitioning specification for the destination table"
     )
+    @PluginProperty(dynamic = true)
     private String timePartitioningField;
 
-    @InputProperty(
-        description = "The action that should occur if the destination table already exists",
-        dynamic = false
+    @Schema(
+        title = "The action that should occur if the destination table already exists"
     )
+    @PluginProperty(dynamic = true)
     private JobInfo.WriteDisposition writeDisposition;
 
-    @InputProperty(
-        description = "Whether the job is allowed to create tables",
-        dynamic = false
+    @Schema(
+        title = "Whether the job is allowed to create tables"
     )
+    @PluginProperty(dynamic = true)
     private JobInfo.CreateDisposition createDisposition;
 
     @Override
@@ -262,32 +268,32 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The job id"
+        @Schema(
+            title = "The job id"
         )
         private String jobId;
 
-        @OutputProperty(
-            description = "List containing the fetched data",
-            body = "Only populated if 'fetch' parameter is set to true."
+        @Schema(
+            title = "List containing the fetched data",
+            description = "Only populated if 'fetch' parameter is set to true."
         )
         private List<Map<String, Object>> rows;
 
-        @OutputProperty(
-            description = "Map containing the first row of fetched data",
-            body = "Only populated if 'fetchOne' parameter is set to true."
+        @Schema(
+            title = "Map containing the first row of fetched data",
+            description = "Only populated if 'fetchOne' parameter is set to true."
         )
         private Map<String, Object> row;
 
-        @OutputProperty(
-            description = "The size of the rows fetch",
-            body = "Only populated if 'fetchOne' or 'fetch' parameter is set to true."
+        @Schema(
+            title = "The size of the rows fetch",
+            description = "Only populated if 'fetchOne' or 'fetch' parameter is set to true."
         )
         private Long size;
 
-        @OutputProperty(
-            description = "The uri of store result",
-            body = "Only populated if 'store' is set to true."
+        @Schema(
+            title = "The uri of store result",
+            description = "Only populated if 'store' is set to true."
         )
         private URI uri;
     }

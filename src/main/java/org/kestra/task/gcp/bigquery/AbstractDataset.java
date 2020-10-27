@@ -3,17 +3,17 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.Acl;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.EncryptionConfiguration;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 
-import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -22,20 +22,20 @@ import java.util.Map;
 @NoArgsConstructor
 abstract public class AbstractDataset extends AbstractBigquery implements RunnableTask<AbstractDataset.Output> {
     @NotNull
-    @InputProperty(
-        description = "The dataset's user-defined id",
-        dynamic = true
+    @Schema(
+        title = "The dataset's user-defined id"
     )
+    @PluginProperty(dynamic = true)
     protected String name;
 
-    @InputProperty(
-        description = "The dataset's access control configuration"
+    @Schema(
+        title = "The dataset's access control configuration"
     )
     protected List<AccessControl> acl;
 
-    @InputProperty(
-        description = "The default lifetime of all tables in the dataset, in milliseconds",
-        body = "The minimum value is\n" +
+    @Schema(
+        title = "The default lifetime of all tables in the dataset, in milliseconds",
+        description = "The minimum value is\n" +
             " 3600000 milliseconds (one hour). Once this property is set, all newly-created tables in the\n" +
             " dataset will have an expirationTime property set to the creation time plus the value in this\n" +
             " property, and changing the value will only affect new tables, not existing ones. When the\n" +
@@ -47,41 +47,41 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     )
     protected Long defaultTableLifetime;
 
-    @InputProperty(
-        description = "Description",
-        body = "A user-friendly description for the dataset.",
-        dynamic = true
+    @Schema(
+        title = "Description",
+        description = "A user-friendly description for the dataset."
     )
+    @PluginProperty(dynamic = true)
     protected String description;
 
-    @InputProperty(
-        description = "A user-friendly name for the dataset",
-        dynamic = true
+    @Schema(
+        title = "A user-friendly name for the dataset"
     )
+    @PluginProperty(dynamic = true)
     protected String friendlyName;
 
-    @InputProperty(
-        description = "The geographic location where the dataset should reside",
-        body = "This property is experimental\n" +
+    @Schema(
+        title = "The geographic location where the dataset should reside",
+        description = "This property is experimental\n" +
             " and might be subject to change or removed.\n" +
             " \n" +
             " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset\n" +
-            "      Location</a>",
-        dynamic = true
+            "      Location</a>"
     )
+    @PluginProperty(dynamic = true)
     protected String location;
 
-    @InputProperty(
-        description = "The default encryption key for all tables in the dataset",
-        body = "Once this property is set, all\n" +
+    @Schema(
+        title = "The default encryption key for all tables in the dataset",
+        description = "Once this property is set, all\n" +
             " newly-created partitioned tables in the dataset will have encryption key set to this value,\n" +
             " unless table creation request (or query) overrides the key."
     )
     protected EncryptionConfiguration defaultEncryptionConfiguration;
 
-    @InputProperty(
-        description = "[Optional] The default partition expiration time for all partitioned tables in the dataset, in milliseconds",
-        body = " Once this property is set, all newly-created partitioned tables in the\n" +
+    @Schema(
+        title = "[Optional] The default partition expiration time for all partitioned tables in the dataset, in milliseconds",
+        description = " Once this property is set, all newly-created partitioned tables in the\n" +
             " dataset will has an expirationMs property in the timePartitioning settings set to this value.\n" +
             " Changing the value only affect new tables, not existing ones. The storage in a partition will\n" +
             " have an expiration time of its partition time plus this value. Setting this property\n" +
@@ -93,8 +93,8 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     )
     protected Long defaultPartitionExpirationMs;
 
-    @InputProperty(
-        description = "The dataset's labels"
+    @Schema(
+        title = "The dataset's labels"
     )
     protected Map<String, String> labels;
 
@@ -175,10 +175,10 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     @Getter
     public static class AccessControl {
         @NotNull
-        @InputProperty(
-            description = "The entity",
-            dynamic = false
-        )
+        @Schema(
+        title = "The entity"
+    )
+    @PluginProperty(dynamic = true)
         private Entity entity;
 
         @SuppressWarnings("unused")
@@ -188,17 +188,17 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         @Getter
         public static class Entity {
             @NotNull
-            @InputProperty(
-                description = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)",
-                dynamic = false
-            )
+            @Schema(
+        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
+    )
+    @PluginProperty(dynamic = true)
             private Type type;
 
             @NotNull
-            @InputProperty(
-                description = "The value for the entity (ex : user email if the type is USER ...)",
-                dynamic = false
-            )
+            @Schema(
+        title = "The value for the entity (ex : user email if the type is USER ...)"
+    )
+    @PluginProperty(dynamic = true)
             private String value;
 
             @SuppressWarnings("unused")
@@ -211,10 +211,10 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         }
 
         @NotNull
-        @InputProperty(
-            description = "The role to assign to the entity",
-            dynamic = false
-        )
+        @Schema(
+        title = "The role to assign to the entity"
+    )
+    @PluginProperty(dynamic = true)
         private Role role;
 
         @SuppressWarnings("unused")
@@ -230,33 +230,33 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     public static class Output implements org.kestra.core.models.tasks.Output {
 
         @NotNull
-        @OutputProperty(
-            description = "The dataset's user-defined id"
+        @Schema(
+            title = "The dataset's user-defined id"
         )
         private String dataset;
 
         @NotNull
-        @OutputProperty(
-            description = "The GCP project id"
+        @Schema(
+            title = "The GCP project id"
         )
         private String project;
 
         @NotNull
-        @OutputProperty(
-            description = "A user-friendly name for the dataset"
+        @Schema(
+            title = "A user-friendly name for the dataset"
         )
         private String friendlyName;
 
         @NotNull
-        @OutputProperty(
-            description = "A user-friendly description for the dataset"
+        @Schema(
+            title = "A user-friendly description for the dataset"
         )
         private String description;
 
         @NotNull
-        @OutputProperty(
-            description = "The geographic location where the dataset should reside",
-            body = "This property is experimental\n" +
+        @Schema(
+            title = "The geographic location where the dataset should reside",
+            description = "This property is experimental\n" +
                 " and might be subject to change or removed.\n" +
                 " \n" +
                 " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset\n" +

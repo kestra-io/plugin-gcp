@@ -2,11 +2,10 @@ package org.kestra.task.gcp.auth;
 
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -21,19 +20,17 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Documentation(
-    description = "Fetch an OAuth access token."
+@Schema(
+    title = "Fetch an OAuth access token."
 )
 public class OauthAccessToken extends Task implements RunnableTask<OauthAccessToken.Output> {
-    @InputProperty(
-        description = "The scopes requested for the access token.",
-        body = {
-            "Full list can be found [here](https://developers.google.com/identity/protocols/oauth2/scopes)",
-            "",
-            "default is `[\"https://www.googleapis.com/auth/cloud-platform\"]"
-        },
-        dynamic = true
+    @Schema(
+        title = "The scopes requested for the access token.",
+        description = "Full list can be found [here](https://developers.google.com/identity/protocols/oauth2/scopes)\n" +
+            "\n" +
+            "default is `[\"https://www.googleapis.com/auth/cloud-platform\"]`"
     )
+    @PluginProperty(dynamic = true)
     @NotEmpty
     private final List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
@@ -55,8 +52,8 @@ public class OauthAccessToken extends Task implements RunnableTask<OauthAccessTo
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
         @NotNull
-        @OutputProperty(
-            description = "A oauth access token for the current user"
+        @Schema(
+            title = "A oauth access token for the current user"
         )
         private final AccessToken accessToken;
     }

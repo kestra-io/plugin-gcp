@@ -4,11 +4,12 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobException;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import net.jodah.failsafe.Failsafe;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
-import org.kestra.core.models.annotations.InputProperty;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.models.tasks.retrys.AbstractRetry;
 import org.kestra.core.models.tasks.retrys.Exponential;
@@ -28,38 +29,38 @@ import javax.validation.Valid;
 @Getter
 @NoArgsConstructor
 abstract public class AbstractBigquery extends Task {
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     protected String projectId;
 
-    @InputProperty(
-        description = "The geographic location where the dataset should reside",
-        body = "This property is experimental\n" +
+    @Schema(
+        title = "The geographic location where the dataset should reside",
+        description = "This property is experimental\n" +
             " and might be subject to change or removed.\n" +
             " \n" +
-            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>",
-        dynamic = true
+            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
     )
+    @PluginProperty(dynamic = true)
     protected String location;
 
     @Valid
-    @InputProperty(
-        description = "Automatic retry for retryable bigquery exceptions",
-        body = {"Some exceptions (espacially rate limit) are not retried by default by BigQuery client, we use by " +
-            "default a transparent retry (not the kestra one) to handle this case.",
-            "The default values are Exponential of 5 seconds for max 15 minutes and 10 attempts"},
-        dynamic = false
+    @Schema(
+        title = "Automatic retry for retryable bigquery exceptions",
+        description = "Some exceptions (espacially rate limit) are not retried by default by BigQuery client, we use by " +
+            "default a transparent retry (not the kestra one) to handle this case.\n" +
+            "The default values are Exponential of 5 seconds for max 15 minutes and 10 attempts"
     )
+    @PluginProperty(dynamic = true)
     protected AbstractRetry retryAuto;
 
     @Valid
     @Builder.Default
-    @InputProperty(
-        description = "The reason that are valid for a automatic retry.",
-        dynamic = false
+    @Schema(
+        title = "The reason that are valid for a automatic retry."
     )
+    @PluginProperty(dynamic = true)
     protected List<String> retryReasons = Arrays.asList(
         "rateLimitExceeded",
         "jobBackendError"
@@ -67,11 +68,11 @@ abstract public class AbstractBigquery extends Task {
 
     @Valid
     @Builder.Default
-    @InputProperty(
-        description = "The message that are valid for a automatic retry.",
-        body = "Message is tested as a substring of the full message and case insensitive",
-        dynamic = false
+    @Schema(
+        title = "The message that are valid for a automatic retry.",
+        description = "Message is tested as a substring of the full message and case insensitive"
     )
+    @PluginProperty(dynamic = true)
     protected List<String> retryMessages = Collections.singletonList(
         "due to concurrent update"
     );

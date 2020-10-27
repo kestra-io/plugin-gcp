@@ -1,29 +1,28 @@
 package org.kestra.task.gcp.bigquery.models;
 
-import com.google.cloud.bigquery.Schema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
-import org.kestra.core.models.annotations.OutputProperty;
 
 @Getter
 @Builder
 public class TableDefinition {
-    @OutputProperty(description = "Returns the table's type.")
+    @Schema(title = "Returns the table's type.")
     private final Type type;
 
-    @OutputProperty(description = "Returns the table's schema.")
-    private final Schema schema;
+    @Schema(title = "Returns the table's schema.")
+    private final com.google.cloud.bigquery.Schema schema;
 
-    @OutputProperty(description = "Returns the table definition if the type is `TABLE`")
+    @Schema(title = "Returns the table definition if the type is `TABLE`")
     private final StandardTableDefinition standardTableDefinition;
 
-    @OutputProperty(description = "Returns the materialized view definition if the type is `MATERIALIZED_VIEW`")
+    @Schema(title = "Returns the materialized view definition if the type is `MATERIALIZED_VIEW`")
     private final MaterializedViewDefinition materializedViewDefinition;
 
-    @OutputProperty(description = "Returns the view definition if the type is `VIEW`")
+    @Schema(title = "Returns the view definition if the type is `VIEW`")
     private final ViewDefinition viewDefinition;
 
-    @OutputProperty(description = "Returns the external table definition if the type is `EXTERNAL`")
+    @Schema(title = "Returns the external table definition if the type is `EXTERNAL`")
     private final ExternalTableDefinition externalTableDefinition;
 
     public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(T tableDefinition) {

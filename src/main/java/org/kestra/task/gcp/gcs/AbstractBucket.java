@@ -4,20 +4,20 @@ import com.google.cloud.storage.Acl;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Cors;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 
-import javax.validation.constraints.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -26,47 +26,47 @@ import java.util.Map;
 @NoArgsConstructor
 abstract public class AbstractBucket extends Task implements RunnableTask<AbstractBucket.Output> {
     @NotNull
-    @InputProperty(
-        description = "Bucket's unique name",
-        dynamic = true
+    @Schema(
+        title = "Bucket's unique name"
     )
+    @PluginProperty(dynamic = true)
     protected String name;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     protected String projectId;
 
-    @InputProperty(
-        description = "Whether the requester pays or not.",
-        body = "Whether a user accessing the bucket or an object it contains should assume the transit\n" +
+    @Schema(
+        title = "Whether the requester pays or not.",
+        description = "Whether a user accessing the bucket or an object it contains should assume the transit\n" +
             " costs related to the access."
     )
     protected Boolean requesterPays;
 
-    @InputProperty(
-        description = "Whether versioning should be enabled for this bucket",
-        body = "When set to true, versioning is\n" +
+    @Schema(
+        title = "Whether versioning should be enabled for this bucket",
+        description = "When set to true, versioning is\n" +
             " fully enabled."
     )
     protected Boolean versioningEnabled;
 
-    @InputProperty(
-        description = "The bucket's website index page",
-        body = "Behaves as the bucket's directory index where missing\n" +
+    @Schema(
+        title = "The bucket's website index page",
+        description = "Behaves as the bucket's directory index where missing\n" +
             " blobs are treated as potential directories."
     )
     protected String indexPage;
 
-    @InputProperty(
-        description = "The custom object to return when a requested resource is not found"
+    @Schema(
+        title = "The custom object to return when a requested resource is not found"
     )
     protected String notFoundPage;
 
-    @InputProperty(
-        description = "The bucket's lifecycle configuration",
-        body = "This configuration is expressed as a number of lifecycle rules, consisting of an\n" +
+    @Schema(
+        title = "The bucket's lifecycle configuration",
+        description = "This configuration is expressed as a number of lifecycle rules, consisting of an\n" +
             " action and a condition.\n" +
             " \n" +
             " See <a href=\"https://cloud.google.com/storage/docs/lifecycle\">Object Lifecycle\n" +
@@ -74,41 +74,41 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
     )
     protected List<BucketInfo.LifecycleRule> lifecycleRules;
 
-    @InputProperty(
-        description = "The bucket's storage class",
-        body = "This defines how blobs in the bucket are stored and\n" +
+    @Schema(
+        title = "The bucket's storage class",
+        description = "This defines how blobs in the bucket are stored and\n" +
             " determines the SLA and the cost of storage. A list of supported values is available <a\n" +
             " href=\"https://cloud.google.com/storage/docs/storage-classes\">here</a>."
     )
     protected StorageClass storageClass;
 
-    @InputProperty(
-        description = "The bucket's location",
-        body = "Data for blobs in the bucket resides in physical storage within\n" +
+    @Schema(
+        title = "The bucket's location",
+        description = "Data for blobs in the bucket resides in physical storage within\n" +
             " this region. A list of supported values is available <a\n" +
-            " href=\"https://cloud.google.com/storage/docs/bucket-locations\">here</a>.",
-        dynamic = true
+            " href=\"https://cloud.google.com/storage/docs/bucket-locations\">here</a>."
     )
+    @PluginProperty(dynamic = true)
     protected String location;
 
-    @InputProperty(
-        description = "The bucket's Cross-Origin Resource Sharing (CORS) configuration",
-        body = " See <a href=\"https://cloud.google.com/storage/docs/cross-origin\">Cross-Origin Resource\n" +
+    @Schema(
+        title = "The bucket's Cross-Origin Resource Sharing (CORS) configuration",
+        description = " See <a href=\"https://cloud.google.com/storage/docs/cross-origin\">Cross-Origin Resource\n" +
             " Sharing (CORS)</a>"
     )
     protected List<Cors> cors;
 
-    @InputProperty(
-        description = "The bucket's access control configuration",
-        body = " See <a\n" +
+    @Schema(
+        title = "The bucket's access control configuration",
+        description = " See <a\n" +
             " href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">\n" +
             " About Access Control Lists</a>"
     )
     protected List<AccessControl> acl;
 
-    @InputProperty(
-        description = "The default access control configuration",
-        body = "The access control configuration to apply to bucket's blobs when no other\n" +
+    @Schema(
+        title = "The default access control configuration",
+        description = "The access control configuration to apply to bucket's blobs when no other\n" +
             " configuration is specified.\n" +
             "\n" +
             " Ssee <a\n" +
@@ -117,38 +117,38 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
     )
     protected List<AccessControl> defaultAcl;
 
-    @InputProperty(
-        description = "The labels of this bucket"
+    @Schema(
+        title = "The labels of this bucket"
     )
     protected Map<String, String> labels;
 
-    @InputProperty(
-        description = "The default Cloud KMS key name for this bucket"
+    @Schema(
+        title = "The default Cloud KMS key name for this bucket"
     )
     protected String defaultKmsKeyName;
 
-    @InputProperty(
-        description = "The default event-based hold for this bucket"
+    @Schema(
+        title = "The default event-based hold for this bucket"
     )
     protected Boolean defaultEventBasedHold;
 
-    @InputProperty(
-        description = "Retention period",
-        body = "If policy is not locked this value can be cleared, increased, and decreased. If policy is\n" +
+    @Schema(
+        title = "Retention period",
+        description = "If policy is not locked this value can be cleared, increased, and decreased. If policy is\n" +
             " locked the retention period can only be increased."
     )
     protected Long retentionPeriod;
 
-    @InputProperty(
-        description = "The Bucket's IAM Configuration",
-        body = " See <a href=\"https://cloud.google.com/storage/docs/uniform-bucket-level-access\">uniform\n" +
+    @Schema(
+        title = "The Bucket's IAM Configuration",
+        description = " See <a href=\"https://cloud.google.com/storage/docs/uniform-bucket-level-access\">uniform\n" +
             "      bucket-level access</a>"
     )
     protected BucketInfo.IamConfiguration iamConfiguration;
 
-    @InputProperty(
-        description = "The bucket's logging configuration",
-        body = "This configuration defines the destination bucket and optional name\n" +
+    @Schema(
+        title = "The bucket's logging configuration",
+        description = "This configuration defines the destination bucket and optional name\n" +
             " prefix for the current bucket's logs."
     )
     protected BucketInfo.Logging logging;
@@ -262,10 +262,10 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
     @Getter
     public static class AccessControl {
         @NotNull
-        @InputProperty(
-            description = "The entity",
-            dynamic = false
-        )
+        @Schema(
+        title = "The entity"
+    )
+    @PluginProperty(dynamic = true)
         private Entity entity;
 
         @SuppressWarnings("unused")
@@ -275,17 +275,17 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
         @Getter
         public static class Entity {
             @NotNull
-            @InputProperty(
-                description = "The type of the entity (USER, GROUP or DOMAIN)",
-                dynamic = false
-            )
+            @Schema(
+        title = "The type of the entity (USER, GROUP or DOMAIN)"
+    )
+    @PluginProperty(dynamic = true)
             private Type type;
 
             @NotNull
-            @InputProperty(
-                description = "The value for the entity (ex : user email if the type is USER ...)",
-                dynamic = false
-            )
+            @Schema(
+        title = "The value for the entity (ex : user email if the type is USER ...)"
+    )
+    @PluginProperty(dynamic = true)
             private String value;
 
             @SuppressWarnings("unused")
@@ -297,10 +297,10 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
         }
 
         @NotNull
-        @InputProperty(
-            description = "The role to assign to the entity",
-            dynamic = false
-        )
+        @Schema(
+        title = "The role to assign to the entity"
+    )
+    @PluginProperty(dynamic = true)
         private Role role;
 
         @SuppressWarnings("unused")
@@ -314,28 +314,28 @@ abstract public class AbstractBucket extends Task implements RunnableTask<Abstra
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The bucket's unique name"
+        @Schema(
+            title = "The bucket's unique name"
         )
         private String bucket;
 
-        @OutputProperty(
-            description = "The bucket's URI."
+        @Schema(
+            title = "The bucket's URI."
         )
         private URI bucketUri;
 
-        @OutputProperty(
-            description = "The bucket's location"
+        @Schema(
+            title = "The bucket's location"
         )
         private String location;
 
-        @OutputProperty(
-            description = "The bucket's website index page."
+        @Schema(
+            title = "The bucket's website index page."
         )
         private String indexPage;
 
-        @OutputProperty(
-            description = "The custom object to return when a requested resource is not found."
+        @Schema(
+            title = "The custom object to return when a requested resource is not found."
         )
         private String notFoundPage;
 

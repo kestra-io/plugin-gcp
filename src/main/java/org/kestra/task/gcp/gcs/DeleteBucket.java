@@ -2,12 +2,12 @@ package org.kestra.task.gcp.gcs;
 
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -21,27 +21,31 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Documentation(
-    description = "Delete a bucket."
+@Schema(
+    title = "Delete a bucket."
 )
-@Example(
-    title = "Delete a bucket",
-    code = {
-        "name: \"my-bucket\""
+@Plugin(
+    examples = {
+        @Example(
+            title = "Delete a bucket",
+            code = {
+                "name: \"my-bucket\""
+            }
+        )
     }
 )
 public class DeleteBucket extends Task implements RunnableTask<DeleteBucket.Output> {
     @NotNull
-    @InputProperty(
-        description = "Bucket's unique name",
-        dynamic = true
+    @Schema(
+        title = "Bucket's unique name"
     )
+    @PluginProperty(dynamic = true)
     protected String name;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     protected String projectId;
 
     @Override
@@ -68,13 +72,13 @@ public class DeleteBucket extends Task implements RunnableTask<DeleteBucket.Outp
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The bucket's unique name"
+        @Schema(
+            title = "The bucket's unique name"
         )
         private String bucket;
 
-        @OutputProperty(
-            description = "The bucket's URI"
+        @Schema(
+            title = "The bucket's URI"
         )
         private URI bucketUri;
     }

@@ -1,11 +1,10 @@
 package org.kestra.task.gcp.bigquery;
 
-import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.Table;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
-import org.kestra.core.models.tasks.RunnableTask;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.task.gcp.bigquery.models.TableDefinition;
 
 import java.math.BigInteger;
@@ -20,110 +19,110 @@ import javax.validation.constraints.NotNull;
 @NoArgsConstructor
 abstract public class AbstractTable extends AbstractBigquery {
     @NotNull
-    @InputProperty(
-        description = "The dataset's user-defined id",
-        dynamic = true
+    @Schema(
+        title = "The dataset's user-defined id"
     )
+    @PluginProperty(dynamic = true)
     protected String dataset;
 
     @NotNull
-    @InputProperty(
-        description = "The table user-defined id",
-        dynamic = true
+    @Schema(
+        title = "The table user-defined id"
     )
+    @PluginProperty(dynamic = true)
     protected String table;
 
     @Getter
     @Builder
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The project's id"
+        @Schema(
+            title = "The project's id"
         )
         private final String projectId;
 
-        @OutputProperty(
-            description = "The dataset's id"
+        @Schema(
+            title = "The dataset's id"
         )
         private final String datasetId;
 
-        @OutputProperty(
-            description = "The table name"
+        @Schema(
+            title = "The table name"
         )
         private final String table;
 
-        @OutputProperty(
-            description = "The hash of the table resource"
+        @Schema(
+            title = "The hash of the table resource"
         )
         private final String etag;
 
-        @OutputProperty(
-            description = "The service-generated id for the table"
+        @Schema(
+            title = "The service-generated id for the table"
         )
         private final String generatedId;
 
-        @OutputProperty(
-            description = "The URL that can be used to access the resource again. The returned URL can be used for get or update requests."
+        @Schema(
+            title = "The URL that can be used to access the resource again. The returned URL can be used for get or update requests."
         )
         private final String selfLink;
 
-        @OutputProperty(
-            description = "The user-friendly name for the table"
+        @Schema(
+            title = "The user-friendly name for the table"
         )
         private final String friendlyName;
 
-        @OutputProperty(
-            description = "The user-friendly description for the table"
+        @Schema(
+            title = "The user-friendly description for the table"
         )
         private final String description;
 
-        @OutputProperty(
-            description = "The time when this table was created"
+        @Schema(
+            title = "The time when this table was created"
         )
         private final Instant creationTime;
 
-        @OutputProperty(
-            description = "Returns the time when this table expires",
-            body = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
+        @Schema(
+            title = "Returns the time when this table expires",
+            description = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
         )
         private final Instant expirationTime;
 
-        @OutputProperty(
-            description = "The time when this table was last modified"
+        @Schema(
+            title = "The time when this table was last modified"
         )
         private final Instant lastModifiedTime;
 
-        @OutputProperty(
-            description = "The size of this table in bytes"
+        @Schema(
+            title = "The size of this table in bytes"
         )
         private final Long numBytes;
 
-        @OutputProperty(
-            description = "The number of bytes considered \"long-term storage\" for reduced billing purposes."
+        @Schema(
+            title = "The number of bytes considered \"long-term storage\" for reduced billing purposes."
         )
         private final Long numLongTermBytes;
 
-        @OutputProperty(
-            description = "The number of rows of data in this table"
+        @Schema(
+            title = "The number of rows of data in this table"
         )
         private final BigInteger numRows;
 
-        @OutputProperty(
-            description = "The table definition"
+        @Schema(
+            title = "The table definition"
         )
         private final org.kestra.task.gcp.bigquery.models.TableDefinition definition;
 
-        @OutputProperty(
-            description = "The encryption configuration"
+        @Schema(
+            title = "The encryption configuration"
         )
         private final org.kestra.task.gcp.bigquery.models.EncryptionConfiguration encryptionConfiguration;
 
-        @OutputProperty(
-            description = "Return a map for labels applied to the table"
+        @Schema(
+            title = "Return a map for labels applied to the table"
         )
         private final Map<String, String> labels;
 
-        @OutputProperty(
-            description = "Return true if a partition filter (that can be used for partition elimination) " +
+        @Schema(
+            title = "Return true if a partition filter (that can be used for partition elimination) " +
                 "is required for queries over this table."
         )
         private final Boolean requirePartitionFilter;

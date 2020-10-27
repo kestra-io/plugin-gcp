@@ -3,10 +3,9 @@ package org.kestra.task.gcp.bigquery;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
-import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -18,14 +17,14 @@ import java.util.Objects;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Documentation(
-    description = "Get table metadata"
+@Schema(
+    title = "Get table metadata"
 )
 public class TableMetadata extends AbstractTable implements RunnableTask<AbstractTable.Output> {
     @Builder.Default
-    @InputProperty(
-        description = "Policy to apply if a table don't exists.",
-        body = "If the policy is `SKIP`, the output will contain only null value, otherwize an error is raised."
+    @Schema(
+        title = "Policy to apply if a table don't exists.",
+        description = "If the policy is `SKIP`, the output will contain only null value, otherwize an error is raised."
     )
     private final IfNotExists ifNotExists = IfNotExists.ERROR;
 

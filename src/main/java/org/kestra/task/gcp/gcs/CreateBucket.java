@@ -3,12 +3,12 @@ package org.kestra.task.gcp.gcs;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
+import org.kestra.core.models.annotations.Plugin;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
@@ -18,22 +18,26 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Create a new bucket with some options",
-    code = {
-        "name: \"my-bucket\"",
-        "versioningEnabled: true",
-        "labels: ",
-        "  my-label: my-value"
+@Plugin(
+    examples = {
+        @Example(
+            title = "Create a new bucket with some options",
+            code = {
+                "name: \"my-bucket\"",
+                "versioningEnabled: true",
+                "labels: ",
+                "  my-label: my-value"
+            }
+        )
     }
 )
-@Documentation(
-    description = "Create a bucket or update if it already exists."
+@Schema(
+    title = "Create a bucket or update if it already exists."
 )
 public class CreateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Builder.Default
-    @InputProperty(
-        description = "Policy to apply if a bucket already exists."
+    @Schema(
+        title = "Policy to apply if a bucket already exists."
     )
     private IfExists ifExists = IfExists.ERROR;
 

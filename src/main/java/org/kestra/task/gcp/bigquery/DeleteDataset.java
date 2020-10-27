@@ -2,14 +2,13 @@ package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
-import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
@@ -20,27 +19,31 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Delete a dataset",
-    code = {
-        "name: \"my-bucket\"",
-        "deleteContents: true"
+@Plugin(
+    examples = {
+        @Example(
+            title = "Delete a dataset",
+            code = {
+                "name: \"my-bucket\"",
+                "deleteContents: true"
+            }
+        )
     }
 )
-@Documentation(
-    description = "Delete a dataset."
+@Schema(
+    title = "Delete a dataset."
 )
 public class DeleteDataset extends AbstractBigquery implements RunnableTask<DeleteDataset.Output> {
     @NotNull
-    @InputProperty(
-        description = "The dataset's user-defined id",
-        dynamic = true
+    @Schema(
+        title = "The dataset's user-defined id"
     )
+    @PluginProperty(dynamic = true)
     private String name;
 
-    @InputProperty(
-        description = "Whether to delete a dataset even if non-empty",
-        body = "If not provided, attempting to\n" +
+    @Schema(
+        title = "Whether to delete a dataset even if non-empty",
+        description = "If not provided, attempting to\n" +
             " delete a non-empty dataset will result in a exception being thrown."
     )
     private Boolean deleteContents;
@@ -75,8 +78,8 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
         @NotNull
-        @OutputProperty(
-            description = "The dataset's user-defined id"
+        @Schema(
+            title = "The dataset's user-defined id"
         )
         private String dataset;
     }

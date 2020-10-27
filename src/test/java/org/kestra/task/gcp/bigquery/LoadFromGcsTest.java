@@ -10,8 +10,10 @@ import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
+import org.kestra.core.serializers.JacksonMapper;
 import org.kestra.core.utils.TestsUtils;
 
+import java.util.Arrays;
 import java.util.Collections;
 import javax.inject.Inject;
 
@@ -39,12 +41,13 @@ class LoadFromGcsTest {
             ))
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.JSON)
-            .schema(Schema.of(
-                Field.of("name", LegacySQLTypeName.STRING),
-                Field.of("post_abbr", LegacySQLTypeName.STRING)
+            .schema(ImmutableMap.of(
+                "fields", Arrays.asList(
+                    ImmutableMap.of("name", "name", "type", "STRING"),
+                    ImmutableMap.of("name", "post_abbr", "type", "STRING")
+                )
             ))
             .build();
-
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         AbstractLoad.Output run = task.run(runContext);

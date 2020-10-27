@@ -1,13 +1,13 @@
 package org.kestra.task.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.executions.metrics.Timer;
 import org.kestra.core.models.tasks.RunnableTask;
@@ -25,85 +25,89 @@ import java.util.Map;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Extract a BigQuery table to a gcs bucket",
-    code = {
-        "destinationUris: ",
-        "  - \"gs://bucket_name/filename.csv\"",
-        "sourceTable: \"my_project.my_dataset.my_table\"",
-        "format: CSV",
-        "fieldDelimiter: ';'",
-        "printHeader: true"
+@Plugin(
+    examples = {
+        @Example(
+            title = "Extract a BigQuery table to a gcs bucket",
+            code = {
+                "destinationUris: ",
+                "  - \"gs://bucket_name/filename.csv\"",
+                "sourceTable: \"my_project.my_dataset.my_table\"",
+                "format: CSV",
+                "fieldDelimiter: ';'",
+                "printHeader: true"
+            }
+        )
     }
 )
-@Documentation(
-    description = "Extract data from BigQuery table to GCS (Google Cloud Storage)"
+@Schema(
+    title = "Extract data from BigQuery table to GCS (Google Cloud Storage)"
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
 
-    @InputProperty(
-        dynamic = true,
-        description = "The table to export."
+    @Schema(
+        title = "The table to export."
     )
+    @PluginProperty(dynamic = true)
     private String sourceTable;
 
-    @InputProperty(
-        dynamic = true,
-        description = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
+    @Schema(
+        title = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
             "the extracted table should be written."
     )
+    @PluginProperty(dynamic = true)
     private List<String> destinationUris;
 
-    @InputProperty(
-        dynamic = true,
-        description = "the compression value to use for exported files. If not set exported files " +
+    @Schema(
+        title = "the compression value to use for exported files. If not set exported files " +
             "are not compressed. "
     )
+    @PluginProperty(dynamic = true)
     private String compression;
 
-    @InputProperty(
-        dynamic = true,
-        description = "The delimiter to use between fields in the exported data. By default \",\" is used."
+    @Schema(
+        title = "The delimiter to use between fields in the exported data. By default \",\" is used."
     )
+    @PluginProperty(dynamic = true)
     private String fieldDelimiter;
 
-    @InputProperty(
-        dynamic = true,
-        description = "The exported file format. If not set table is exported in CSV format. "
+    @Schema(
+        title = "The exported file format. If not set table is exported in CSV format. "
     )
+    @PluginProperty(dynamic = true)
     private String format;
 
-    @InputProperty(
-        description = "[Optional] Flag if format is set to \"AVRO\".",
-        body = {"[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
+    @Schema(
+        title = "[Optional] Flag if format is set to \"AVRO\".",
+        description = "[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
             "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
-            "types (timestamp-micros), instead of only using their raw types (avro-long).",
-            "Parameters:",
-            "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "}
+            "types (timestamp-micros), instead of only using their raw types (avro-long). \n" +
+            "Parameters:\n"+
+            "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "
     )
     private Boolean useAvroLogicalTypes;
 
-    @InputProperty(
-        description = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
+    @Schema(
+        title = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
             "BigQuery may attempt to terminate the job."
     )
     private Long jobTimeoutMs;
 
-    @InputProperty(
-        description = "The labels associated with this job.",
-        body = {"The labels associated with this job. You can use these to organize and group your jobs. Label " +
+    @Schema(
+        title = "The labels associated with this job.",
+        description = "The labels associated with this job. You can use these to organize and group your jobs. Label " +
             "keys and values can be no longer than 63 characters, can only contain lowercase letters, " +
             "numeric characters, underscores and dashes. International characters are allowed. Label " +
             "values are optional. Label keys must start with a letter and each label in the list must have " +
-            "a different key.",
-            "Parameters:",
-            "    labels - labels or null for none "},
-        dynamic = true
+            "a different key.\n" +
+            "Parameters:\n" +
+            "    labels - labels or null for none "
     )
+    @PluginProperty(dynamic = true)
     private Map<String,String> labels;
 
-    @InputProperty(
-        description = "Whether to print out a header row in the results. By default an header is printed."
+    @Schema(
+        title = "Whether to print out a header row in the results. By default an header is printed."
     )
     private Boolean printHeader;
 
@@ -140,23 +144,23 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The job id"
+        @Schema(
+            title = "The job id"
         )
-        private String jobId;
+        private final String jobId;
 
-        @OutputProperty(
-            description = "source Table"
+        @Schema(
+            title = "source Table"
         )
-        private String sourceTable;
+        private final String sourceTable;
 
-        @OutputProperty(
-            description = "The destination URI file"
+        @Schema(
+            title = "The destination URI file"
         )
-        private List<String> destinationUris;
+        private final List<String> destinationUris;
 
-        @OutputProperty()
-        private List<Long> fileCounts;
+        @Schema(title = "Number of extracted files")
+        private final List<Long> fileCounts;
     }
 
     private void metrics(RunContext runContext, JobStatistics.ExtractStatistics stats, Job job) throws IllegalVariableEvaluationException {

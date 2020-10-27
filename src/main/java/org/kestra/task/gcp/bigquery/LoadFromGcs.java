@@ -4,14 +4,15 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.LoadJobConfiguration;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
@@ -24,33 +25,32 @@ import java.util.List;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Load an avro file from a gcs bucket",
-    code = {
-        "from:",
-        "  - \"{{ outputs.avro-to-gcs }}\"",
-        "destinationTable: \"my_project.my_dataset.my_table\"",
-        "format: AVRO",
-        "avroOptions:",
-        "  useAvroLogicalTypes: true"
+@Plugin(
+    examples = {
+        @Example(
+            title = "Load an avro file from a gcs bucket",
+            code = {
+                "from:",
+                "  - \"{{ outputs.avro-to-gcs }}\"",
+                "destinationTable: \"my_project.my_dataset.my_table\"",
+                "format: AVRO",
+                "avroOptions:",
+                "  useAvroLogicalTypes: true"
+            }
+        )
     }
 )
-@Documentation(
-    description = "Load data from GCS (Google Cloud Storage) to BigQuery"
+@Schema(
+    title = "Load data from GCS (Google Cloud Storage) to BigQuery"
 )
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
-    /**
-     * Sets the fully-qualified URIs that point to source data in Google Cloud Storage (e.g.
-     * gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the
-     * 'bucket' name.
-     */
-    @InputProperty(
-        description = "Google Cloud Storage source data",
-        body = "The fully-qualified URIs that point to source data in Google Cloud Storage (e.g.\n" +
+    @Schema(
+        title = "Google Cloud Storage source data",
+        description = "The fully-qualified URIs that point to source data in Google Cloud Storage (e.g.\n" +
             " gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the\n" +
-            " 'bucket' name.",
-        dynamic = true
+            " 'bucket' name."
     )
+    @PluginProperty(dynamic = true)
     private List<String> from;
 
     @Override
@@ -63,7 +63,7 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
         LoadJobConfiguration.Builder builder = LoadJobConfiguration
             .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)), from);
 
-        this.setOptions(builder);
+        this.setOptions(builder, runContext);
 
         LoadJobConfiguration configuration = builder.build();
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));

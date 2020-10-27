@@ -37,7 +37,6 @@ class TableMetadataTest {
     }
 
     private Job query(String query) throws InterruptedException {
-        System.out.println(query);
         return this.connection
             .create(JobInfo
                 .newBuilder(QueryJobConfiguration.newBuilder(query).build())

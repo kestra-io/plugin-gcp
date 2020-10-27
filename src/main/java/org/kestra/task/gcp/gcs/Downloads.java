@@ -2,22 +2,20 @@ package org.kestra.task.gcp.gcs;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.task.gcp.gcs.models.Blob;
-import org.slf4j.Logger;
 
 import java.io.File;
-import java.net.URI;
 import java.util.stream.Collectors;
 import javax.annotation.RegEx;
 import javax.validation.constraints.NotNull;
@@ -30,66 +28,70 @@ import static org.kestra.core.utils.Rethrow.throwFunction;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Download a list of files and move it to an archive folders",
-    code = {
-        "from: gs://my-bucket/kestra/files/",
-        "action: MOVE",
-        "moveDirectory: gs://my-bucket/kestra/archive/",
+@Plugin(
+    examples = {
+        @Example(
+            title = "Download a list of files and move it to an archive folders",
+            code = {
+                "from: gs://my-bucket/kestra/files/",
+                "action: MOVE",
+                "moveDirectory: gs://my-bucket/kestra/archive/",
+            }
+        )
     }
 )
-@Documentation(
-    description = "Download multiple files from a GCS bucket."
+@Schema(
+    title = "Download multiple files from a GCS bucket."
 )
 public class Downloads extends Task implements RunnableTask<Downloads.Output> {
-    @InputProperty(
-        description = "The directory to list",
-        dynamic = true
+    @Schema(
+        title = "The directory to list"
     )
+    @PluginProperty(dynamic = true)
     @NotNull
     private String from;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     private String projectId;
 
-    @InputProperty(
-        description = "If set to `true`, lists all versions of a blob. The default is `false`.",
-        dynamic = true
+    @Schema(
+        title = "If set to `true`, lists all versions of a blob. The default is `false`."
     )
+    @PluginProperty(dynamic = true)
     private Boolean allVersions;
 
-    @InputProperty(
-        description = "The filter files or directory"
+    @Schema(
+        title = "The filter files or directory"
     )
     @Builder.Default
     private final List.Filter filter = List.Filter.BOTH;
 
-    @InputProperty(
-        description = "The listing type you want (like directory or recursive)"
+    @Schema(
+        title = "The listing type you want (like directory or recursive)"
     )
     @Builder.Default
     private final List.ListingType listingType = List.ListingType.DIRECTORY;
 
-    @InputProperty(
-        description = "A regexp to filter on full path"
+    @Schema(
+        title = "A regexp to filter on full path"
     )
     @RegEx
     private String regExp;
 
-    @InputProperty(
-        description = "The action to do on find files",
-        body = "Can be null, in this case no action is perform",
-        dynamic = true
+    @Schema(
+        title = "The action to do on find files",
+        description = "Can be null, in this case no action is perform"
     )
+    @PluginProperty(dynamic = true)
     private Downloads.Action action;
 
-    @InputProperty(
-        description = "The destination directory in case off `MOVE` ",
-        dynamic = true
+    @Schema(
+        title = "The destination directory in case off `MOVE` "
     )
+    @PluginProperty(dynamic = true)
     private String moveDirectory;
 
     static void archive(
@@ -176,8 +178,8 @@ public class Downloads extends Task implements RunnableTask<Downloads.Output> {
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The bucket of the downloaded file"
+        @Schema(
+            title = "The bucket of the downloaded file"
         )
         private final java.util.List<Blob>  blobs;
     }

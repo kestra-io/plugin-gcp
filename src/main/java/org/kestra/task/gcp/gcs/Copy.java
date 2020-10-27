@@ -3,12 +3,12 @@ package org.kestra.task.gcp.gcs;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
@@ -22,38 +22,42 @@ import java.net.URI;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Documentation(
-    description = "Copy a file between bucket",
-    body = "Copy the file between Internal Storage or Google Cloud Storage file"
+@Schema(
+    title = "Copy a file between bucket",
+    description = "Copy the file between Internal Storage or Google Cloud Storage file"
 )
-@Example(
-    title = "Move a file between bucket path",
-    code = {
-        "from: \"{{ inputs.file }}\"",
-        "delete: true"
+@Plugin(
+    examples = {
+        @Example(
+            title = "Move a file between bucket path",
+            code = {
+                "from: \"{{ inputs.file }}\"",
+                "delete: true"
+            }
+        )
     }
 )
 public class Copy extends Task implements RunnableTask<Copy.Output> {
-    @InputProperty(
-        description = "The file to copy",
-        dynamic = true
+    @Schema(
+        title = "The file to copy"
     )
+    @PluginProperty(dynamic = true)
     private String from;
 
-    @InputProperty(
-        description = "The destination path",
-        dynamic = true
+    @Schema(
+        title = "The destination path"
     )
+    @PluginProperty(dynamic = true)
     private String to;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     private String projectId;
 
-    @InputProperty(
-        description = "Whether to delete the source files (from parameter) on success copy"
+    @Schema(
+        title = "Whether to delete the source files (from parameter) on success copy"
     )
     @Builder.Default
     private final boolean delete = false;
@@ -96,9 +100,9 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The destination full uri",
-            body = {"The full url will be like `gs://{bucket}/{path}/{file}`"}
+        @Schema(
+            title = "The destination full uri",
+            description = "The full url will be like `gs://{bucket}/{path}/{file}`"
         )
         private URI uri;
     }

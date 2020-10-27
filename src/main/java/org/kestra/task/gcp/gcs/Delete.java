@@ -2,12 +2,12 @@ package org.kestra.task.gcp.gcs;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -21,33 +21,37 @@ import java.util.NoSuchElementException;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    code = {
-        "uri: \"gs://my_bucket/dir/file.csv\""
+@Plugin(
+    examples = {
+        @Example(
+            code = {
+                "uri: \"gs://my_bucket/dir/file.csv\""
+            }
+        )
     }
 )
-@Documentation(
-    description = "Delete a file to a GCS bucket."
+@Schema(
+    title = "Delete a file to a GCS bucket."
 )
 public class Delete extends Task implements RunnableTask<Delete.Output> {
-    @InputProperty(
-        description = "The file to delete",
-        dynamic = true
+    @Schema(
+        title = "The file to delete"
     )
+    @PluginProperty(dynamic = true)
     private String uri;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     private String projectId;
 
-    @InputProperty(
-        description = "raise an error if the file is not found",
-        dynamic = false
+    @Schema(
+        title = "raise an error if the file is not found"
     )
+    @PluginProperty(dynamic = true)
     @Builder.Default
-    private Boolean errorOnMissing = false;
+    private final Boolean errorOnMissing = false;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -79,13 +83,13 @@ public class Delete extends Task implements RunnableTask<Delete.Output> {
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The deleted uri"
+        @Schema(
+            title = "The deleted uri"
         )
         private final URI uri;
 
-        @OutputProperty(
-            description = "If the files was really deleted"
+        @Schema(
+            title = "If the files was really deleted"
         )
         private final Boolean deleted;
     }

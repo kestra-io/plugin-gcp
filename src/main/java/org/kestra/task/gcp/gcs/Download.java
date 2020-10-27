@@ -4,13 +4,13 @@ import com.google.cloud.ReadChannel;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.io.FilenameUtils;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -27,25 +27,29 @@ import java.nio.channels.FileChannel;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    code = {
-        "from: \"gs://my_bucket/dir/file.csv\""
+@Plugin(
+    examples = {
+        @Example(
+            code = {
+                "from: \"gs://my_bucket/dir/file.csv\""
+            }
+        )
     }
 )
-@Documentation(
-    description = "Download a file from a GCS bucket."
+@Schema(
+    title = "Download a file from a GCS bucket."
 )
 public class Download extends Task implements RunnableTask<Download.Output> {
-    @InputProperty(
-        description = "The file to copy",
-        dynamic = true
+    @Schema(
+        title = "The file to copy"
     )
+    @PluginProperty(dynamic = true)
     private String from;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     private String projectId;
 
     static File download(Storage connection, BlobId source) throws IOException {
@@ -96,18 +100,18 @@ public class Download extends Task implements RunnableTask<Download.Output> {
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The bucket of the downloaded file"
+        @Schema(
+            title = "The bucket of the downloaded file"
         )
         private final String bucket;
 
-        @OutputProperty(
-            description = "The path on the bucket of the downloaded file"
+        @Schema(
+            title = "The path on the bucket of the downloaded file"
         )
         private final String path;
 
-        @OutputProperty(
-            description = "The url of the downloaded file on kestra storage "
+        @Schema(
+            title = "The url of the downloaded file on kestra storage "
         )
         private final URI uri;
     }

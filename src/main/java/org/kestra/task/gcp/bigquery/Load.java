@@ -1,14 +1,18 @@
 package org.kestra.task.gcp.bigquery;
 
-import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.TableDataWriteChannel;
+import com.google.cloud.bigquery.WriteChannelConfiguration;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
@@ -25,25 +29,28 @@ import java.nio.channels.Channels;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "Load an csv file from an input file",
-    code = {
-        "from: \"{{ inputs.file }}\"",
-        "destinationTable: \"my_project.my_dataset.my_table\"",
-        "format: CSV",
-        "csvOptions:",
-        "  fieldDelimiter: \";\""
+@Plugin(
+    examples = {
+        @Example(
+            title = "Load an csv file from an input file",
+            code = {
+                "from: \"{{ inputs.file }}\"",
+                "destinationTable: \"my_project.my_dataset.my_table\"",
+                "format: CSV",
+                "csvOptions:",
+                "  fieldDelimiter: \";\""
+            }
+        )
     }
 )
-@Documentation(
-    description = "Load data from local file to BigQuery"
+@Schema(
+    title = "Load data from local file to BigQuery"
 )
 public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
-
-    @InputProperty(
-        description = "The fully-qualified URIs that point to source data",
-        dynamic = true
+    @Schema(
+        title = "The fully-qualified URIs that point to source data"
     )
+    @PluginProperty(dynamic = true)
     private String from;
 
     @Override
@@ -54,7 +61,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
             .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)));
 
-        this.setOptions(builder);
+        this.setOptions(builder, runContext);
 
         WriteChannelConfiguration configuration = builder.build();
         logger.debug("Starting load\n{}", JacksonMapper.log(configuration));

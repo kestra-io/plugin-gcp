@@ -3,12 +3,12 @@ package org.kestra.task.gcp.gcs;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Storage;
 import com.google.common.collect.Iterables;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.Plugin;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
@@ -28,49 +28,53 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Example(
-    title = "List files in a bucket",
-    code = {
-        "from: \"gs://my_bucket/dir/\""
+@Plugin(
+    examples = {
+        @Example(
+            title = "List files in a bucket",
+            code = {
+                "from: \"gs://my_bucket/dir/\""
+            }
+        )
     }
 )
-@Documentation(
-    description = "List file on a GCS bucket."
+@Schema(
+    title = "List file on a GCS bucket."
 )
 public class List extends Task implements RunnableTask<List.Output> {
-    @InputProperty(
-        description = "The directory to list",
-        dynamic = true
+    @Schema(
+        title = "The directory to list"
     )
+    @PluginProperty(dynamic = true)
     @NotNull
     private String from;
 
-    @InputProperty(
-        description = "The GCP project id",
-        dynamic = true
+    @Schema(
+        title = "The GCP project id"
     )
+    @PluginProperty(dynamic = true)
     private String projectId;
 
-    @InputProperty(
-        description = "If set to `true`, lists all versions of a blob. The default is `false`.",
-        dynamic = true
+    @Schema(
+        title = "If set to `true`, lists all versions of a blob. The default is `false`."
     )
+    @PluginProperty(dynamic = true)
     private Boolean allVersions;
 
-    @InputProperty(
-        description = "The filter files or directory"
+    @Schema(
+        title = "The filter files or directory"
     )
     @Builder.Default
     private final Filter filter = Filter.BOTH;
 
-    @InputProperty(
-        description = "The listing type you want (like directory or recursive)"
+    @Schema(
+        title = "The listing type you want (like directory or recursive)"
     )
     @Builder.Default
     private final ListingType listingType = ListingType.DIRECTORY;
 
-    @InputProperty(
-        description = "A regexp to filter on full path"
+    @Schema(
+        title = "A regexp to filter on full path"
     )
     @RegEx
     private String regExp;
@@ -124,8 +128,8 @@ public class List extends Task implements RunnableTask<List.Output> {
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
-        @OutputProperty(
-            description = "The list of blobs"
+        @Schema(
+            title = "The list of blobs"
         )
         private final java.util.List<Blob> blobs;
     }
