@@ -78,7 +78,7 @@ public class Downloads extends Task implements RunnableTask<Downloads.Output> {
     @Schema(
         title = "A regexp to filter on full path"
     )
-    @RegEx
+    @PluginProperty(dynamic = true)
     private String regExp;
 
     @Schema(

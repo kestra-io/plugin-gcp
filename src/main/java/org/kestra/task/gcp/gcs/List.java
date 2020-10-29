@@ -76,7 +76,7 @@ public class List extends Task implements RunnableTask<List.Output> {
     @Schema(
         title = "A regexp to filter on full path"
     )
-    @RegEx
+    @PluginProperty(dynamic = true)
     private String regExp;
 
     @Override
@@ -85,6 +85,7 @@ public class List extends Task implements RunnableTask<List.Output> {
 
         Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));
+        String regExp = runContext.render(this.regExp);
 
         Page<com.google.cloud.storage.Blob> list = connection.list(from.getAuthority(), options(from));
 
@@ -94,7 +95,7 @@ public class List extends Task implements RunnableTask<List.Output> {
             .filter(blob -> filter == Filter.DIRECTORY ? blob.isDirectory() :
                 (filter != Filter.FILES || !blob.isDirectory())
             )
-            .filter(blob -> regExp == null || blob.getUri().toString().matches(this.regExp))
+            .filter(blob -> regExp == null || blob.getUri().toString().matches(regExp))
             .collect(Collectors.toList());
 
         runContext.metric(Counter.of("size", blobs.size()));

@@ -113,7 +113,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
     @Schema(
         title = "A regexp to filter on full path"
     )
-    @RegEx
+    @PluginProperty(dynamic = true)
     private String regExp;
 
     @Override
