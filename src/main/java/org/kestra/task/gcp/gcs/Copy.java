@@ -60,7 +60,7 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
         title = "Whether to delete the source files (from parameter) on success copy"
     )
     @Builder.Default
-    private final boolean delete = false;
+    private final Boolean delete = false;
 
     @Override
     public Copy.Output run(RunContext runContext) throws Exception {
