@@ -1,9 +1,6 @@
 package org.kestra.task.gcp.bigquery;
 
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.BigQueryError;
-import com.google.cloud.bigquery.Job;
-import com.google.cloud.bigquery.JobException;
+import com.google.cloud.bigquery.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -14,8 +11,10 @@ import org.kestra.core.models.tasks.Task;
 import org.kestra.core.models.tasks.retrys.AbstractRetry;
 import org.kestra.core.models.tasks.retrys.Exponential;
 import org.kestra.core.runners.RunContext;
+import org.kestra.task.gcp.AbstractTask;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,13 +27,7 @@ import javax.validation.Valid;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractBigquery extends Task {
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    protected String projectId;
-
+abstract public class AbstractBigquery extends AbstractTask {
     @Schema(
         title = "The geographic location where the dataset should reside",
         description = "This property is experimental\n" +
@@ -77,11 +70,14 @@ abstract public class AbstractBigquery extends Task {
         "due to concurrent update"
     );
 
-    protected BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException {
-        return new BigQueryService().of(
-            runContext.render(this.projectId),
-            runContext.render(this.location)
-        );
+    BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        return BigQueryOptions
+            .newBuilder()
+            .setCredentials(this.credentials(runContext))
+            .setProjectId(runContext.render(this.projectId))
+            .setLocation(runContext.render(this.location))
+            .build()
+            .getService();
     }
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob) {

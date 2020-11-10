@@ -21,6 +21,7 @@ import org.kestra.task.gcp.gcs.models.Blob;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.RegEx;
@@ -67,6 +68,25 @@ import static org.kestra.core.utils.Rethrow.throwFunction;
 )
 public class Trigger extends AbstractTrigger implements PollingTriggerInterface {
     @Schema(
+        title = "The GCP project id"
+    )
+    @PluginProperty(dynamic = true)
+    protected String projectId;
+
+    @Schema(
+        title = "The GCP service account key"
+    )
+    @PluginProperty(dynamic = true)
+    protected String serviceAccount;
+
+    @Schema(
+        title = "The GCP scopes to used"
+    )
+    @PluginProperty(dynamic = true)
+    @Builder.Default
+    protected java.util.List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+
+    @Schema(
         title = "The interval between test of triggers"
     )
     @Builder.Default
@@ -93,12 +113,6 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
     private String moveDirectory;
 
     @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    private String projectId;
-
-    @Schema(
         title = "The filter files or directory"
     )
     @Builder.Default
@@ -121,8 +135,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
         List task = List.builder()
             .id(this.id)
             .type(List.class.getName())
-            .from(this.from)
             .projectId(this.projectId)
+            .serviceAccount(this.serviceAccount)
+            .scopes(this.scopes)
+            .from(this.from)
             .filter(this.filter)
             .listingType(this.listingType)
             .regExp(this.regExp)
@@ -135,7 +151,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
 
         String executionId = IdUtils.create();
 
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = task.connection(runContext);
 
         java.util.List<Blob> list = run
             .getBlobs()

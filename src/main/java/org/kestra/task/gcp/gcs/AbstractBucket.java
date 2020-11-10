@@ -24,19 +24,13 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractBucket extends Task implements RunnableTask<AbstractBucket.Output> {
+abstract public class AbstractBucket extends AbstractGcs implements RunnableTask<AbstractBucket.Output> {
     @NotNull
     @Schema(
         title = "Bucket's unique name"
     )
     @PluginProperty(dynamic = true)
     protected String name;
-
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    protected String projectId;
 
     @Schema(
         title = "Whether the requester pays or not.",

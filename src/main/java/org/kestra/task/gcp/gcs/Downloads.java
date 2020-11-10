@@ -43,19 +43,13 @@ import static org.kestra.core.utils.Rethrow.throwFunction;
 @Schema(
     title = "Download multiple files from a GCS bucket."
 )
-public class Downloads extends Task implements RunnableTask<Downloads.Output> {
+public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Output> {
     @Schema(
         title = "The directory to list"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String from;
-
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    private String projectId;
 
     @Schema(
         title = "If set to `true`, lists all versions of a blob. The default is `false`."
@@ -132,8 +126,10 @@ public class Downloads extends Task implements RunnableTask<Downloads.Output> {
         List task = List.builder()
             .id(this.id)
             .type(List.class.getName())
-            .from(this.from)
             .projectId(this.projectId)
+            .serviceAccount(this.serviceAccount)
+            .scopes(this.scopes)
+            .from(this.from)
             .filter(this.filter)
             .listingType(this.listingType)
             .regExp(this.regExp)
@@ -141,7 +137,7 @@ public class Downloads extends Task implements RunnableTask<Downloads.Output> {
             .build();
         List.Output run = task.run(runContext);
 
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = this.connection(runContext);
 
         java.util.List<Blob> list = run
             .getBlobs()

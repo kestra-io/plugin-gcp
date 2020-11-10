@@ -1,7 +1,6 @@
 package org.kestra.task.gcp.gke;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.container.v1.ClusterManagerClient;
 import com.google.cloud.container.v1.ClusterManagerSettings;
 import com.google.container.v1.Cluster;
@@ -13,8 +12,8 @@ import org.kestra.core.models.annotations.Example;
 import org.kestra.core.models.annotations.Plugin;
 import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
-import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
+import org.kestra.task.gcp.AbstractTask;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,9 +39,9 @@ import javax.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Delete a dataset."
+    title = "Get cluster metadata."
 )
-public class ClusterMetadata extends Task implements RunnableTask<ClusterMetadata.Output> {
+public class ClusterMetadata extends AbstractTask implements RunnableTask<ClusterMetadata.Output> {
     @NotNull
     @Schema(
         title = "Cluster id where meta data are fetch"
@@ -54,13 +53,13 @@ public class ClusterMetadata extends Task implements RunnableTask<ClusterMetadat
         title = "Cluster zone in GCP"
     )
     @PluginProperty(dynamic = true)
-    private String zone;
+    private String clusterZone;
 
     @Schema(
         title = "Project ID in GCP were is located cluster"
     )
     @PluginProperty(dynamic = true)
-    private String projectId;
+    private String clusterProjectId;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -74,8 +73,8 @@ public class ClusterMetadata extends Task implements RunnableTask<ClusterMetadat
             .clusterIpv4Cidr(cluster.getClusterIpv4Cidr())
             .subNetwork(cluster.getSubnetwork())
             .endpoint(cluster.getEndpoint())
-            .zone(zone)
-            .project(projectId)
+            .zone(clusterZone)
+            .project(clusterProjectId)
             .createTime(cluster.getCreateTime())
             .nodePoolsCount(cluster.getNodePoolsCount())
             .nodePools(cluster.getNodePoolsList()
@@ -103,13 +102,13 @@ public class ClusterMetadata extends Task implements RunnableTask<ClusterMetadat
 
     Cluster fetch(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         ClusterManagerSettings clusterManagerSettings = ClusterManagerSettings.newBuilder()
-            .setCredentialsProvider(FixedCredentialsProvider.create(GoogleCredentials.getApplicationDefault()))
+            .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
             .build();
 
         try (ClusterManagerClient client = ClusterManagerClient.create(clusterManagerSettings)) {
             return client.getCluster(
-                runContext.render(projectId),
-                runContext.render(zone),
+                runContext.render(clusterProjectId),
+                runContext.render(clusterZone),
                 runContext.render(clusterId)
             );
         }

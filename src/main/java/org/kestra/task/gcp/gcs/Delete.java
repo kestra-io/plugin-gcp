@@ -33,18 +33,12 @@ import java.util.NoSuchElementException;
 @Schema(
     title = "Delete a file to a GCS bucket."
 )
-public class Delete extends Task implements RunnableTask<Delete.Output> {
+public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Schema(
         title = "The file to delete"
     )
     @PluginProperty(dynamic = true)
     private String uri;
-
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    private String projectId;
 
     @Schema(
         title = "raise an error if the file is not found"
@@ -55,7 +49,7 @@ public class Delete extends Task implements RunnableTask<Delete.Output> {
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
         URI render = new URI(runContext.render(this.uri));

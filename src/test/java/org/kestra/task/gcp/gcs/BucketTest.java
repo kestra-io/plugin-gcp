@@ -138,7 +138,7 @@ class BucketTest {
         assertThat(run.getBucket(), is(rc.getVariables().get("bucket")));
         assertThat(run.getIndexPage(), is("createUpdate"));
 
-        Storage connection = new Connection().of(rc.render(this.project));
+        Storage connection = task.connection(rc);
         Bucket bucket = connection.get(run.getBucket());
 
         assertThat(null, not(bucket));

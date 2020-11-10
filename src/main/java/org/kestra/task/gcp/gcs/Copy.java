@@ -13,6 +13,7 @@ import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
+import org.kestra.task.gcp.AbstractTask;
 import org.slf4j.Logger;
 
 import java.net.URI;
@@ -37,7 +38,7 @@ import java.net.URI;
         )
     }
 )
-public class Copy extends Task implements RunnableTask<Copy.Output> {
+public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
     @Schema(
         title = "The file to copy"
     )
@@ -51,12 +52,6 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
     private String to;
 
     @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    private String projectId;
-
-    @Schema(
         title = "Whether to delete the source files (from parameter) on success copy"
     )
     @Builder.Default
@@ -64,7 +59,8 @@ public class Copy extends Task implements RunnableTask<Copy.Output> {
 
     @Override
     public Copy.Output run(RunContext runContext) throws Exception {
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = this.connection(runContext);
+
         Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));
         URI to = new URI(runContext.render(this.to));

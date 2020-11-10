@@ -39,18 +39,12 @@ import java.nio.channels.FileChannel;
 @Schema(
     title = "Download a file from a GCS bucket."
 )
-public class Download extends Task implements RunnableTask<Download.Output> {
+public class Download extends AbstractGcs implements RunnableTask<Download.Output> {
     @Schema(
         title = "The file to copy"
     )
     @PluginProperty(dynamic = true)
     private String from;
-
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    private String projectId;
 
     static File download(Storage connection, BlobId source) throws IOException {
         Blob blob = connection.get(source);
@@ -76,7 +70,7 @@ public class Download extends Task implements RunnableTask<Download.Output> {
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));

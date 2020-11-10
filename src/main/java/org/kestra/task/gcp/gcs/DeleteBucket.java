@@ -34,7 +34,7 @@ import javax.validation.constraints.NotNull;
         )
     }
 )
-public class DeleteBucket extends Task implements RunnableTask<DeleteBucket.Output> {
+public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBucket.Output> {
     @NotNull
     @Schema(
         title = "Bucket's unique name"
@@ -50,7 +50,8 @@ public class DeleteBucket extends Task implements RunnableTask<DeleteBucket.Outp
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = this.connection(runContext);
+
         Logger logger = runContext.logger();
         String name = runContext.render(this.name);
 

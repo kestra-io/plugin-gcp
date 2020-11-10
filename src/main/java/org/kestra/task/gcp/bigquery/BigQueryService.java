@@ -1,33 +1,15 @@
 package org.kestra.task.gcp.bigquery;
 
-import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobId;
+import com.google.cloud.bigquery.TableId;
 import org.kestra.core.exceptions.IllegalVariableEvaluationException;
 import org.kestra.core.runners.RunContext;
-import org.kestra.task.gcp.AbstractConnection;
 import org.slf4j.Logger;
 
 import java.util.UUID;
 
-public class BigQueryService extends AbstractConnection {
-    public BigQuery of(String projectId, String location) {
-        return BigQueryOptions
-            .newBuilder()
-            .setProjectId(projectId)
-            .setLocation(location)
-            .build()
-            .getService();
-    }
-
-    public BigQuery of(String serviceAccount, String projectId, String location) {
-        return BigQueryOptions
-            .newBuilder()
-            .setCredentials(this.credentials(serviceAccount))
-            .setProjectId(projectId)
-            .setLocation(location)
-            .build()
-            .getService();
-    }
-
+public class BigQueryService {
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
         return JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()))

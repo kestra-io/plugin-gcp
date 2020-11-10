@@ -38,7 +38,7 @@ import java.nio.ByteBuffer;
 @Schema(
     title = "Upload a file to a GCS bucket."
 )
-public class Upload extends Task implements RunnableTask<Upload.Output> {
+public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
     @Schema(
         title = "The file to copy"
     )
@@ -51,15 +51,9 @@ public class Upload extends Task implements RunnableTask<Upload.Output> {
     @PluginProperty(dynamic = true)
     private String to;
 
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    private String projectId;
-
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));

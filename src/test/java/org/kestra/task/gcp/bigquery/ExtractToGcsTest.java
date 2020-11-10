@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.annotation.MicronautTest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -24,7 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @MicronautTest
-public class ExtractToGcsTest extends AbstractBigquery{
+public class ExtractToGcsTest extends AbstractBigquery {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -49,15 +48,8 @@ public class ExtractToGcsTest extends AbstractBigquery{
     @Value("true")
     private Boolean printHeader;
 
-    private BigQuery connection;
-
-    @BeforeEach
-    private void init()  {
-        this.connection = new BigQueryService().of(projectId, "EU");
-    }
-
-    private Job query(String query) throws InterruptedException {
-        return this.connection
+    private Job query(BigQuery bigQuery, String query) throws InterruptedException {
+        return bigQuery
             .create(JobInfo
                 .newBuilder(QueryJobConfiguration.newBuilder(query).build())
                 .setJobId(JobId.of(UUID.randomUUID().toString()))
@@ -69,12 +61,6 @@ public class ExtractToGcsTest extends AbstractBigquery{
     @Test
     void toCsv() throws Exception {
         // Sample table
-        query("CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
-            "(product STRING, quantity INT64)" +
-            ";" +
-            "INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
-            "VALUES('top load washer', 10)" +
-            ";");
 
         // Extract task
         ExtractToGcs task = ExtractToGcs.builder()
@@ -88,6 +74,17 @@ public class ExtractToGcsTest extends AbstractBigquery{
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        query(
+            task.connection(runContext),
+            "CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
+            "(product STRING, quantity INT64)" +
+            ";" +
+            "INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
+            "VALUES('top load washer', 10)" +
+            ";"
+        );
+
         ExtractToGcs.Output extractOutput = task.run(runContext);
 
         // Download task
@@ -111,7 +108,7 @@ public class ExtractToGcsTest extends AbstractBigquery{
         );
 
         // Clean sample table
-        query("DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
+        query(task.connection(runContext), "DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
 
     }
 

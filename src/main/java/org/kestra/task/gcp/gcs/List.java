@@ -41,19 +41,13 @@ import javax.validation.constraints.NotNull;
 @Schema(
     title = "List file on a GCS bucket."
 )
-public class List extends Task implements RunnableTask<List.Output> {
+public class List extends AbstractGcs implements RunnableTask<List.Output> {
     @Schema(
         title = "The directory to list"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String from;
-
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    private String projectId;
 
     @Schema(
         title = "If set to `true`, lists all versions of a blob. The default is `false`."
@@ -81,7 +75,7 @@ public class List extends Task implements RunnableTask<List.Output> {
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Storage connection = new Connection().of(runContext.render(this.projectId));
+        Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));

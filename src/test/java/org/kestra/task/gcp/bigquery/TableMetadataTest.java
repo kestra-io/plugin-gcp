@@ -8,6 +8,7 @@ import io.micronaut.test.annotation.MicronautTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
 
 import java.util.List;
@@ -31,15 +32,8 @@ class TableMetadataTest {
     @Value("${kestra.tasks.bigquery.dataset}")
     private String dataset;
 
-    private BigQuery connection;
-
-    @BeforeEach
-    private void init() {
-        this.connection = new BigQueryService().of(project, "EU");
-    }
-
-    private Job query(String query) throws InterruptedException {
-        return this.connection
+    private Job query(BigQuery bigQuery, String query) throws InterruptedException {
+        return bigQuery
             .create(JobInfo
                 .newBuilder(QueryJobConfiguration.newBuilder(query).build())
                 .setJobId(JobId.of(UUID.randomUUID().toString()))
@@ -53,26 +47,29 @@ class TableMetadataTest {
     void table() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
 
-        query("CREATE TABLE `" + this.dataset + "." + friendlyId + "`" +
-            "(product STRING, quantity INT64, date TIMESTAMP)" +
-            " PARTITION BY DATE(date)" +
-            " CLUSTER BY quantity" +
-            " OPTIONS(" +
-            "  expiration_timestamp=TIMESTAMP_ADD(" +
-            "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)," +
-            "  friendly_name=\"new_view\"," +
-            "  description=\"a view that expires in 2 days\"," +
-            "  labels=[(\"org_unit\", \"development\")]" +
-            ");"
-        );
-
         TableMetadata task = TableMetadata.builder()
             .projectId(this.project)
             .dataset(this.dataset)
             .table(friendlyId)
             .build();
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));
+        query(
+            task.connection(runContext),
+            "CREATE TABLE `" + this.dataset + "." + friendlyId + "`" +
+                "(product STRING, quantity INT64, date TIMESTAMP)" +
+                " PARTITION BY DATE(date)" +
+                " CLUSTER BY quantity" +
+                " OPTIONS(" +
+                "  expiration_timestamp=TIMESTAMP_ADD(" +
+                "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)," +
+                "  friendly_name=\"new_view\"," +
+                "  description=\"a view that expires in 2 days\"," +
+                "  labels=[(\"org_unit\", \"development\")]" +
+                ");"
+        );
+
+        TableMetadata.Output run = task.run(runContext);
 
         assertThat(run.getTable(), is(friendlyId));
         assertThat(run.getFriendlyName(), is("new_view"));
@@ -88,24 +85,29 @@ class TableMetadataTest {
     void view() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
 
-        query("CREATE VIEW `" + this.dataset + "." + friendlyId + "`\n" +
-            "OPTIONS(" +
-            "  expiration_timestamp=TIMESTAMP_ADD(" +
-            "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)," +
-            "  friendly_name=\"new_view\"," +
-            "  description=\"a view that expires in 2 days\"," +
-            "  labels=[(\"org_unit\", \"development\")]" +
-            ")\n" +
-            "AS SELECT 'name' as name, 'state' as state, 1.23 as float, 1 as int"
-        );
-
         TableMetadata task = TableMetadata.builder()
             .projectId(this.project)
             .dataset(this.dataset)
             .table(friendlyId)
             .build();
 
-        TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        query(
+            task.connection(runContext),
+            "CREATE VIEW `" + this.dataset + "." + friendlyId + "`\n" +
+                "OPTIONS(" +
+                "  expiration_timestamp=TIMESTAMP_ADD(" +
+                "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)," +
+                "  friendly_name=\"new_view\"," +
+                "  description=\"a view that expires in 2 days\"," +
+                "  labels=[(\"org_unit\", \"development\")]" +
+                ")\n" +
+                "AS SELECT 'name' as name, 'state' as state, 1.23 as float, 1 as int"
+        );
+
+
+        TableMetadata.Output run = task.run(runContext);
 
         assertThat(run.getTable(), is(friendlyId));
         assertThat(run.getFriendlyName(), is("new_view"));
