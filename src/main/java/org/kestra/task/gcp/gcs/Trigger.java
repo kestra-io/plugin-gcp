@@ -15,6 +15,7 @@ import org.kestra.core.models.flows.State;
 import org.kestra.core.models.triggers.AbstractTrigger;
 import org.kestra.core.models.triggers.PollingTriggerInterface;
 import org.kestra.core.models.triggers.TriggerContext;
+import org.kestra.core.models.triggers.TriggerOutput;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.utils.IdUtils;
 import org.kestra.task.gcp.gcs.models.Blob;
@@ -24,7 +25,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.RegEx;
 import javax.validation.constraints.NotNull;
 
 import static org.kestra.core.utils.Rethrow.throwFunction;
@@ -66,7 +66,7 @@ import static org.kestra.core.utils.Rethrow.throwFunction;
         )
     }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface {
+public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output> {
     @Schema(
         title = "The GCP project id"
     )
@@ -174,20 +174,18 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
             runContext
         );
 
+        ExecutionTrigger executionTrigger = ExecutionTrigger.of(
+            this,
+            Downloads.Output.builder().blobs(list).build()
+        );
+
         Execution execution = Execution.builder()
             .id(executionId)
             .namespace(context.getNamespace())
             .flowId(context.getFlowId())
             .flowRevision(context.getFlowRevision())
             .state(new State())
-            .trigger(ExecutionTrigger.builder()
-                .id(this.id)
-                .type(this.type)
-                .variables(ImmutableMap.of(
-                    "blobs", list
-                ))
-                .build()
-            )
+            .trigger(executionTrigger)
             .build();
 
         return Optional.of(execution);
