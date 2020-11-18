@@ -116,7 +116,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface 
     private final List.ListingType listingType = List.ListingType.DIRECTORY;
 
     @Schema(
-        title = "A regexp to filter on full path"
+        title = "A regexp to filter on full path",
         description = "ex:\n"+
             "`regExp: .*` to match all files\n"+
             "`regExp: .*2020-01-0.\\\\.csv` to match files between 01 and 09 of january ending with `.csv`"
