@@ -1,37 +1,20 @@
-# Kestra Google Cloud Platform Tasks
+# Kestra Google Cloud Platform Plugin
 
 <p align="center">
   <a href="https://kestra.io">
-    <img width="460" src="https://github.com/kestra-io/kestra/raw/master/ui/src/assets/logo.svg?sanitize=true"  alt="Kestra workflow orchestrator" />
+    <img width="460" src="https://kestra.io/logo.svg"  alt="Kestra workflow orchestrator" />
   </a>
 </p>
 
-> Tasks to interract with Google Cloud Platform
+> Plugin to interract with Google Cloud Platform
 
-## Task
+![Kestra orchestrator](https://kestra.io/ui.gif)
 
-### BigQuery
-* `org.kestra.task.gcp.bigquery.Load`: Load files into Bigquery  
-* `org.kestra.task.gcp.bigquery.LoadFromGcs`: Load files from GCS into Bigquery
-* `org.kestra.task.gcp.bigquery.Query`: Send a job query to bigquery 
 
-### BigQuery Dataset
-* `org.kestra.task.gcp.bigquery.CreateDataset`: Create a new Bigquery dataset
-* `org.kestra.task.gcp.bigquery.DeleteDataset`: Delete a new Bigquery dataset
-* `org.kestra.task.gcp.bigquery.UpdateDataset`: Update a new Bigquery dataset
-
-### Cloud Storage
-* `org.kestra.task.gcp.gcs.Copy`: Copy files between buckets & buckets directory 
-* `org.kestra.task.gcp.gcs.Upload`: Upload files to bucket 
-* `org.kestra.task.gcp.gcs.Download`: Download files from bucket 
-* `org.kestra.task.gcp.gcs.Delete`: Delete a file from bucket 
-* `org.kestra.task.gcp.gcs.List`: List files on a bucket 
-* `org.kestra.task.gcp.gcs.Trigger`: Trigger flow on files 
-
-### Cloud Storage Bucket
-* `org.kestra.task.gcp.gcs.CreateBucket`: Create a new Cloud Storage bucket
-* `org.kestra.task.gcp.gcs.DeleteBucket`: Delete a new Cloud Storage bucket
-* `org.kestra.task.gcp.gcs.UpdateBucket`: Update a new Cloud Storage bucket
+## Documentation
+* The official Kestra documentation can be found under: [kestra.io](https://kestra.io)
+* This plugin documentation can be found [here](https://kestra.io/plugins/task-gcp/)
 
 ## License
 Apache 2.0 © [Nigh Tech](https://nigh.tech)
+
