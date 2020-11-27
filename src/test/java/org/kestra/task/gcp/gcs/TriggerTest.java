@@ -11,19 +11,18 @@ import org.kestra.core.models.executions.Execution;
 import org.kestra.core.models.triggers.TriggerContext;
 import org.kestra.core.queues.QueueFactoryInterface;
 import org.kestra.core.queues.QueueInterface;
-import org.kestra.core.repositories.ExecutionRepositoryInterface;
 import org.kestra.core.repositories.LocalFlowRepositoryLoader;
-import org.kestra.core.repositories.TriggerRepositoryInterface;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
-import org.kestra.core.schedulers.Scheduler;
-import org.kestra.core.services.FlowListenersService;
-import org.kestra.core.utils.ExecutorsUtils;
+import org.kestra.core.schedulers.AbstractScheduler;
+import org.kestra.core.schedulers.SchedulerExecutionStateInterface;
+import org.kestra.core.schedulers.SchedulerTriggerStateInterface;
 import org.kestra.core.utils.TestsUtils;
+import org.kestra.runner.memory.MemoryFlowListeners;
+import org.kestra.core.schedulers.DefaultScheduler;
 import org.kestra.task.gcp.gcs.models.Blob;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Objects;
@@ -43,16 +42,13 @@ class TriggerTest {
     private ApplicationContext applicationContext;
 
     @Inject
-    private ExecutorsUtils executorsUtils;
+    private SchedulerTriggerStateInterface triggerState;
 
     @Inject
-    private TriggerRepositoryInterface triggerContextRepository;
+    private SchedulerExecutionStateInterface executionState;
 
     @Inject
-    private ExecutionRepositoryInterface executionRepository;
-
-    @Inject
-    private FlowListenersService flowListenersService;
+    private MemoryFlowListeners flowListenersService;
 
     @Inject
     @Named(QueueFactoryInterface.EXECUTION_NAMED)
@@ -84,13 +80,11 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (Scheduler scheduler = new Scheduler(
+        try (AbstractScheduler scheduler = new DefaultScheduler(
             this.applicationContext,
-            this.executorsUtils,
-            this.executionQueue,
             this.flowListenersService,
-            this.executionRepository,
-            this.triggerContextRepository
+            this.executionState,
+            this.triggerState
         )) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
