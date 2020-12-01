@@ -9,11 +9,13 @@ import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
+import org.kestra.core.utils.Rethrow;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
+import java.util.stream.Collectors;
 
 @SuperBuilder
 @ToString
@@ -96,6 +98,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     @Schema(
         title = "The dataset's labels"
     )
+    @PluginProperty(dynamic = true)
     protected Map<String, String> labels;
 
     protected DatasetInfo datasetInfo(RunContext runContext) throws Exception {
@@ -130,7 +133,13 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         }
 
         if (this.labels != null) {
-            builder.setLabels(this.labels);
+            builder.setLabels(
+                this.labels.entrySet().stream()
+                    .collect(Collectors.toMap(
+                        e -> e.getKey(),
+                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                    ))
+            );
         }
 
         return builder.build();
@@ -176,9 +185,9 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     public static class AccessControl {
         @NotNull
         @Schema(
-        title = "The entity"
-    )
-    @PluginProperty(dynamic = true)
+            title = "The entity"
+        )
+        @PluginProperty(dynamic = true)
         private Entity entity;
 
         @SuppressWarnings("unused")
@@ -189,16 +198,16 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         public static class Entity {
             @NotNull
             @Schema(
-        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
-    )
-    @PluginProperty(dynamic = true)
+                title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
+            )
+            @PluginProperty(dynamic = true)
             private Type type;
 
             @NotNull
             @Schema(
-        title = "The value for the entity (ex : user email if the type is USER ...)"
-    )
-    @PluginProperty(dynamic = true)
+                title = "The value for the entity (ex : user email if the type is USER ...)"
+            )
+            @PluginProperty(dynamic = true)
             private String value;
 
             @SuppressWarnings("unused")
@@ -212,9 +221,9 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
 
         @NotNull
         @Schema(
-        title = "The role to assign to the entity"
-    )
-    @PluginProperty(dynamic = true)
+            title = "The role to assign to the entity"
+        )
+        @PluginProperty(dynamic = true)
         private Role role;
 
         @SuppressWarnings("unused")
