@@ -35,21 +35,21 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
 
     @Schema(
         title = "Whether the requester pays or not.",
-        description = "Whether a user accessing the bucket or an object it contains should assume the transit\n" +
+        description = "Whether a user accessing the bucket or an object it contains should assume the transit " +
             " costs related to the access."
     )
     protected Boolean requesterPays;
 
     @Schema(
         title = "Whether versioning should be enabled for this bucket",
-        description = "When set to true, versioning is\n" +
+        description = "When set to true, versioning is " +
             " fully enabled."
     )
     protected Boolean versioningEnabled;
 
     @Schema(
         title = "The bucket's website index page",
-        description = "Behaves as the bucket's directory index where missing\n" +
+        description = "Behaves as the bucket's directory index where missing " +
             " blobs are treated as potential directories."
     )
     protected String indexPage;
@@ -61,26 +61,26 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
 
     @Schema(
         title = "The bucket's lifecycle configuration",
-        description = "This configuration is expressed as a number of lifecycle rules, consisting of an\n" +
-            " action and a condition.\n" +
+        description = "This configuration is expressed as a number of lifecycle rules, consisting of an" +
+            " action and a condition." +
             " \n" +
-            " See <a href=\"https://cloud.google.com/storage/docs/lifecycle\">Object Lifecycle\n" +
+            " See <a href=\"https://cloud.google.com/storage/docs/lifecycle\">Object Lifecycle" +
             " Management</a>"
     )
     protected List<BucketInfo.LifecycleRule> lifecycleRules;
 
     @Schema(
         title = "The bucket's storage class",
-        description = "This defines how blobs in the bucket are stored and\n" +
-            " determines the SLA and the cost of storage. A list of supported values is available <a\n" +
+        description = "This defines how blobs in the bucket are stored and " +
+            " determines the SLA and the cost of storage. A list of supported values is available <a" +
             " href=\"https://cloud.google.com/storage/docs/storage-classes\">here</a>."
     )
     protected StorageClass storageClass;
 
     @Schema(
         title = "The bucket's location",
-        description = "Data for blobs in the bucket resides in physical storage within\n" +
-            " this region. A list of supported values is available <a\n" +
+        description = "Data for blobs in the bucket resides in physical storage within" +
+            " this region. A list of supported values is available <a" +
             " href=\"https://cloud.google.com/storage/docs/bucket-locations\">here</a>."
     )
     @PluginProperty(dynamic = true)
@@ -88,27 +88,27 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
 
     @Schema(
         title = "The bucket's Cross-Origin Resource Sharing (CORS) configuration",
-        description = " See <a href=\"https://cloud.google.com/storage/docs/cross-origin\">Cross-Origin Resource\n" +
-            " Sharing (CORS)</a>"
+        description = " See <a href=\"https://cloud.google.com/storage/docs/cross-origin\">Cross-Origin Resource" +
+            "Sharing (CORS)</a>"
     )
     protected List<Cors> cors;
 
     @Schema(
         title = "The bucket's access control configuration",
-        description = " See <a\n" +
-            " href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">\n" +
-            " About Access Control Lists</a>"
+        description = " See <a" +
+            " href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">" +
+            "About Access Control Lists</a>"
     )
     protected List<AccessControl> acl;
 
     @Schema(
         title = "The default access control configuration",
-        description = "The access control configuration to apply to bucket's blobs when no other\n" +
-            " configuration is specified.\n" +
+        description = "The access control configuration to apply to bucket's blobs when no other" +
+            " configuration is specified." +
             "\n" +
-            " Ssee <a\n" +
-            "     href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">\n" +
-            "     About Access Control Lists</a>"
+            " See <a" +
+            "     href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">" +
+            "About Access Control Lists</a>"
     )
     protected List<AccessControl> defaultAcl;
 
@@ -130,21 +130,21 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
 
     @Schema(
         title = "Retention period",
-        description = "If policy is not locked this value can be cleared, increased, and decreased. If policy is\n" +
+        description = "If policy is not locked this value can be cleared, increased, and decreased. If policy is " +
             " locked the retention period can only be increased."
     )
     protected Long retentionPeriod;
 
     @Schema(
         title = "The Bucket's IAM Configuration",
-        description = " See <a href=\"https://cloud.google.com/storage/docs/uniform-bucket-level-access\">uniform\n" +
-            "      bucket-level access</a>"
+        description = " See <a href=\"https://cloud.google.com/storage/docs/uniform-bucket-level-access\">uniform " +
+            " bucket-level access</a>"
     )
     protected BucketInfo.IamConfiguration iamConfiguration;
 
     @Schema(
         title = "The bucket's logging configuration",
-        description = "This configuration defines the destination bucket and optional name\n" +
+        description = "This configuration defines the destination bucket and optional name" +
             " prefix for the current bucket's logs."
     )
     protected BucketInfo.Logging logging;

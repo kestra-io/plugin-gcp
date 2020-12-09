@@ -143,12 +143,14 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
     @Schema(
         title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
-        description = " Schema update options are supported in two cases: when\n" +
-            " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination\n" +
-            " table is a partition of a table, specified by partition decorators. For normal tables,\n" +
-            " WRITE_TRUNCATE will always overwrite the schema."
+        description = " Schema update options are supported in two cases: " +
+            "* when writeDisposition is WRITE_APPEND; \n" +
+            "* when writeDisposition is WRITE_TRUNCATE and the destination" +
+            " table is a partition of a table, specified by partition decorators. " +
+            "\n" +
+            " For normal tables, WRITE_TRUNCATE will always overwrite the schema."
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = false)
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
     @Schema(
@@ -160,13 +162,13 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     @Schema(
         title = "The action that should occur if the destination table already exists"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = false)
     private JobInfo.WriteDisposition writeDisposition;
 
     @Schema(
         title = "Whether the job is allowed to create tables"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = false)
     private JobInfo.CreateDisposition createDisposition;
 
     @Override

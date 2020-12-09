@@ -43,7 +43,7 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
 
     @Schema(
         title = "Whether to delete a dataset even if non-empty",
-        description = "If not provided, attempting to\n" +
+        description = "If not provided, attempting to" +
             " delete a non-empty dataset will result in a exception being thrown."
     )
     private Boolean deleteContents;

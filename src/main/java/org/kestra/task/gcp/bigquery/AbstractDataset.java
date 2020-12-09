@@ -37,14 +37,14 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
 
     @Schema(
         title = "The default lifetime of all tables in the dataset, in milliseconds",
-        description = "The minimum value is\n" +
-            " 3600000 milliseconds (one hour). Once this property is set, all newly-created tables in the\n" +
-            " dataset will have an expirationTime property set to the creation time plus the value in this\n" +
-            " property, and changing the value will only affect new tables, not existing ones. When the\n" +
-            " expirationTime for a given table is reached, that table will be deleted automatically. If a\n" +
-            " table's expirationTime is modified or removed before the table expires, or if you provide an\n" +
-            " explicit expirationTime when creating a table, that value takes precedence over the default\n" +
-            " expiration time indicated by this property. This property is experimental and might be\n" +
+        description = "The minimum value is" +
+            " 3600000 milliseconds (one hour). Once this property is set, all newly-created tables in the" +
+            " dataset will have an expirationTime property set to the creation time plus the value in this" +
+            " property, and changing the value will only affect new tables, not existing ones. When the" +
+            " expirationTime for a given table is reached, that table will be deleted automatically. If a" +
+            " table's expirationTime is modified or removed before the table expires, or if you provide an" +
+            " explicit expirationTime when creating a table, that value takes precedence over the default" +
+            " expiration time indicated by this property. This property is experimental and might be" +
             " subject to change or removed."
     )
     protected Long defaultTableLifetime;
@@ -64,10 +64,10 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
 
     @Schema(
         title = "The geographic location where the dataset should reside",
-        description = "This property is experimental\n" +
-            " and might be subject to change or removed.\n" +
+        description = "This property is experimental" +
+            " and might be subject to change or removed." +
             " \n" +
-            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset\n" +
+            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset" +
             "      Location</a>"
     )
     @PluginProperty(dynamic = true)
@@ -75,22 +75,22 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
 
     @Schema(
         title = "The default encryption key for all tables in the dataset",
-        description = "Once this property is set, all\n" +
-            " newly-created partitioned tables in the dataset will have encryption key set to this value,\n" +
+        description = "Once this property is set, all" +
+            " newly-created partitioned tables in the dataset will have encryption key set to this value," +
             " unless table creation request (or query) overrides the key."
     )
     protected EncryptionConfiguration defaultEncryptionConfiguration;
 
     @Schema(
         title = "[Optional] The default partition expiration time for all partitioned tables in the dataset, in milliseconds",
-        description = " Once this property is set, all newly-created partitioned tables in the\n" +
-            " dataset will has an expirationMs property in the timePartitioning settings set to this value.\n" +
-            " Changing the value only affect new tables, not existing ones. The storage in a partition will\n" +
-            " have an expiration time of its partition time plus this value. Setting this property\n" +
-            " overrides the use of defaultTableExpirationMs for partitioned tables: only one of\n" +
-            " defaultTableExpirationMs and defaultPartitionExpirationMs will be used for any new\n" +
-            " partitioned table. If you provide an explicit timePartitioning.expirationMs when creating or\n" +
-            " updating a partitioned table, that value takes precedence over the default partition\n" +
+        description = " Once this property is set, all newly-created partitioned tables in the " +
+            " dataset will has an expirationMs property in the timePartitioning settings set to this value." +
+            " Changing the value only affect new tables, not existing ones. The storage in a partition will" +
+            " have an expiration time of its partition time plus this value. Setting this property" +
+            " overrides the use of defaultTableExpirationMs for partitioned tables: only one of" +
+            " defaultTableExpirationMs and defaultPartitionExpirationMs will be used for any new" +
+            " partitioned table. If you provide an explicit timePartitioning.expirationMs when creating or" +
+            " updating a partitioned table, that value takes precedence over the default partition" +
             " expiration time indicated by this property. The value may be null."
     )
     protected Long defaultPartitionExpirationMs;
@@ -136,7 +136,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
             builder.setLabels(
                 this.labels.entrySet().stream()
                     .collect(Collectors.toMap(
-                        e -> e.getKey(),
+                        Map.Entry::getKey,
                         Rethrow.throwFunction(e -> runContext.render(e.getValue()))
                     ))
             );
@@ -265,10 +265,10 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         @NotNull
         @Schema(
             title = "The geographic location where the dataset should reside",
-            description = "This property is experimental\n" +
-                " and might be subject to change or removed.\n" +
+            description = "This property is experimental" +
+                " and might be subject to change or removed." +
                 " \n" +
-                " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset\n" +
+                " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset" +
                 "      Location</a>"
         )
         private String location;

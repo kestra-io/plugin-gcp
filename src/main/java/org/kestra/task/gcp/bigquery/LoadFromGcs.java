@@ -46,8 +46,8 @@ import java.util.List;
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     @Schema(
         title = "Google Cloud Storage source data",
-        description = "The fully-qualified URIs that point to source data in Google Cloud Storage (e.g.\n" +
-            " gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the\n" +
+        description = "The fully-qualified URIs that point to source data in Google Cloud Storage (e.g." +
+            " gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the" +
             " 'bucket' name."
     )
     @PluginProperty(dynamic = true)

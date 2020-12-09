@@ -38,9 +38,9 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
     @Schema(
         title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
-        description = "Schema update options are supported in two cases: when\n" +
-            " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination\n" +
-            " table is a partition of a table, specified by partition decorators. For normal tables,\n" +
+        description = "Schema update options are supported in two cases: when" +
+            " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination" +
+            " table is a partition of a table, specified by partition decorators. For normal tables," +
             " WRITE_TRUNCATE will always overwrite the schema."
     )
     @PluginProperty(dynamic = false)
@@ -72,8 +72,8 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
     @Schema(
         title = "Whether BigQuery should allow extra values that are not represented in the table schema",
-        description = " If true, the extra values are ignored. If false, records with extra columns\n" +
-            " are treated as bad records, and if there are too many bad records, an invalid error is\n" +
+        description = " If true, the extra values are ignored. If false, records with extra columns" +
+            " are treated as bad records, and if there are too many bad records, an invalid error is" +
             " returned in the job result. By default unknown values are not allowed."
     )
     @PluginProperty(dynamic = false)
@@ -81,7 +81,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
     @Schema(
         title = "The maximum number of bad records that BigQuery can ignore when running the job",
-        description = " If the number of bad records exceeds this value, an invalid error is returned in the job result.\n" +
+        description = " If the number of bad records exceeds this value, an invalid error is returned in the job result." +
             " By default no bad record is ignored."
     )
     @PluginProperty(dynamic = false)
@@ -89,8 +89,8 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
     @Schema(
         title = "The schema for the destination table",
-        description = "The schema can be omitted if the destination table\n" +
-            " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. \n" +
+        description = "The schema can be omitted if the destination table" +
+            " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. " +
             " DATASTORE_BACKUP format option)."
     )
     @PluginProperty(dynamic = false)
@@ -285,9 +285,9 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     public static class CsvOptions {
         @Schema(
             title = "Whether BigQuery should accept rows that are missing trailing optional columns",
-            description = "If true, BigQuery treats missing trailing columns as null values. If {@code false}, records\n" +
-                " with missing trailing columns are treated as bad records, and if there are too many bad\n" +
-                " records, an invalid error is returned in the job result. By default, rows with missing\n" +
+            description = "If true, BigQuery treats missing trailing columns as null values. If {@code false}, records" +
+                " with missing trailing columns are treated as bad records, and if there are too many bad" +
+                " records, an invalid error is returned in the job result. By default, rows with missing" +
                 " trailing columns are considered bad records."
         )
         @PluginProperty(dynamic = true)
@@ -302,8 +302,8 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
         @Schema(
             title = "The character encoding of the data",
-            description = "The supported values are UTF-8 or ISO-8859-1. The\n" +
-                " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split\n" +
+            description = "The supported values are UTF-8 or ISO-8859-1. The" +
+                " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split" +
                 " using the values set in {@link #setQuote(String)} and {@link #setFieldDelimiter(String)}."
         )
         @PluginProperty(dynamic = true)
@@ -311,9 +311,9 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
         @Schema(
             title = "The separator for fields in a CSV file",
-            description = "BigQuery converts the string to ISO-8859-1\n" +
-                " encoding, and then uses the first byte of the encoded string to split the data in its raw,\n" +
-                " binary state. BigQuery also supports the escape sequence \"\\t\" to specify a tab separator. The\n" +
+            description = "BigQuery converts the string to ISO-8859-1" +
+                " encoding, and then uses the first byte of the encoded string to split the data in its raw," +
+                " binary state. BigQuery also supports the escape sequence \"\\t\" to specify a tab separator. The" +
                 " default value is a comma (',')."
         )
         @PluginProperty(dynamic = true)
@@ -321,11 +321,11 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
         @Schema(
             title = "The value that is used to quote data sections in a CSV file",
-            description = "BigQuery converts the\n" +
-                " string to ISO-8859-1 encoding, and then uses the first byte of the encoded string to split\n" +
-                " the data in its raw, binary state. The default value is a double-quote ('\"'). If your data\n" +
-                " does not contain quoted sections, set the property value to an empty string. If your data\n" +
-                " contains quoted newline characters, you must also set {@link\n" +
+            description = "BigQuery converts the" +
+                " string to ISO-8859-1 encoding, and then uses the first byte of the encoded string to split" +
+                " the data in its raw, binary state. The default value is a double-quote ('\"'). If your data" +
+                " does not contain quoted sections, set the property value to an empty string. If your data" +
+                " contains quoted newline characters, you must also set {@link" +
                 " #setAllowQuotedNewLines(boolean)} property to {@code true}."
         )
         @PluginProperty(dynamic = true)
@@ -333,7 +333,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
         @Schema(
             title = "The number of rows at the top of a CSV file that BigQuery will skip when reading the data",
-            description = "The default value is 0. This property is useful if you have header rows in the file\n" +
+            description = "The default value is 0. This property is useful if you have header rows in the file" +
                 " that should be skipped."
         )
         @PluginProperty(dynamic = true)
@@ -378,7 +378,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     @AllArgsConstructor
     public static class AvroOptions {
         @Schema(
-            title = "If Format option is set to AVRO, you can interpret logical types into their corresponding\n" +
+            title = "If Format option is set to AVRO, you can interpret logical types into their corresponding" +
                 " types (such as TIMESTAMP) instead of only using their raw types (such as INTEGER)",
             description = "The value may be null."
         )

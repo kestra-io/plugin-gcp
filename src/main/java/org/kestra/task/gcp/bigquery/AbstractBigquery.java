@@ -30,7 +30,7 @@ import javax.validation.Valid;
 abstract public class AbstractBigquery extends AbstractTask {
     @Schema(
         title = "The geographic location where the dataset should reside",
-        description = "This property is experimental\n" +
+        description = "This property is experimental" +
             " and might be subject to change or removed.\n" +
             " \n" +
             " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
