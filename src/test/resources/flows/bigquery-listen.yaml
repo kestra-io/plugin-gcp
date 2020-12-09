@@ -1,0 +1,14 @@
+id: bigquery-listen
+namespace: org.kestra.tests
+
+triggers:
+  - id: watch
+    type: org.kestra.task.gcp.bigquery.Trigger
+    sql: "SELECT * FROM `{{globals.project}}.{{globals.dataset}}.{{globals.table}}`"
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: org.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

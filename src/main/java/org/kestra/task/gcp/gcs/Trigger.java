@@ -18,6 +18,7 @@ import org.kestra.core.models.triggers.TriggerContext;
 import org.kestra.core.models.triggers.TriggerOutput;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.utils.IdUtils;
+import org.kestra.task.gcp.GcpInterface;
 import org.kestra.task.gcp.gcs.models.Blob;
 
 import java.net.URI;
@@ -66,32 +67,15 @@ import static org.kestra.core.utils.Rethrow.throwFunction;
         )
     }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output> {
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    protected String projectId;
-
-    @Schema(
-        title = "The GCP service account key"
-    )
-    @PluginProperty(dynamic = true)
-    protected String serviceAccount;
-
-    @Schema(
-        title = "The GCP scopes to used"
-    )
-    @PluginProperty(dynamic = true)
-    @Builder.Default
-    protected java.util.List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
-
-    @Schema(
-        title = "The interval between test of triggers",
-        description = "The interval are expressed with ISO 8601 Durations: https://en.wikipedia.org/wiki/ISO_8601#Durations"
-    )
+public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface {
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
+
+    protected String projectId;
+    protected String serviceAccount;
+
+    @Builder.Default
+    protected java.util.List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
     @Schema(
         title = "The directory to list"

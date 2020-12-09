@@ -21,23 +21,11 @@ import java.util.List;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractTask extends Task {
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
+public abstract class AbstractTask extends Task implements GcpInterface {
     protected String projectId;
 
-    @Schema(
-        title = "The GCP service account key"
-    )
-    @PluginProperty(dynamic = true)
     protected String serviceAccount;
 
-    @Schema(
-        title = "The GCP scopes to used"
-    )
-    @PluginProperty(dynamic = true)
     @Builder.Default
     protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 

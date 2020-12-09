@@ -88,40 +88,19 @@ import java.util.stream.StreamSupport;
 @Schema(
     title = "Execute BigQuery SQL query in a specific BigQuery database"
 )
-public class Query extends AbstractBigquery implements RunnableTask<Query.Output> {
-    @Schema(
-        title = "The sql query to run"
-    )
-    @PluginProperty(dynamic = true)
+public class Query extends AbstractBigquery implements RunnableTask<Query.Output>, QueryInterface {
     private String sql;
 
     @Builder.Default
-    @Schema(
-        title = "Whether to use BigQuery's legacy SQL dialect for this query",
-        description = "By default this property is set to false."
-    )
-    @PluginProperty(dynamic = true)
     private boolean legacySql = false;
 
     @Builder.Default
-    @Schema(
-        title = "Whether to Fetch the data from the query result to the task output"
-    )
-    @PluginProperty(dynamic = true)
     private boolean fetch = false;
 
     @Builder.Default
-    @Schema(
-        title = "Whether to store the data from the query result into an ion serialized data file"
-    )
-    @PluginProperty(dynamic = true)
     private boolean store = false;
 
     @Builder.Default
-    @Schema(
-        title = "Whether to Fetch only one data row from the query result to the task output"
-    )
-    @PluginProperty(dynamic = true)
     private boolean fetchOne = false;
 
     // private List<String> positionalParameters;
@@ -288,8 +267,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         private Map<String, Object> row;
 
         @Schema(
-            title = "The size of the rows fetch",
-            description = "Only populated if 'fetchOne' or 'fetch' parameter is set to true."
+            title = "The size of the rows fetch"
         )
         private Long size;
 

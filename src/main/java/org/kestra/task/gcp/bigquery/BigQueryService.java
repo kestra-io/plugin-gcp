@@ -11,11 +11,13 @@ import java.util.UUID;
 
 public class BigQueryService {
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
+        String jobName = runContext.getVariables().containsKey("execution") ? "{{execution.id}}_{{taskrun.id}}" : "{{trigger.id}}";
+
         return JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()))
             .setLocation(runContext.render(abstractBigquery.getLocation()))
             .setJob(runContext
-                .render("{{flow.namespace}}.{{flow.id}}_{{execution.id}}_{{taskrun.id}}_" + UUID.randomUUID())
+                .render("{{flow.namespace}}.{{flow.id}}_" + jobName + "_" + UUID.randomUUID())
                 .replace(".", "-")
             )
             .build();

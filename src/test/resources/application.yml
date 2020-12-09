@@ -20,3 +20,6 @@ kestra:
     globals:
       bucket: kestra-unit-test
       random: "${random.shortuuid}"
+      project: "${kestra.tasks.bigquery.project}"
+      dataset: "${kestra.tasks.bigquery.dataset}"
+      table: "${random.shortuuid}"
