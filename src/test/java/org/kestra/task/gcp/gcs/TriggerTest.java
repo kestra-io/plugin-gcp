@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -104,7 +105,7 @@ class TriggerTest {
 
             scheduler.run();
 
-            queueCount.await();
+            queueCount.await(1, TimeUnit.MINUTES);
 
             @SuppressWarnings("unchecked")
             java.util.List<Blob> trigger = (java.util.List<Blob>) last.get().getTrigger().getVariables().get("blobs");

@@ -259,7 +259,7 @@ class QueryTest {
             "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
         ));
 
-        JobException e = assertThrows(JobException.class, () -> {
+        FailsafeException e = assertThrows(FailsafeException.class, () -> {
             task.run(runContext);
         });
 
