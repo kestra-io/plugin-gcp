@@ -3,6 +3,7 @@ package org.kestra.task.gcp.gcs;
 import com.google.cloud.storage.Acl;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
+import com.google.cloud.storage.BucketInfo.LifecycleRule;
 import com.google.cloud.storage.Cors;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -64,10 +65,11 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         description = "This configuration is expressed as a number of lifecycle rules, consisting of an" +
             " action and a condition." +
             " \n" +
-            " See <a href=\"https://cloud.google.com/storage/docs/lifecycle\">Object Lifecycle" +
-            " Management</a>"
+            " See <a href=\"https://cloud.google.com/storage/docs/lifecycle\">Object Lifecycle Management </a>" +
+            " \n" +
+            " Only the age condition is supported. Only the delete and SetStorageClass actions are supported"
     )
-    protected List<BucketInfo.LifecycleRule> lifecycleRules;
+    protected List<BucketLifecycleRule> lifecycleRules;
 
     @Schema(
         title = "The bucket's storage class",
@@ -169,7 +171,7 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         }
 
         if (this.lifecycleRules != null) {
-            builder.setLifecycleRules(this.lifecycleRules);
+            builder.setLifecycleRules(mapLifecycleRules(this.lifecycleRules));
         }
 
         if (this.storageClass != null) {
@@ -313,6 +315,140 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         }
     }
 
+    public List<LifecycleRule> mapLifecycleRules(List<BucketLifecycleRule> bucketLifecycleRules) {
+        if (bucketLifecycleRules == null) {
+            return null;
+        }
+
+        List<LifecycleRule> rules = new ArrayList<>();
+        for (BucketLifecycleRule bucketLifecycleRule : bucketLifecycleRules) {
+            rules.add(mapLifecycleRule(bucketLifecycleRule));
+        }
+
+        return rules;
+    }
+
+    public LifecycleRule mapLifecycleRule(BucketLifecycleRule bucketLifecycleRule) {
+        if (bucketLifecycleRule == null || bucketLifecycleRule.getCondition() == null || bucketLifecycleRule.getAction() == null) {
+            return null;
+        }
+
+        switch (bucketLifecycleRule.getAction().getType()) {
+            case DELETE:
+                return BucketLifecycleRule.DeleteAction.builder()
+                    .build()
+                    .convert(bucketLifecycleRule.getCondition());
+            case SET_STORAGE_CLASS:
+                return BucketLifecycleRule.SetStorageAction.builder()
+                    .storageClass(StorageClass.valueOf((String) bucketLifecycleRule.getAction().getValue()))
+                    .build()
+                    .convert(bucketLifecycleRule.getCondition());
+            default:
+                return null;
+
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Getter
+    public static class BucketLifecycleRule {
+        @NotNull
+        @Schema(
+            title = "The condition"
+        )
+        @PluginProperty(dynamic = true)
+        private AbstractBucket.BucketLifecycleRule.Condition condition;
+
+        @NotNull
+        @Schema(
+            title = "The action to take when a lifecycle condition is met"
+        )
+        @PluginProperty(dynamic = true)
+        private AbstractBucket.BucketLifecycleRule.Action action;
+
+        @SuppressWarnings("unused")
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        @Getter
+        public static class Condition {
+            @NotNull
+            @Schema(
+                title = "The Age condition is satisfied when an object reaches the specified age (in days). Age is measured from the object's creation time."
+            )
+            @PluginProperty(dynamic = true)
+            private Integer age;
+        }
+
+        @SuppressWarnings("unused")
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        @Getter
+        public static class Action {
+            @NotNull
+            @Schema(
+                title = "The type of the action (DELETE ...)"
+            )
+            @PluginProperty(dynamic = true)
+            private AbstractBucket.BucketLifecycleRule.Action.Type type;
+
+            @Schema(
+                title = "The value for the action (if any)"
+            )
+            @PluginProperty(dynamic = true)
+            private String value;
+
+            @SuppressWarnings("unused")
+            public enum Type {
+                DELETE,
+                SET_STORAGE_CLASS
+            }
+        }
+
+
+        @SuppressWarnings("unused")
+        @SuperBuilder
+        @NoArgsConstructor
+        @Getter
+        public static class DeleteAction implements LifecycleAction {
+            @Override
+            public LifecycleRule convert(BucketLifecycleRule.Condition condition) {
+                return new BucketInfo.LifecycleRule(
+                    LifecycleRule.LifecycleAction.newDeleteAction(),
+                    LifecycleRule.LifecycleCondition.newBuilder().setAge(condition.getAge()).build());
+            }
+        }
+
+        @SuppressWarnings("unused")
+        @SuperBuilder
+        @AllArgsConstructor
+        @NoArgsConstructor
+        @Getter
+        public static class SetStorageAction implements LifecycleAction {
+            @NotNull
+            @Schema(
+                title = "The storage class (standard, nearline, coldline ...)"
+            )
+            @PluginProperty(dynamic = true)
+            private AbstractBucket.StorageClass storageClass;
+
+            @Override
+            public LifecycleRule convert(BucketLifecycleRule.Condition condition) {
+                return new BucketInfo.LifecycleRule(
+                    LifecycleRule.LifecycleAction.newSetStorageClassAction(com.google.cloud.storage.StorageClass.valueOf(this.storageClass.name())),
+                    LifecycleRule.LifecycleCondition.newBuilder().setAge(condition.getAge()).build());
+            }
+        }
+
+        public interface LifecycleAction {
+            BucketInfo.LifecycleRule convert(BucketLifecycleRule.Condition condition);
+        }
+    }
+
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
@@ -357,6 +493,8 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         MULTI_REGIONAL,
         NEARLINE,
         COLDLINE,
-        STANDARD
+        STANDARD,
+        ARCHIVE,
+        DURABLE_REDUCED_AVAILABILITY
     }
 }
