@@ -2,22 +2,14 @@ package org.kestra.task.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.CharStreams;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
-import org.kestra.core.storages.StorageInterface;
 import org.kestra.core.utils.TestsUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.util.Objects;
 import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;

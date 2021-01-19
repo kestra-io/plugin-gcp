@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import com.google.common.io.CharStreams;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.lang3.StringUtils;

@@ -49,9 +49,9 @@ dependencies {
 
     api group: 'com.google.api', name: 'gax-grpc', version: '1.60.1'
     api group: 'com.google.api', name: 'gax', version: '1.60.1'
-    api 'com.google.cloud:google-cloud-storage:1.113.8'
-    api 'com.google.cloud:google-cloud-bigquery:1.126.3'
-    api 'com.google.cloud:google-cloud-container:1.2.3'
+    api 'com.google.cloud:google-cloud-storage:1.113.9'
+    api 'com.google.cloud:google-cloud-bigquery:1.126.6'
+    api 'com.google.cloud:google-cloud-container:1.2.4'
 }
 
 

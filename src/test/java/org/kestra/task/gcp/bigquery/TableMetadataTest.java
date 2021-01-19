@@ -4,9 +4,8 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.runners.RunContextFactory;
@@ -17,7 +16,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest

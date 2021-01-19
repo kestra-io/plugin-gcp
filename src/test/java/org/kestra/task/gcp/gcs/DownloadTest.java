@@ -4,7 +4,7 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;

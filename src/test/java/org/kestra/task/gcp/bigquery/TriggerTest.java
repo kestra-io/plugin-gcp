@@ -3,7 +3,7 @@ package org.kestra.task.gcp.bigquery;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.models.executions.Execution;
