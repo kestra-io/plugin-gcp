@@ -38,7 +38,6 @@ abstract public class AbstractBigquery extends AbstractTask {
     @PluginProperty(dynamic = true)
     protected String location;
 
-    @Valid
     @Schema(
         title = "Automatic retry for retryable bigquery exceptions",
         description = "Some exceptions (espacially rate limit) are not retried by default by BigQuery client, we use by " +
@@ -48,7 +47,6 @@ abstract public class AbstractBigquery extends AbstractTask {
     @PluginProperty(dynamic = true)
     protected AbstractRetry retryAuto;
 
-    @Valid
     @Builder.Default
     @Schema(
         title = "The reason that are valid for a automatic retry."
@@ -59,7 +57,6 @@ abstract public class AbstractBigquery extends AbstractTask {
         "jobBackendError"
     );
 
-    @Valid
     @Builder.Default
     @Schema(
         title = "The message that are valid for a automatic retry.",
