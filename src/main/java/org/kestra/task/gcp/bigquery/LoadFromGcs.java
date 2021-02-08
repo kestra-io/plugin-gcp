@@ -44,10 +44,10 @@ import java.util.List;
             title = "Load a csv file with a defined schema",
             code = {
                 "- id: load_files_test"
-                "    type: org.kestra.task.gcp.bigquery.LoadFromGcs"
-                "    destinationTable: \"myDataset.myTable\""
-                "    ignoreUnknownValues: true"
-                "    schema:"
+                "  type: org.kestra.task.gcp.bigquery.LoadFromGcs"
+                "  destinationTable: \"myDataset.myTable\""
+                "  ignoreUnknownValues: true"
+                "  schema:"
                 "    fields:"
                 "      - name: colA"
                 "        type: STRING"
@@ -55,13 +55,13 @@ import java.util.List;
                 "        type: NUMERIC"
                 "      - name: colC"
                 "        type: STRING"
-                "    format: CSV"
-                "    csvOptions:"
-                "      allowJaggedRows: true"
-                "      encoding: UTF-8"
-                "      fieldDelimiter: \",\""
-                "    from:"
-                "    - gs://myBucket/myFile.csv"
+                "  format: CSV"
+                "  csvOptions:"
+                "    allowJaggedRows: true"
+                "    encoding: UTF-8"
+                "    fieldDelimiter: \",\""
+                "  from:"
+                "  - gs://myBucket/myFile.csv"
             }
         )
 )
