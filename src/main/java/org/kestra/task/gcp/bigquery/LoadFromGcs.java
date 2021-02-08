@@ -39,6 +39,31 @@ import java.util.List;
             }
         )
     }
+    @Example(
+            full = true,
+            title = "Load a csv file with a defined schema",
+            code = {
+                "- id: load_files_test"
+                "    type: org.kestra.task.gcp.bigquery.LoadFromGcs"
+                "    destinationTable: \"myDataset.myTable\""
+                "    ignoreUnknownValues: true"
+                "    schema:"
+                "    fields:"
+                "      - name: colA"
+                "        type: STRING"
+                "      - name: colB"
+                "        type: NUMERIC"
+                "      - name: colC"
+                "        type: STRING"
+                "    format: CSV"
+                "    csvOptions:"
+                "      allowJaggedRows: true"
+                "      encoding: UTF-8"
+                "      fieldDelimiter: \",\""
+                "    from:"
+                "    - gs://myBucket/myFile.csv"
+            }
+        )
 )
 @Schema(
     title = "Load data from GCS (Google Cloud Storage) to BigQuery"
