@@ -27,17 +27,42 @@ import java.util.List;
 @NoArgsConstructor
 @Plugin(
     examples = {
-        @Example(
-            title = "Load an avro file from a gcs bucket",
-            code = {
-                "from:",
-                "  - \"{{ outputs.avro-to-gcs }}\"",
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "format: AVRO",
-                "avroOptions:",
-                "  useAvroLogicalTypes: true"
-            }
-        )
+            @Example(
+                    title = "Load an avro file from a gcs bucket",
+                    code = {
+                            "from:",
+                            "  - \"{{ outputs.avro-to-gcs }}\"",
+                            "destinationTable: \"my_project.my_dataset.my_table\"",
+                            "format: AVRO",
+                            "avroOptions:",
+                            "  useAvroLogicalTypes: true"
+                    }
+            ),
+            @Example(
+                    full = true,
+                    title = "Load a csv file with a defined schema",
+                    code = {
+                            "- id: load_files_test",
+                            "  type: org.kestra.task.gcp.bigquery.LoadFromGcs",
+                            "  destinationTable: \"myDataset.myTable\"",
+                            "  ignoreUnknownValues: true",
+                            "  schema:",
+                            "    fields:",
+                            "      - name: colA",
+                            "        type: STRING",
+                            "      - name: colB",
+                            "        type: NUMERIC",
+                            "      - name: colC",
+                            "        type: STRING",
+                            "  format: CSV",
+                            "  csvOptions:",
+                            "    allowJaggedRows: true",
+                            "    encoding: UTF-8",
+                            "    fieldDelimiter: \",\"",
+                            "  from:",
+                            "  - gs://myBucket/myFile.csv",
+                    }
+            )
     }
 )
 @Schema(
