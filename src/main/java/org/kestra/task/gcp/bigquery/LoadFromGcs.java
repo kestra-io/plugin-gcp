@@ -38,8 +38,7 @@ import java.util.List;
                 "  useAvroLogicalTypes: true"
             }
         )
-    }
-    @Example(
+        @Example(
             full = true,
             title = "Load a csv file with a defined schema",
             code = {
