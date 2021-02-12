@@ -163,7 +163,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             run.getBlobs(),
             this.action,
             this.moveDirectory,
-            runContext
+            runContext,
+            this.projectId,
+            this.serviceAccount,
+            this.scopes
         );
 
         ExecutionTrigger executionTrigger = ExecutionTrigger.of(

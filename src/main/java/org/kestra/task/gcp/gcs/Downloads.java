@@ -92,7 +92,10 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         java.util.List<org.kestra.task.gcp.gcs.models.Blob> blobList,
         Action action,
         String moveDirectory,
-        RunContext runContext
+        RunContext runContext,
+        String projectId,
+        String serviceAccount,
+        java.util.List<String> scopes
     ) throws Exception {
         if (action == Action.DELETE) {
             blobList
@@ -101,6 +104,9 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                         .id("archive")
                         .type(Delete.class.getName())
                         .uri(blob.getUri().toString())
+                        .serviceAccount(serviceAccount)
+                        .projectId(projectId)
+                        .scopes(scopes)
                         .build();
                     delete.run(runContext);
                 }));
@@ -115,6 +121,9 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                             + "/" + FilenameUtils.getName(blob.getName())
                         )
                         .delete(true)
+                        .serviceAccount(serviceAccount)
+                        .projectId(projectId)
+                        .scopes(scopes)
                         .build();
                     copy.run(runContext);
                 }));
@@ -157,7 +166,10 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             run.getBlobs(),
             this.action,
             this.moveDirectory,
-            runContext
+            runContext,
+            this.projectId,
+            this.serviceAccount,
+            this.scopes
         );
 
         return Output
