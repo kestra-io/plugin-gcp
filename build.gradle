@@ -49,10 +49,10 @@ dependencies {
     api "androidx.annotation:annotation:1.1.0"
     api 'net.jodah:failsafe:2.4.0'
 
-    api group: 'com.google.api', name: 'gax-grpc', version: '1.60.1'
-    api group: 'com.google.api', name: 'gax', version: '1.60.1'
-    api 'com.google.cloud:google-cloud-storage:1.113.9'
-    api 'com.google.cloud:google-cloud-bigquery:1.126.6'
+    api group: 'com.google.api', name: 'gax-grpc', version: '1.61.0'
+    api group: 'com.google.api', name: 'gax', version: '1.61.0'
+    api 'com.google.cloud:google-cloud-storage:1.113.10'
+    api 'com.google.cloud:google-cloud-bigquery:1.127.3'
     api 'com.google.cloud:google-cloud-container:1.2.4'
 }
 
@@ -93,7 +93,7 @@ dependencies {
     testImplementation "org.hamcrest:hamcrest-library:2.2"
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id', version: '1.1.0'
-    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.3.3'
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.8.0'
 }
 
 /**********************************************************************************************************************\
