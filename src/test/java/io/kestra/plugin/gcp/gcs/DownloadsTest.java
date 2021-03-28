@@ -10,6 +10,8 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +34,7 @@ class DownloadsTest {
     @Test
     void run() throws Exception {
         String out1 = FriendlyId.createFriendlyId();
-        testUtils.upload(random + "/" + out1);
+        testUtils.upload(random + "/" + out1 + " (1).yml");
         String out2 = FriendlyId.createFriendlyId();
         testUtils.upload(random + "/" + out2);
 

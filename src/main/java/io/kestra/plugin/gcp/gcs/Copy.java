@@ -62,10 +62,10 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI from = new URI(runContext.render(this.from));
-        URI to = new URI(runContext.render(this.to));
+        URI from = encode(runContext, this.from);
+        URI to = encode(runContext, this.to);
 
-        BlobId source = BlobId.of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(), from.getPath().substring(1));
+        BlobId source = BlobId.of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(), blobPath(from.getPath().substring(1)));
 
         if (from.toString().equals(to.toString())) {
             throw new IllegalArgumentException("Invalid copy to same path '" + to.toString());
@@ -76,7 +76,7 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         Blob result = connection
             .copy(Storage.CopyRequest.newBuilder()
                 .setSource(source)
-                .setTarget(BlobId.of(to.getAuthority(), to.getPath().substring(1)))
+                .setTarget(BlobId.of(to.getAuthority(), blobPath(to.getPath().substring(1))))
                 .build()
             )
             .getResult();

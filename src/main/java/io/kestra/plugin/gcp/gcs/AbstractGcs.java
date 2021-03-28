@@ -2,16 +2,18 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.gcp.AbstractTask;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @SuperBuilder
 @ToString
@@ -26,5 +28,17 @@ public abstract class AbstractGcs extends AbstractTask {
             .setProjectId(runContext.render(projectId))
             .build()
             .getService();
+    }
+
+    static URI encode(RunContext runContext, String blob) throws IllegalVariableEvaluationException, URISyntaxException {
+        return new URI(encode(runContext.render(blob)));
+    }
+
+    static String encode(String blob) {
+        return blob.replace(" ", "+");
+    }
+
+    static String blobPath(String path) throws IllegalVariableEvaluationException, URISyntaxException {
+        return path.replace("+", " ");
     }
 }

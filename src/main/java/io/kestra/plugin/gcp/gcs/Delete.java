@@ -52,11 +52,11 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI render = new URI(runContext.render(this.uri));
+        URI render = encode(runContext, this.uri);
 
         BlobId source = BlobId.of(
             render.getAuthority(),
-            render.getPath().substring(1)
+            blobPath(render.getPath().substring(1))
         );
 
         logger.debug("Delete '{}'", render);

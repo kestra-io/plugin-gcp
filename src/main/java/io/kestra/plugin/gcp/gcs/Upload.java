@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 
 @SuperBuilder
 @ToString
@@ -56,11 +57,11 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI from = new URI(runContext.render(this.from));
-        URI to = new URI(runContext.render(this.to));
+        URI from = encode(runContext, this.from);
+        URI to = encode(runContext, this.to);
 
         BlobInfo destination = BlobInfo
-            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), to.getPath().substring(1)))
+            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1))))
             .build();
 
         logger.debug("Upload from '{}' to '{}'", from, to);
@@ -82,7 +83,7 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
 
         return Output
             .builder()
-            .uri(new URI("gs://" + destination.getBucket() + "/" + destination.getName()))
+            .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
             .build();
     }
 

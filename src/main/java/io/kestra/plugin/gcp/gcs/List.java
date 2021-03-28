@@ -17,6 +17,7 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 import org.slf4j.Logger;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -78,7 +79,7 @@ public class List extends AbstractGcs implements RunnableTask<List.Output> {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI from = new URI(runContext.render(this.from));
+        URI from = encode(runContext, this.from);
         String regExp = runContext.render(this.regExp);
 
         Page<com.google.cloud.storage.Blob> list = connection.list(from.getAuthority(), options(from));

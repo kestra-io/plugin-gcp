@@ -13,6 +13,8 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import javax.inject.Inject;
 
@@ -90,7 +92,7 @@ class ListTest {
             .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
             .filter(List.Filter.FILES)
             .listingType(List.ListingType.DIRECTORY)
-            .regExp(".*\\/" + dir + "\\/" + lastFileName + "\\.(yaml|yml)")
+            .regExp(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)")
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(1));
@@ -116,7 +118,7 @@ class ListTest {
             .id(ListTest.class.getSimpleName())
             .type(Upload.class.getName())
             .from(source.toString())
-            .to("gs://" + this.bucket +  dir + "/" + out + ".yml")
+            .to("gs://" + this.bucket +  dir + "/" + out + " (1).yml")
             .build();
 
         task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));

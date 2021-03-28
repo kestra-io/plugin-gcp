@@ -47,7 +47,7 @@ public class Blob {
 
     public static Blob of(com.google.cloud.storage.Blob blob) {
         return Blob.builder()
-            .uri(URI.create("gs://" + blob.getBucket() + "/" + blob.getName()))
+            .uri(URI.create("gs://" + blob.getBucket() + "/" + blob.getName().replace(" ", "+")))
             .bucket(blob.getBucket())
             .name(blob.getName())
             .generatedId(blob.getGeneratedId())

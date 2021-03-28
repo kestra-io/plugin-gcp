@@ -73,11 +73,11 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI from = new URI(runContext.render(this.from));
+        URI from = encode(runContext, this.from);
 
         BlobId source = BlobId.of(
             from.getAuthority(),
-            from.getPath().substring(1)
+            blobPath(from.getPath().substring(1))
         );
 
         File tempFile = download(connection, source);
