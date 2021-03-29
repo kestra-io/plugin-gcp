@@ -88,6 +88,8 @@ import java.util.stream.StreamSupport;
 @Schema(
     title = "Execute BigQuery SQL query in a specific BigQuery database"
 )
+@StoreFetchValidation
+@StoreFetchDestinationValidation
 public class Query extends AbstractBigquery implements RunnableTask<Query.Output>, QueryInterface {
     private String sql;
 

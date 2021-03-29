@@ -55,6 +55,8 @@ import java.util.Optional;
         )
     }
 )
+@StoreFetchValidation
+@StoreFetchDestinationValidation
 public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Query.Output>, QueryInterface {
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
