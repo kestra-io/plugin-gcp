@@ -53,7 +53,6 @@ class ValidationTest {
         assertThat(valid.isPresent(), is(true));
     }
 
-
     @Test
     void storeFetchDestinationValidation() {
         Query.QueryBuilder<?, ?> builder = Query.builder()
@@ -72,6 +71,28 @@ class ValidationTest {
         task = builder
             .store(true)
             .destinationTable("project.dataset.table")
+            .build();
+
+        valid = modelValidator.isValid(task);
+        assertThat(valid.isPresent(), is(true));
+    }
+
+    @Test
+    void loadCsvValidation() {
+        Load.LoadBuilder<?, ?> builder = Load.builder()
+            .id("test")
+            .type(Query.class.getName());
+
+        Load task = builder
+            .format(AbstractLoad.Format.AVRO)
+            .build();
+
+        Optional<ConstraintViolationException> valid = modelValidator.isValid(task);
+        assertThat(valid.isPresent(), is(false));
+
+        task = builder
+            .format(AbstractLoad.Format.CSV)
+            .csvOptions(null)
             .build();
 
         valid = modelValidator.isValid(task);

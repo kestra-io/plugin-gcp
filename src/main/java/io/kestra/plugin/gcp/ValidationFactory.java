@@ -1,9 +1,6 @@
 package io.kestra.plugin.gcp;
 
-import io.kestra.plugin.gcp.bigquery.Query;
-import io.kestra.plugin.gcp.bigquery.QueryInterface;
-import io.kestra.plugin.gcp.bigquery.StoreFetchDestinationValidation;
-import io.kestra.plugin.gcp.bigquery.StoreFetchValidation;
+import io.kestra.plugin.gcp.bigquery.*;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
 
@@ -34,6 +31,21 @@ public class ValidationFactory {
             }
 
             if ((value.isFetch() || value.isFetchOne() || value.isStore()) && value.getDestinationTable() != null) {
+                return false;
+            }
+
+            return true;
+        };
+    }
+
+    @Singleton
+    ConstraintValidator<LoadCsvValidation, AbstractLoad> loadCsvValidationValidator() {
+        return (value, annotationMetadata, context) -> {
+            if (value == null) {
+                return true; // nulls are allowed according to spec
+            }
+
+            if (value.getFormat() == AbstractLoad.Format.CSV && value.getCsvOptions() == null) {
                 return false;
             }
 

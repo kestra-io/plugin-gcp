@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@LoadCsvValidation
 abstract public class AbstractLoad extends AbstractBigquery implements RunnableTask<AbstractLoad.Output> {
     @Schema(
         title = "The table where to put query results",
