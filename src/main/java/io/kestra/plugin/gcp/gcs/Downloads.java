@@ -98,35 +98,33 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         java.util.List<String> scopes
     ) throws Exception {
         if (action == Action.DELETE) {
-            blobList
-                .forEach(throwConsumer(blob -> {
-                    Delete delete = Delete.builder()
-                        .id("archive")
-                        .type(Delete.class.getName())
-                        .uri(blob.getUri().toString())
-                        .serviceAccount(serviceAccount)
-                        .projectId(projectId)
-                        .scopes(scopes)
-                        .build();
-                    delete.run(runContext);
-                }));
+            for (Blob blob : blobList) {
+                Delete delete = Delete.builder()
+                    .id("archive")
+                    .type(Delete.class.getName())
+                    .uri(blob.getUri().toString())
+                    .serviceAccount(serviceAccount)
+                    .projectId(projectId)
+                    .scopes(scopes)
+                    .build();
+                delete.run(runContext);
+            }
         } else if (action == Action.MOVE) {
-            blobList
-                .forEach(throwConsumer(blob -> {
-                    Copy copy = Copy.builder()
-                        .id("archive")
-                        .type(Copy.class.getName())
-                        .from(blob.getUri().toString())
-                        .to(StringUtils.stripEnd(runContext.render(moveDirectory) + "/", "/")
-                            + "/" + FilenameUtils.getName(blob.getName())
-                        )
-                        .delete(true)
-                        .serviceAccount(serviceAccount)
-                        .projectId(projectId)
-                        .scopes(scopes)
-                        .build();
-                    copy.run(runContext);
-                }));
+            for (Blob blob : blobList) {
+                Copy copy = Copy.builder()
+                    .id("archive")
+                    .type(Copy.class.getName())
+                    .from(blob.getUri().toString())
+                    .to(StringUtils.stripEnd(runContext.render(moveDirectory) + "/", "/")
+                        + "/" + FilenameUtils.getName(blob.getName())
+                    )
+                    .delete(true)
+                    .serviceAccount(serviceAccount)
+                    .projectId(projectId)
+                    .scopes(scopes)
+                    .build();
+                copy.run(runContext);
+            }
         }
     }
 
