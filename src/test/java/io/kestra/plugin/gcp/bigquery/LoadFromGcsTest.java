@@ -2,6 +2,8 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.plugin.gcp.gcs.Upload;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
@@ -9,8 +11,12 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Objects;
 import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -18,6 +24,9 @@ import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 class LoadFromGcsTest {
+    @Inject
+    private StorageInterface storageInterface;
+
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -27,13 +36,35 @@ class LoadFromGcsTest {
     @Value("${kestra.tasks.bigquery.dataset}")
     private String dataset;
 
+    @Value("${kestra.tasks.gcs.bucket}")
+    private String bucket;
+
     @Test
     void fromJson() throws Exception {
+        File applicationFile = new File(Objects.requireNonNull(LoadFromGcsTest.class.getClassLoader()
+            .getResource("data/us-states.json"))
+            .toURI()
+        );
+
+        URI put = storageInterface.put(
+            new URI("/" + FriendlyId.createFriendlyId()),
+            new FileInputStream(applicationFile)
+        );
+
+        Upload upload = Upload.builder()
+            .id(LoadFromGcsTest.class.getSimpleName())
+            .type(Upload.class.getName())
+            .from(put.toString())
+            .to("gs://" + this.bucket + "/" + FriendlyId.createFriendlyId() + ".json")
+            .build();
+
+        upload.run(TestsUtils.mockRunContext(this.runContextFactory, upload, ImmutableMap.of()));
+
         LoadFromGcs task = LoadFromGcs.builder()
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(LoadFromGcs.class.getName())
             .from(Collections.singletonList(
-                "gs://cloud-samples-data/bigquery/us-states/us-states.json"
+                upload.getTo()
             ))
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.JSON)

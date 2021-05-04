@@ -82,6 +82,7 @@ abstract public class AbstractBigquery extends AbstractTask {
             .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
                     .type("exponential")
                     .interval(Duration.ofSeconds(5))
+                    .maxInterval(Duration.ofMinutes(60))
                     .maxDuration(Duration.ofMinutes(15))
                     .maxAttempt(10)
                     .build()
