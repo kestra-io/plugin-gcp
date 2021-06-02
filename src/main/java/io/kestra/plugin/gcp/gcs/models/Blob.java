@@ -70,7 +70,7 @@ public class Blob {
             .contentEncoding(blob.getContentEncoding())
             .contentDisposition(blob.getContentDisposition())
             .contentLanguage(blob.getContentLanguage())
-//            .storageClass(blob.getStorageClass())
+//            .storageClass(StorageClass.valueOf(blob.getStorageClass().name()))
             .timeStorageClassUpdated(blob.getTimeStorageClassUpdated() == null ? null : Instant.ofEpochMilli(blob.getTimeStorageClassUpdated()))
             .componentCount(blob.getComponentCount())
             .isDirectory(blob.isDirectory())

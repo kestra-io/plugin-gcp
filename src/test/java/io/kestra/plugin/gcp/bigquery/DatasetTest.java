@@ -6,6 +6,8 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Dataset;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.plugin.gcp.bigquery.models.AccessControl;
+import io.kestra.plugin.gcp.bigquery.models.Entity;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.MethodOrderer;
@@ -124,11 +126,11 @@ class DatasetTest {
             .description(RANDOM_ID_2)
             .ifExists(CreateDataset.IfExists.UPDATE)
             .acl(Collections.singletonList(
-                AbstractDataset.AccessControl.builder()
-                    .entity(AbstractDataset.AccessControl.Entity.builder()
-                        .type(AbstractDataset.AccessControl.Entity.Type.USER)
+                AccessControl.builder()
+                    .entity(Entity.builder()
+                        .type(Entity.Type.USER)
                         .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build())
-                    .role(AbstractDataset.AccessControl.Role.OWNER)
+                    .role(AccessControl.Role.OWNER)
                     .build()
             ))
             .build();

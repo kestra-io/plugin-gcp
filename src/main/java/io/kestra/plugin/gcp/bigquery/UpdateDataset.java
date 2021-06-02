@@ -3,6 +3,8 @@ package io.kestra.plugin.gcp.bigquery;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Dataset;
 import com.google.cloud.bigquery.DatasetInfo;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -20,6 +22,17 @@ import org.slf4j.Logger;
 @NoArgsConstructor
 @Schema(
     title = "Update a dataset."
+)
+@Plugin(
+    examples = {
+        @Example(
+            code = {
+                "name: \"my_dataset\"",
+                "location: \"EU\"",
+                "friendlyName: \"new Friendly Name\""
+            }
+        )
+    }
 )
 public class UpdateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Override

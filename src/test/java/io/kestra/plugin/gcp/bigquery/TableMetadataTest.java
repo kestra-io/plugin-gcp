@@ -42,7 +42,6 @@ class TableMetadataTest {
             .waitFor();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void table() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
@@ -73,14 +72,13 @@ class TableMetadataTest {
 
         assertThat(run.getTable(), is(friendlyId));
         assertThat(run.getFriendlyName(), is("new_view"));
-        assertThat(((List<Map<String, Object>>) run.getDefinition().getSchema().get("fields")).size(), is(3));
+        assertThat(run.getDefinition().getSchema().getFields().size(), is(3));
 
-        assertThat(((Map<String, String>) ((List<Map<String, Object>>) run.getDefinition().getSchema().get("fields")).get(1).get("type")).get("standardType"), is(StandardSQLTypeName.INT64.name()));
-        assertThat(run.getDefinition().getStandardTableDefinition().getClustering().getFields().get(0), is("quantity"));
+        assertThat(run.getDefinition().getSchema().getFields().get(1).getType(), is(StandardSQLTypeName.INT64));
+        assertThat(run.getDefinition().getStandardTableDefinition().getClustering().get(0), is("quantity"));
         assertThat(run.getDefinition().getStandardTableDefinition().getTimePartitioning().getField(), is("date"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void view() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
@@ -111,9 +109,9 @@ class TableMetadataTest {
 
         assertThat(run.getTable(), is(friendlyId));
         assertThat(run.getFriendlyName(), is("new_view"));
-        assertThat(((List<Map<String, Object>>) run.getDefinition().getSchema().get("fields")).size(), is(4));
+        assertThat(run.getDefinition().getSchema().getFields().size(), is(4));
 
-        assertThat(((Map<String, String>) ((List<Map<String, Object>>) run.getDefinition().getSchema().get("fields")).get(2).get("type")).get("standardType"), is(StandardSQLTypeName.FLOAT64.name()));
+        assertThat(run.getDefinition().getSchema().getFields().get(2).getType(), is(StandardSQLTypeName.FLOAT64));
     }
 
 

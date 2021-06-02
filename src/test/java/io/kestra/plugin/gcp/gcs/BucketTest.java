@@ -8,6 +8,9 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.plugin.gcp.gcs.models.AccessControl;
+import io.kestra.plugin.gcp.gcs.models.BucketLifecycleRule;
+import io.kestra.plugin.gcp.gcs.models.Entity;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.hamcrest.Description;
@@ -128,11 +131,11 @@ class BucketTest {
         CreateBucket task = createBuilder()
             .indexPage("createUpdate")
             .acl(Collections.singletonList(
-                AbstractBucket.AccessControl.builder()
-                    .entity(AbstractBucket.AccessControl.Entity.builder()
-                        .type(AbstractBucket.AccessControl.Entity.Type.USER)
+                AccessControl.builder()
+                    .entity(Entity.builder()
+                        .type(Entity.Type.USER)
                         .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build())
-                    .role(AbstractBucket.AccessControl.Role.OWNER)
+                    .role(AccessControl.Role.OWNER)
                     .build()
             ))
             .ifExists(CreateBucket.IfExists.UPDATE)
@@ -183,7 +186,7 @@ class BucketTest {
         assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
     }
 
-    private void createBucketWithLifecycleRule(RunContext rc, java.util.List<AbstractBucket.BucketLifecycleRule> rules) throws Exception {
+    private void createBucketWithLifecycleRule(RunContext rc, java.util.List<BucketLifecycleRule> rules) throws Exception {
         CreateBucket task = createBuilder()
             .lifecycleRules(rules)
             .ifExists(CreateBucket.IfExists.ERROR)
@@ -224,10 +227,10 @@ class BucketTest {
         createBucketWithLifecycleRule(
             rc,
             Collections.singletonList(
-                AbstractBucket.BucketLifecycleRule.builder()
-                    .condition(AbstractBucket.BucketLifecycleRule.Condition.builder().age(1).build())
-                    .action(AbstractBucket.BucketLifecycleRule.Action.builder()
-                        .type(AbstractBucket.BucketLifecycleRule.Action.Type.DELETE)
+                BucketLifecycleRule.builder()
+                    .condition(BucketLifecycleRule.Condition.builder().age(1).build())
+                    .action(BucketLifecycleRule.Action.builder()
+                        .type(BucketLifecycleRule.Action.Type.DELETE)
                         .build())
                     .build()
             ));
@@ -242,34 +245,34 @@ class BucketTest {
         createBucketWithLifecycleRule(
             rc,
             ImmutableList.of(
-                AbstractBucket.BucketLifecycleRule.builder()
-                    .condition(AbstractBucket.BucketLifecycleRule.Condition.builder().age(30).build())
-                    .action(AbstractBucket.BucketLifecycleRule.Action.builder()
-                        .type(AbstractBucket.BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
-                        .value(AbstractBucket.StorageClass.NEARLINE.name())
+                BucketLifecycleRule.builder()
+                    .condition(BucketLifecycleRule.Condition.builder().age(30).build())
+                    .action(BucketLifecycleRule.Action.builder()
+                        .type(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
+                        .value(io.kestra.plugin.gcp.gcs.models.StorageClass.NEARLINE.name())
                         .build())
                     .build(),
 
-                AbstractBucket.BucketLifecycleRule.builder()
-                    .condition(AbstractBucket.BucketLifecycleRule.Condition.builder().age(60).build())
-                    .action(AbstractBucket.BucketLifecycleRule.Action.builder()
-                        .type(AbstractBucket.BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
-                        .value(AbstractBucket.StorageClass.COLDLINE.name())
+                BucketLifecycleRule.builder()
+                    .condition(BucketLifecycleRule.Condition.builder().age(60).build())
+                    .action(BucketLifecycleRule.Action.builder()
+                        .type(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
+                        .value(io.kestra.plugin.gcp.gcs.models.StorageClass.COLDLINE.name())
                         .build())
                     .build(),
 
-                AbstractBucket.BucketLifecycleRule.builder()
-                    .condition(AbstractBucket.BucketLifecycleRule.Condition.builder().age(90).build())
-                    .action(AbstractBucket.BucketLifecycleRule.Action.builder()
-                        .type(AbstractBucket.BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
-                        .value(AbstractBucket.StorageClass.ARCHIVE.name())
+                BucketLifecycleRule.builder()
+                    .condition(BucketLifecycleRule.Condition.builder().age(90).build())
+                    .action(BucketLifecycleRule.Action.builder()
+                        .type(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
+                        .value(io.kestra.plugin.gcp.gcs.models.StorageClass.ARCHIVE.name())
                         .build())
                     .build(),
 
-                AbstractBucket.BucketLifecycleRule.builder()
-                    .condition(AbstractBucket.BucketLifecycleRule.Condition.builder().age(1).build())
-                    .action(AbstractBucket.BucketLifecycleRule.Action.builder()
-                        .type(AbstractBucket.BucketLifecycleRule.Action.Type.DELETE)
+                BucketLifecycleRule.builder()
+                    .condition(BucketLifecycleRule.Condition.builder().age(1).build())
+                    .action(BucketLifecycleRule.Action.builder()
+                        .type(BucketLifecycleRule.Action.Type.DELETE)
                         .build())
                     .build()
             ));

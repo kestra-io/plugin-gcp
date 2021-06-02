@@ -5,6 +5,9 @@ import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.BucketInfo.LifecycleRule;
 import com.google.cloud.storage.Cors;
+import io.kestra.plugin.gcp.gcs.models.AccessControl;
+import io.kestra.plugin.gcp.gcs.models.BucketLifecycleRule;
+import io.kestra.plugin.gcp.gcs.models.StorageClass;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -259,62 +262,6 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
     }
 
 
-    @SuppressWarnings("unused")
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    @Getter
-    public static class AccessControl {
-        @NotNull
-        @Schema(
-            title = "The entity"
-        )
-        @PluginProperty(dynamic = true)
-        private Entity entity;
-
-        @SuppressWarnings("unused")
-        @NoArgsConstructor
-        @AllArgsConstructor
-        @Builder
-        @Getter
-        public static class Entity {
-            @NotNull
-            @Schema(
-                title = "The type of the entity (USER, GROUP or DOMAIN)"
-            )
-            @PluginProperty(dynamic = true)
-            private Type type;
-
-            @NotNull
-            @Schema(
-                title = "The value for the entity (ex : user email if the type is USER ...)"
-            )
-            @PluginProperty(dynamic = true)
-            private String value;
-
-            @SuppressWarnings("unused")
-            public enum Type {
-                DOMAIN,
-                GROUP,
-                USER
-            }
-        }
-
-        @NotNull
-        @Schema(
-            title = "The role to assign to the entity"
-        )
-        @PluginProperty(dynamic = true)
-        private Role role;
-
-        @SuppressWarnings("unused")
-        public enum Role {
-            READER,
-            WRITER,
-            OWNER
-        }
-    }
-
     public List<LifecycleRule> mapLifecycleRules(List<BucketLifecycleRule> bucketLifecycleRules) {
         if (bucketLifecycleRules == null) {
             return null;
@@ -346,106 +293,6 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
             default:
                 return null;
 
-        }
-    }
-
-    @SuppressWarnings("unused")
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    @Getter
-    public static class BucketLifecycleRule {
-        @NotNull
-        @Schema(
-            title = "The condition"
-        )
-        @PluginProperty(dynamic = true)
-        private AbstractBucket.BucketLifecycleRule.Condition condition;
-
-        @NotNull
-        @Schema(
-            title = "The action to take when a lifecycle condition is met"
-        )
-        @PluginProperty(dynamic = true)
-        private AbstractBucket.BucketLifecycleRule.Action action;
-
-        @SuppressWarnings("unused")
-        @NoArgsConstructor
-        @AllArgsConstructor
-        @Builder
-        @Getter
-        public static class Condition {
-            @NotNull
-            @Schema(
-                title = "The Age condition is satisfied when an object reaches the specified age (in days). Age is measured from the object's creation time."
-            )
-            @PluginProperty(dynamic = true)
-            private Integer age;
-        }
-
-        @SuppressWarnings("unused")
-        @NoArgsConstructor
-        @AllArgsConstructor
-        @Builder
-        @Getter
-        public static class Action {
-            @NotNull
-            @Schema(
-                title = "The type of the action (DELETE ...)"
-            )
-            @PluginProperty(dynamic = true)
-            private AbstractBucket.BucketLifecycleRule.Action.Type type;
-
-            @Schema(
-                title = "The value for the action (if any)"
-            )
-            @PluginProperty(dynamic = true)
-            private String value;
-
-            @SuppressWarnings("unused")
-            public enum Type {
-                DELETE,
-                SET_STORAGE_CLASS
-            }
-        }
-
-
-        @SuppressWarnings("unused")
-        @SuperBuilder
-        @NoArgsConstructor
-        @Getter
-        public static class DeleteAction implements LifecycleAction {
-            @Override
-            public LifecycleRule convert(BucketLifecycleRule.Condition condition) {
-                return new BucketInfo.LifecycleRule(
-                    LifecycleRule.LifecycleAction.newDeleteAction(),
-                    LifecycleRule.LifecycleCondition.newBuilder().setAge(condition.getAge()).build());
-            }
-        }
-
-        @SuppressWarnings("unused")
-        @SuperBuilder
-        @AllArgsConstructor
-        @NoArgsConstructor
-        @Getter
-        public static class SetStorageAction implements LifecycleAction {
-            @NotNull
-            @Schema(
-                title = "The storage class (standard, nearline, coldline ...)"
-            )
-            @PluginProperty(dynamic = true)
-            private AbstractBucket.StorageClass storageClass;
-
-            @Override
-            public LifecycleRule convert(BucketLifecycleRule.Condition condition) {
-                return new BucketInfo.LifecycleRule(
-                    LifecycleRule.LifecycleAction.newSetStorageClassAction(com.google.cloud.storage.StorageClass.valueOf(this.storageClass.name())),
-                    LifecycleRule.LifecycleCondition.newBuilder().setAge(condition.getAge()).build());
-            }
-        }
-
-        public interface LifecycleAction {
-            BucketInfo.LifecycleRule convert(BucketLifecycleRule.Condition condition);
         }
     }
 
@@ -488,13 +335,4 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         }
     }
 
-    public enum StorageClass {
-        REGIONAL,
-        MULTI_REGIONAL,
-        NEARLINE,
-        COLDLINE,
-        STANDARD,
-        ARCHIVE,
-        DURABLE_REDUCED_AVAILABILITY
-    }
 }

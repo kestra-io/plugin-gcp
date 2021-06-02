@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.google.cloud.bigquery.Acl;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.EncryptionConfiguration;
+import io.kestra.plugin.gcp.bigquery.models.AccessControl;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -174,63 +175,6 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
                 return Acl.of(new Acl.IamMember(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
             default:
                 return null;
-        }
-    }
-
-    @SuppressWarnings("unused")
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    @Getter
-    public static class AccessControl {
-        @NotNull
-        @Schema(
-            title = "The entity"
-        )
-        @PluginProperty(dynamic = true)
-        private Entity entity;
-
-        @SuppressWarnings("unused")
-        @NoArgsConstructor
-        @AllArgsConstructor
-        @Builder
-        @Getter
-        public static class Entity {
-            @NotNull
-            @Schema(
-                title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
-            )
-            @PluginProperty(dynamic = true)
-            private Type type;
-
-            @NotNull
-            @Schema(
-                title = "The value for the entity (ex : user email if the type is USER ...)"
-            )
-            @PluginProperty(dynamic = true)
-            private String value;
-
-            @SuppressWarnings("unused")
-            public enum Type {
-                DOMAIN,
-                GROUP,
-                USER,
-                IAM_MEMBER
-            }
-        }
-
-        @NotNull
-        @Schema(
-            title = "The role to assign to the entity"
-        )
-        @PluginProperty(dynamic = true)
-        private Role role;
-
-        @SuppressWarnings("unused")
-        public enum Role {
-            READER,
-            WRITER,
-            OWNER
         }
     }
 

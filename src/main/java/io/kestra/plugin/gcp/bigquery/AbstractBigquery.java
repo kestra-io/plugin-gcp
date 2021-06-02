@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -68,11 +69,19 @@ abstract public class AbstractBigquery extends AbstractTask {
     );
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        return connection(
+            this.credentials(runContext),
+            runContext.render(this.projectId),
+            runContext.render(this.location)
+        );
+    }
+
+    static BigQuery connection(GoogleCredentials googleCredentials, String projectId, String location) {
         return BigQueryOptions
             .newBuilder()
-            .setCredentials(this.credentials(runContext))
-            .setProjectId(runContext.render(this.projectId))
-            .setLocation(runContext.render(this.location))
+            .setCredentials(googleCredentials)
+            .setProjectId(projectId)
+            .setLocation(location)
             .build()
             .getService();
     }
