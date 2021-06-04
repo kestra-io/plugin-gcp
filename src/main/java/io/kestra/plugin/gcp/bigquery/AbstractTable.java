@@ -1,6 +1,9 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.Table;
+import com.google.cloud.bigquery.TableId;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -31,6 +34,12 @@ abstract public class AbstractTable extends AbstractBigquery {
     )
     @PluginProperty(dynamic = true)
     protected String table;
+
+    protected TableId tableId(RunContext runContext) throws IllegalVariableEvaluationException {
+        return this.projectId != null  ?
+            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table)) :
+            TableId.of(runContext.render(this.dataset), runContext.render(this.table));
+    }
 
     @Getter
     @Builder
@@ -150,6 +159,4 @@ abstract public class AbstractTable extends AbstractBigquery {
                 .build();
         }
     }
-
-
 }

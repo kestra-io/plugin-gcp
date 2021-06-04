@@ -41,9 +41,7 @@ public class UpdateTable extends AbstractTableCreateUpdate implements RunnableTa
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        TableId tableId = this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table)) :
-            TableId.of(runContext.render(this.dataset), runContext.render(this.table));
+        TableId tableId = this.tableId(runContext);
 
         Table table = connection.getTable(tableId);
 

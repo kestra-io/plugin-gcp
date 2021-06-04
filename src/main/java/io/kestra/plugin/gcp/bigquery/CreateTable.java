@@ -24,7 +24,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create table"
+    title = "Create a table"
 )
 @Plugin(
     examples = {
@@ -56,14 +56,7 @@ public class CreateTable extends AbstractTableCreateUpdate implements RunnableTa
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        TableId tableId = this.projectId != null ?
-            TableId.of(
-                runContext.render(this.projectId),
-                runContext.render(this.dataset),
-                runContext.render(this.table)
-            ) :
-            TableId.of(runContext.render(this.dataset), runContext.render(this.table));
-
+        TableId tableId = this.tableId(runContext);
 
         TableInfo.Builder builder = TableInfo.newBuilder(tableId, this.tableDefinition.to(runContext));
         builder = this.build(builder, runContext);
