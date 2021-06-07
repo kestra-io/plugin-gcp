@@ -56,6 +56,7 @@ class QueryTest {
         return "SELECT \n" +
             "  \"hello\" as string,\n" +
             "  NULL AS `nullable`,\n" +
+            "  TRUE AS `bool`,\n" +
             "  1 as int,\n" +
             "  1.25 AS float,\n" +
             "  DATE(\"2008-12-25\") AS date,\n" +
@@ -115,7 +116,7 @@ class QueryTest {
         assertThat(
             CharStreams.toString(new InputStreamReader(storageInterface.get(run.getUri()))),
             is(StringUtils.repeat(
-                "{date:\"2008-12-25\",struct:{x:4,y:0,z:[1,2,3]},datetime:\"2008-12-25T15:30:00.123456Z\",string:\"hello\",nullable:null,array:[1,2,3],geopoint:[50.6833e0,2.9e0],time:\"15:30:00.123456\",float:1.25e0,int:1,timestamp:\"2008-12-25T15:30:00.123Z\"}\n",
+                "{date:2008-12-25,struct:{x:4,y:0,z:[1,2,3]},datetime:2008-12-25T15:30:00.123Z,string:\"hello\",nullable:null,bool:true,array:[1,2,3],geopoint:[50.6833e0,2.9e0],time:LocalTime::\"15:30:00.123456\",float:1.25e0,int:1,timestamp:2008-12-25T15:30:00.123Z}\n",
                 2
             ))
         );
