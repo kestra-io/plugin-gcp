@@ -2,7 +2,6 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
-import com.google.common.collect.ImmutableMap;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -67,7 +66,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
         )
     }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface {
+public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface, ListInterface, ActionInterface{
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
@@ -77,48 +76,15 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     protected java.util.List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
-    @Schema(
-        title = "The directory to list"
-    )
-    @PluginProperty(dynamic = true)
-    @NotNull
     private String from;
 
-    @Schema(
-        title = "The action to do on find files"
-    )
-    @PluginProperty(dynamic = true)
-    @NotNull
-    private Downloads.Action action;
+    private ActionInterface.Action action;
 
-    @Schema(
-        title = "The destination directory in case off `MOVE` "
-    )
-    @PluginProperty(dynamic = true)
     private String moveDirectory;
 
-    @Schema(
-        title = "The filter files or directory"
-    )
     @Builder.Default
-    private final List.Filter filter = List.Filter.BOTH;
+    private final List.ListingType listingType = ListInterface.ListingType.DIRECTORY;
 
-    @Schema(
-        title = "The listing type you want (like directory or recursive)",
-        description = "if DIRECTORY, will only list objects in the specified directory\n" +
-            "if RECURSIVE, will list objects in the specified directory recursively\n" +
-            "Default value is DIRECTORY\n" +
-            "When using RECURSIVE value, be carefull to move your files to a location not in the `from` scope"
-    )
-    @Builder.Default
-    private final List.ListingType listingType = List.ListingType.DIRECTORY;
-
-    @Schema(
-        title = "A regexp to filter on full path",
-        description = "ex:\n"+
-            "`regExp: .*` to match all files\n"+
-            "`regExp: .*2020-01-0.\\\\.csv` to match files between 01 and 09 of january ending with `.csv`"
-    )
     @PluginProperty(dynamic = true)
     private String regExp;
 
@@ -131,7 +97,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.from)
-            .filter(this.filter)
+            .filter(ListInterface.Filter.FILES)
             .listingType(this.listingType)
             .regExp(this.regExp)
             .build();

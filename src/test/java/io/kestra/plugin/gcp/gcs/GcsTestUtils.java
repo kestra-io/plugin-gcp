@@ -2,12 +2,13 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.context.annotation.Value;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
+import io.micronaut.context.annotation.Value;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,10 +29,14 @@ class GcsTestUtils {
     private String bucket;
 
     Upload.Output upload(String out) throws Exception {
+        return this.upload(out, "application.yml");
+    }
+
+    Upload.Output upload(String out, String resource) throws Exception {
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
-                .getResource("application.yml"))
+                .getResource(resource))
                 .toURI()))
         );
 
@@ -39,7 +44,7 @@ class GcsTestUtils {
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
             .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
+            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource))
             .build();
 
         return task.run(runContext(task));

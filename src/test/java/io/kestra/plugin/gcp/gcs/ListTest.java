@@ -13,8 +13,6 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import javax.inject.Inject;
 
@@ -53,8 +51,8 @@ class ListTest {
         // only dir
         task = task()
             .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(List.Filter.DIRECTORY)
-            .listingType(List.ListingType.DIRECTORY)
+            .filter(ListInterface.Filter.DIRECTORY)
+            .listingType(ListInterface.ListingType.DIRECTORY)
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(1));
@@ -63,7 +61,7 @@ class ListTest {
         // files only
         task = task()
             .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(List.Filter.FILES)
+            .filter(ListInterface.Filter.FILES)
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(10));
@@ -71,7 +69,7 @@ class ListTest {
         // recursive
         task = task()
             .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .listingType(List.ListingType.RECURSIVE)
+            .listingType(ListInterface.ListingType.RECURSIVE)
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(11));
@@ -80,8 +78,8 @@ class ListTest {
         // regexp
         task = task()
             .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(List.Filter.FILES)
-            .listingType(List.ListingType.DIRECTORY)
+            .filter(ListInterface.Filter.FILES)
+            .listingType(ListInterface.ListingType.DIRECTORY)
             .regExp(".*\\/" + dir + "\\/.*")
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
@@ -90,8 +88,8 @@ class ListTest {
         // regexp on file
         task = task()
             .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(List.Filter.FILES)
-            .listingType(List.ListingType.DIRECTORY)
+            .filter(ListInterface.Filter.FILES)
+            .listingType(ListInterface.ListingType.DIRECTORY)
             .regExp(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)")
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));

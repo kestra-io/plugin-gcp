@@ -10,8 +10,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,7 +40,7 @@ class DownloadsTest {
             .id(DownloadTest.class.getSimpleName())
             .type(Downloads.class.getName())
             .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
-            .action(Downloads.Action.DELETE)
+            .action(ActionInterface.Action.DELETE)
             .build();
 
         Downloads.Output run = task.run(runContext(task));

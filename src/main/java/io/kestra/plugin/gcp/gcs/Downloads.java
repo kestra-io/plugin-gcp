@@ -11,16 +11,13 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import java.io.File;
 import java.util.stream.Collectors;
-import javax.annotation.RegEx;
 import javax.validation.constraints.NotNull;
 
-import static io.kestra.core.utils.Rethrow.throwConsumer;
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @SuperBuilder
@@ -43,12 +40,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Schema(
     title = "Download multiple files from a GCS bucket."
 )
-public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Output> {
-    @Schema(
-        title = "The directory to list"
-    )
-    @PluginProperty(dynamic = true)
-    @NotNull
+public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Output>, ListInterface, ActionInterface {
     private String from;
 
     @Schema(
@@ -57,47 +49,25 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
     @PluginProperty(dynamic = true)
     private Boolean allVersions;
 
-    @Schema(
-        title = "The filter files or directory"
-    )
     @Builder.Default
-    private final List.Filter filter = List.Filter.BOTH;
+    private final List.ListingType listingType = ListInterface.ListingType.DIRECTORY;
 
-    @Schema(
-        title = "The listing type you want (like directory or recursive)"
-    )
-    @Builder.Default
-    private final List.ListingType listingType = List.ListingType.DIRECTORY;
-
-    @Schema(
-        title = "A regexp to filter on full path"
-    )
-    @PluginProperty(dynamic = true)
     private String regExp;
 
-    @Schema(
-        title = "The action to do on find files",
-        description = "Can be null, in this case no action is perform"
-    )
-    @PluginProperty(dynamic = true)
-    private Downloads.Action action;
+    private ActionInterface.Action action;
 
-    @Schema(
-        title = "The destination directory in case off `MOVE` "
-    )
-    @PluginProperty(dynamic = true)
     private String moveDirectory;
 
     static void archive(
         java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
-        Action action,
+        ActionInterface.Action action,
         String moveDirectory,
         RunContext runContext,
         String projectId,
         String serviceAccount,
         java.util.List<String> scopes
     ) throws Exception {
-        if (action == Action.DELETE) {
+        if (action == ActionInterface.Action.DELETE) {
             for (Blob blob : blobList) {
                 Delete delete = Delete.builder()
                     .id("archive")
@@ -109,7 +79,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                     .build();
                 delete.run(runContext);
             }
-        } else if (action == Action.MOVE) {
+        } else if (action == ActionInterface.Action.MOVE) {
             for (Blob blob : blobList) {
                 Copy copy = Copy.builder()
                     .id("archive")
@@ -137,7 +107,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.from)
-            .filter(this.filter)
+            .filter(Filter.FILES)
             .listingType(this.listingType)
             .regExp(this.regExp)
             .allVersions(this.allVersions)
@@ -174,11 +144,6 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             .builder()
             .blobs(list)
             .build();
-    }
-
-    public enum Action {
-        MOVE,
-        DELETE
     }
 
     @Builder

@@ -120,7 +120,7 @@ class TriggerTest {
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
             .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
-            .action(Downloads.Action.MOVE)
+            .action(ActionInterface.Action.MOVE)
             .moveDirectory("gs://" + bucket + "/test/move")
             .build();
 

@@ -11,17 +11,14 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 import org.slf4j.Logger;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import javax.annotation.RegEx;
 import javax.validation.constraints.NotNull;
 
 @SuperBuilder
@@ -42,11 +39,7 @@ import javax.validation.constraints.NotNull;
 @Schema(
     title = "List file on a GCS bucket."
 )
-public class List extends AbstractGcs implements RunnableTask<List.Output> {
-    @Schema(
-        title = "The directory to list"
-    )
-    @PluginProperty(dynamic = true)
+public class List extends AbstractGcs implements RunnableTask<List.Output>, ListInterface {
     @NotNull
     private String from;
 
@@ -62,16 +55,9 @@ public class List extends AbstractGcs implements RunnableTask<List.Output> {
     @Builder.Default
     private final Filter filter = Filter.BOTH;
 
-    @Schema(
-        title = "The listing type you want (like directory or recursive)"
-    )
     @Builder.Default
     private final ListingType listingType = ListingType.DIRECTORY;
 
-    @Schema(
-        title = "A regexp to filter on full path"
-    )
-    @PluginProperty(dynamic = true)
     private String regExp;
 
     @Override
@@ -128,16 +114,5 @@ public class List extends AbstractGcs implements RunnableTask<List.Output> {
             title = "The list of blobs"
         )
         private final java.util.List<Blob> blobs;
-    }
-
-    public enum Filter {
-        FILES,
-        DIRECTORY,
-        BOTH
-    }
-
-    public enum ListingType {
-        RECURSIVE,
-        DIRECTORY,
     }
 }
