@@ -124,7 +124,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                     blob.getBucket(),
                     blob.getName()
                 );
-                File tempFile = Download.download(connection, source);
+                File tempFile = Download.download(runContext, connection, source);
 
                 return blob.withUri(runContext.putTempFile(tempFile));
             }))

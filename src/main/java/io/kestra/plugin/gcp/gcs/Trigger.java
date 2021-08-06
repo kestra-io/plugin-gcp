@@ -116,7 +116,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .stream()
             .map(throwFunction(blob -> {
                 URI uri = runContext.putTempFile(
-                    Download.download(connection, BlobId.of(blob.getBucket(), blob.getName())),
+                    Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName())),
                     executionId,
                     this
                 );

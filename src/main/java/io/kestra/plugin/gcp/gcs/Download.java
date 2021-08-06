@@ -46,17 +46,14 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
     @PluginProperty(dynamic = true)
     private String from;
 
-    static File download(Storage connection, BlobId source) throws IOException {
+    static File download(RunContext runContext, Storage connection, BlobId source) throws IOException {
         Blob blob = connection.get(source);
         if (blob == null) {
             throw new IllegalArgumentException("Unable to find blob on bucket '" +  source.getBucket() +"' with path '" +  source.getName() +"'");
         }
         ReadChannel readChannel = blob.reader();
 
-        File tempFile = File.createTempFile(
-            Download.class.getSimpleName().toLowerCase() + "_",
-            "." + FilenameUtils.getExtension(source.getName())
-        );
+        File tempFile = runContext.tempFile().toFile();
 
         try (
             FileOutputStream fileOuputStream = new FileOutputStream(tempFile);
@@ -80,7 +77,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
             blobPath(from.getPath().substring(1))
         );
 
-        File tempFile = download(connection, source);
+        File tempFile = download(runContext, connection, source);
         logger.debug("Download from '{}'", from);
 
         return Output

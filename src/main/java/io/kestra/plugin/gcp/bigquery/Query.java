@@ -341,7 +341,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
     private Map.Entry<URI, Long> storeResult(TableResult result, RunContext runContext) throws IOException {
         // temp file
-        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
+        File tempFile = runContext.tempFile(".ion").toFile();
 
         try (
             OutputStream output = new FileOutputStream(tempFile);
