@@ -45,9 +45,13 @@ public class Blob {
     private final Boolean temporaryHold;
     private final Long retentionExpirationTime;
 
+    public static URI uri(com.google.cloud.storage.Blob blob) {
+        return URI.create("gs://" + blob.getBucket() + "/" + blob.getName().replace(" ", "+"));
+    }
+
     public static Blob of(com.google.cloud.storage.Blob blob) {
         return Blob.builder()
-            .uri(URI.create("gs://" + blob.getBucket() + "/" + blob.getName().replace(" ", "+")))
+            .uri(uri(blob))
             .bucket(blob.getBucket())
             .name(blob.getName())
             .generatedId(blob.getGeneratedId())

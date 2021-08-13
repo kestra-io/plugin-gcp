@@ -36,9 +36,9 @@ class ListTest {
         String lastFileName = null;
 
         for (int i = 0; i < 10; i++) {
-            lastFileName = upload("/tasks/gcp/" + dir);
+            lastFileName = upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
         }
-        upload("/tasks/gcp/" + dir + "/sub");
+        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub");
 
         // directory listing
         List task = task()
@@ -102,7 +102,7 @@ class ListTest {
             .type(List.class.getName());
     }
 
-    private String upload(String dir) throws Exception {
+    static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(ListTest.class.getClassLoader()
@@ -116,10 +116,10 @@ class ListTest {
             .id(ListTest.class.getSimpleName())
             .type(Upload.class.getName())
             .from(source.toString())
-            .to("gs://" + this.bucket +  dir + "/" + out + " (1).yml")
+            .to("gs://" + bucket +  dir + "/" + out + " (1).yml")
             .build();
 
-        task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
+        task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
         return out;
     }
