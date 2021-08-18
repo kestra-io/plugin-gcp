@@ -48,14 +48,14 @@ dependencies {
 
     // libs
     api "androidx.annotation:annotation:1.2.0"
-    api 'net.jodah:failsafe:2.4.2'
+    api 'net.jodah:failsafe:2.4.1'
 
-    api group: 'com.google.api', name: 'gax-grpc', version: '2.3.0'
-    api group: 'com.google.api', name: 'gax', version: '2.3.0'
-    api 'com.google.cloud:google-cloud-storage:2.0.1'
-    api 'com.google.cloud:google-cloud-bigquery:2.1.2'
-    api 'com.google.cloud:google-cloud-bigquerystorage:2.0.2'
-    api 'com.google.cloud:google-cloud-container:2.0.1'
+    api group: 'com.google.api', name: 'gax-grpc', version: '1.63.3'
+    api group: 'com.google.api', name: 'gax', version: '1.63.3'
+    api 'com.google.cloud:google-cloud-storage:1.114.0'
+    api 'com.google.cloud:google-cloud-bigquery:1.131.1'
+    api 'com.google.cloud:google-cloud-bigquerystorage:1.22.0'
+    api 'com.google.cloud:google-cloud-container:1.3.4'
 }
 
 
