@@ -4,7 +4,7 @@ plugins {
     id "com.adarshr.test-logger" version "3.0.0"
     id "com.github.johnrengelman.shadow" version "7.0.0"
     id 'ru.vyarus.java-lib' version '2.1.0'
-    id 'ru.vyarus.github-info' version '1.2.0'
+    id 'ru.vyarus.github-info' version '1.3.0'
     id 'signing'
     id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
     id "com.github.ben-manes.versions" version "0.39.0"
@@ -48,14 +48,14 @@ dependencies {
 
     // libs
     api "androidx.annotation:annotation:1.2.0"
-    api 'net.jodah:failsafe:2.4.0'
+    api 'net.jodah:failsafe:2.4.2'
 
-    api group: 'com.google.api', name: 'gax-grpc', version: '1.65.1'
-    api group: 'com.google.api', name: 'gax', version: '1.65.1'
-    api 'com.google.cloud:google-cloud-storage:1.116.0'
-    api 'com.google.cloud:google-cloud-bigquery:1.133.1'
-    api 'com.google.cloud:google-cloud-bigquerystorage:1.22.3'
-    api 'com.google.cloud:google-cloud-container:1.4.0'
+    api group: 'com.google.api', name: 'gax-grpc', version: '2.3.0'
+    api group: 'com.google.api', name: 'gax', version: '2.3.0'
+    api 'com.google.cloud:google-cloud-storage:2.0.1'
+    api 'com.google.cloud:google-cloud-bigquery:2.1.2'
+    api 'com.google.cloud:google-cloud-bigquerystorage:2.0.2'
+    api 'com.google.cloud:google-cloud-container:2.0.1'
 }
 
 
@@ -95,7 +95,7 @@ dependencies {
     testImplementation "org.hamcrest:hamcrest-library:2.2"
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id', version: '1.1.0'
-    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.11.1'
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.11.2'
 }
 
 /**********************************************************************************************************************\
