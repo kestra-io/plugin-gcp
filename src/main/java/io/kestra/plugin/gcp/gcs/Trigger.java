@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.models.conditions.ConditionContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -89,7 +90,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private String regExp;
 
     @Override
-    public Optional<Execution> evaluate(RunContext runContext, TriggerContext context) throws Exception {
+    public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
+        RunContext runContext = conditionContext.getRunContext();
         List task = List.builder()
             .id(this.id)
             .type(List.class.getName())

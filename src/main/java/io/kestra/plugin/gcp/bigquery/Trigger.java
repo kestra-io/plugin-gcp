@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import io.kestra.core.models.conditions.ConditionContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -81,7 +82,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private boolean fetchOne = false;
 
     @Override
-    public Optional<Execution> evaluate(RunContext runContext, TriggerContext context) throws Exception {
+    public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
+        RunContext runContext = conditionContext.getRunContext();
         Logger logger = runContext.logger();
 
         Query task = Query.builder()

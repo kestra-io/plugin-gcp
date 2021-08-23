@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.conditions.ConditionContext;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
@@ -127,7 +128,7 @@ class TriggerTest {
         String out = FriendlyId.createFriendlyId();
         Upload.Output upload = testUtils.upload(random + "/" + out);
 
-        Map.Entry<RunContext, TriggerContext> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, TriggerContext> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
