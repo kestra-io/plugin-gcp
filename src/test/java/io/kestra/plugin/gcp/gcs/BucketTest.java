@@ -160,6 +160,28 @@ class BucketTest {
 
     @Test
     @Order(7)
+    void iamPolicy() throws Exception {
+        CreateBucketIamPolicy.CreateBucketIamPolicyBuilder<?, ?> builder = CreateBucketIamPolicy.builder()
+            .id(UpdateBucket.class.getSimpleName())
+            .type(CreateBucket.class.getName())
+            .name("{{bucket}}")
+            .projectId("{{project}}")
+            .member("domain:kestra.io")
+            .role("roles/storage.objectViewer");
+
+        CreateBucketIamPolicy.Output run = builder.build().run(runContext());
+        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
+
+        assertThrows(Exception.class, () -> {
+            builder.ifExists(CreateBucketIamPolicy.IfExists.ERROR).build().run(runContext());
+        });
+
+        run = builder.ifExists(CreateBucketIamPolicy.IfExists.SKIP).build().run(runContext());
+        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
+    }
+
+    @Test
+    @Order(8)
     void delete() throws Exception {
         RunContext runContext = runContext();
 
@@ -221,7 +243,7 @@ class BucketTest {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     void createBucketWithDeleteLifecycleRule() throws Exception {
         String bucketId = "tu_lc_rule_delete_" + FriendlyId.createFriendlyId().toLowerCase();
 
@@ -239,7 +261,7 @@ class BucketTest {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void createBucketWithSetStorageClassLifecycleRule() throws Exception {
         String bucketId = "tu_lc_rule_class_" + FriendlyId.createFriendlyId().toLowerCase();
 
