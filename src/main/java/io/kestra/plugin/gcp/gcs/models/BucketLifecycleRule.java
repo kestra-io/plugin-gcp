@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 @Getter
@@ -101,5 +104,33 @@ public class BucketLifecycleRule {
 
     public interface LifecycleAction {
         BucketInfo.LifecycleRule convert(Condition condition);
+    }
+
+    public static List<BucketInfo.LifecycleRule> convert(List<BucketLifecycleRule> rules) {
+        return rules
+            .stream()
+            .map(c -> c.convert())
+            .collect(Collectors.toList());
+    }
+
+    public BucketInfo.LifecycleRule convert() {
+        if (this.getCondition() == null || this.getAction() == null) {
+            return null;
+        }
+
+        switch (this.getAction().getType()) {
+            case DELETE:
+                return BucketLifecycleRule.DeleteAction.builder()
+                    .build()
+                    .convert(this.getCondition());
+            case SET_STORAGE_CLASS:
+                return BucketLifecycleRule.SetStorageAction.builder()
+                    .storageClass(StorageClass.valueOf((String) this.getAction().getValue()))
+                    .build()
+                    .convert(this.getCondition());
+            default:
+                return null;
+
+        }
     }
 }

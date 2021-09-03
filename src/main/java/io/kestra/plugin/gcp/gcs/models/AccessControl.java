@@ -1,13 +1,14 @@
 package io.kestra.plugin.gcp.gcs.models;
 
+import com.google.cloud.storage.Acl;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 @Getter
@@ -32,5 +33,29 @@ public class AccessControl {
         READER,
         WRITER,
         OWNER
+    }
+
+    public static List<Acl> convert(List<AccessControl> accessControls) {
+        return accessControls
+            .stream()
+            .map(c -> c.convert())
+            .collect(Collectors.toList());
+    }
+
+    private Acl convert() {
+        if (this.getEntity() == null || this.getRole() == null) {
+            return null;
+        }
+
+        switch (this.getEntity().getType()) {
+            case USER:
+                return Acl.of(new Acl.User(this.getEntity().getValue()), Acl.Role.valueOf(this.getRole().name()));
+            case GROUP:
+                return Acl.of(new Acl.Group(this.getEntity().getValue()), Acl.Role.valueOf(this.getRole().name()));
+            case DOMAIN:
+                return Acl.of(new Acl.Domain(this.getEntity().getValue()), Acl.Role.valueOf(this.getRole().name()));
+            default:
+                return null;
+        }
     }
 }

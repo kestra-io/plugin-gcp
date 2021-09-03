@@ -1,28 +1,22 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.google.cloud.storage.Acl;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
-import com.google.cloud.storage.BucketInfo.LifecycleRule;
-import com.google.cloud.storage.Cors;
-import io.kestra.plugin.gcp.gcs.models.AccessControl;
-import io.kestra.plugin.gcp.gcs.models.BucketLifecycleRule;
-import io.kestra.plugin.gcp.gcs.models.StorageClass;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Rethrow;
+import io.kestra.plugin.gcp.gcs.models.*;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import javax.validation.constraints.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -145,14 +139,14 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         description = " See <a href=\"https://cloud.google.com/storage/docs/uniform-bucket-level-access\">uniform " +
             " bucket-level access</a>"
     )
-    protected BucketInfo.IamConfiguration iamConfiguration;
+    protected IamConfiguration iamConfiguration;
 
     @Schema(
         title = "The bucket's logging configuration",
         description = "This configuration defines the destination bucket and optional name" +
             " prefix for the current bucket's logs."
     )
-    protected BucketInfo.Logging logging;
+    protected Logging logging;
 
     protected BucketInfo bucketInfo(RunContext runContext) throws Exception {
         BucketInfo.Builder builder = BucketInfo.newBuilder(runContext.render(this.name));
@@ -174,7 +168,7 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         }
 
         if (this.lifecycleRules != null) {
-            builder.setLifecycleRules(mapLifecycleRules(this.lifecycleRules));
+            builder.setLifecycleRules(BucketLifecycleRule.convert(this.lifecycleRules));
         }
 
         if (this.storageClass != null) {
@@ -186,22 +180,22 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         }
 
         if (this.cors != null) {
-            builder.setCors(this.cors);
+            builder.setCors(Cors.convert(this.cors));
         }
 
         if (this.acl != null) {
-            builder.setAcl(mapAcls(this.acl));
+            builder.setAcl(AccessControl.convert(this.acl));
         }
 
         if (this.defaultAcl != null) {
-            builder.setDefaultAcl(mapAcls(this.defaultAcl));
+            builder.setDefaultAcl(AccessControl.convert(this.defaultAcl));
         }
 
         if (this.labels != null) {
             builder.setLabels(
                 this.labels.entrySet().stream()
                     .collect(Collectors.toMap(
-                        e -> e.getKey(),
+                        Map.Entry::getKey,
                         Rethrow.throwFunction(e -> runContext.render(e.getValue()))
                     ))
             );
@@ -220,80 +214,14 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         }
 
         if (this.iamConfiguration != null) {
-            builder.setIamConfiguration(this.iamConfiguration);
+            builder.setIamConfiguration(this.iamConfiguration.convert());
         }
 
         if (this.logging != null) {
-            builder.setLogging(this.logging);
+            builder.setLogging(this.logging.convert());
         }
 
         return builder.build();
-    }
-
-
-    private List<Acl> mapAcls(List<AccessControl> accessControls) {
-        if (accessControls == null) {
-            return null;
-        }
-
-        List<Acl> acls = new ArrayList<>();
-        for (AccessControl accessControl : accessControls) {
-            acls.add(mapAcl(accessControl));
-        }
-
-        return acls;
-    }
-
-    private Acl mapAcl(AccessControl accessControl) {
-        if (accessControl == null || accessControl.getEntity() == null || accessControl.getRole() == null) {
-            return null;
-        }
-
-        switch (accessControl.getEntity().getType()) {
-            case USER:
-                return Acl.of(new Acl.User(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
-            case GROUP:
-                return Acl.of(new Acl.Group(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
-            case DOMAIN:
-                return Acl.of(new Acl.Domain(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
-            default:
-                return null;
-        }
-    }
-
-
-    public List<LifecycleRule> mapLifecycleRules(List<BucketLifecycleRule> bucketLifecycleRules) {
-        if (bucketLifecycleRules == null) {
-            return null;
-        }
-
-        List<LifecycleRule> rules = new ArrayList<>();
-        for (BucketLifecycleRule bucketLifecycleRule : bucketLifecycleRules) {
-            rules.add(mapLifecycleRule(bucketLifecycleRule));
-        }
-
-        return rules;
-    }
-
-    public LifecycleRule mapLifecycleRule(BucketLifecycleRule bucketLifecycleRule) {
-        if (bucketLifecycleRule == null || bucketLifecycleRule.getCondition() == null || bucketLifecycleRule.getAction() == null) {
-            return null;
-        }
-
-        switch (bucketLifecycleRule.getAction().getType()) {
-            case DELETE:
-                return BucketLifecycleRule.DeleteAction.builder()
-                    .build()
-                    .convert(bucketLifecycleRule.getCondition());
-            case SET_STORAGE_CLASS:
-                return BucketLifecycleRule.SetStorageAction.builder()
-                    .storageClass(StorageClass.valueOf((String) bucketLifecycleRule.getAction().getValue()))
-                    .build()
-                    .convert(bucketLifecycleRule.getCondition());
-            default:
-                return null;
-
-        }
     }
 
     @Builder

@@ -204,14 +204,16 @@ class BucketTest {
         assertThat(bucket.getLifecycleRules(), notNullValue());
         assertThat(bucket.getLifecycleRules().size(), is(rules.size()));
 
-        java.util.List<Matcher<LifecycleRule>> matchers = task.getLifecycleRules().stream()
-            .map(rule -> matchingLifecycleRuleOnTypeAndAge(task.mapLifecycleRule(rule)))
+        java.util.List<Matcher<LifecycleRule>> matchers = task
+            .getLifecycleRules()
+            .stream()
+            .map(rule -> matchingLifecycleRuleOnTypeAndAge(rule.convert()))
             .collect(Collectors.toList());
 
         assertThat(matchers.size(), is(rules.size()));
 
         assertThat(bucket.getLifecycleRules(), hasItems(
-            matchers.toArray(new Matcher[matchers.size()])
+            matchers.toArray(new Matcher[0])
         ));
 
         // Delete bucket
