@@ -55,7 +55,8 @@ abstract public class AbstractBigquery extends AbstractTask {
     @PluginProperty(dynamic = true)
     protected List<String> retryReasons = Arrays.asList(
         "rateLimitExceeded",
-        "jobBackendError"
+        "jobBackendError",
+        "internalError"
     );
 
     @Builder.Default
@@ -64,8 +65,9 @@ abstract public class AbstractBigquery extends AbstractTask {
         description = "Message is tested as a substring of the full message and case insensitive"
     )
     @PluginProperty(dynamic = true)
-    protected List<String> retryMessages = Collections.singletonList(
-        "due to concurrent update"
+    protected List<String> retryMessages = Arrays.asList(
+        "due to concurrent update",
+        "Retrying the job may solve the problem"
     );
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
@@ -96,7 +98,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                     .maxAttempt(10)
                     .build()
                 )
-                .handleIf(this::shouldRetry)
+                .handleIf(throwable -> this.shouldRetry(throwable, logger))
                 .onFailure(event -> logger.error(
                     "Stop retry, attempts {} elapsed {} seconds",
                     event.getAttemptCount(),
@@ -135,8 +137,11 @@ abstract public class AbstractBigquery extends AbstractTask {
                         logger.warn(
                             "Error query on job '{}' with error [\n - {}\n]",
                             job.getJobId().getJob(),
-                            bqException.toString()
+                            bqException,
+                            bqException
                         );
+
+                        throw new BigQueryException(bqException.getErrors().get(0));
                     }
 
                     throw exception;
@@ -148,8 +153,9 @@ abstract public class AbstractBigquery extends AbstractTask {
             });
     }
 
-    private boolean shouldRetry(Throwable failure) {
+    private boolean shouldRetry(Throwable failure, Logger logger) {
         if (!(failure instanceof BigQueryException)) {
+            logger.warn("Cancelled retrying, unknown exception type {}", failure.getClass(), failure);
             return false;
         }
 
