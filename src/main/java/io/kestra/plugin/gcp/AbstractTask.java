@@ -35,14 +35,11 @@ public abstract class AbstractTask extends Task implements GcpInterface {
 
 
         if (serviceAccount != null) {
-            String serviceAccount = runContext.render(this.serviceAccount);
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccount.getBytes());
-            credentials = ServiceAccountCredentials.fromStream(byteArrayInputStream);
+            credentials = getSACredendials(runContext);
             Logger logger = runContext.logger();
 
             if (logger.isTraceEnabled()) {
-                byteArrayInputStream.reset();
-                Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {});
+                Map<String, String> jsonKey = getJsonKey(runContext);
                 if (jsonKey.containsKey("client_email")) {
                     logger.trace(" • Using service account: {}", jsonKey.get("client_email") );
                 }
@@ -58,11 +55,9 @@ public abstract class AbstractTask extends Task implements GcpInterface {
         return credentials;
     }
 
-    protected String getServiceAccountEmail(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    public String getServiceAccountEmail(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         if (this.serviceAccount != null) {
-            String serviceAccount = runContext.render(this.serviceAccount);
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccount.getBytes());
-            Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {});
+            Map<String, String> jsonKey = getJsonKey(runContext);
             if (jsonKey.containsKey("client_email")) {
                 return jsonKey.get("client_email");
             }
@@ -70,5 +65,20 @@ public abstract class AbstractTask extends Task implements GcpInterface {
         return null;
     }
 
+
+    private Map<String, String> getJsonKey(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
+        ByteArrayInputStream byteArrayInputStream = getByteArrayInputStream(runContext);
+        return JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {});
+    }
+
+    private ServiceAccountCredentials getSACredendials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        ByteArrayInputStream byteArrayInputStream = getByteArrayInputStream(runContext);
+        return ServiceAccountCredentials.fromStream(byteArrayInputStream);
+    }
+
+    private ByteArrayInputStream getByteArrayInputStream(RunContext runContext) throws IllegalVariableEvaluationException {
+        String serviceAccount = runContext.render(this.serviceAccount);
+        return new ByteArrayInputStream(serviceAccount.getBytes());
+    }
 
 }
