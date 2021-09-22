@@ -57,4 +57,18 @@ public abstract class AbstractTask extends Task implements GcpInterface {
 
         return credentials;
     }
+
+    protected String getServiceAccountEmail(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        if (this.serviceAccount != null) {
+            String serviceAccount = runContext.render(this.serviceAccount);
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccount.getBytes());
+            Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {});
+            if (jsonKey.containsKey("client_email")) {
+                return jsonKey.get("client_email");
+            }
+        }
+        return null;
+    }
+
+
 }
