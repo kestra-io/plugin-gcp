@@ -68,7 +68,7 @@ class BucketTest {
         CreateBucket task = createBuilder().build();
         AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getBucket().getName(), is(runContext().getVariables().get("bucket")));
     }
 
     @Test
@@ -91,7 +91,7 @@ class BucketTest {
 
         AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getBucket().getName(), is(runContext().getVariables().get("bucket")));
     }
 
     @Test
@@ -104,8 +104,8 @@ class BucketTest {
 
         AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
-        assertThat(run.getIndexPage(), is("createUpdate"));
+        assertThat(run.getBucket().getName(), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getBucket().getIndexPage(), is("createUpdate"));
     }
 
     @Test
@@ -121,8 +121,8 @@ class BucketTest {
 
         AbstractBucket.Output run = task.run(runContext());
 
-        assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
-        assertThat(run.getIndexPage(), is("update"));
+        assertThat(run.getBucket().getName(), is(runContext().getVariables().get("bucket")));
+        assertThat(run.getBucket().getIndexPage(), is("update"));
     }
 
     @Test
@@ -145,11 +145,11 @@ class BucketTest {
 
         AbstractBucket.Output run = task.run(rc);
 
-        assertThat(run.getBucket(), is(rc.getVariables().get("bucket")));
-        assertThat(run.getIndexPage(), is("createUpdate"));
+        assertThat(run.getBucket().getName(), is(rc.getVariables().get("bucket")));
+        assertThat(run.getBucket().getIndexPage(), is("createUpdate"));
 
         Storage connection = task.connection(rc);
-        Bucket bucket = connection.get(run.getBucket());
+        Bucket bucket = connection.get(run.getBucket().getName());
 
         assertThat(null, not(bucket));
 
@@ -216,10 +216,10 @@ class BucketTest {
 
         AbstractBucket.Output run = task.run(rc);
 
-        assertThat(run.getBucket(), is(rc.getVariables().get("bucket")));
+        assertThat(run.getBucket().getName(), is(rc.getVariables().get("bucket")));
 
         Storage connection = task.connection(rc);
-        Bucket bucket = connection.get(run.getBucket());
+        Bucket bucket = connection.get(run.getBucket().getName());
 
         assertThat(null, not(bucket));
 
@@ -239,7 +239,7 @@ class BucketTest {
         ));
 
         // Delete bucket
-        connection.delete(run.getBucket());
+        connection.delete(run.getBucket().getName());
     }
 
     @Test
@@ -304,7 +304,7 @@ class BucketTest {
 
     // Custom match for Acl
     private Matcher<Acl> matchingAcl(Acl expected) {
-        return new TypeSafeMatcher<Acl>() {
+        return new TypeSafeMatcher<>() {
             @Override
             public void describeTo(Description description) {
                 description.appendText(expected.toString());

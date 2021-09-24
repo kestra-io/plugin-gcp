@@ -1,6 +1,5 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -228,39 +227,20 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The bucket's unique name"
+            title = "The bucket's info"
         )
-        private String bucket;
+        private Bucket bucket;
 
         @Schema(
-            title = "The bucket's URI."
+            title = "If the bucket was updated."
         )
-        private URI bucketUri;
+        @Builder.Default
+        private Boolean updated = false;
 
         @Schema(
-            title = "The bucket's location"
+            title = "If the bucket was created."
         )
-        private String location;
-
-        @Schema(
-            title = "The bucket's website index page."
-        )
-        private String indexPage;
-
-        @Schema(
-            title = "The custom object to return when a requested resource is not found."
-        )
-        private String notFoundPage;
-
-        public static Output of(Bucket bucket) throws URISyntaxException {
-            return Output.builder()
-                .bucket(bucket.getName())
-                .bucketUri(new URI("gs://" + bucket.getName()))
-                .location(bucket.getLocation())
-                .indexPage(bucket.getIndexPage())
-                .notFoundPage(bucket.getNotFoundPage())
-                .build();
-        }
+        @Builder.Default
+        private Boolean created = false;
     }
-
 }

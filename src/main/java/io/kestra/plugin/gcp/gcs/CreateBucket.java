@@ -1,16 +1,15 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.gcp.gcs.models.Bucket;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 @SuperBuilder
@@ -48,25 +47,30 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
         Logger logger = runContext.logger();
         BucketInfo bucketInfo = this.bucketInfo(runContext);
 
-        logger.debug("Creating bucket '{}'", bucketInfo);
-        Bucket bucket = this.create(connection, runContext, bucketInfo);
-
-        return Output.of(bucket);
-    }
-
-    private Bucket create(Storage connection, RunContext runContext, BucketInfo bucketInfo) throws IllegalVariableEvaluationException {
-        Bucket bucket = connection.get(bucketInfo.getName());
+        com.google.cloud.storage.Bucket bucket = connection.get(bucketInfo.getName());
 
         // Bucket does not exist, we try to create it
         if (bucket == null) {
-            return connection.create(bucketInfo);
+            logger.debug("Creating bucket '{}'", bucketInfo);
+            return Output.builder()
+                .bucket(Bucket.of(connection.create(bucketInfo)))
+                .created(true)
+                .build();
         }
 
         // Bucket exists, we check the ifExists policy
         if (this.ifExists == IfExists.UPDATE) {
-            return connection.update(bucketInfo);
+            logger.debug("Updating bucket '{}'", bucketInfo);
+            return Output.builder()
+                .bucket(Bucket.of(connection.update(bucketInfo)))
+                .updated(true)
+                .build();
+
         } else if (this.ifExists == IfExists.SKIP) {
-            return bucket;
+            logger.debug("Bucket '{}' already exists, skipping", bucketInfo);
+            return Output.builder()
+                .bucket(Bucket.of(connection.update(bucketInfo)))
+                .build();
         } else {
             throw new RuntimeException("Bucket " + bucketInfo.getName() + " already exists and ifExists policy is set to ERROR !");
         }

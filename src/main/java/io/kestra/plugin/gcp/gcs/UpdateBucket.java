@@ -1,18 +1,17 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
 @SuperBuilder
@@ -44,8 +43,11 @@ public class UpdateBucket extends AbstractBucket implements RunnableTask<Abstrac
         BucketInfo bucketInfo = this.bucketInfo(runContext);
 
         logger.debug("Updating bucket '{}'", bucketInfo);
-        Bucket bucket = connection.update(bucketInfo);
 
-        return Output.of(bucket);
+        return Output.builder()
+            .bucket(io.kestra.plugin.gcp.gcs.models.Bucket.of(connection.update(bucketInfo)))
+            .updated(true)
+            .build();
+
     }
 }
