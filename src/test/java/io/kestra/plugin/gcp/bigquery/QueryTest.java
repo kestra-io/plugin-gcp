@@ -142,13 +142,13 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("{{#each inputs.loop}}" +
+            .sql("{% for input in inputs.loop %}" +
                 "SELECT" +
                 "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{dateFormat execution.startDate \"yyyy-MM-dd HH:mm:ss.SSSSSS\"}}\" as execution_date," +
-                "  {{@key}} as counter" +
-                "{{#unless @last}}\nUNION ALL\n{{/unless}}" +
-                "{{/each}}"
+                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\")}}\" as execution_date," +
+                "  {{ input }} as counter" +
+                "{{ loop.last  == false ? '\nUNION ALL\n' : '\n' }}" +
+                "{% endfor %}"
             )
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .timePartitioningField("execution_date")
@@ -187,12 +187,12 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("{{#each inputs.loop}}" +
+            .sql("{% for input in inputs.loop %}" +
                 "SELECT" +
                 "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{dateFormat execution.startDate \"yyyy-MM-dd HH:mm:ss.SSSSSS\"}}\" as execution_date," +
-                "  {{@key}} as counter;" +
-                "{{/each}}"
+                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\") }}\" as execution_date," +
+                "  {{input}} as counter;" +
+                "{% endfor %}"
             )
             .build();
 
@@ -250,9 +250,9 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("{{#each inputs.loop}}" +
+            .sql("{% for input in  inputs.loop %}" +
                 "SELECT * from `{{execution.id}}`;" +
-                "{{/each}}"
+                "{% endfor %}"
             )
             .build();
 

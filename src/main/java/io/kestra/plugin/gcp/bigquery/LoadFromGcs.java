@@ -31,7 +31,7 @@ import java.util.List;
                     title = "Load an avro file from a gcs bucket",
                     code = {
                             "from:",
-                            "  - \"{{ outputs.avro-to-gcs }}\"",
+                            "  - \"{{ outputs['avro-to-gcs'] }}\"",
                             "destinationTable: \"my_project.my_dataset.my_table\"",
                             "format: AVRO",
                             "avroOptions:",

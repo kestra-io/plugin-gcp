@@ -26,20 +26,4 @@ class UploadTest {
 
         assertThat(run.getUri(), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/" + out + ".yml")));
     }
-
-    @Test
-    void fromRemoteUrl() throws Exception {
-        String out = FriendlyId.createFriendlyId();
-
-        Upload task = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from("http://www.google.com")
-            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".html")
-            .build();
-
-        Upload.Output run = task.run(testUtils.runContext(task));
-
-        assertThat(run.getUri(), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/" + out + ".html")));
-    }
 }
