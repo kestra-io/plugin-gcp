@@ -334,7 +334,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
     private List<Map<String, Object>> fetchResult(TableResult result) {
         return StreamSupport
-            .stream(result.getValues().spliterator(), false)
+            .stream(result.iterateAll().spliterator(), false)
             .map(fieldValues -> this.convertRows(result, fieldValues))
             .collect(Collectors.toList());
     }
@@ -350,7 +350,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
                 .create(
                     s -> {
                         StreamSupport
-                            .stream(result.getValues().spliterator(), false)
+                            .stream(result.iterateAll().spliterator(), false)
                             .forEach(fieldValues -> {
                                 s.onNext(this.convertRows(result, fieldValues));
                             });
