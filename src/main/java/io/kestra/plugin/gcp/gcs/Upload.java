@@ -66,25 +66,25 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
 
         logger.debug("Upload from '{}' to '{}'", from, to);
 
-        InputStream data = runContext.uriToInputStream(from);
+        try (InputStream data = runContext.uriToInputStream(from)) {
+            long size = 0;
+            try (WriteChannel writer = connection.writer(destination)) {
+                byte[] buffer = new byte[10_240];
 
-        long size = 0;
-        try (WriteChannel writer = connection.writer(destination)) {
-            byte[] buffer = new byte[10_240];
-
-            int limit;
-            while ((limit = data.read(buffer)) >= 0) {
-                writer.write(ByteBuffer.wrap(buffer, 0, limit));
-                size += limit;
+                int limit;
+                while ((limit = data.read(buffer)) >= 0) {
+                    writer.write(ByteBuffer.wrap(buffer, 0, limit));
+                    size += limit;
+                }
             }
+
+            runContext.metric(Counter.of("file.size", size));
+
+            return Output
+                .builder()
+                .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
+                .build();
         }
-
-        runContext.metric(Counter.of("file.size", size));
-
-        return Output
-            .builder()
-            .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
-            .build();
     }
 
     @Builder
