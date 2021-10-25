@@ -93,13 +93,15 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         description = "The schema can be omitted if the destination table" +
             " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. " +
             " DATASTORE_BACKUP format option).\n" +
+            "```yaml" +
             "schema:\n" +
             "  fields:\n" +
             "    - name: colA\n" +
             "      type: STRING\n" +
             "    - name: colB\n" + 
             "      type: NUMERIC\n"+
-            "See type from <a href=\"https://javadoc.io/static/com.google.cloud/google-cloud-bigquery/1.88.0/com/google/cloud/bigquery/StandardSQLTypeName.html>StandardSQLTypeName</a>"
+            "```\n" +
+            "See type from [StandardSQLTypeName](https://javadoc.io/static/com.google.cloud/google-cloud-bigquery/1.88.0/com/google/cloud/bigquery/StandardSQLTypeName.html)"
     )
     @PluginProperty(dynamic = false)
     private Map<String, Object> schema;
