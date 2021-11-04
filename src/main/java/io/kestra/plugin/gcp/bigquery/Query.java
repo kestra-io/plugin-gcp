@@ -152,6 +152,107 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     @PluginProperty(dynamic = false)
     private JobInfo.CreateDisposition createDisposition;
 
+    @Schema(
+        title = "Job timeout.",
+        description = "If this time limit is exceeded, BigQuery may attempt to terminate the job."
+    )
+    @PluginProperty(dynamic = false)
+    private Duration jobTimeout;
+
+    @Schema(
+        title = "The labels associated with this job.",
+        description = "You can use these to organize and group your jobs. Label " +
+            "keys and values can be no longer than 63 characters, can only contain lowercase letters, " +
+            "numeric characters, underscores and dashes. International characters are allowed. Label " +
+            "values are optional. Label keys must start with a letter and each label in the list must have " +
+            "a different key."
+    )
+    @PluginProperty(dynamic = true)
+    private Map<String, String> labels;
+
+    @Schema(
+        title = "Sets the default dataset.",
+        description = "This dataset is used for all unqualified table names used in the query."
+    )
+    @PluginProperty(dynamic = true)
+    private String defaultDataset;
+
+    @Schema(
+        title = "Sets a priority for the query."
+    )
+    @PluginProperty(dynamic = false)
+    @Builder.Default
+    private QueryJobConfiguration.Priority priority = QueryJobConfiguration.Priority.INTERACTIVE;
+
+    @Schema(
+        title = "Sets whether the job is enabled to create arbitrarily large results.",
+        description = "If `true` the query is allowed to create large results at a slight cost in performance. " +
+            "`destinationTable` must be provide"
+    )
+    @PluginProperty(dynamic = false)
+    private Boolean allowLargeResults;
+
+    @Schema(
+        title = "Sets whether to look for the result in the query cache.",
+        description = "The query cache is a best-effort cache that will be flushed whenever tables in the query are " +
+            "modified. Moreover, the query cache is only available when `destinationTable` is not set "
+    )
+    @PluginProperty(dynamic = false)
+    private Boolean useQueryCache;
+
+    @Schema(
+        title = "Sets whether nested and repeated fields should be flattened.",
+        description = "If set to `false`, allowLargeResults must be `true`"
+    )
+    @PluginProperty(dynamic = false)
+    @Builder.Default
+    private Boolean flattenResults = true;
+
+    @Schema(
+        title = "Sets whether the job has to be dry run or no.",
+        description = " A valid query will return a mostly empty response with some processing statistics, " +
+            "while an invalid query will return the same error it would if it wasn't a dry run."
+    )
+    @PluginProperty(dynamic = false)
+    @Builder.Default
+    private Boolean dryRun = false;
+
+    @Schema(
+        title = "Sets whether to use BigQuery's legacy SQL dialect for this query.",
+        description = " A valid query will return a mostly empty response with some processing statistics, " +
+            "while an invalid query will return the same error it would if it wasn't a dry run."
+    )
+    @PluginProperty(dynamic = false)
+    @Builder.Default
+    private Boolean useLegacySql = false;
+
+    @Schema(
+        title = "Limits the billing tier for this job.",
+        description = "Queries that have resource usage beyond this tier will fail (without incurring a charge). " +
+            "If unspecified, this will be set to your project default."
+    )
+    @PluginProperty(dynamic = false)
+    private Integer maximumBillingTier;
+
+    @Schema(
+        title = "Limits the bytes billed for this job.",
+        description = "Queries that will have bytes billed beyond this limit will fail (without incurring a charge). " +
+            "If unspecified, this will be set to your project default."
+    )
+    @PluginProperty(dynamic = false)
+    private Long maximumBytesBilled;
+
+    @Schema(
+        title = "This is only supported in the fast query path.",
+        description = "The maximum number of rows of data " +
+            "to return per page of results. Setting this flag to a small value such as 1000 and then " +
+            "paging through results might improve reliability when the query result set is large. In " +
+            "addition to this limit, responses are also limited to 10 MB. By default, there is no maximum " +
+            "row count, and only the byte limit applies."
+    )
+    @PluginProperty(dynamic = false)
+    private Long maxResults;
+
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
@@ -243,6 +344,42 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
 
         if (this.createDisposition != null) {
             builder.setCreateDisposition(this.createDisposition);
+        }
+
+        if (this.allowLargeResults != null) {
+            builder.setAllowLargeResults(this.allowLargeResults);
+        }
+
+        if (this.useLegacySql != null) {
+            builder.setUseLegacySql(this.useLegacySql);
+        }
+
+        if (this.labels != null) {
+            builder.setLabels(this.labels);
+        }
+
+        if (this.jobTimeout != null) {
+            builder.setJobTimeoutMs(this.jobTimeout.toMillis());
+        }
+
+        if (this.maximumBillingTier != null) {
+            builder.setMaximumBillingTier(this.maximumBillingTier);
+        }
+
+        if (this.maximumBytesBilled != null) {
+            builder.setMaximumBytesBilled(this.maximumBytesBilled);
+        }
+
+        if (this.maxResults != null) {
+            builder.setMaxResults(this.maxResults);
+        }
+
+        if (this.priority != null) {
+            builder.setPriority(this.priority);
+        }
+
+        if (this.useQueryCache != null) {
+            builder.setUseQueryCache(this.useQueryCache);
         }
 
         return builder.build();
