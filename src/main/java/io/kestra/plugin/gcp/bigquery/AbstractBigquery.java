@@ -56,7 +56,8 @@ abstract public class AbstractBigquery extends AbstractTask {
     protected List<String> retryReasons = Arrays.asList(
         "rateLimitExceeded",
         "jobBackendError",
-        "internalError"
+        "internalError",
+        "jobInternalError"
     );
 
     @Builder.Default
