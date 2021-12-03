@@ -36,7 +36,12 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for files on Google cloud storage"
+    title = "Wait for files on Google cloud storage",
+    description = "This trigger will poll every `interval` a GCS bucket. " +
+        "You can search for all files in a bucket or directory in `from` or you can filter the files with a `regExp`." +
+        "The detection is atomic, internally we do a list and interact only with files listed.\n" +
+        "Once a file is detected, we download the file on internal storage and processed with declared `action` " +
+        "in order to move or delete the files from the bucket (to avoid double detection on new poll)"
 )
 @Plugin(
     examples = {
