@@ -5,7 +5,7 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
-import com.google.cloud.bigquery.storage.v1beta2.*;
+import com.google.cloud.bigquery.storage.v1.*;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -284,7 +284,9 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
                 throw new IllegalArgumentException("No schema defined for table '" + tableId);
             }
 
-            return JsonStreamWriter.newBuilder(parentTable.toString(), schema);
+            TableSchema tableSchema = BigQueryToBigQueryStorageSchemaConverter.convertTableSchema(schema);
+
+            return JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema);
         } else  {
             // Write to a stream in pending mode: https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_pending_mode
             // Write to a stream in committed mode : https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode
