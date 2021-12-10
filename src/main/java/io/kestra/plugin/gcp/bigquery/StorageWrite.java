@@ -270,9 +270,10 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         if (this.writeStreamType == WriteStreamType.DEFAULT) {
             // Write to the default stream: https://cloud.google.com/bigquery/docs/write-api#write_to_the_default_stream
             BigQuery bigQuery = AbstractBigquery.connection(
+                runContext,
                 this.credentials(runContext),
-                runContext.render(this.projectId),
-                runContext.render(this.location)
+                this.projectId,
+                this.location
             );
 
             TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable));

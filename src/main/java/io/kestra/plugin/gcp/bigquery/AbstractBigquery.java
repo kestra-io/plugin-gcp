@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
+import io.kestra.core.utils.VersionProvider;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -20,6 +21,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import javax.validation.Valid;
 
@@ -73,18 +75,22 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return connection(
+            runContext,
             this.credentials(runContext),
-            runContext.render(this.projectId),
-            runContext.render(this.location)
+            this.projectId,
+            this.location
         );
     }
 
-    static BigQuery connection(GoogleCredentials googleCredentials, String projectId, String location) {
+    static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
+        VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
+
         return BigQueryOptions
             .newBuilder()
             .setCredentials(googleCredentials)
-            .setProjectId(projectId)
-            .setLocation(location)
+            .setProjectId(runContext.render(projectId))
+            .setLocation(runContext.render(location))
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
             .build()
             .getService();
     }
