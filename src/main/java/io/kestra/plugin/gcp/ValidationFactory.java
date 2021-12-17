@@ -4,7 +4,7 @@ import io.kestra.plugin.gcp.bigquery.*;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Factory
 public class ValidationFactory {

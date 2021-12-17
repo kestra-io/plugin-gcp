@@ -14,8 +14,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Objects;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 class GcsTestUtils {

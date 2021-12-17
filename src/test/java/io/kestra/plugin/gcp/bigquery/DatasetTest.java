@@ -17,7 +17,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
