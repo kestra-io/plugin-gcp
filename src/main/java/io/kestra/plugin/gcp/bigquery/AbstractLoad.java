@@ -272,7 +272,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
             runContext.metric(Counter.of("input.files", stats.getInputFiles(), tags));
         }
 
-        runContext.metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
+        runContext.metric(Timer.of("duration", Duration.ofMillis(stats.getEndTime() - stats.getStartTime()), tags));
     }
 
     public enum Format {

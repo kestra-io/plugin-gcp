@@ -466,7 +466,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             runContext.metric(Counter.of("cache.hit", stats.getCacheHit() ? 1 : 0, tags));
         }
 
-        runContext.metric(Timer.of("duration", Duration.ofNanos(stats.getEndTime() - stats.getStartTime()), tags));
+        runContext.metric(Timer.of("duration", Duration.ofMillis(stats.getEndTime() - stats.getStartTime()), tags));
     }
 
     private List<Map<String, Object>> fetchResult(TableResult result) {
