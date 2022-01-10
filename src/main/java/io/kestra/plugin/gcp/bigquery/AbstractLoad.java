@@ -93,7 +93,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         description = "The schema can be omitted if the destination table" +
             " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. " +
             " DATASTORE_BACKUP format option).\n" +
-            "```yaml" +
+            "```yaml\n" +
             "schema:\n" +
             "  fields:\n" +
             "    - name: colA\n" +
