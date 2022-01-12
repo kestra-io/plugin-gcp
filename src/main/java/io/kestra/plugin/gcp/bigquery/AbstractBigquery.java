@@ -121,19 +121,24 @@ abstract public class AbstractBigquery extends AbstractTask {
                 })
             )
             .get(() -> {
-                Job job = createJob.call();
-
-                BigQueryService.handleErrors(job, logger);
-
+                Job job = null;
                 try {
+                    job = createJob.call();
+
+                    BigQueryService.handleErrors(job, logger);
+
                     job = job.waitFor();
+
+                    BigQueryService.handleErrors(job, logger);
+
+                    return job;
                 } catch (Exception exception) {
                     if (exception instanceof com.google.cloud.bigquery.BigQueryException) {
                         com.google.cloud.bigquery.BigQueryException bqException = (com.google.cloud.bigquery.BigQueryException) exception;
 
                         logger.warn(
-                            "Error query on job '{}' with error [\n - {}\n]",
-                            job.getJobId().getJob(),
+                            "Error query on {} with error [\n - {}\n]",
+                            job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
                             bqException.toString()
                         );
 
@@ -143,7 +148,7 @@ abstract public class AbstractBigquery extends AbstractTask {
 
                         logger.warn(
                             "Error query on job '{}' with error [\n - {}\n]",
-                            job.getJobId().getJob(),
+                            job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
                             bqException,
                             bqException
                         );
@@ -153,10 +158,6 @@ abstract public class AbstractBigquery extends AbstractTask {
 
                     throw exception;
                 }
-
-                BigQueryService.handleErrors(job, logger);
-
-                return job;
             });
     }
 
