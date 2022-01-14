@@ -59,7 +59,8 @@ abstract public class AbstractBigquery extends AbstractTask {
         "rateLimitExceeded",
         "jobBackendError",
         "internalError",
-        "jobInternalError"
+        "jobInternalError",
+        "duplicate"
     );
 
     @Builder.Default
@@ -124,6 +125,8 @@ abstract public class AbstractBigquery extends AbstractTask {
                 Job job = null;
                 try {
                     job = createJob.call();
+
+                    logger.debug("Starting job '{}'", job.getJobId());
 
                     BigQueryService.handleErrors(job, logger);
 
