@@ -93,7 +93,10 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
         LoadJobConfiguration configuration = builder.build();
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
-        Job loadJob = this.waitForJob(logger, () -> connection.create(JobInfo.of(configuration)));
+        Job loadJob = this.waitForJob(logger, () -> connection.create(JobInfo.newBuilder(configuration)
+            .setJobId(BigQueryService.jobId(runContext, this))
+            .build()
+        ));
 
         return this.outputs(runContext, configuration, loadJob);
     }
