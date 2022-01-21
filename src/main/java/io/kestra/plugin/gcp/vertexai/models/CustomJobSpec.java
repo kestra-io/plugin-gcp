@@ -83,7 +83,7 @@ public class CustomJobSpec {
             .forEach(builder::addWorkerPoolSpecs);
 
         if (this.getServiceAccount() != null) {
-            builder.setServiceAccount(this.getServiceAccount());
+            builder.setServiceAccount(runContext.render(this.getServiceAccount()));
         }
 
         if (this.getNetwork() != null) {
@@ -91,7 +91,7 @@ public class CustomJobSpec {
         }
 
         if (this.getTensorboard() != null) {
-            builder.setTensorboard(this.getTensorboard());
+            builder.setTensorboard(runContext.render(this.getTensorboard()));
         }
 
         if (this.getEnableWebAccess() != null) {
