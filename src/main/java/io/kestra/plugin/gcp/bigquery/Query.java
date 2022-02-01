@@ -512,7 +512,7 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     }
 
     private Map<String, Object> convertRows(TableResult result, FieldValueList fieldValues) {
-        HashMap<String, Object> row = new HashMap<>();
+        Map<String, Object> row = new LinkedHashMap<>();
         result
             .getSchema()
             .getFields()
