@@ -1,24 +1,20 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobId;
 import com.google.cloud.bigquery.TableId;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.IdUtils;
 import org.slf4j.Logger;
+
+import java.util.ArrayList;
 
 public class BigQueryService {
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
-        String jobName = runContext.getVariables().containsKey("execution") ? "{{execution.id}}_{{taskrun.id}}" : "{{trigger.id}}";
-
         return JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()))
             .setLocation(runContext.render(abstractBigquery.getLocation()))
-            .setJob(runContext
-                .render("{{flow.namespace}}.{{flow.id}}_" + jobName + "_rand_" + IdUtils.create())
-                .replace(".", "-")
-            )
             .build();
     }
 
@@ -37,24 +33,23 @@ public class BigQueryService {
         if (job == null) {
             throw new IllegalArgumentException("Job no longer exists");
         } else if (job.getStatus().getError() != null) {
-            if (job.getStatus().getExecutionErrors() != null) {
-                job
-                    .getStatus()
-                    .getExecutionErrors()
-                    .forEach(bigQueryError -> {
-                        logger.warn(
-                            "Error on job '{}' query with error [\n - {}\n]",
-                            job.getJobId().getJob(),
-                            bigQueryError.toString()
-                        );
-                    });
+            ArrayList<BigQueryError> errors = new ArrayList<>();
+            if (job.getStatus().getError() != null) {
+                errors.add(job.getStatus().getError());
             }
 
-            if (job.getStatus().getError() != null) {
-                throw new BigQueryException(
-                    job.getStatus().getError(),
-                    job.getStatus().getExecutionErrors()
+            if (job.getStatus().getExecutionErrors() != null) {
+                errors.addAll(job.getStatus().getExecutionErrors());
+            }
+
+            if (errors.size() > 0) {
+                logger.warn(
+                    "Error query on job '{}' with errors:\n[\n - {}\n]",
+                     "job '" + job.getJobId().getJob() + "'",
+                    String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
                 );
+
+                throw new BigQueryException(errors);
             }
         }
     }

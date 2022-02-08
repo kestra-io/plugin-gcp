@@ -9,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 import net.jodah.failsafe.Failsafe;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.retrys.AbstractRetry;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
@@ -19,11 +18,9 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import javax.validation.Valid;
 
 @SuperBuilder
 @ToString
@@ -59,8 +56,7 @@ abstract public class AbstractBigquery extends AbstractTask {
         "rateLimitExceeded",
         "jobBackendError",
         "internalError",
-        "jobInternalError",
-        "duplicate"
+        "jobInternalError"
     );
 
     @Builder.Default
@@ -140,23 +136,22 @@ abstract public class AbstractBigquery extends AbstractTask {
                         com.google.cloud.bigquery.BigQueryException bqException = (com.google.cloud.bigquery.BigQueryException) exception;
 
                         logger.warn(
-                            "Error query on {} with error [\n - {}\n]",
+                            "Error query on {} with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            bqException.toString()
+                            String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
                         );
 
-                        throw new BigQueryException(bqException.getError());
+                        throw new BigQueryException(bqException.getErrors());
                     } else if (exception instanceof JobException) {
                         JobException bqException = (JobException) exception;
 
                         logger.warn(
-                            "Error query on job '{}' with error [\n - {}\n]",
+                            "Error query on job '{}' with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            bqException,
-                            bqException
+                            String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
                         );
 
-                        throw new BigQueryException(bqException.getErrors().get(0));
+                        throw new BigQueryException(bqException.getErrors());
                     }
 
                     throw exception;
@@ -170,16 +165,16 @@ abstract public class AbstractBigquery extends AbstractTask {
             return false;
         }
 
-        BigQueryError error = ((BigQueryException) failure).getError();
+        for (BigQueryError error : ((BigQueryException) failure).getErrors()) {
+            if (this.retryReasons != null && this.retryReasons.contains(error.getReason())) {
+                return true;
+            }
 
-        if (this.retryReasons != null && this.retryReasons.contains(error.getReason())) {
-            return true;
-        }
-
-        if (this.retryMessages != null) {
-            for (String message: this.retryMessages) {
-                if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
-                    return true;
+            if (this.retryMessages != null) {
+                for (String message: this.retryMessages) {
+                    if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
+                        return true;
+                    }
                 }
             }
         }

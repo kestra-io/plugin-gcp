@@ -7,19 +7,14 @@ import java.util.List;
 
 @Getter
 public class BigQueryException extends Exception {
-    private BigQueryError error;
-    private List<BigQueryError> executionsErrors;
+    private final List<BigQueryError> errors;
 
-    BigQueryException(BigQueryError error, List<BigQueryError> executionsErrors) {
-        super(error.toString());
+    BigQueryException(List<BigQueryError> errors) {
+        super("Bigquery Errors\n[ - " +
+            String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new)) +
+            "\n]"
+        );
 
-        this.error = error;
-        this.executionsErrors = executionsErrors;
-    }
-
-    BigQueryException(BigQueryError error) {
-        super(error.toString());
-
-        this.error = error;
+        this.errors = errors;
     }
 }

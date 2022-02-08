@@ -64,11 +64,6 @@ class TriggerTest {
     @Value("${kestra.variables.globals.table}")
     private String table;
 
-    @BeforeEach
-    private void init() throws IOException, URISyntaxException {
-        repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows")));
-    }
-
     @Test
     void flow() throws Exception {
         // mock flow listeners
@@ -99,6 +94,8 @@ class TriggerTest {
                 .build();
 
             scheduler.run();
+
+            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows")));
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 

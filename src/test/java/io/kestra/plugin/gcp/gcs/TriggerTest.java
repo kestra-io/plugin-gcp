@@ -71,11 +71,6 @@ class TriggerTest {
     @Value("${kestra.variables.globals.random}")
     private String random;
 
-    @BeforeEach
-    private void init() throws IOException, URISyntaxException {
-        repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows")));
-    }
-
     @Test
     void flow() throws Exception {
         // mock flow listeners
@@ -105,6 +100,7 @@ class TriggerTest {
             testUtils.upload(random + "/" + out2);
 
             scheduler.run();
+            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows")));
 
             queueCount.await(1, TimeUnit.MINUTES);
 
