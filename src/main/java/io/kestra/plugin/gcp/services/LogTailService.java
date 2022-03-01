@@ -12,37 +12,42 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.kestra.core.utils.Rethrow.throwRunnable;
 
 public class LogTailService {
-    public static void tail(Logger logger, String projectId, Credentials credential, String filter, AtomicBoolean stopSignal) throws Exception {
+    public static Thread tail(Logger logger, String projectId, Credentials credential, String filter, AtomicBoolean stopSignal) throws Exception {
         LoggingOptions options = LoggingOptions.newBuilder()
             .setCredentials(credential)
             .setProjectId(projectId)
             .build();
 
-        Thread thread = new Thread(throwRunnable(() -> {
-            try (Logging logging = options.getService()) {
-                LogEntryServerStream stream = logging.tailLogEntries(
-                    Logging.TailOption.project(projectId),
-                     Logging.TailOption.filter(filter)
-                );
+        Thread thread = new Thread(
+            throwRunnable(() -> {
+                try (Logging logging = options.getService()) {
+                    LogEntryServerStream stream = logging.tailLogEntries(
+                        Logging.TailOption.project(projectId),
+                        Logging.TailOption.filter(filter)
+                    );
 
-                for (LogEntry logEntry : stream) {
-                    LogTailService.log(logger, logEntry);
+                    for (LogEntry logEntry : stream) {
+                        LogTailService.log(logger, logEntry);
 
-                    if (stopSignal.get()) {
-                        if (stream.isReceiveReady()) {
-                            stream.iterator().forEachRemaining(l -> LogTailService.log(logger, l));
+                        if (stopSignal.get()) {
+                            if (stream.isReceiveReady()) {
+                                stream.iterator().forEachRemaining(l -> LogTailService.log(logger, l));
+                            }
+
+                            stream.cancel();
                         }
-
-                        stream.cancel();
                     }
                 }
-            }
-        }));
+            }),
+            "gcp-log-tail"
+        );
 
         thread.start();
         thread.setUncaughtExceptionHandler((t, e) -> {
             logger.error("Failed to capture log", e);
         });
+
+        return thread;
     }
 
     private static void log(Logger logger, LogEntry logEntry) {

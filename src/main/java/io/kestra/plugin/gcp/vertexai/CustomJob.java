@@ -133,55 +133,63 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                 .updateDate(TimestampService.of(response.getUpdateTime()))
                 .state(response.getState());
 
-            LogTailService.tail(
-                logger,
-                runContext.render(this.projectId),
-                credentials,
-                "resource.labels.job_id=\"" + response.getName().substring(response.getName().lastIndexOf("/") + 1) + "\" AND " +
-                    "resource.type=\"ml_job\"",
-                stopLog
-            );
-
-            if (this.wait) {
-                com.google.cloud.aiplatform.v1.CustomJob result = Await.until(
-                    () -> {
-                        com.google.cloud.aiplatform.v1.CustomJob customJob = client.getCustomJob(response.getName());
-
-                        if (!customJob.hasEndTime()) {
-                            return null;
-                        }
-
-                        return customJob;
-                    },
-                    Duration.ofSeconds(30)
+            Thread tailThread = null;
+            try {
+                tailThread = LogTailService.tail(
+                    logger,
+                    runContext.render(this.projectId),
+                    credentials,
+                    "resource.labels.job_id=\"" + response.getName()
+                        .substring(response.getName().lastIndexOf("/") + 1) + "\" AND " +
+                        "resource.type=\"ml_job\"",
+                    stopLog
                 );
 
-                stopLog.set(true);
+                if (this.wait) {
+                    com.google.cloud.aiplatform.v1.CustomJob result = Await.until(
+                        () -> {
+                            com.google.cloud.aiplatform.v1.CustomJob customJob = client.getCustomJob(response.getName());
 
-                outputBuilder
-                    .endDate(TimestampService.of(result.getEndTime()))
-                    .state(result.getState());
+                            if (!customJob.hasEndTime()) {
+                                return null;
+                            }
 
-                logger.info("Job {} ended with in {}",
-                    response.getName(),
-                    Duration.between(TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime()))
-                );
+                            return customJob;
+                        },
+                        Duration.ofSeconds(30)
+                    );
 
-                // wait a little for log
-                Thread.sleep(4000);
+                    stopLog.set(true);
+
+                    outputBuilder
+                        .endDate(TimestampService.of(result.getEndTime()))
+                        .state(result.getState());
+
+                    logger.info("Job {} ended with in {}",
+                        response.getName(),
+                        Duration.between(TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime()))
+                    );
+
+                    // wait a little for log
+                    Thread.sleep(4000);
 
 
-                if (this.delete) {
-                    client.deleteCustomJobAsync(response.getName()).get();
-                    logger.info("Job {} is deleted", response.getName());
+                    if (this.delete) {
+                        client.deleteCustomJobAsync(response.getName()).get();
+                        logger.info("Job {} is deleted", response.getName());
+                    }
+
+                    if (response.hasError()) {
+                        throw new Exception(response.getError().getMessage());
+                    }
                 }
 
-                if (response.hasError()) {
-                    throw new Exception(response.getError().getMessage());
+                return outputBuilder.build();
+            } finally {
+                if (tailThread != null) {
+                    tailThread.interrupt();
                 }
             }
-
-            return outputBuilder.build();
         }
     }
 
