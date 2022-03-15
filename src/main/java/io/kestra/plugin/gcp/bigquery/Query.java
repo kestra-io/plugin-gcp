@@ -589,7 +589,8 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
                     this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
                 ))
                 .peek(u -> counter.getAndIncrement())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                // https://bugs.openjdk.java.net/browse/JDK-8148463
+                .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
         }
 
         if (LegacySQLTypeName.STRING.equals(field.getType())) {

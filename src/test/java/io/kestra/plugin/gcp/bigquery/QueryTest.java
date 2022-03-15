@@ -55,7 +55,7 @@ class QueryTest {
     static String sql() {
         return "SELECT \n" +
             "  \"hello\" as string,\n" +
-            "  NULL AS `nullable`,\n" +
+            "  CAST(NULL AS INT) AS `nullable`,\n" +
             "  TRUE AS `bool`,\n" +
             "  1 as int,\n" +
             "  1.25 AS float,\n" +
@@ -65,7 +65,7 @@ class QueryTest {
             "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
             "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
             "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
-            "  STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`";
+            "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`";
     }
 
     @Test
@@ -97,6 +97,7 @@ class QueryTest {
         assertThat(rows.get(0).get("timestamp"), is(Instant.parse("2008-12-25T15:30:00.123Z")));
         assertThat((List<Double>) rows.get(0).get("geopoint"), containsInAnyOrder(50.6833, 2.9));
         assertThat((List<Long>) rows.get(0).get("array"), containsInAnyOrder(1L, 2L, 3L));
+        assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("v"), is(nullValue()));
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("x"), is(4L));
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("y"), is(0L));
         assertThat((List<Long>) ((Map<String, Object>) rows.get(0).get("struct")).get("z"), containsInAnyOrder(1L, 2L, 3L));
@@ -116,7 +117,7 @@ class QueryTest {
         assertThat(
             CharStreams.toString(new InputStreamReader(storageInterface.get(run.getUri()))),
             is(StringUtils.repeat(
-                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{x:4,y:0,z:[1,2,3]}}\n",
+                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{v:null,x:4,y:0,z:[1,2,3]}}\n",
                 2
             ))
         );
@@ -179,7 +180,7 @@ class QueryTest {
             task.run(runContext);
         });
 
-        assertThat(e.getCause().getMessage(), containsString("missing dataset while no default dataset"));
+        assertThat(e.getCause().getMessage(), containsString("must be qualified with a dataset"));
     }
 
     @Test
@@ -264,7 +265,7 @@ class QueryTest {
             task.run(runContext);
         });
 
-        assertThat(e.getMessage(), containsString("missing dataset while no default dataset"));
+        assertThat(e.getMessage(), containsString("must be qualified with a dataset"));
     }
 
     @Test
