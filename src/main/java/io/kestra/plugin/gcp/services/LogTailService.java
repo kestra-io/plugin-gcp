@@ -44,7 +44,9 @@ public class LogTailService {
 
         thread.start();
         thread.setUncaughtExceptionHandler((t, e) -> {
-            logger.error("Failed to capture log", e);
+            if (!(e instanceof InterruptedException)) {
+                logger.error("Failed to capture log", e);
+            }
         });
 
         return thread;
