@@ -6,6 +6,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.storage.v1.*;
+import com.google.common.primitives.Primitives;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -33,6 +34,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -208,15 +210,17 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         if (object instanceof Map) {
             Map<?, ?> value = (Map<?, ?>) object;
 
-            return new JSONObject(value
+            HashMap<Object, Object> map = value
                 .entrySet()
                 .stream()
                 .map(e -> new AbstractMap.SimpleEntry<>(
                     e.getKey(),
                     transform(e.getValue())
                 ))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-            );
+                // https://bugs.openjdk.java.net/browse/JDK-8148463
+                .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+
+            return new JSONObject(map);
         } else if (object instanceof Collection) {
             Collection<?> value = (Collection<?>) object;
             return new JSONArray(value
@@ -226,10 +230,10 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             );
         } else if (object instanceof ZonedDateTime) {
             ZonedDateTime value = (ZonedDateTime) object;
-            return value.toInstant().toEpochMilli();
+            return value.toInstant().toEpochMilli() * 1000;
         } else if (object instanceof Instant) {
             Instant value = (Instant) object;
-            return value.toEpochMilli();
+            return value.toEpochMilli() * 1000;
         } else if (object instanceof LocalDate) {
             LocalDate value = (LocalDate) object;
             return (int) value.toEpochDay();
@@ -242,6 +246,14 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         } else if (object instanceof OffsetTime) {
             OffsetTime value = (OffsetTime) object;
             return CivilTimeEncoder.encodePacked64TimeMicros(org.threeten.bp.LocalTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
+        } else if (object == null) {
+            return null;
+        } else if (object instanceof String) {
+            return object;
+        } else if (object.getClass().isPrimitive() || Primitives.isWrapperType(object.getClass())) {
+            return object;
+        } else if (object instanceof Enum) {
+            return ((Enum<?>) object).name();
         } else {
             return object;
         }
@@ -262,7 +274,6 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             "write_stream_type", this.writeStreamType.name(),
             "project_id", tableId.getProject(),
             "dataset", tableId.getDataset(),
-            "location", this.location,
         };
     }
 
