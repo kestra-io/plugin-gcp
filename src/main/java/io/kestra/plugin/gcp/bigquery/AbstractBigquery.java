@@ -93,6 +93,10 @@ abstract public class AbstractBigquery extends AbstractTask {
     }
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob) {
+        return this.waitForJob(logger, createJob, false);
+    }
+
+    protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun) {
         return Failsafe
             .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
                     .type("exponential")
@@ -126,7 +130,9 @@ abstract public class AbstractBigquery extends AbstractTask {
 
                     BigQueryService.handleErrors(job, logger);
 
-                    job = job.waitFor();
+                    if (!dryRun) {
+                        job = job.waitFor();
+                    }
 
                     BigQueryService.handleErrors(job, logger);
 

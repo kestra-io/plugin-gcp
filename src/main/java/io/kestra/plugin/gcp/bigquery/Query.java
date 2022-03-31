@@ -268,7 +268,8 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
                 .create(JobInfo.newBuilder(jobConfiguration)
                     .setJobId(BigQueryService.jobId(runContext, this))
                     .build()
-                )
+                ),
+            this.dryRun
         );
 
         JobStatistics.QueryStatistics queryJobStatistics = queryJob.getStatistics();
@@ -382,6 +383,18 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
             builder.setUseQueryCache(this.useQueryCache);
         }
 
+        if (this.dryRun != null) {
+            builder.setDryRun(this.dryRun);
+        }
+
+        if (this.defaultDataset != null) {
+            builder.setDefaultDataset(runContext.render(this.defaultDataset));
+        }
+
+        if (this.flattenResults != null) {
+            builder.setFlattenResults(this.flattenResults);
+        }
+
         return builder.build();
     }
 
@@ -430,10 +443,6 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
         String[] tags = this.tags(stats, queryJob);
 
-        if (this.destinationTable != null) {
-            ArrayUtils.addAll(tags, "destination_table", runContext.render(this.destinationTable));
-        }
-
         if (stats.getEstimatedBytesProcessed() != null) {
             runContext.metric(Counter.of("estimated.bytes.processed", stats.getEstimatedBytesProcessed(), tags));
         }
@@ -453,6 +462,11 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
         if (stats.getTotalPartitionsProcessed() != null) {
             runContext.metric(Counter.of("total.partitions.processed", stats.getTotalPartitionsProcessed(), tags));
         }
+
+        if (stats.getReferencedTables() != null) {
+            runContext.metric(Counter.of("referenced.tables", stats.getReferencedTables().size(), tags));
+        }
+
 
         if (stats.getTotalSlotMs() != null) {
             runContext.metric(Counter.of("total.slot.ms", stats.getTotalSlotMs(), tags));
