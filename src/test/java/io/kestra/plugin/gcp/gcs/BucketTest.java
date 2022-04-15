@@ -208,6 +208,7 @@ class BucketTest {
         assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
     }
 
+    @SuppressWarnings("unchecked")
     private void createBucketWithLifecycleRule(RunContext rc, java.util.List<BucketLifecycleRule> rules) throws Exception {
         CreateBucket task = createBuilder()
             .lifecycleRules(rules)
@@ -259,7 +260,6 @@ class BucketTest {
                     .build()
             ));
     }
-
     @Test
     @Order(10)
     void createBucketWithSetStorageClassLifecycleRule() throws Exception {

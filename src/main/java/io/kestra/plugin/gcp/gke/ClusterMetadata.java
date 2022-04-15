@@ -87,8 +87,6 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
                 .collect(Collectors.toList())
             )
             .masterAuth(MasterAuth.builder()
-                .username(cluster.getMasterAuth().getUsername())
-                .password(cluster.getMasterAuth().getPassword())
                 .clusterCertificat(cluster.getMasterAuth().getClusterCaCertificate())
                 .clientKey(cluster.getMasterAuth().getClientKey())
                 .clientCertificat(cluster.getMasterAuth().getClientCertificate())
@@ -138,13 +136,6 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
     @Builder
     @Getter
     public static class MasterAuth {
-        @Schema(
-            title = "The username to use for HTTP basic authentication to the master endpoint.",
-            description = "For clusters v1.6.0 and later, basic authentication can be disabled by" +
-                "leaving username unspecified (or setting it to the empty string)."
-        )
-        private final String username;
-        private final String password;
         private final String clusterCertificat;
         private final String clientKey;
         private final String clientCertificat;
