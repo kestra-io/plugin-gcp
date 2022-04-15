@@ -71,6 +71,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-logging'
     api 'com.google.cloud:google-cloud-firestore'
     api 'com.google.cloud:google-cloud-pubsub'
+    api 'com.google.cloud:google-cloud-dataproc'
 }
 
 
