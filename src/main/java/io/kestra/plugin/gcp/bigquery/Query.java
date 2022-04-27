@@ -90,7 +90,7 @@ import java.util.stream.StreamSupport;
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
-public class Query extends AbstractBigquery implements RunnableTask<Query.Output>, QueryInterface {
+public class Query extends AbstractJob implements RunnableTask<Query.Output>, QueryInterface {
     private String sql;
 
     @Builder.Default
@@ -116,13 +116,6 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     private List<String> clusteringFields;
 
     @Schema(
-        title = "The table where to put query results",
-        description = "If not provided a new table is created."
-    )
-    @PluginProperty(dynamic = true)
-    private String destinationTable;
-
-    @Schema(
         title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
         description = " Schema update options are supported in two cases: " +
             "* when writeDisposition is WRITE_APPEND; \n" +
@@ -139,36 +132,6 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     )
     @PluginProperty(dynamic = true)
     private String timePartitioningField;
-
-    @Schema(
-        title = "The action that should occur if the destination table already exists"
-    )
-    @PluginProperty(dynamic = false)
-    private JobInfo.WriteDisposition writeDisposition;
-
-    @Schema(
-        title = "Whether the job is allowed to create tables"
-    )
-    @PluginProperty(dynamic = false)
-    private JobInfo.CreateDisposition createDisposition;
-
-    @Schema(
-        title = "Job timeout.",
-        description = "If this time limit is exceeded, BigQuery may attempt to terminate the job."
-    )
-    @PluginProperty(dynamic = false)
-    private Duration jobTimeout;
-
-    @Schema(
-        title = "The labels associated with this job.",
-        description = "You can use these to organize and group your jobs. Label " +
-            "keys and values can be no longer than 63 characters, can only contain lowercase letters, " +
-            "numeric characters, underscores and dashes. International characters are allowed. Label " +
-            "values are optional. Label keys must start with a letter and each label in the list must have " +
-            "a different key."
-    )
-    @PluginProperty(dynamic = true)
-    private Map<String, String> labels;
 
     @Schema(
         title = "Sets the default dataset.",
@@ -207,15 +170,6 @@ public class Query extends AbstractBigquery implements RunnableTask<Query.Output
     @PluginProperty(dynamic = false)
     @Builder.Default
     private Boolean flattenResults = true;
-
-    @Schema(
-        title = "Sets whether the job has to be dry run or no.",
-        description = " A valid query will return a mostly empty response with some processing statistics, " +
-            "while an invalid query will return the same error it would if it wasn't a dry run."
-    )
-    @PluginProperty(dynamic = false)
-    @Builder.Default
-    private Boolean dryRun = false;
 
     @Schema(
         title = "Sets whether to use BigQuery's legacy SQL dialect for this query.",
