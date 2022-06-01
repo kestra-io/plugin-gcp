@@ -48,10 +48,18 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
     @Schema(
-        title = "The time partitioning specification for the destination table"
+        title = "The time partitioning field for the destination table"
     )
     @PluginProperty(dynamic = true)
     private String timePartitioningField;
+
+    @Schema(
+        title = "The time partitioning type specification for the destination table"
+    )
+    @PluginProperty(dynamic = true)
+    @Builder.Default
+    private TimePartitioning.Type timePartitioningType = TimePartitioning.Type.DAY;
+
 
     @Schema(
         title = "The action that should occur if the destination table already exists"
@@ -133,7 +141,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(TimePartitioning.Type.DAY)
+            builder.setTimePartitioning(TimePartitioning.newBuilder(this.timePartitioningType)
                 .setField(runContext.render(this.timePartitioningField))
                 .build()
             );

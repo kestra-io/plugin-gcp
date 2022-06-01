@@ -128,10 +128,41 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
     @Schema(
-        title = "The time partitioning specification for the destination table"
+        title = "The time partitioning field for the destination table."
     )
     @PluginProperty(dynamic = true)
     private String timePartitioningField;
+
+    @Schema(
+        title = "The time partitioning type specification."
+    )
+    @PluginProperty(dynamic = true)
+    @Builder.Default
+    private TimePartitioning.Type timePartitioningType = TimePartitioning.Type.DAY;
+
+    @Schema(
+        title = "Range partitioning field for the destination table."
+    )
+    @PluginProperty(dynamic = true)
+    private String rangePartitioningField;
+
+    @Schema(
+        title = "The start of range partitioning, inclusive."
+    )
+    @PluginProperty(dynamic = true)
+    private Long rangePartitioningStart;
+
+    @Schema(
+        title = "The end range partitioning, inclusive."
+    )
+    @PluginProperty(dynamic = true)
+    private Long rangePartitioningEnd;
+
+    @Schema(
+        title = "The width of each interval."
+    )
+    @PluginProperty(dynamic = true)
+    private Long rangePartitioningInterval;
 
     @Schema(
         title = "Sets the default dataset.",
@@ -287,8 +318,21 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(TimePartitioning.Type.DAY)
+            builder.setTimePartitioning(TimePartitioning.newBuilder(this.timePartitioningType)
                 .setField(runContext.render(this.timePartitioningField))
+                .build()
+            );
+        }
+
+        if (this.rangePartitioningField != null) {
+            builder.setRangePartitioning(RangePartitioning.newBuilder()
+                .setField(runContext.render(this.rangePartitioningField))
+                .setRange(RangePartitioning.Range.newBuilder()
+                    .setStart(this.rangePartitioningStart)
+                    .setEnd(this.rangePartitioningEnd)
+                    .setInterval(this.rangePartitioningInterval)
+                    .build()
+                )
                 .build()
             );
         }

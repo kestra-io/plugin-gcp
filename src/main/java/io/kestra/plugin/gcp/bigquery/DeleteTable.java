@@ -32,7 +32,7 @@ import org.slf4j.Logger;
         )
     }
 )
-public class DeleteTable extends AbstractTableCreateUpdate implements RunnableTask<DeleteTable.Output> {
+public class DeleteTable extends AbstractTable implements RunnableTask<DeleteTable.Output> {
     @Override
     public DeleteTable.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
