@@ -42,15 +42,15 @@ import javax.validation.constraints.NotNull;
 @StoreFetchDestinationValidation
 public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Schema(
-        title = "The table where to put query results",
-        description = "If not provided a new table is created."
+        title = "The source tables",
+        description = "Can be table or partitions."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private List<String> sourceTables;
 
     @Schema(
-        title = "The table where to put query results",
+        title = "The destination table",
         description = "If not provided a new table is created."
     )
     @PluginProperty(dynamic = true)
@@ -94,7 +94,6 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
 
         Output.OutputBuilder output = Output.builder()
             .jobId(copyJob.getJobId().getJob());
-
 
         return output.build();
     }

@@ -91,6 +91,7 @@ dependencies {
     testImplementation group: "io.kestra", name: "storage-local", version: kestraVersion
 
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
+    testImplementation "org.junit.jupiter:junit-jupiter-params"
     testImplementation "org.hamcrest:hamcrest:2.2"
     testImplementation "org.hamcrest:hamcrest-library:2.2"
 
