@@ -38,8 +38,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "table: my-table",
                 "destinationTable: my-dest-table",
                 "partitionType: DAY",
-                "from: \"{{ dateAdd(-30, 'DAYS') }}\"",
-                "to: \"{{ dateAdd(-7, 'DAYS') }}\""
+                "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"",
+                "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""
             }
         )
     }

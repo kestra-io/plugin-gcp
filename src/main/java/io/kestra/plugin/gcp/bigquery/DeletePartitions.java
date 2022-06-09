@@ -32,8 +32,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                 "dataset: my-dataset",
                 "table: my-table",
                 "partitionType: DAY",
-                "from: \"{{ dateAdd(-30, 'DAYS') }}\"",
-                "to: \"{{ dateAdd(-7, 'DAYS') }}\""
+                "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"",
+                "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""
             }
         )
     }
