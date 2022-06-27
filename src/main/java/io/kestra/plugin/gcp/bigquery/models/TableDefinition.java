@@ -17,7 +17,8 @@ public class TableDefinition {
     private final io.kestra.plugin.gcp.bigquery.models.Schema schema;
 
     @Schema(title = "the table definition if the type is `TABLE`")
-    private final StandardTableDefinition standardTableDefinition;
+    @Builder.Default
+    private final StandardTableDefinition standardTableDefinition = new StandardTableDefinition(null,null,null,null);
 
     @Schema(title = "the materialized view definition if the type is `MATERIALIZED_VIEW`")
     private final MaterializedViewDefinition materializedViewDefinition;

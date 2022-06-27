@@ -92,4 +92,48 @@ class CreateUpdateTableTest {
         assertThat(updateRun.getFriendlyName(), is("new_table_2"));
         assertThat(updateRun.getExpirationTime(), is(not(run.getExpirationTime())));
     }
+
+    @Test
+    void runWithoutStandardDefinition() throws Exception {
+        String friendlyId = FriendlyId.createFriendlyId();
+
+        CreateTable task = CreateTable.builder()
+                .projectId(this.project)
+                .dataset(this.dataset)
+                .table(friendlyId)
+                .friendlyName("new_table")
+                .tableDefinition(TableDefinition.builder()
+                        .type(TableDefinition.Type.TABLE)
+                        .schema(Schema.builder()
+                                .fields(Arrays.asList(
+                                        Field.builder()
+                                                .name("id")
+                                                .type(StandardSQLTypeName.INT64)
+                                                .build(),
+                                        Field.builder()
+                                                .name("name")
+                                                .type(StandardSQLTypeName.STRING)
+                                                .build()
+                                ))
+                                .build()
+                        )
+                        .standardTableDefinition(StandardTableDefinition.builder()
+                                .clustering(Arrays.asList("id", "name"))
+                                .build()
+                        )
+                        .build()
+                )
+                .build();
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+
+        CreateTable.Output run = task.run(runContext);
+
+        assertThat(run.getTable(), is(friendlyId));
+        assertThat(run.getFriendlyName(), is("new_table"));
+        assertThat(run.getDefinition().getSchema().getFields().size(), is(2));
+
+        assertThat(run.getDefinition().getSchema().getFields().get(0).getType(), is(StandardSQLTypeName.INT64));
+
+    }
 }
