@@ -117,10 +117,6 @@ class CreateUpdateTableTest {
                                 ))
                                 .build()
                         )
-                        .standardTableDefinition(StandardTableDefinition.builder()
-                                .clustering(Arrays.asList("id", "name"))
-                                .build()
-                        )
                         .build()
                 )
                 .build();
@@ -134,6 +130,5 @@ class CreateUpdateTableTest {
         assertThat(run.getDefinition().getSchema().getFields().size(), is(2));
 
         assertThat(run.getDefinition().getSchema().getFields().get(0).getType(), is(StandardSQLTypeName.INT64));
-
     }
 }

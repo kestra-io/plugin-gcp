@@ -17,8 +17,7 @@ public class TableDefinition {
     private final io.kestra.plugin.gcp.bigquery.models.Schema schema;
 
     @Schema(title = "the table definition if the type is `TABLE`")
-    @Builder.Default
-    private final StandardTableDefinition standardTableDefinition = new StandardTableDefinition(null,null,null,null);
+    private final StandardTableDefinition standardTableDefinition;
 
     @Schema(title = "the materialized view definition if the type is `MATERIALIZED_VIEW`")
     private final MaterializedViewDefinition materializedViewDefinition;
@@ -64,7 +63,8 @@ public class TableDefinition {
             case VIEW:
                 return (T) this.viewDefinition.to(runContext);
             case TABLE:
-                return (T) this.standardTableDefinition.to(runContext, this.schema);
+                return (T) (this.standardTableDefinition == null ? StandardTableDefinition.builder().build() : this.standardTableDefinition)
+                    .to(runContext, this.schema);
             case EXTERNAL:
                 return (T) this.externalTableDefinition.to(runContext, this.schema);
             case MATERIALIZED_VIEW:
