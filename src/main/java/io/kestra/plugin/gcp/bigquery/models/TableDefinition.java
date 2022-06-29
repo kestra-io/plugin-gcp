@@ -63,7 +63,8 @@ public class TableDefinition {
             case VIEW:
                 return (T) this.viewDefinition.to(runContext);
             case TABLE:
-                return (T) this.standardTableDefinition.to(runContext, this.schema);
+                return (T) (this.standardTableDefinition == null ? StandardTableDefinition.builder().build() : this.standardTableDefinition)
+                    .to(runContext, this.schema);
             case EXTERNAL:
                 return (T) this.externalTableDefinition.to(runContext, this.schema);
             case MATERIALIZED_VIEW:
