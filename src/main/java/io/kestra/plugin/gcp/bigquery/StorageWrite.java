@@ -290,6 +290,11 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable));
 
             Table table = bigQuery.getTable(tableId.getDataset(), tableId.getTable());
+
+            if (table == null) {
+                throw new IllegalArgumentException("No table '" + tableId + "' exists");
+            }
+
             com.google.cloud.bigquery.Schema schema = table.getDefinition().getSchema();
 
             if (schema == null) {
