@@ -89,6 +89,7 @@ abstract public class AbstractPartition extends AbstractTable {
             LocalDateTime to = LocalDateTime.parse(runContext.render(this.to), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
             return partitions
                 .stream()
+                .filter(s -> !s.equals("__NULL__"))
                 .filter(s -> {
                     LocalDateTime current = LocalDateTime.parse(
                         s + ADDED_DATE.get(partitionType),
