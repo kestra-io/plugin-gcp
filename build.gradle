@@ -51,7 +51,7 @@ dependencies {
     api 'net.jodah:failsafe:2.4.4'
 
     api 'com.google.cloud:google-cloud-storage:2.11.3'
-    api 'com.google.cloud:google-cloud-bigquery:2.14.6'
+    api 'com.google.cloud:google-cloud-bigquery:2.14.7'
     api 'com.google.cloud:google-cloud-bigquerystorage:2.20.0'
     api 'com.google.cloud:google-cloud-container:2.5.1'
     api 'com.google.cloud:google-cloud-aiplatform:3.2.0'
