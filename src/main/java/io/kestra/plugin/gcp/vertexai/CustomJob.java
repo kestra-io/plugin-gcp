@@ -165,22 +165,22 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                         .endDate(TimestampService.of(result.getEndTime()))
                         .state(result.getState());
 
-                    logger.info("Job {} ended with in {}",
-                        response.getName(),
-                        Duration.between(TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime()))
+                    logger.info("Job {} ended with in {} with status {}",
+                        result.getName(),
+                        Duration.between(TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime())),
+                        result.getState()
                     );
 
                     // wait a little for log
                     Thread.sleep(4000);
-
 
                     if (this.delete) {
                         client.deleteCustomJobAsync(response.getName()).get();
                         logger.info("Job {} is deleted", response.getName());
                     }
 
-                    if (response.hasError()) {
-                        throw new Exception(response.getError().getMessage());
+                    if (result.hasError()) {
+                        throw new Exception(result.getError().getMessage());
                     }
                 }
 
