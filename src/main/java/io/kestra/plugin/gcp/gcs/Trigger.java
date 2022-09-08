@@ -59,7 +59,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "      - id: return",
                 "        type: io.kestra.core.tasks.debugs.Return",
                 "        format: \"{{taskrun.value}}\"",
-                "    value: \"{{ trigger.blobs | jq '[].uri' }}\"",
+                "    value: \"{{ trigger.blobs | jq('.[].uri') }}\"",
                 "",
                 "triggers:",
                 "  - id: watch",
