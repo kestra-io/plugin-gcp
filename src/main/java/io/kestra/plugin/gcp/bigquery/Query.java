@@ -294,6 +294,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                     output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
                 }
             }
+            if (this.destinationTable != null) {
+                output.destinationTable(this.destinationTable);
+                logger.info("Query loaded in: {}",this.destinationTable);
+            }
         }
 
         return output.build();
@@ -426,6 +430,12 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             description = "Only populated if 'store' is set to true."
         )
         private URI uri;
+
+        @Schema(
+            title = "The table where the data are stored",
+            description = "Only populated if 'destinationTable' is set."
+        )
+        private String destinationTable;
     }
 
     private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
