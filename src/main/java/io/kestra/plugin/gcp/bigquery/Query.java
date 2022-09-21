@@ -259,6 +259,11 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         JobStatistics.QueryStatistics queryJobStatistics = queryJob.getStatistics();
 
+        QueryJobConfiguration config = queryJob.getConfiguration();
+        TableId tableIdentity = config.getDestinationTable();
+
+        logger.info("Query loaded in: {}", tableIdentity.getDataset() + "." + tableIdentity.getTable());
+
         this.metrics(runContext, queryJobStatistics, queryJob);
 
         Output.OutputBuilder output = Output.builder()
@@ -294,10 +299,11 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                     output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
                 }
             }
-            if (this.destinationTable != null) {
-                output.destinationTable(this.destinationTable);
-                logger.info("Query loaded in: {}",this.destinationTable);
-            }
+                HashMap<String,String> destinationTable = new HashMap<>();
+                destinationTable.put("project",tableIdentity.getProject());
+                destinationTable.put("dataset",tableIdentity.getProject());
+                destinationTable.put("table",tableIdentity.getProject());
+                output.destinationTable(destinationTable);
         }
 
         return output.build();
@@ -432,10 +438,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         private URI uri;
 
         @Schema(
-            title = "The table where the data are stored",
-            description = "Only populated if 'destinationTable' is set."
+            title = "The informations where the data are stored"
         )
-        private String destinationTable;
+        private HashMap<String,String> destinationTable;
     }
 
     private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
