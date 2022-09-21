@@ -301,8 +301,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             }
                 HashMap<String,String> destinationTable = new HashMap<>();
                 destinationTable.put("project",tableIdentity.getProject());
-                destinationTable.put("dataset",tableIdentity.getProject());
-                destinationTable.put("table",tableIdentity.getProject());
+                destinationTable.put("dataset",tableIdentity.getDataset());
+                destinationTable.put("table",tableIdentity.getTable());
                 output.destinationTable(destinationTable);
         }
 
