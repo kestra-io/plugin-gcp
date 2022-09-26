@@ -262,7 +262,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         QueryJobConfiguration config = queryJob.getConfiguration();
         TableId tableIdentity = config.getDestinationTable();
 
-        logger.info("Query loaded in: {}", tableIdentity.getDataset() + "." + tableIdentity.getTable());
+        logger.debug("Query loaded in: {}", tableIdentity.getDataset() + "." + tableIdentity.getTable());
 
         this.metrics(runContext, queryJobStatistics, queryJob);
 
@@ -299,10 +299,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                     output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
                 }
             }
-                HashMap<String,String> destinationTable = new HashMap<>();
-                destinationTable.put("project",tableIdentity.getProject());
-                destinationTable.put("dataset",tableIdentity.getDataset());
-                destinationTable.put("table",tableIdentity.getTable());
+                DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(),tableIdentity.getDataset(),tableIdentity.getTable());
                 output.destinationTable(destinationTable);
         }
 
@@ -440,7 +437,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         @Schema(
             title = "The informations where the data are stored"
         )
-        private HashMap<String,String> destinationTable;
+        private DestinationTable destinationTable;
     }
 
     private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
@@ -451,6 +448,40 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             "project_id", queryJob.getJobId().getProject(),
             "location", queryJob.getJobId().getLocation(),
         };
+    }
+
+    public class DestinationTable {
+        @Schema(
+                title = "The project of the table"
+        )
+        private String project;
+        @Schema(
+                title = "The dataset of the table"
+        )
+        private String dataset;
+
+        @Schema(
+                title = "The table name"
+        )
+        private String table;
+
+        public DestinationTable(String project, String dataset, String table){
+            this.project = project;
+            this.dataset = dataset;
+            this.table = table;
+        }
+
+        public String getProject() {
+            return project;
+        }
+
+        public String getDataset() {
+            return dataset;
+        }
+
+        public String getTable() {
+            return table;
+        }
     }
 
     private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
