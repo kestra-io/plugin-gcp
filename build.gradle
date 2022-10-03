@@ -47,7 +47,7 @@ dependencies {
     compileOnly group: "io.kestra", name: "core", version: kestraVersion
 
     // libs
-    api 'androidx.annotation:annotation:1.4.0'
+    api 'androidx.annotation:annotation:1.5.0'
     api 'net.jodah:failsafe:2.4.4'
 
     api 'com.google.cloud:google-cloud-storage:2.12.0'
