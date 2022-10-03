@@ -8,7 +8,7 @@ plugins {
     id 'signing'
     id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
     id "com.github.ben-manes.versions" version "0.42.0"
-    id 'net.researchgate.release' version '3.0.1'
+    id 'net.researchgate.release' version '3.0.2'
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -50,12 +50,12 @@ dependencies {
     api 'androidx.annotation:annotation:1.4.0'
     api 'net.jodah:failsafe:2.4.4'
 
-    api 'com.google.cloud:google-cloud-storage:2.11.3'
-    api 'com.google.cloud:google-cloud-bigquery:2.15.0'
-    api 'com.google.cloud:google-cloud-bigquerystorage:2.20.1'
-    api 'com.google.cloud:google-cloud-container:2.5.1'
-    api 'com.google.cloud:google-cloud-aiplatform:3.2.0'
-    api 'com.google.cloud:google-cloud-logging:3.10.6'
+    api 'com.google.cloud:google-cloud-storage:2.12.0'
+    api 'com.google.cloud:google-cloud-bigquery:2.16.1'
+    api 'com.google.cloud:google-cloud-bigquerystorage:2.22.0'
+    api 'com.google.cloud:google-cloud-container:2.5.2'
+    api 'com.google.cloud:google-cloud-aiplatform:3.3.0'
+    api 'com.google.cloud:google-cloud-logging:3.11.4'
 }
 
 
@@ -96,7 +96,7 @@ dependencies {
     testImplementation "org.hamcrest:hamcrest-library:2.2"
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id', version: '1.1.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.7.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.8.0'
 }
 
 /**********************************************************************************************************************\
