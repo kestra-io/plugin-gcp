@@ -256,7 +256,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 ),
             this.dryRun
         );
-
         JobStatistics.QueryStatistics queryJobStatistics = queryJob.getStatistics();
 
         QueryJobConfiguration config = queryJob.getConfiguration();
@@ -299,10 +298,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                     output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
                 }
             }
-                DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(),tableIdentity.getDataset(),tableIdentity.getTable());
-                output.destinationTable(destinationTable);
         }
 
+        DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(),tableIdentity.getDataset(),tableIdentity.getTable());
+        output.destinationTable(destinationTable);
         return output.build();
     }
 
