@@ -52,7 +52,7 @@ class QueryTest {
     @Value("${kestra.tasks.bigquery.dataset}")
     private String dataset;
 
-        static String sql() {
+    static String sql() {
         return "SELECT \n" +
             "  \"hello\" as string,\n" +
             "  CAST(NULL AS INT) AS `nullable`,\n" +

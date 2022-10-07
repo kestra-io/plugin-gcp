@@ -300,7 +300,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             }
         }
 
-        DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(),tableIdentity.getDataset(),tableIdentity.getTable());
+        DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable());
         output.destinationTable(destinationTable);
         return output.build();
     }
@@ -434,7 +434,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         private URI uri;
 
         @Schema(
-            title = "The informations where the data are stored"
+            title = "The destination table (if one) or the temporary table created automatically "
         )
         private DestinationTable destinationTable;
     }
