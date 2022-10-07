@@ -80,6 +80,7 @@ class QueryTest {
 
         Query task = Query.builder()
             .sql("{{sql}}")
+            .location("EU")
             .fetch(true)
             .build();
 
@@ -140,6 +141,7 @@ class QueryTest {
 
     @Test
     void destination() throws Exception {
+        String friendlyId = FriendlyId.createFriendlyId();
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
@@ -151,7 +153,7 @@ class QueryTest {
                 "{{ loop.last  == false ? '\nUNION ALL\n' : '\n' }}" +
                 "{% endfor %}"
             )
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+            .destinationTable(project + "." + dataset + "." + friendlyId)
             .timePartitioningField("execution_date")
             .clusteringFields(Arrays.asList("execution_id", "counter"))
             .schemaUpdateOptions(Collections.singletonList(JobInfo.SchemaUpdateOption.ALLOW_FIELD_ADDITION))
@@ -164,6 +166,9 @@ class QueryTest {
 
         Query.Output run = task.run(runContext);
         assertThat(run.getJobId(), is(notNullValue()));
+        assertThat(run.getDestinationTable().getProject(),is(project));
+        assertThat(run.getDestinationTable().getDataset(),is(dataset));
+        assertThat(run.getDestinationTable().getTable(),is(friendlyId));
     }
 
     @Test
