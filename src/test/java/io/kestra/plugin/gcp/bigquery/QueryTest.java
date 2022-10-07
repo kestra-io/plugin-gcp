@@ -46,10 +46,10 @@ class QueryTest {
     @Inject
     private StorageInterface storageInterface;
 
-    @Value("lmfr-ddp-dcp-dev")
+    @Value("${kestra.tasks.bigquery.project}")
     private String project;
 
-    @Value("tests")
+    @Value("${kestra.tasks.bigquery.dataset}")
     private String dataset;
 
         static String sql() {
