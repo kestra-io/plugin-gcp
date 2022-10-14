@@ -274,6 +274,23 @@ class QueryTest {
     }
 
     @Test
+    void scriptMultipleNoOutput() throws Exception {
+        Query task = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .sql("DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".not`;" +
+                "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".exist`;"
+            )
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+        Query.Output run = task.run(runContext);
+
+        assertThat(run.getDestinationTable(), nullValue());
+        assertThat(run.getJobId(), notNullValue());
+    }
+
+    @Test
     @Disabled
     void concurrency() throws Exception {
         String table = this.dataset + "." + FriendlyId.createFriendlyId();

@@ -261,7 +261,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         QueryJobConfiguration config = queryJob.getConfiguration();
         TableId tableIdentity = config.getDestinationTable();
 
-        logger.debug("Query loaded in: {}", tableIdentity.getDataset() + "." + tableIdentity.getTable());
+        if (tableIdentity != null) {
+            logger.debug("Query loaded in: {}", tableIdentity.getDataset() + "." + tableIdentity.getTable());
+        }
 
         this.metrics(runContext, queryJobStatistics, queryJob);
 
@@ -300,8 +302,11 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             }
         }
 
-        DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable());
-        output.destinationTable(destinationTable);
+        if (tableIdentity != null) {
+            DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable());
+            output.destinationTable(destinationTable);
+        }
+
         return output.build();
     }
 
