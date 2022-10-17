@@ -126,9 +126,9 @@ abstract public class AbstractBigquery extends AbstractTask {
                 try {
                     job = createJob.call();
 
-                    logger.debug("Starting job '{}'", job.getJobId());
-
                     BigQueryService.handleErrors(job, logger);
+
+                    logger.debug("Starting job '{}'", job.getJobId());
 
                     if (!dryRun) {
                         job = job.waitFor();
