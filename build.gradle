@@ -7,7 +7,7 @@ plugins {
     id 'ru.vyarus.github-info' version '1.4.0'
     id 'signing'
     id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
-    id "com.github.ben-manes.versions" version "0.42.0"
+    id "com.github.ben-manes.versions" version "0.43.0"
     id 'net.researchgate.release' version '3.0.2'
 }
 
@@ -30,6 +30,12 @@ tasks.withType(JavaCompile) {
     options.compilerArgs.add("-parameters")
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("org.slf4j:slf4j-api:1.7.36")
+    }
+}
+
 dependencies {
     // lombok
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
@@ -50,12 +56,12 @@ dependencies {
     api 'androidx.annotation:annotation:1.5.0'
     api 'net.jodah:failsafe:2.4.4'
 
-    api 'com.google.cloud:google-cloud-storage:2.13.0'
-    api 'com.google.cloud:google-cloud-bigquery:2.17.1'
-    api 'com.google.cloud:google-cloud-bigquerystorage:2.23.1'
-    api 'com.google.cloud:google-cloud-container:2.6.0'
-    api 'com.google.cloud:google-cloud-aiplatform:3.4.2'
-    api 'com.google.cloud:google-cloud-logging:3.11.7'
+    api 'com.google.cloud:google-cloud-storage:2.15.0'
+    api 'com.google.cloud:google-cloud-bigquery:2.19.1'
+    api 'com.google.cloud:google-cloud-bigquerystorage:2.24.2'
+    api 'com.google.cloud:google-cloud-container:2.8.0'
+    api 'com.google.cloud:google-cloud-aiplatform:3.6.0'
+    api 'com.google.cloud:google-cloud-logging:3.12.0'
 }
 
 
@@ -96,7 +102,7 @@ dependencies {
     testImplementation "org.hamcrest:hamcrest-library:2.2"
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id', version: '1.1.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.8.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.8.1'
 }
 
 /**********************************************************************************************************************\
