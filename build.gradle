@@ -61,7 +61,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-bigquerystorage:2.25.0'
     api 'com.google.cloud:google-cloud-container:2.9.0'
     api 'com.google.cloud:google-cloud-aiplatform:3.7.0'
-    api 'com.google.cloud:google-cloud-logging:3.12.1'
+    api 'com.google.cloud:google-cloud-logging:3.13.2'
 }
 
 
