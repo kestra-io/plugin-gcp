@@ -69,6 +69,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-container'
     api 'com.google.cloud:google-cloud-aiplatform'
     api 'com.google.cloud:google-cloud-logging'
+    api 'com.google.cloud:google-cloud-firestore'
 }
 
 
