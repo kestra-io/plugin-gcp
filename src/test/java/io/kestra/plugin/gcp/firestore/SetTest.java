@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.firestore;
 
 import io.kestra.core.runners.RunContextFactory;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -16,63 +17,70 @@ class SetTest {
     @Inject
     private RunContextFactory runContextFactory;
 
+    @Value("${kestra.tasks.firestore.project}")
+    private String project;
+
     @Test
-    void run_map() throws Exception {
+    void runMap() throws Exception {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-                .collection("persons")
-                .childPath("1")
-                .document(Map.of("firstname", "John",
-                        "lastname", "Doe"))
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .childPath("1")
+            .document(Map.of("firstname", "John",
+                "lastname", "Doe"
+            ))
+            .build();
 
         var output = set.run(runContext);
 
-        assertThat(output.getUpdateTime(), is(notNullValue()));
+        assertThat(output.getUpdatedTime(), is(notNullValue()));
 
         // clear the collection
-        try(var firestore = set.connection(runContext)) {
+        try (var firestore = set.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }
 
     @Test
-    void run_string() throws Exception {
+    void runString() throws Exception {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-                .collection("persons")
-                .childPath("2")
-                .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .childPath("2")
+            .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
+            .build();
 
         var output = set.run(runContext);
 
-        assertThat(output.getUpdateTime(), is(notNullValue()));
+        assertThat(output.getUpdatedTime(), is(notNullValue()));
 
         // clear the collection
-        try(var firestore = set.connection(runContext)) {
+        try (var firestore = set.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }
 
     @Test
-    void run_null() throws Exception {
+    void runNull() throws Exception {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-                .collection("persons")
-                .childPath("3")
-                .document(null)
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .childPath("3")
+            .document(null)
+            .build();
 
         var output = set.run(runContext);
 
-        assertThat(output.getUpdateTime(), is(notNullValue()));
+        assertThat(output.getUpdatedTime(), is(notNullValue()));
 
         // clear the collection
-        try(var firestore = set.connection(runContext)) {
+        try (var firestore = set.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }

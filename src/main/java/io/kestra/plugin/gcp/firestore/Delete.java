@@ -9,8 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import javax.validation.constraints.NotNull;
 import java.time.Instant;
+import javax.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -18,24 +18,22 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Delete a document from a collection.",
-        description = "Delete a document from a collection."
+    title = "Delete a document from a collection."
 )
 @Plugin(
-        examples = {
-                @Example(
-                        title = "Delete a document.",
-                        code = {
-                                "collection: \"persons\"",
-                                "childPath: \"1\""
-                        }
-                )
-        }
+    examples = {
+        @Example(
+            code = {
+                "collection: \"persons\"",
+                "childPath: \"1\""
+            }
+        )
+    }
 )
 public class Delete extends AbstractFirestore implements RunnableTask<Delete.Output> {
     @Schema(
-            title = "The Firestore document child path.",
-            description = "The Firestore document child path."
+        title = "The Firestore document child path.",
+        description = "The Firestore document child path."
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -43,14 +41,14 @@ public class Delete extends AbstractFirestore implements RunnableTask<Delete.Out
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        try(var firestore = this.connection(runContext)) {
+        try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
             var future = collectionRef.document(runContext.render(this.childPath)).delete();
 
             // wait for the write to happen
             var writeResult = future.get();
 
-            return Delete.Output.builder().updateTime(writeResult.getUpdateTime().toDate().toInstant()).build();
+            return Delete.Output.builder().updatedTime(writeResult.getUpdateTime().toDate().toInstant()).build();
         }
     }
 
@@ -58,8 +56,8 @@ public class Delete extends AbstractFirestore implements RunnableTask<Delete.Out
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-                title = "The document update time"
+            title = "The document updated time."
         )
-        private Instant updateTime;
+        private Instant updatedTime;
     }
 }

@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.firestore;
 
 import io.kestra.core.runners.RunContextFactory;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -15,20 +16,24 @@ class ListTest {
     @Inject
     private RunContextFactory runContextFactory;
 
+    @Value("${kestra.tasks.firestore.project}")
+    private String project;
+
     @Test
-    void run_fetch() throws Exception {
+    void runFetch() throws Exception {
         var runContext = runContextFactory.of();
 
         var list = List.builder()
-                .collection("persons")
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .build();
 
         // create something to list
-        try(var firestore = list.connection(runContext)) {
+        try (var firestore = list.connection(runContext)) {
             var collection = firestore.collection("persons");
-            collection.document("1").set(Map.of("firstname", "John","lastname", "Doe")).get();
-            collection.document("2").set(Map.of("firstname", "Jane","lastname", "Doe")).get();
-            collection.document("3").set(Map.of("firstname", "Charles","lastname", "Baudelaire")).get();
+            collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
+            collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
         }
 
         var output = list.run(runContext);
@@ -38,26 +43,27 @@ class ListTest {
         assertThat(output.getUri(), is(nullValue()));
 
         // clear the collection
-        try(var firestore = list.connection(runContext)) {
+        try (var firestore = list.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }
 
     @Test
-    void run_stored() throws Exception {
+    void runStored() throws Exception {
         var runContext = runContextFactory.of();
 
         var list = List.builder()
-                .collection("persons")
-                .store(true)
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .store(true)
+            .build();
 
         // create something to list
-        try(var firestore = list.connection(runContext)) {
+        try (var firestore = list.connection(runContext)) {
             var collection = firestore.collection("persons");
-            collection.document("1").set(Map.of("firstname", "John","lastname", "Doe")).get();
-            collection.document("2").set(Map.of("firstname", "Jane","lastname", "Doe")).get();
-            collection.document("3").set(Map.of("firstname", "Charles","lastname", "Baudelaire")).get();
+            collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
+            collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
         }
 
         var output = list.run(runContext);
@@ -67,7 +73,7 @@ class ListTest {
         assertThat(output.getUri(), is(notNullValue()));
 
         // clear the collection
-        try(var firestore = list.connection(runContext)) {
+        try (var firestore = list.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }

@@ -1,6 +1,8 @@
 package io.kestra.plugin.gcp.firestore;
 
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.plugin.gcp.StoreType;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -15,22 +17,27 @@ class QueryTest {
     @Inject
     private RunContextFactory runContextFactory;
 
+    @Value("${kestra.tasks.firestore.project}")
+    private String project;
+
     @Test
-    void run_fetch() throws Exception {
+    void runFetch() throws Exception {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-                .collection("persons")
-                .field("lastname")
-                .value("Doe")
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .field("lastname")
+            .value("Doe")
+            .storeType(StoreType.FETCH)
+            .build();
 
         // create something to list
-        try(var firestore = query.connection(runContext)) {
+        try (var firestore = query.connection(runContext)) {
             var collection = firestore.collection("persons");
-            collection.document("1").set(Map.of("firstname", "John","lastname", "Doe")).get();
-            collection.document("2").set(Map.of("firstname", "Jane","lastname", "Doe")).get();
-            collection.document("3").set(Map.of("firstname", "Charles","lastname", "Baudelaire")).get();
+            collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
+            collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
         }
 
         var output = query.run(runContext);
@@ -40,29 +47,31 @@ class QueryTest {
         assertThat(output.getUri(), is(nullValue()));
 
         // clear the collection
-        try(var firestore = query.connection(runContext)) {
+        try (var firestore = query.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }
 
     @Test
-    void run_fetch_notEqualTo_withOrderBy() throws Exception {
+    void runFetchNotEqualToWithOrderBy() throws Exception {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-                .collection("persons")
-                .field("lastname")
-                .value("Doe")
-                .queryOperator(Query.QueryOperator.NOT_EQUAL_TO)
-                .orderBy("firstname")
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .field("lastname")
+            .value("Doe")
+            .queryOperator(Query.QueryOperator.NOT_EQUAL_TO)
+            .orderBy("firstname")
+            .storeType(StoreType.FETCH)
+            .build();
 
         // create something to list
-        try(var firestore = query.connection(runContext)) {
+        try (var firestore = query.connection(runContext)) {
             var collection = firestore.collection("persons");
-            collection.document("1").set(Map.of("firstname", "John","lastname", "Doe")).get();
-            collection.document("2").set(Map.of("firstname", "Jane","lastname", "Doe")).get();
-            collection.document("3").set(Map.of("firstname", "Charles","lastname", "Baudelaire")).get();
+            collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
+            collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
         }
 
         var output = query.run(runContext);
@@ -72,28 +81,29 @@ class QueryTest {
         assertThat(output.getUri(), is(nullValue()));
 
         // clear the collection
-        try(var firestore = query.connection(runContext)) {
+        try (var firestore = query.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }
 
     @Test
-    void run_stored() throws Exception {
+    void runStored() throws Exception {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-                .collection("persons")
-                .field("lastname")
-                .value("Doe")
-                .store(true)
-                .build();
+            .projectId(project)
+            .collection("persons")
+            .field("lastname")
+            .value("Doe")
+            .storeType(StoreType.STORE)
+            .build();
 
         // create something to list
-        try(var firestore = query.connection(runContext)) {
+        try (var firestore = query.connection(runContext)) {
             var collection = firestore.collection("persons");
-            collection.document("1").set(Map.of("firstname", "John","lastname", "Doe")).get();
-            collection.document("2").set(Map.of("firstname", "Jane","lastname", "Doe")).get();
-            collection.document("3").set(Map.of("firstname", "Charles","lastname", "Baudelaire")).get();
+            collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
+            collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
         }
 
         var output = query.run(runContext);
@@ -103,7 +113,7 @@ class QueryTest {
         assertThat(output.getUri(), is(notNullValue()));
 
         // clear the collection
-        try(var firestore = query.connection(runContext)) {
+        try (var firestore = query.connection(runContext)) {
             FirestoreTestUtil.clearCollection(firestore, "persons");
         }
     }

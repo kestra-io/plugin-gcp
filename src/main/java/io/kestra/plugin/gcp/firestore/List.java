@@ -27,23 +27,20 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "List all documents of a collection.",
-        description = "List all documents of a collection."
+    title = "List all documents of a collection."
 )
 @Plugin(
-        examples = {
-                @Example(
-                        title = "List all documents of a collection.",
-                        code = {
-                                "collection: \"persons\""
-                        }
-                )
-        }
+    examples = {
+        @Example(
+            code = {
+                "collection: \"persons\""
+            }
+        )
+    }
 )
 public class List extends AbstractFirestore implements RunnableTask<List.Output> {
-
     @Schema(
-            title = "Whether to store the data from the query results into an ion serialized data file"
+        title = "Whether to store the data from the query results into an ion serialized data file"
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
@@ -51,7 +48,7 @@ public class List extends AbstractFirestore implements RunnableTask<List.Output>
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        try(var firestore = this.connection(runContext)) {
+        try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
             var documentReferences = collectionRef.listDocuments();
 
@@ -59,20 +56,20 @@ public class List extends AbstractFirestore implements RunnableTask<List.Output>
             if (this.store) {
                 Pair<URI, Long> store = this.store(runContext, documentReferences);
                 outputBuilder
-                        .uri(store.getLeft())
-                        .size(store.getRight());
+                    .uri(store.getLeft())
+                    .size(store.getRight());
             } else {
                 Pair<java.util.List<Object>, Long> fetch = this.fetch(documentReferences);
                 outputBuilder
-                        .rows(fetch.getLeft())
-                        .size(fetch.getRight());
+                    .rows(fetch.getLeft())
+                    .size(fetch.getRight());
             }
 
             Output output = outputBuilder.build();
 
             runContext.metric(Counter.of(
-                    "records", output.getSize(),
-                    "collection", this.collection
+                "records", output.getSize(),
+                "collection", this.collection
             ));
 
             return output;
@@ -92,8 +89,8 @@ public class List extends AbstractFirestore implements RunnableTask<List.Output>
         }
 
         return Pair.of(
-                runContext.putTempFile(tempFile),
-                count.get()
+            runContext.putTempFile(tempFile),
+            count.get()
         );
     }
 
@@ -114,19 +111,19 @@ public class List extends AbstractFirestore implements RunnableTask<List.Output>
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-                title = "List containing the fetched data",
-                description = "Only populated if `store` parameter is set to false."
+            title = "List containing the fetched data",
+            description = "Only populated if `store` parameter is set to false."
         )
         private java.util.List<Object> rows;
 
         @Schema(
-                title = "The size of the fetched rows"
+            title = "The size of the fetched rows"
         )
         private Long size;
 
         @Schema(
-                title = "The uri of stored results",
-                description = "Only populated if `store` parameter is set to true."
+            title = "The uri of stored results",
+            description = "Only populated if `store` parameter is set to true."
         )
         private URI uri;
     }
