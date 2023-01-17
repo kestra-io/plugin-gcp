@@ -7,6 +7,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,8 +28,9 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .field("lastname")
-            .value("Doe")
+            .filters(List.of(
+                Query.Filter.builder().field("lastname").value("Doe").build())
+            )
             .storeType(StoreType.FETCH)
             .build();
 
@@ -44,6 +46,40 @@ class QueryTest {
 
         assertThat(output.getSize(), is(2L));
         assertThat(output.getRows().size(), is(2));
+        assertThat(output.getUri(), is(nullValue()));
+
+        // clear the collection
+        try (var firestore = query.connection(runContext)) {
+            FirestoreTestUtil.clearCollection(firestore, "persons");
+        }
+    }
+
+    @Test
+    void runFetchMultipleWhere() throws Exception {
+        var runContext = runContextFactory.of();
+
+        var query = Query.builder()
+            .projectId(project)
+            .collection("persons")
+            .filters(List.of(
+                Query.Filter.builder().field("lastname").value("Doe").build(),
+                Query.Filter.builder().field("firstname").value("Jane").build())
+            )
+            .storeType(StoreType.FETCH)
+            .build();
+
+        // create something to list
+        try (var firestore = query.connection(runContext)) {
+            var collection = firestore.collection("persons");
+            collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
+            collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
+        }
+
+        var output = query.run(runContext);
+
+        assertThat(output.getSize(), is(1L));
+        assertThat(output.getRows().size(), is(1));
         assertThat(output.getUri(), is(nullValue()));
 
         // clear the collection
@@ -89,9 +125,9 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .field("lastname")
-            .value("Doe")
-            .queryOperator(Query.QueryOperator.NOT_EQUAL_TO)
+            .filters(List.of(
+                Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO).build())
+            )
             .orderBy("firstname")
             .storeType(StoreType.FETCH)
             .build();
@@ -123,8 +159,9 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .field("lastname")
-            .value("Doe")
+            .filters(List.of(
+                Query.Filter.builder().field("lastname").value("Doe").build())
+            )
             .storeType(StoreType.STORE)
             .build();
 

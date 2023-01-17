@@ -12,6 +12,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.gcp.StoreType;
+import io.micronaut.core.annotation.Introspected;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,9 +23,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
@@ -42,8 +44,9 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
         @Example(
             code = {
                 "collection: \"persons\"",
-                "field: \"firstname\"",
-                "value: \"Doe\""
+                "filters: ",
+                "- field: \"lastname\"",
+                "  value: \"Doe\""
             }
         )
     }
@@ -52,33 +55,18 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
     @Schema(
         title = "The way you want to store the data",
         description = "FETCHONE output the first row"
-            + "FETCH output all the row"
-            + "STORE store all row in a file"
+            + "FETCH output all the rows"
+            + "STORE store all rows in a file"
             + "NONE do nothing"
     )
     @Builder.Default
     private StoreType storeType = StoreType.STORE;
 
     @Schema(
-        title = "Field name for the where clause.",
-        description = "Field name for the where clause. If null all the collection will be retrieved."
+        title = "List of query filters that will be added as a where clause."
     )
     @PluginProperty(dynamic = false)
-    private String field;
-
-    @Schema(
-        title = "Field value for the where clause.",
-        description = "Field value for the where clause. Only strings are supported at the moment."
-    )
-    @PluginProperty(dynamic = true)
-    private String value;
-
-    @Schema(
-        title = "The query operator for the where clause, by default EQUAL_TO that will call 'collection.whereEqualTo(name, value)'"
-    )
-    @PluginProperty(dynamic = false)
-    @Builder.Default
-    private QueryOperator queryOperator = QueryOperator.EQUAL_TO;
+    private List<Filter> filters;
 
     @Schema(
         title = "Field name for the order by clause."
@@ -110,7 +98,7 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
         try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
 
-            var query = getQuery(runContext, collectionRef, this.queryOperator);
+            var query = getQuery(runContext, collectionRef, this.filters);
 
             if (this.orderBy != null) {
                 query.orderBy(this.orderBy, this.orderDirection);
@@ -162,35 +150,46 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
         }
     }
 
-    private com.google.cloud.firestore.Query getQuery(RunContext runContext, CollectionReference collectionRef, QueryOperator queryOperator)
+    private com.google.cloud.firestore.Query getQuery(RunContext runContext, CollectionReference collectionRef, List<Filter> filters)
         throws IllegalVariableEvaluationException {
-        if(this.field == null) {
-            // this is a no-op but allow to get an empty query
-            return collectionRef.offset(0);
+        // this is a no-op but allow to create an empty query
+        var query = collectionRef.offset(0);
+        if (this.filters == null || this.filters.isEmpty()) {
+            return query;
         }
-        switch (queryOperator) {
+
+        for(Filter option : filters)  {
+           query = appendQueryPart(runContext, query, option);
+        }
+        return query;
+    }
+
+    private com.google.cloud.firestore.Query appendQueryPart(RunContext runContext, com.google.cloud.firestore.Query query,
+                                                             Filter filter)
+        throws IllegalVariableEvaluationException {
+        switch (filter.getOperator()) {
             case EQUAL_TO: {
-                return collectionRef.whereEqualTo(this.field, runContext.render(this.value));
+                return query.whereEqualTo(filter.getField(), runContext.render(filter.getValue()));
             }
             case NOT_EQUAL_TO: {
-                return collectionRef.whereNotEqualTo(this.field, runContext.render(this.value));
+                return query.whereNotEqualTo(filter.getField(), runContext.render(filter.getValue()));
             }
             case LESS_THAN: {
-                return collectionRef.whereLessThan(this.field, runContext.render(this.value));
+                return query.whereLessThan(filter.getField(), runContext.render(filter.getValue()));
             }
             case LESS_THAN_OR_EQUAL_TO: {
-                return collectionRef.whereLessThanOrEqualTo(this.field, runContext.render(this.value));
+                return query.whereLessThanOrEqualTo(filter.getField(), runContext.render(filter.getValue()));
             }
             case GREATER_THAN: {
-                return collectionRef.whereGreaterThan(this.field, runContext.render(this.value));
+                return query.whereGreaterThan(filter.getField(), runContext.render(filter.getValue()));
             }
             case GREATER_THAN_OR_EQUAL_TO: {
-                return collectionRef.whereGreaterThanOrEqualTo(this.field, runContext.render(this.value));
+                return query.whereGreaterThanOrEqualTo(filter.getField(), runContext.render(filter.getValue()));
             }
-            // more where clause could be supported, but we need to validate that the value is a list
+            // more where clause could be supported, but we need to validate that the value is a List
         }
         // Should never occur
-        throw new IllegalArgumentException("Unknown QueryOperator: " + queryOperator);
+        throw new IllegalArgumentException("Unknown QueryOperator: " + filter.getOperator());
     }
 
     private Pair<URI, Long> store(RunContext runContext, java.util.List<QueryDocumentSnapshot> documents) throws IOException {
@@ -229,6 +228,37 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
         }
 
         return documents.get(0).getData();
+    }
+
+    @SuperBuilder
+    @NoArgsConstructor
+    @Getter
+    @Introspected
+    @Schema(
+        title = "A filter for the where clause"
+    )
+    public static class Filter {
+        @Schema(
+            title = "Field name for the filter."
+        )
+        @PluginProperty(dynamic = false)
+        @NotNull
+        private String field;
+
+        @Schema(
+            title = "Field value for the filter.",
+            description = "Field value for the filter. Only strings are supported at the moment."
+        )
+        @PluginProperty(dynamic = true)
+        @NotNull
+        private String value;
+
+        @Schema(
+            title = "The operator for the filter, by default EQUAL_TO that will call 'collection.whereEqualTo(name, value)'"
+        )
+        @PluginProperty(dynamic = false)
+        @Builder.Default
+        private QueryOperator operator = QueryOperator.EQUAL_TO;
     }
 
     @Builder
