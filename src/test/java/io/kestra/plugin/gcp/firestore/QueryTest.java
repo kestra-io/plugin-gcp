@@ -53,6 +53,36 @@ class QueryTest {
     }
 
     @Test
+    void runFetchNoWhere() throws Exception {
+        var runContext = runContextFactory.of();
+
+        var query = Query.builder()
+            .projectId(project)
+            .collection("persons")
+            .storeType(StoreType.FETCH)
+            .build();
+
+        // create something to list
+        try (var firestore = query.connection(runContext)) {
+            var collection = firestore.collection("persons");
+            collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
+            collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
+        }
+
+        var output = query.run(runContext);
+
+        assertThat(output.getSize(), is(3L));
+        assertThat(output.getRows().size(), is(3));
+        assertThat(output.getUri(), is(nullValue()));
+
+        // clear the collection
+        try (var firestore = query.connection(runContext)) {
+            FirestoreTestUtil.clearCollection(firestore, "persons");
+        }
+    }
+
+    @Test
     void runFetchNotEqualToWithOrderBy() throws Exception {
         var runContext = runContextFactory.of();
 

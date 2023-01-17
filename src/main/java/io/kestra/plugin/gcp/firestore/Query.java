@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.validation.constraints.NotNull;
 
@@ -59,10 +60,10 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
     private StoreType storeType = StoreType.STORE;
 
     @Schema(
-        title = "Field name for the where clause."
+        title = "Field name for the where clause.",
+        description = "Field name for the where clause. If null all the collection will be retrieved."
     )
     @PluginProperty(dynamic = false)
-    @NotNull
     private String field;
 
     @Schema(
@@ -70,7 +71,6 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
         description = "Field value for the where clause. Only strings are supported at the moment."
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     private String value;
 
     @Schema(
@@ -164,6 +164,10 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
 
     private com.google.cloud.firestore.Query getQuery(RunContext runContext, CollectionReference collectionRef, QueryOperator queryOperator)
         throws IllegalVariableEvaluationException {
+        if(this.field == null) {
+            // this is a no-op but allow to get an empty query
+            return collectionRef.offset(0);
+        }
         switch (queryOperator) {
             case EQUAL_TO: {
                 return collectionRef.whereEqualTo(this.field, runContext.render(this.value));
