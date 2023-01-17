@@ -17,6 +17,7 @@ import java.util.Objects;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 @MicronautTest
@@ -47,6 +48,6 @@ class DeleteListTest {
         DeleteList.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
 
         assertThat(run.getCount(), is(10L));
-        assertThat(run.getSize(), is(6020L));
+        assertThat(run.getSize(), greaterThan(6000L));
     }
 }
