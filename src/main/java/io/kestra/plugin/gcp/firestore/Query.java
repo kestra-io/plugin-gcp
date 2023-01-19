@@ -54,10 +54,10 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 public class Query extends AbstractFirestore implements RunnableTask<Query.Output> {
     @Schema(
         title = "The way you want to store the data",
-        description = "FETCHONE output the first row"
-            + "FETCH output all the rows"
-            + "STORE store all rows in a file"
-            + "NONE do nothing"
+        description = "FETCH_ONE output the first row, "
+            + "FETCH output all the rows, "
+            + "STORE store all rows in a file, "
+            + "NONE do nothing."
     )
     @Builder.Default
     private StoreType storeType = StoreType.STORE;
@@ -117,13 +117,13 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
             var outputBuilder = Query.Output.builder();
             switch (storeType) {
                 case FETCH:
-                    Pair<java.util.List<Object>, Long> fetch = this.fetch(queryDocumentSnapshots);
+                    Pair<List<Object>, Long> fetch = this.fetch(queryDocumentSnapshots);
                     outputBuilder
                         .rows(fetch.getLeft())
                         .size(fetch.getRight());
                 break;
 
-                case FETCHONE:
+                case FETCH_ONE:
                     var o = this.fetchOne(queryDocumentSnapshots);
 
                     outputBuilder
@@ -192,7 +192,7 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
         throw new IllegalArgumentException("Unknown QueryOperator: " + filter.getOperator());
     }
 
-    private Pair<URI, Long> store(RunContext runContext, java.util.List<QueryDocumentSnapshot> documents) throws IOException {
+    private Pair<URI, Long> store(RunContext runContext, List<QueryDocumentSnapshot> documents) throws IOException {
         File tempFile = runContext.tempFile(".ion").toFile();
         AtomicLong count = new AtomicLong();
 
@@ -209,8 +209,8 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
         );
     }
 
-    private Pair<java.util.List<Object>, Long> fetch(java.util.List<QueryDocumentSnapshot> documents) {
-        java.util.List<Object> result = new ArrayList<>();
+    private Pair<List<Object>, Long> fetch(List<QueryDocumentSnapshot> documents) {
+        List<Object> result = new ArrayList<>();
         AtomicLong count = new AtomicLong();
 
         documents.forEach(throwConsumer(snapshot -> {
@@ -222,7 +222,7 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
     }
 
 
-    private Map<String, Object> fetchOne(java.util.List<QueryDocumentSnapshot> documents) {
+    private Map<String, Object> fetchOne(List<QueryDocumentSnapshot> documents) {
         if (documents.isEmpty()) {
             return null;
         }
@@ -268,7 +268,7 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
             title = "List containing the fetched data",
             description = "Only populated if using `FETCH`."
         )
-        private java.util.List<Object> rows;
+        private List<Object> rows;
 
         @Schema(
             title = "Map containing the first row of fetched data",
