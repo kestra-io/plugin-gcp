@@ -9,9 +9,10 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchOutput;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.kestra.plugin.gcp.StoreType;
 import io.micronaut.core.annotation.Introspected;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -51,7 +52,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
         )
     }
 )
-public class Query extends AbstractFirestore implements RunnableTask<Query.Output> {
+public class Query extends AbstractFirestore implements RunnableTask<FetchOutput> {
     @Schema(
         title = "The way you want to store the data",
         description = "FETCH_ONE output the first row, "
@@ -60,7 +61,8 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
             + "NONE do nothing."
     )
     @Builder.Default
-    private StoreType storeType = StoreType.STORE;
+    @PluginProperty
+    private FetchType fetchType = FetchType.STORE;
 
     @Schema(
         title = "List of query filters that will be added as a where clause."
@@ -94,7 +96,7 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
     private Integer limit;
 
     @Override
-    public Query.Output run(RunContext runContext) throws Exception {
+    public FetchOutput run(RunContext runContext) throws Exception {
         try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
 
@@ -114,8 +116,8 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
 
             var queryDocumentSnapshots = query.get().get().getDocuments();
 
-            var outputBuilder = Query.Output.builder();
-            switch (storeType) {
+            var outputBuilder = FetchOutput.builder();
+            switch (fetchType) {
                 case FETCH:
                     Pair<List<Object>, Long> fetch = this.fetch(queryDocumentSnapshots);
                     outputBuilder
@@ -139,7 +141,7 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
                 break;
             }
 
-            Query.Output output = outputBuilder.build();
+            var output = outputBuilder.build();
 
             runContext.metric(Counter.of(
                 "records", output.getSize(),
@@ -259,33 +261,6 @@ public class Query extends AbstractFirestore implements RunnableTask<Query.Outpu
         @PluginProperty(dynamic = false)
         @Builder.Default
         private QueryOperator operator = QueryOperator.EQUAL_TO;
-    }
-
-    @Builder
-    @Getter
-    public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "List containing the fetched data",
-            description = "Only populated if using `FETCH`."
-        )
-        private List<Object> rows;
-
-        @Schema(
-            title = "Map containing the first row of fetched data",
-            description = "Only populated if using `FETCHONE`."
-        )
-        private Map<String, Object> row;
-
-        @Schema(
-            title = "The uri of store result",
-            description = "Only populated if using `STORE`"
-        )
-        private URI uri;
-
-        @Schema(
-            title = "The size of the rows fetch"
-        )
-        private Long size;
     }
 
     public enum QueryOperator {
