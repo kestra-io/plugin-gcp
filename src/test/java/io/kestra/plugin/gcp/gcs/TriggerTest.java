@@ -96,7 +96,7 @@ class TriggerTest {
             testUtils.upload(random + "/" + out2);
 
             scheduler.run();
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows")));
+            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
 
             queueCount.await(1, TimeUnit.MINUTES);
 
