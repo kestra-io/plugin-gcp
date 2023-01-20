@@ -1,7 +1,7 @@
 package io.kestra.plugin.gcp.firestore;
 
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.gcp.StoreType;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
@@ -31,7 +31,7 @@ class QueryTest {
             .filters(List.of(
                 Query.Filter.builder().field("lastname").value("Doe").build())
             )
-            .storeType(StoreType.FETCH)
+            .fetchType(FetchType.FETCH)
             .build();
 
         // create something to list
@@ -65,7 +65,7 @@ class QueryTest {
                 Query.Filter.builder().field("lastname").value("Doe").build(),
                 Query.Filter.builder().field("firstname").value("Jane").build())
             )
-            .storeType(StoreType.FETCH)
+            .fetchType(FetchType.FETCH)
             .build();
 
         // create something to list
@@ -95,7 +95,7 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .storeType(StoreType.FETCH)
+            .fetchType(FetchType.FETCH)
             .build();
 
         // create something to list
@@ -129,7 +129,7 @@ class QueryTest {
                 Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO).build())
             )
             .orderBy("firstname")
-            .storeType(StoreType.FETCH)
+            .fetchType(FetchType.FETCH)
             .build();
 
         // create something to list
@@ -162,7 +162,7 @@ class QueryTest {
             .filters(List.of(
                 Query.Filter.builder().field("lastname").value("Doe").build())
             )
-            .storeType(StoreType.STORE)
+            .fetchType(FetchType.STORE)
             .build();
 
         // create something to list
