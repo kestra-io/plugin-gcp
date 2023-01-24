@@ -1,4 +1,4 @@
-package io.kestra.plugin.gcp.bigquery;
+package io.kestra.plugin.gcp.pubsub;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.executions.Execution;
@@ -12,7 +12,7 @@ import io.kestra.core.schedulers.DefaultScheduler;
 import io.kestra.core.schedulers.SchedulerExecutionStateInterface;
 import io.kestra.core.schedulers.SchedulerTriggerStateInterface;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.plugin.gcp.gcs.models.Blob;
+import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
@@ -20,6 +20,9 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 @MicronautTest
 class TriggerTest {
@@ -55,11 +59,6 @@ class TriggerTest {
     @Value("${kestra.variables.globals.project}")
     private String project;
 
-    @Value("${kestra.variables.globals.dataset}")
-    private String dataset;
-
-    @Value("${kestra.variables.globals.table}")
-    private String table;
 
     @Test
     void flow() throws Exception {
@@ -67,12 +66,8 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (AbstractScheduler scheduler = new DefaultScheduler(
-            this.applicationContext,
-            this.flowListenersService,
-            this.executionState,
-            this.triggerState
-        )) {
+        try (AbstractScheduler scheduler = new DefaultScheduler(this.applicationContext, this.flowListenersService,
+            this.executionState, this.triggerState)) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
@@ -80,28 +75,36 @@ class TriggerTest {
                 last.set(execution);
 
                 queueCount.countDown();
-                assertThat(execution.getFlowId(), is("bigquery-listen"));
+                assertThat(execution.getFlowId(), is("pubsub-listen"));
             });
 
 
-            Query task = Query.builder()
-                .id(QueryTest.class.getSimpleName())
-                .type(Query.class.getName())
-                .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)")
-                .build();
-
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
+            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/pubsub")));
 
+            // publish two messages to trigger the flow
+            Publish task = Publish.builder()
+                .id(Publish.class.getSimpleName())
+                .type(Publish.class.getName())
+                .topic("test-topic")
+                .projectId(this.project)
+                .from(
+                    List.of(
+                        Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build(),
+                        Message.builder().attributes(Map.of("key", "value")).build()
+                    )
+                )
+                .build();
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
             queueCount.await(1, TimeUnit.MINUTES);
 
             @SuppressWarnings("unchecked")
-            java.util.List<Blob> trigger = (java.util.List<Blob>) last.get().getTrigger().getVariables().get("rows");
-
-            assertThat(trigger.size(), is(2));
+            var count = (Integer) last.get().getTrigger().getVariables().get("count");
+            var uri = (String) last.get().getTrigger().getVariables().get("uri");
+            assertThat(count, is(2));
+            assertThat(uri, is(notNullValue()));
         }
     }
 }

@@ -18,6 +18,8 @@ kestra:
       table: "${random.shortuuid}"
     firestore:
       project: "kestra-unit-test"
+    pubsub:
+      project: "kestra-unit-test"
   variables:
     globals:
       bucket: kestra-unit-test
