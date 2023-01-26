@@ -25,7 +25,7 @@ import java.util.stream.StreamSupport;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class AbstractPubSub extends AbstractTask implements PubSubConnectionInterface {
+abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionInterface {
     private String topic;
 
     Publisher createPublisher(RunContext runContext) throws IOException, IllegalVariableEvaluationException {

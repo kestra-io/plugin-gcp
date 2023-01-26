@@ -23,7 +23,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-class AbstractFirestore extends AbstractTask {
+abstract class AbstractFirestore extends AbstractTask {
     @Schema(
         title = "The Firestore collection"
     )
