@@ -5,10 +5,7 @@ import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.TableDataWriteChannel;
 import com.google.cloud.bigquery.WriteChannelConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -53,6 +50,13 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
     @PluginProperty(dynamic = true)
     private String from;
 
+    @Schema(
+        title = "Does the task will failed for an empty file"
+    )
+    @PluginProperty(dynamic = false)
+    @Builder.Default
+    private Boolean failedOnEmpty = true;
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
@@ -67,20 +71,33 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         logger.debug("Starting load\n{}", JacksonMapper.log(configuration));
 
         URI from = new URI(runContext.render(this.from));
-        InputStream data = runContext.uriToInputStream(from);
+        try (InputStream data = runContext.uriToInputStream(from)) {
+            long byteWritten = 0L;
 
-        TableDataWriteChannel writer = connection.writer(configuration);
-        try (OutputStream stream = Channels.newOutputStream(writer)) {
-            byte[] buffer = new byte[10_240];
+            TableDataWriteChannel writer = connection.writer(configuration);
+            try (OutputStream stream = Channels.newOutputStream(writer)) {
+                byte[] buffer = new byte[10_240];
 
-            int limit;
-            while ((limit = data.read(buffer)) >= 0) {
-                writer.write(ByteBuffer.wrap(buffer, 0, limit));
+                int limit;
+                while ((limit = data.read(buffer)) >= 0) {
+                    writer.write(ByteBuffer.wrap(buffer, 0, limit));
+                    byteWritten += limit;
+                }
             }
+
+            if (byteWritten == 0) {
+                if (failedOnEmpty) {
+                    throw new Exception("Can't load an empty file and this one don't contain any data");
+                }
+
+                return Output.builder()
+                    .rows(0L)
+                    .build();
+            }
+
+            Job job = this.waitForJob(logger, writer::getJob);
+
+            return this.outputs(runContext, configuration, job);
         }
-
-        Job job = this.waitForJob(logger, writer::getJob);
-
-        return this.outputs(runContext, configuration, job);
     }
 }
