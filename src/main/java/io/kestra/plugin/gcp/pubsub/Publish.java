@@ -53,7 +53,8 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     @NotNull
     @Schema(
         title = "The source of the published data.",
-        description = "Can be an internal storage URI, a list of Pub/Sub messages, or a single Pub/Sub message."
+        description = "Can be an internal storage URI, a list of Pub/Sub messages, or a single Pub/Sub message.",
+        anyOf = {String.class, Message[].class, Message.class}
     )
     private Object from;
 

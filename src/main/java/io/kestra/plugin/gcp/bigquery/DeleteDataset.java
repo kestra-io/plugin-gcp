@@ -46,6 +46,7 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
         description = "If not provided, attempting to" +
             " delete a non-empty dataset will result in a exception being thrown."
     )
+    @PluginProperty
     private Boolean deleteContents;
 
     @Override

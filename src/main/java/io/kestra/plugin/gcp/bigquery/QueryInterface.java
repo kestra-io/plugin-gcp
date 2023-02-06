@@ -14,24 +14,24 @@ public interface QueryInterface {
         title = "Whether to use BigQuery's legacy SQL dialect for this query",
         description = "By default this property is set to false."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     boolean isLegacySql();
 
     @Schema(
         title = "Whether to Fetch the data from the query result to the task output"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     boolean isFetch();
 
     @Schema(
         title = "Whether to store the data from the query result into an ion serialized data file"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     boolean isStore();
 
     @Schema(
         title = "Whether to Fetch only one data row from the query result to the task output"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     boolean isFetchOne();
 }

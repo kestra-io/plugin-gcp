@@ -47,7 +47,8 @@ import java.util.Map;
 public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     @Schema(
         title = "The Firestore document.",
-        description = "Can be a JSON string, or a map."
+        description = "Can be a JSON string, or a map.",
+        anyOf = {String.class, Map.class}
     )
     @PluginProperty(dynamic = true)
     private Object document;

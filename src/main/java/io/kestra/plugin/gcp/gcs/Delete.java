@@ -43,7 +43,7 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Schema(
         title = "raise an error if the file is not found"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty
     @Builder.Default
     private final Boolean errorOnMissing = false;
 

@@ -53,7 +53,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
     @Schema(
         title = "Does the task will failed for an empty file"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     @Builder.Default
     private Boolean failedOnEmpty = true;
 

@@ -44,6 +44,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
         title = "The filter files or directory"
     )
     @Builder.Default
+    @PluginProperty
     protected final Filter filter = Filter.BOTH;
 
     @Override

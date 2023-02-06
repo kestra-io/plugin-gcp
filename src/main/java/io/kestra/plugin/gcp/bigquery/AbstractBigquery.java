@@ -40,11 +40,11 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     @Schema(
         title = "Automatic retry for retryable bigquery exceptions",
-        description = "Some exceptions (espacially rate limit) are not retried by default by BigQuery client, we use by " +
+        description = "Some exceptions (especially rate limit) are not retried by default by BigQuery client, we use by " +
             "default a transparent retry (not the kestra one) to handle this case.\n" +
             "The default values are Exponential of 5 seconds for max 15 minutes and 10 attempts"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty
     protected AbstractRetry retryAuto;
 
     @Builder.Default

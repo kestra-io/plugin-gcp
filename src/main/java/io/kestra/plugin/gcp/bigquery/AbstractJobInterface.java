@@ -18,20 +18,20 @@ public interface AbstractJobInterface {
     @Schema(
         title = "The action that should occur if the destination table already exists"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     JobInfo.WriteDisposition getWriteDisposition();
 
     @Schema(
         title = "Whether the job is allowed to create tables"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     JobInfo.CreateDisposition getCreateDisposition();
 
     @Schema(
         title = "Job timeout.",
         description = "If this time limit is exceeded, BigQuery may attempt to terminate the job."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     Duration getJobTimeout();
 
     @Schema(
@@ -50,6 +50,6 @@ public interface AbstractJobInterface {
         description = " A valid query will return a mostly empty response with some processing statistics, " +
             "while an invalid query will return the same error it would if it wasn't a dry run."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     Boolean getDryRun();
 }

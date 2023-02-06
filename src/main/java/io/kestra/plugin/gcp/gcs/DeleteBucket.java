@@ -42,12 +42,6 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
     @PluginProperty(dynamic = true)
     protected String name;
 
-    @Schema(
-        title = "The GCP project id"
-    )
-    @PluginProperty(dynamic = true)
-    protected String projectId;
-
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
