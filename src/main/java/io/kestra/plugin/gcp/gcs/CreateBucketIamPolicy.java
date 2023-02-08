@@ -4,18 +4,16 @@ import com.google.cloud.Identity;
 import com.google.cloud.Policy;
 import com.google.cloud.Role;
 import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageRoles;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
-
-import javax.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -23,46 +21,35 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Add role to a service account on a bucket",
-            code = {
-                "name: \"my-bucket\"",
-                "member: \"sa@project.iam.gserviceaccount.com\"",
-                "role: \"roles/storage.admin\""
-            }
-        )
-    }
-)
-@Schema(
-    title = "Add role on an existing bucket."
-)
-public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<CreateBucketIamPolicy.Output> {
+        examples = {
+            @Example(
+                    title = "Add role to a service account on a bucket",
+                    code = {
+                        "name: \"my-bucket\"",
+                        "member: \"sa@project.iam.gserviceaccount.com\"",
+                        "role: \"roles/storage.admin\""
+                    })
+        })
+@Schema(title = "Add role on an existing bucket.")
+public class CreateBucketIamPolicy extends AbstractGcs
+        implements RunnableTask<CreateBucketIamPolicy.Output> {
     @NotNull
-    @Schema(
-        title = "Bucket's unique name"
-    )
+    @Schema(title = "Bucket's unique name")
     @PluginProperty(dynamic = true)
     protected String name;
 
     @NotNull
-    @Schema(
-        title = "Bucket's unique name"
-    )
+    @Schema(title = "Bucket's unique name")
     @PluginProperty(dynamic = true)
     protected String member;
 
     @NotNull
-    @Schema(
-        title = "Bucket's unique name"
-    )
+    @Schema(title = "Bucket's unique name")
     @PluginProperty(dynamic = true)
     protected String role;
 
     @Builder.Default
-    @Schema(
-        title = "Policy to apply if a policy already exists."
-    )
+    @Schema(title = "Policy to apply if a policy already exists.")
     private IfExists ifExists = IfExists.SKIP;
 
     @Override
@@ -77,23 +64,27 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
 
         Policy currentPolicy = connection.getIamPolicy(bucketName);
 
-        boolean exists = currentPolicy
-            .getBindingsList()
-            .stream()
-            .anyMatch(binding -> binding.getRole().equals(role.getValue()) &&
-                binding
-                    .getMembers()
-                    .stream()
-                    .anyMatch(s -> s.equals(identity.strValue()))
-            );
+        boolean exists =
+                currentPolicy.getBindingsList().stream()
+                        .anyMatch(
+                                binding ->
+                                        binding.getRole().equals(role.getValue())
+                                                && binding.getMembers().stream()
+                                                        .anyMatch(
+                                                                s ->
+                                                                        s.equals(
+                                                                                identity
+                                                                                        .strValue())));
 
-        Output.OutputBuilder output = Output.builder()
-            .bucket(bucketName)
-            .member(identity.getValue())
-            .role(role.getValue());
+        Output.OutputBuilder output =
+                Output.builder()
+                        .bucket(bucketName)
+                        .member(identity.getValue())
+                        .role(role.getValue());
 
         if (exists) {
-            String exception = "Binding " + role.getValue() + " for member " + member + " already exists";
+            String exception =
+                    "Binding " + role.getValue() + " for member " + member + " already exists";
             if (this.ifExists == IfExists.ERROR) {
                 throw new Exception(exception);
             } else {
@@ -102,12 +93,13 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
             }
         }
 
-        Policy updated = currentPolicy
-            .toBuilder()
-            .addIdentity(role, identity)
-            .build();
+        Policy updated = currentPolicy.toBuilder().addIdentity(role, identity).build();
 
-        logger.debug("Updating policy on bucket '{}', adding '{}' with role '{}", bucketName, identity, role);
+        logger.debug(
+                "Updating policy on bucket '{}', adding '{}' with role '{}",
+                bucketName,
+                identity,
+                role);
 
         connection.setIamPolicy(bucketName, updated);
 
@@ -117,24 +109,16 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The bucket uri"
-        )
+        @Schema(title = "The bucket uri")
         private String bucket;
 
-        @Schema(
-            title = "The bucket uri"
-        )
+        @Schema(title = "The bucket uri")
         private String member;
 
-        @Schema(
-            title = "The bucket uri"
-        )
+        @Schema(title = "The bucket uri")
         private String role;
 
-        @Schema(
-            title = "If the binding was added, or already exist"
-        )
+        @Schema(title = "If the binding was added, or already exist")
         private Boolean created;
     }
 

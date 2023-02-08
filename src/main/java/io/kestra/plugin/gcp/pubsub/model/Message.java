@@ -4,11 +4,10 @@ import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.Map;
 
 @Getter
 @Builder
@@ -32,17 +31,17 @@ public class Message {
     private String orderingKey;
 
     public PubsubMessage to() {
-        var builder =  PubsubMessage.newBuilder();
-        if(data != null) {
+        var builder = PubsubMessage.newBuilder();
+        if (data != null) {
             builder.setData(ByteString.copyFrom(data.getBytes()));
         }
-        if(attributes != null && !attributes.isEmpty()) {
+        if (attributes != null && !attributes.isEmpty()) {
             attributes.forEach((key, value) -> builder.putAttributes(key, value));
         }
-        if(messageId != null) {
+        if (messageId != null) {
             builder.setMessageId(messageId);
         }
-        if(orderingKey != null) {
+        if (orderingKey != null) {
             builder.setOrderingKey(orderingKey);
         }
         return builder.build();
@@ -50,10 +49,10 @@ public class Message {
 
     public static Message of(PubsubMessage message) {
         return Message.builder()
-            .messageId(message.getMessageId())
-            .data(message.getData().toString())
-            .attributes(message.getAttributesMap())
-            .orderingKey(message.getOrderingKey())
-            .build();
+                .messageId(message.getMessageId())
+                .data(message.getData().toString())
+                .attributes(message.getAttributesMap())
+                .orderingKey(message.getOrderingKey())
+                .build();
     }
 }

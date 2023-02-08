@@ -5,14 +5,14 @@ import com.google.cloud.bigquery.Dataset;
 import com.google.cloud.bigquery.DatasetInfo;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
 @SuperBuilder
@@ -20,20 +20,16 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Update a dataset."
-)
+@Schema(title = "Update a dataset.")
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "name: \"my_dataset\"",
-                "location: \"EU\"",
-                "friendlyName: \"new Friendly Name\""
-            }
-        )
-    }
-)
+        examples = {
+            @Example(
+                    code = {
+                        "name: \"my_dataset\"",
+                        "location: \"EU\"",
+                        "friendlyName: \"new Friendly Name\""
+                    })
+        })
 public class UpdateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {

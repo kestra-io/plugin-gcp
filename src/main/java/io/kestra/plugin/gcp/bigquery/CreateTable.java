@@ -9,6 +9,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,41 +17,36 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.util.Objects;
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Create a table"
-)
+@Schema(title = "Create a table")
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "tableDefinition:",
-                "  type: TABLE",
-                "  schema:",
-                "    fields:",
-                "    - name: id",
-                "      type: INT64",
-                "    - name: name",
-                "      type: STRING",
-                "  standardTableDefinition:",
-                "    clustering:",
-                "    - id",
-                "    - name",
-                "friendlyName: new_table"
-            }
-        )
-    }
-)
-public class CreateTable extends AbstractTableCreateUpdate implements RunnableTask<AbstractTable.Output> {
+        examples = {
+            @Example(
+                    code = {
+                        "projectId: my-project",
+                        "dataset: my-dataset",
+                        "table: my-table",
+                        "tableDefinition:",
+                        "  type: TABLE",
+                        "  schema:",
+                        "    fields:",
+                        "    - name: id",
+                        "      type: INT64",
+                        "    - name: name",
+                        "      type: STRING",
+                        "  standardTableDefinition:",
+                        "    clustering:",
+                        "    - id",
+                        "    - name",
+                        "friendlyName: new_table"
+                    })
+        })
+public class CreateTable extends AbstractTableCreateUpdate
+        implements RunnableTask<AbstractTable.Output> {
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
@@ -58,7 +54,8 @@ public class CreateTable extends AbstractTableCreateUpdate implements RunnableTa
 
         TableId tableId = this.tableId(runContext);
 
-        TableInfo.Builder builder = TableInfo.newBuilder(tableId, this.tableDefinition.to(runContext));
+        TableInfo.Builder builder =
+                TableInfo.newBuilder(tableId, this.tableDefinition.to(runContext));
         builder = this.build(builder, runContext);
 
         TableInfo tableInfo = builder.build();

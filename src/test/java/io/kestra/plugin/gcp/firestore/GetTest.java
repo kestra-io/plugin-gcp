@@ -1,20 +1,18 @@
 package io.kestra.plugin.gcp.firestore;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
 import io.kestra.core.runners.RunContextFactory;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-
 import java.util.Map;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import org.junit.jupiter.api.Test;
 
 @MicronautTest
 class GetTest {
-    @Inject
-    private RunContextFactory runContextFactory;
+    @Inject private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.firestore.project}")
     private String project;
@@ -23,16 +21,15 @@ class GetTest {
     void run() throws Exception {
         var runContext = runContextFactory.of();
 
-        var get = Get.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("1")
-            .build();
+        var get = Get.builder().projectId(project).collection("persons").childPath("1").build();
 
         // create something to get
         try (var firestore = get.connection(runContext)) {
-            firestore.collection("persons")
-                .document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            firestore
+                    .collection("persons")
+                    .document("1")
+                    .set(Map.of("firstname", "John", "lastname", "Doe"))
+                    .get();
         }
 
         var output = get.run(runContext);

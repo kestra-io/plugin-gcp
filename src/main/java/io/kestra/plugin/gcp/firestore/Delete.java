@@ -6,35 +6,22 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.time.Instant;
 import javax.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Delete a document from a collection."
-)
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "collection: \"persons\"",
-                "childPath: \"1\""
-            }
-        )
-    }
-)
+@Schema(title = "Delete a document from a collection.")
+@Plugin(examples = {@Example(code = {"collection: \"persons\"", "childPath: \"1\""})})
 public class Delete extends AbstractFirestore implements RunnableTask<Delete.Output> {
     @Schema(
-        title = "The Firestore document child path.",
-        description = "The Firestore document child path."
-    )
+            title = "The Firestore document child path.",
+            description = "The Firestore document child path.")
     @PluginProperty(dynamic = true)
     @NotNull
     private String childPath;
@@ -48,16 +35,16 @@ public class Delete extends AbstractFirestore implements RunnableTask<Delete.Out
             // wait for the write to happen
             var writeResult = future.get();
 
-            return Delete.Output.builder().updatedTime(writeResult.getUpdateTime().toDate().toInstant()).build();
+            return Delete.Output.builder()
+                    .updatedTime(writeResult.getUpdateTime().toDate().toInstant())
+                    .build();
         }
     }
 
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The document updated time."
-        )
+        @Schema(title = "The document updated time.")
         private Instant updatedTime;
     }
 }

@@ -20,12 +20,6 @@ import io.micronaut.core.annotation.Introspected;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -40,6 +34,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
 
 @SuperBuilder
 @ToString
@@ -47,58 +46,50 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "from: \"{{ outputs.read.uri }}\"",
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "writeStreamType: DEFAULT"
-            }
-        )
-    }
-)
+        examples = {
+            @Example(
+                    code = {
+                        "from: \"{{ outputs.read.uri }}\"",
+                        "destinationTable: \"my_project.my_dataset.my_table\"",
+                        "writeStreamType: DEFAULT"
+                    })
+        })
 @Schema(
-    title = "Load an kestra internal storage file on bigquery using " +
-        "[BigQuery Storage API](https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode)"
-)
+        title =
+                "Load an kestra internal storage file on bigquery using [BigQuery Storage"
+                    + " API](https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode)")
 public class StorageWrite extends AbstractTask implements RunnableTask<StorageWrite.Output> {
-    @Schema(
-        title = "The fully-qualified URIs that point to source data"
-    )
+    @Schema(title = "The fully-qualified URIs that point to source data")
     @PluginProperty(dynamic = true)
     private String from;
 
     @NotNull
     @NotEmpty
     @Schema(
-        title = "The table where to load data",
-        description = "The table must be created beefore."
-    )
+            title = "The table where to load data",
+            description = "The table must be created beefore.")
     private String destinationTable;
 
     @NotNull
     @NotEmpty
     @Builder.Default
-    @Schema(
-        title = "The type of write stream to use"
-    )
+    @Schema(title = "The type of write stream to use")
     private final WriteStreamType writeStreamType = WriteStreamType.DEFAULT;
 
     @NotNull
     @Builder.Default
-    @Schema(
-        title = "The number of records to send on each query"
-    )
+    @Schema(title = "The number of records to send on each query")
     @PluginProperty(dynamic = false)
     protected final Integer bufferSize = 1000;
 
     @Schema(
-        title = "The geographic location where the dataset should reside",
-        description = "This property is experimental" +
-            " and might be subject to change or removed.\n" +
-            " \n" +
-            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
-    )
+            title = "The geographic location where the dataset should reside",
+            description =
+                    "This property is experimental and might be subject to change or removed.\n"
+                        + " \n"
+                        + " See <a"
+                        + " href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset"
+                        + " Location</a>")
     @PluginProperty(dynamic = true)
     protected String location;
 
@@ -107,78 +98,94 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         Logger logger = runContext.logger();
         TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable));
 
-        if (tableId.getProject() == null || tableId.getDataset() == null || tableId.getTable() == null) {
+        if (tableId.getProject() == null
+                || tableId.getDataset() == null
+                || tableId.getTable() == null) {
             throw new Exception("Invalid destinationTable " + tableId);
         }
 
-        TableName parentTable = TableName.of(tableId.getProject(), tableId.getDataset(), tableId.getTable());
+        TableName parentTable =
+                TableName.of(tableId.getProject(), tableId.getDataset(), tableId.getTable());
 
         // reader
         URI from = new URI(runContext.render(this.from));
 
-        try (
-            BigQueryWriteClient connection = this.connection(runContext);
-            BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.uriToInputStream(from)));
-        ) {
-            try (JsonStreamWriter writer = this.jsonStreamWriter(runContext, parentTable, connection).build()) {
-                Integer count = Flowable
-                    .create(FileSerde.reader(inputStream), BackpressureStrategy.BUFFER)
-                    .map(this::map)
-                    .buffer(this.bufferSize)
-                    .map(list -> {
-                        JSONArray result = new JSONArray();
-                        list.forEach(result::put);
+        try (BigQueryWriteClient connection = this.connection(runContext);
+                BufferedReader inputStream =
+                        new BufferedReader(
+                                new InputStreamReader(runContext.uriToInputStream(from))); ) {
+            try (JsonStreamWriter writer =
+                    this.jsonStreamWriter(runContext, parentTable, connection).build()) {
+                Integer count =
+                        Flowable.create(FileSerde.reader(inputStream), BackpressureStrategy.BUFFER)
+                                .map(this::map)
+                                .buffer(this.bufferSize)
+                                .map(
+                                        list -> {
+                                            JSONArray result = new JSONArray();
+                                            list.forEach(result::put);
 
-                        return result;
-                    })
-                    .map(o -> {
-                        try {
-                            ApiFuture<AppendRowsResponse> future = writer.append(o);
-                            AppendRowsResponse response = future.get();
+                                            return result;
+                                        })
+                                .map(
+                                        o -> {
+                                            try {
+                                                ApiFuture<AppendRowsResponse> future =
+                                                        writer.append(o);
+                                                AppendRowsResponse response = future.get();
 
-                            return o.length();
-                        } catch (ExecutionException e) {
-                            // If the wrapped exception is a StatusRuntimeException, check the state of the operation.
-                            // If the state is INTERNAL, CANCELLED, or ABORTED, you can retry. For more information, see:
-                            // https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
-                            throw new Exception("Failed to append records with error: " + e.getMessage(), e);
-                        }
-                    })
-                    .reduce(Integer::sum)
-                    .blockingGet();
+                                                return o.length();
+                                            } catch (ExecutionException e) {
+                                                // If the wrapped exception is a
+                                                // StatusRuntimeException, check the state of the
+                                                // operation.
+                                                // If the state is INTERNAL, CANCELLED, or ABORTED,
+                                                // you can retry. For more information, see:
+                                                // https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
+                                                throw new Exception(
+                                                        "Failed to append records with error: "
+                                                                + e.getMessage(),
+                                                        e);
+                                            }
+                                        })
+                                .reduce(Integer::sum)
+                                .blockingGet();
 
-                Output.OutputBuilder builder = Output.builder()
-                    .rows(count);
+                Output.OutputBuilder builder = Output.builder().rows(count);
 
                 if (this.writeStreamType == WriteStreamType.PENDING) {
                     logger.debug("Commit pending stream '{}'", writer.getStreamName());
 
                     // Commit the streams for PENDING
-                    FinalizeWriteStreamResponse finalizeResponse = connection.finalizeWriteStream(writer.getStreamName());
+                    FinalizeWriteStreamResponse finalizeResponse =
+                            connection.finalizeWriteStream(writer.getStreamName());
 
                     builder.rowsCount(finalizeResponse.getRowCount());
 
-                    BatchCommitWriteStreamsRequest commitRequest = BatchCommitWriteStreamsRequest
-                        .newBuilder()
-                        .setParent(parentTable.toString())
-                        .addWriteStreams(writer.getStreamName())
-                        .build();
+                    BatchCommitWriteStreamsRequest commitRequest =
+                            BatchCommitWriteStreamsRequest.newBuilder()
+                                    .setParent(parentTable.toString())
+                                    .addWriteStreams(writer.getStreamName())
+                                    .build();
 
-                    BatchCommitWriteStreamsResponse commitResponse = connection.batchCommitWriteStreams(commitRequest);
+                    BatchCommitWriteStreamsResponse commitResponse =
+                            connection.batchCommitWriteStreams(commitRequest);
 
                     if (!commitResponse.hasCommitTime()) {
-                        // If the response does not have a commit time, it means the commit operation failed.
-                        throw new Exception("Error on commit with error: " + commitResponse.getStreamErrorsList()
-                            .stream()
-                            .map(StorageError::getErrorMessage)
-                            .collect(Collectors.joining("\n- ")));
+                        // If the response does not have a commit time, it means the commit
+                        // operation failed.
+                        throw new Exception(
+                                "Error on commit with error: "
+                                        + commitResponse.getStreamErrorsList().stream()
+                                                .map(StorageError::getErrorMessage)
+                                                .collect(Collectors.joining("\n- ")));
                     } else {
-                        builder.commitTime(Instant.ofEpochSecond(commitResponse.getCommitTime().getSeconds()));
+                        builder.commitTime(
+                                Instant.ofEpochSecond(commitResponse.getCommitTime().getSeconds()));
                     }
                 }
 
-                Output output = builder
-                    .build();
+                Output output = builder.build();
 
                 String[] tags = tags(tableId);
 
@@ -195,7 +202,8 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @SuppressWarnings("unchecked")
     private JSONObject map(Object object) {
         if (!(object instanceof Map)) {
-            throw new IllegalArgumentException("Unable to map with type '" + object.getClass().getName() + "'");
+            throw new IllegalArgumentException(
+                    "Unable to map with type '" + object.getClass().getName() + "'");
         }
 
         Map<String, Object> map = (Map<String, Object>) object;
@@ -210,24 +218,22 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         if (object instanceof Map) {
             Map<?, ?> value = (Map<?, ?>) object;
 
-            HashMap<Object, Object> map = value
-                .entrySet()
-                .stream()
-                .map(e -> new AbstractMap.SimpleEntry<>(
-                    e.getKey(),
-                    transform(e.getValue())
-                ))
-                // https://bugs.openjdk.java.net/browse/JDK-8148463
-                .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+            HashMap<Object, Object> map =
+                    value.entrySet().stream()
+                            .map(
+                                    e ->
+                                            new AbstractMap.SimpleEntry<>(
+                                                    e.getKey(), transform(e.getValue())))
+                            // https://bugs.openjdk.java.net/browse/JDK-8148463
+                            .collect(
+                                    HashMap::new,
+                                    (m, v) -> m.put(v.getKey(), v.getValue()),
+                                    HashMap::putAll);
 
             return new JSONObject(map);
         } else if (object instanceof Collection) {
             Collection<?> value = (Collection<?>) object;
-            return new JSONArray(value
-                .stream()
-                .map(this::transform)
-                .collect(Collectors.toList())
-            );
+            return new JSONArray(value.stream().map(this::transform).collect(Collectors.toList()));
         } else if (object instanceof ZonedDateTime) {
             ZonedDateTime value = (ZonedDateTime) object;
             return value.toInstant().toEpochMilli() * 1000;
@@ -239,13 +245,19 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             return (int) value.toEpochDay();
         } else if (object instanceof LocalDateTime) {
             LocalDateTime value = (LocalDateTime) object;
-            return CivilTimeEncoder.encodePacked64DatetimeMicros(org.threeten.bp.LocalDateTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+            return CivilTimeEncoder.encodePacked64DatetimeMicros(
+                    org.threeten.bp.LocalDateTime.parse(
+                            value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
         } else if (object instanceof LocalTime) {
             LocalTime value = (LocalTime) object;
-            return CivilTimeEncoder.encodePacked64TimeMicros(org.threeten.bp.LocalTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
+            return CivilTimeEncoder.encodePacked64TimeMicros(
+                    org.threeten.bp.LocalTime.parse(
+                            value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
         } else if (object instanceof OffsetTime) {
             OffsetTime value = (OffsetTime) object;
-            return CivilTimeEncoder.encodePacked64TimeMicros(org.threeten.bp.LocalTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
+            return CivilTimeEncoder.encodePacked64TimeMicros(
+                    org.threeten.bp.LocalTime.parse(
+                            value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
         } else if (object == null) {
             return null;
         } else if (object instanceof String) {
@@ -259,33 +271,38 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         }
     }
 
-    private BigQueryWriteClient connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        BigQueryWriteSettings bigQueryWriteSettings = BigQueryWriteSettings
-            .newBuilder()
-            .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
-            .setQuotaProjectId(this.projectId)
-            .build();
+    private BigQueryWriteClient connection(RunContext runContext)
+            throws IllegalVariableEvaluationException, IOException {
+        BigQueryWriteSettings bigQueryWriteSettings =
+                BigQueryWriteSettings.newBuilder()
+                        .setCredentialsProvider(
+                                FixedCredentialsProvider.create(this.credentials(runContext)))
+                        .setQuotaProjectId(this.projectId)
+                        .build();
 
         return BigQueryWriteClient.create(bigQueryWriteSettings);
     }
 
     private String[] tags(TableId tableId) {
-        return new String[]{
+        return new String[] {
             "write_stream_type", this.writeStreamType.name(),
             "project_id", tableId.getProject(),
             "dataset", tableId.getDataset(),
         };
     }
 
-    private JsonStreamWriter.Builder jsonStreamWriter(RunContext runContext, TableName parentTable, BigQueryWriteClient client) throws IllegalVariableEvaluationException, IOException {
+    private JsonStreamWriter.Builder jsonStreamWriter(
+            RunContext runContext, TableName parentTable, BigQueryWriteClient client)
+            throws IllegalVariableEvaluationException, IOException {
         if (this.writeStreamType == WriteStreamType.DEFAULT) {
-            // Write to the default stream: https://cloud.google.com/bigquery/docs/write-api#write_to_the_default_stream
-            BigQuery bigQuery = AbstractBigquery.connection(
-                runContext,
-                this.credentials(runContext),
-                this.projectId,
-                this.location
-            );
+            // Write to the default stream:
+            // https://cloud.google.com/bigquery/docs/write-api#write_to_the_default_stream
+            BigQuery bigQuery =
+                    AbstractBigquery.connection(
+                            runContext,
+                            this.credentials(runContext),
+                            this.projectId,
+                            this.location);
 
             TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable));
 
@@ -301,26 +318,30 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
                 throw new IllegalArgumentException("No schema defined for table '" + tableId);
             }
 
-            TableSchema tableSchema = BigQueryToBigQueryStorageSchemaConverter.convertTableSchema(schema);
+            TableSchema tableSchema =
+                    BigQueryToBigQueryStorageSchemaConverter.convertTableSchema(schema);
 
             return JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema);
-        } else  {
-            // Write to a stream in pending mode: https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_pending_mode
-            // Write to a stream in committed mode : https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode
+        } else {
+            // Write to a stream in pending mode:
+            // https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_pending_mode
+            // Write to a stream in committed mode :
+            // https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode
 
-            WriteStream stream = WriteStream
-                .newBuilder()
-                .setType(WriteStream.Type.valueOf(this.writeStreamType.name()))
-                .build();
+            WriteStream stream =
+                    WriteStream.newBuilder()
+                            .setType(WriteStream.Type.valueOf(this.writeStreamType.name()))
+                            .build();
 
-            CreateWriteStreamRequest createWriteStreamRequest = CreateWriteStreamRequest
-                .newBuilder()
-                .setParent(parentTable.toString())
-                .setWriteStream(stream)
-                .build();
+            CreateWriteStreamRequest createWriteStreamRequest =
+                    CreateWriteStreamRequest.newBuilder()
+                            .setParent(parentTable.toString())
+                            .setWriteStream(stream)
+                            .build();
             WriteStream writeStream = client.createWriteStream(createWriteStreamRequest);
 
-            return JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema(), client);
+            return JsonStreamWriter.newBuilder(
+                    writeStream.getName(), writeStream.getTableSchema(), client);
         }
     }
 
@@ -334,19 +355,13 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "Rows count"
-        )
+        @Schema(title = "Rows count")
         private final Integer rows;
 
-        @Schema(
-            title = "Rows count reported by BigQuery, only on `PENDING` writeStreamType"
-        )
+        @Schema(title = "Rows count reported by BigQuery, only on `PENDING` writeStreamType")
         private final Long rowsCount;
 
-        @Schema(
-            title = "Commit time reported by BigQuery, only on `PENDING` writeStreamType"
-        )
+        @Schema(title = "Commit time reported by BigQuery, only on `PENDING` writeStreamType")
         private final Instant commitTime;
     }
 }

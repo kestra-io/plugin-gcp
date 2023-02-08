@@ -9,33 +9,29 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
-
-import java.util.Objects;
 
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Update table metadata"
-)
+@Schema(title = "Update table metadata")
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "expirationDuration: PT2D"
-            }
-        )
-    }
-)
-public class UpdateTable extends AbstractTableCreateUpdate implements RunnableTask<AbstractTable.Output> {
+        examples = {
+            @Example(
+                    code = {
+                        "projectId: my-project",
+                        "dataset: my-dataset",
+                        "table: my-table",
+                        "expirationDuration: PT2D"
+                    })
+        })
+public class UpdateTable extends AbstractTableCreateUpdate
+        implements RunnableTask<AbstractTable.Output> {
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);

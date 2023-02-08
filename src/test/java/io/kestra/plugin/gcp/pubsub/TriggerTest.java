@@ -1,5 +1,9 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.queues.QueueFactoryInterface;
@@ -18,8 +22,6 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.junit.jupiter.api.Test;
-
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -27,38 +29,28 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import org.junit.jupiter.api.Test;
 
 @MicronautTest
 class TriggerTest {
-    @Inject
-    private ApplicationContext applicationContext;
+    @Inject private ApplicationContext applicationContext;
 
-    @Inject
-    private SchedulerTriggerStateInterface triggerState;
+    @Inject private SchedulerTriggerStateInterface triggerState;
 
-    @Inject
-    private SchedulerExecutionStateInterface executionState;
+    @Inject private SchedulerExecutionStateInterface executionState;
 
-    @Inject
-    private FlowListeners flowListenersService;
+    @Inject private FlowListeners flowListenersService;
 
     @Inject
     @Named(QueueFactoryInterface.EXECUTION_NAMED)
     private QueueInterface<Execution> executionQueue;
 
-    @Inject
-    protected LocalFlowRepositoryLoader repositoryLoader;
+    @Inject protected LocalFlowRepositoryLoader repositoryLoader;
 
-    @Inject
-    private RunContextFactory runContextFactory;
+    @Inject private RunContextFactory runContextFactory;
 
     @Value("${kestra.variables.globals.project}")
     private String project;
-
 
     @Test
     void flow() throws Exception {
@@ -66,36 +58,50 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (AbstractScheduler scheduler = new DefaultScheduler(this.applicationContext, this.flowListenersService,
-            this.executionState, this.triggerState)) {
+        try (AbstractScheduler scheduler =
+                new DefaultScheduler(
+                        this.applicationContext,
+                        this.flowListenersService,
+                        this.executionState,
+                        this.triggerState)) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
-            executionQueue.receive(TriggerTest.class, execution -> {
-                last.set(execution);
+            executionQueue.receive(
+                    TriggerTest.class,
+                    execution -> {
+                        last.set(execution);
 
-                queueCount.countDown();
-                assertThat(execution.getFlowId(), is("pubsub-listen"));
-            });
-
+                        queueCount.countDown();
+                        assertThat(execution.getFlowId(), is("pubsub-listen"));
+                    });
 
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/pubsub")));
+            repositoryLoader.load(
+                    Objects.requireNonNull(
+                            TriggerTest.class.getClassLoader().getResource("flows/pubsub")));
 
             // publish two messages to trigger the flow
-            Publish task = Publish.builder()
-                .id(Publish.class.getSimpleName())
-                .type(Publish.class.getName())
-                .topic("test-topic")
-                .projectId(this.project)
-                .from(
-                    List.of(
-                        Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build(),
-                        Message.builder().attributes(Map.of("key", "value")).build()
-                    )
-                )
-                .build();
+            Publish task =
+                    Publish.builder()
+                            .id(Publish.class.getSimpleName())
+                            .type(Publish.class.getName())
+                            .topic("test-topic")
+                            .projectId(this.project)
+                            .from(
+                                    List.of(
+                                            Message.builder()
+                                                    .data(
+                                                            Base64.getEncoder()
+                                                                    .encodeToString(
+                                                                            "Hello World"
+                                                                                    .getBytes()))
+                                                    .build(),
+                                            Message.builder()
+                                                    .attributes(Map.of("key", "value"))
+                                                    .build()))
+                            .build();
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
             queueCount.await(1, TimeUnit.MINUTES);

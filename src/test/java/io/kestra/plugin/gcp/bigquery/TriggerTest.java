@@ -1,5 +1,8 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.queues.QueueFactoryInterface;
@@ -18,39 +21,29 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.junit.jupiter.api.Test;
-
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import org.junit.jupiter.api.Test;
 
 @MicronautTest
 class TriggerTest {
-    @Inject
-    private ApplicationContext applicationContext;
+    @Inject private ApplicationContext applicationContext;
 
-    @Inject
-    private SchedulerTriggerStateInterface triggerState;
+    @Inject private SchedulerTriggerStateInterface triggerState;
 
-    @Inject
-    private SchedulerExecutionStateInterface executionState;
+    @Inject private SchedulerExecutionStateInterface executionState;
 
-    @Inject
-    private FlowListeners flowListenersService;
+    @Inject private FlowListeners flowListenersService;
 
     @Inject
     @Named(QueueFactoryInterface.EXECUTION_NAMED)
     private QueueInterface<Execution> executionQueue;
 
-    @Inject
-    protected LocalFlowRepositoryLoader repositoryLoader;
+    @Inject protected LocalFlowRepositoryLoader repositoryLoader;
 
-    @Inject
-    private RunContextFactory runContextFactory;
+    @Inject private RunContextFactory runContextFactory;
 
     @Value("${kestra.variables.globals.project}")
     private String project;
@@ -67,39 +60,52 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (AbstractScheduler scheduler = new DefaultScheduler(
-            this.applicationContext,
-            this.flowListenersService,
-            this.executionState,
-            this.triggerState
-        )) {
+        try (AbstractScheduler scheduler =
+                new DefaultScheduler(
+                        this.applicationContext,
+                        this.flowListenersService,
+                        this.executionState,
+                        this.triggerState)) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
-            executionQueue.receive(TriggerTest.class, execution -> {
-                last.set(execution);
+            executionQueue.receive(
+                    TriggerTest.class,
+                    execution -> {
+                        last.set(execution);
 
-                queueCount.countDown();
-                assertThat(execution.getFlowId(), is("bigquery-listen"));
-            });
+                        queueCount.countDown();
+                        assertThat(execution.getFlowId(), is("bigquery-listen"));
+                    });
 
-
-            Query task = Query.builder()
-                .id(QueryTest.class.getSimpleName())
-                .type(Query.class.getName())
-                .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)")
-                .build();
+            Query task =
+                    Query.builder()
+                            .id(QueryTest.class.getSimpleName())
+                            .type(Query.class.getName())
+                            .sql(
+                                    "CREATE TABLE `"
+                                            + project
+                                            + "."
+                                            + dataset
+                                            + "."
+                                            + table
+                                            + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS"
+                                            + " number)")
+                            .build();
 
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
+            repositoryLoader.load(
+                    Objects.requireNonNull(
+                            TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
             queueCount.await(1, TimeUnit.MINUTES);
 
             @SuppressWarnings("unchecked")
-            java.util.List<Blob> trigger = (java.util.List<Blob>) last.get().getTrigger().getVariables().get("rows");
+            java.util.List<Blob> trigger =
+                    (java.util.List<Blob>) last.get().getTrigger().getVariables().get("rows");
 
             assertThat(trigger.size(), is(2));
         }

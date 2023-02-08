@@ -28,43 +28,56 @@ public class TableDefinition {
     @Schema(title = "the external table definition if the type is `EXTERNAL`")
     private final ExternalTableDefinition externalTableDefinition;
 
-    public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(T tableDefinition) {
-        TableDefinitionBuilder tableDefinitionBuilder = TableDefinition.builder()
-            .type(Type.valueOf(tableDefinition.getType().toString()));
+    public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(
+            T tableDefinition) {
+        TableDefinitionBuilder tableDefinitionBuilder =
+                TableDefinition.builder().type(Type.valueOf(tableDefinition.getType().toString()));
 
         if (tableDefinition.getSchema() != null) {
-            tableDefinitionBuilder.schema(io.kestra.plugin.gcp.bigquery.models.Schema.of(tableDefinition.getSchema()));
+            tableDefinitionBuilder.schema(
+                    io.kestra.plugin.gcp.bigquery.models.Schema.of(tableDefinition.getSchema()));
         }
 
         if (tableDefinition instanceof com.google.cloud.bigquery.ViewDefinition) {
             var viewDefinition = ((com.google.cloud.bigquery.ViewDefinition) tableDefinition);
 
             tableDefinitionBuilder.viewDefinition(ViewDefinition.of(viewDefinition));
-        } else if (tableDefinition instanceof com.google.cloud.bigquery.MaterializedViewDefinition) {
-            var materializedViewDefinition = ((com.google.cloud.bigquery.MaterializedViewDefinition) tableDefinition);
+        } else if (tableDefinition
+                instanceof com.google.cloud.bigquery.MaterializedViewDefinition) {
+            var materializedViewDefinition =
+                    ((com.google.cloud.bigquery.MaterializedViewDefinition) tableDefinition);
 
-            tableDefinitionBuilder.materializedViewDefinition(MaterializedViewDefinition.of(materializedViewDefinition));
+            tableDefinitionBuilder.materializedViewDefinition(
+                    MaterializedViewDefinition.of(materializedViewDefinition));
         } else if (tableDefinition instanceof com.google.cloud.bigquery.ExternalTableDefinition) {
-            var externalTableDefinition = ((com.google.cloud.bigquery.ExternalTableDefinition) tableDefinition);
+            var externalTableDefinition =
+                    ((com.google.cloud.bigquery.ExternalTableDefinition) tableDefinition);
 
-            tableDefinitionBuilder.externalTableDefinition(ExternalTableDefinition.of(externalTableDefinition));
+            tableDefinitionBuilder.externalTableDefinition(
+                    ExternalTableDefinition.of(externalTableDefinition));
         } else if (tableDefinition instanceof com.google.cloud.bigquery.StandardTableDefinition) {
-            var standardTableDefinition = ((com.google.cloud.bigquery.StandardTableDefinition) tableDefinition);
+            var standardTableDefinition =
+                    ((com.google.cloud.bigquery.StandardTableDefinition) tableDefinition);
 
-            tableDefinitionBuilder.standardTableDefinition(StandardTableDefinition.of(standardTableDefinition));
+            tableDefinitionBuilder.standardTableDefinition(
+                    StandardTableDefinition.of(standardTableDefinition));
         }
 
         return tableDefinitionBuilder.build();
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends com.google.cloud.bigquery.TableDefinition> T to(RunContext runContext) throws Exception {
+    public <T extends com.google.cloud.bigquery.TableDefinition> T to(RunContext runContext)
+            throws Exception {
         switch (this.type) {
             case VIEW:
                 return (T) this.viewDefinition.to(runContext);
             case TABLE:
-                return (T) (this.standardTableDefinition == null ? StandardTableDefinition.builder().build() : this.standardTableDefinition)
-                    .to(runContext, this.schema);
+                return (T)
+                        (this.standardTableDefinition == null
+                                        ? StandardTableDefinition.builder().build()
+                                        : this.standardTableDefinition)
+                                .to(runContext, this.schema);
             case EXTERNAL:
                 return (T) this.externalTableDefinition.to(runContext, this.schema);
             case MATERIALIZED_VIEW:

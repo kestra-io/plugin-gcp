@@ -4,9 +4,6 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.container.v1.ClusterManagerClient;
 import com.google.cloud.container.v1.ClusterManagerSettings;
 import com.google.container.v1.Cluster;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -14,11 +11,13 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -26,89 +25,80 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Fetch a gke cluster metadata",
-            code = {
-                "name: \"gke-metas\"",
-                "projectId: my-project-id",
-                "zone: eu-west-1c",
-                "clusterId: my-cluster-id",
-            }
-        )
-    }
-)
-@Schema(
-    title = "Get cluster metadata."
-)
+        examples = {
+            @Example(
+                    title = "Fetch a gke cluster metadata",
+                    code = {
+                        "name: \"gke-metas\"",
+                        "projectId: my-project-id",
+                        "zone: eu-west-1c",
+                        "clusterId: my-cluster-id",
+                    })
+        })
+@Schema(title = "Get cluster metadata.")
 public class ClusterMetadata extends AbstractTask implements RunnableTask<ClusterMetadata.Output> {
     @NotNull
-    @Schema(
-        title = "Cluster id where meta data are fetch"
-    )
+    @Schema(title = "Cluster id where meta data are fetch")
     @PluginProperty(dynamic = true)
     private String clusterId;
 
-    @Schema(
-        title = "Cluster zone in GCP"
-    )
+    @Schema(title = "Cluster zone in GCP")
     @PluginProperty(dynamic = true)
     private String clusterZone;
 
-    @Schema(
-        title = "Project ID in GCP were is located cluster"
-    )
+    @Schema(title = "Project ID in GCP were is located cluster")
     @PluginProperty(dynamic = true)
     private String clusterProjectId;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Cluster cluster = fetch(runContext);
-        return Output
-            .builder()
-            .location(cluster.getLocation())
-            .description(cluster.getDescription())
-            .network(cluster.getNetwork())
-            .name(cluster.getName())
-            .clusterIpv4Cidr(cluster.getClusterIpv4Cidr())
-            .subNetwork(cluster.getSubnetwork())
-            .endpoint(cluster.getEndpoint())
-            .zone(clusterZone)
-            .project(clusterProjectId)
-            .createTime(cluster.getCreateTime())
-            .nodePoolsCount(cluster.getNodePoolsCount())
-            .nodePools(cluster.getNodePoolsList()
-                .stream()
-                .map(r -> NodePool.builder()
-                    .name(r.getName())
-                    .status(r.getStatus())
-                    .build()
-                )
-                .collect(Collectors.toList())
-            )
-            .masterAuth(MasterAuth.builder()
-                .clusterCertificat(cluster.getMasterAuth().getClusterCaCertificate())
-                .clientKey(cluster.getMasterAuth().getClientKey())
-                .clientCertificat(cluster.getMasterAuth().getClientCertificate())
-                .build()
-            )
-            .loggingService(cluster.getLoggingService())
-            .monitoringService(cluster.getMonitoringService())
-            .link(cluster.getSelfLink())
-            .build();
+        return Output.builder()
+                .location(cluster.getLocation())
+                .description(cluster.getDescription())
+                .network(cluster.getNetwork())
+                .name(cluster.getName())
+                .clusterIpv4Cidr(cluster.getClusterIpv4Cidr())
+                .subNetwork(cluster.getSubnetwork())
+                .endpoint(cluster.getEndpoint())
+                .zone(clusterZone)
+                .project(clusterProjectId)
+                .createTime(cluster.getCreateTime())
+                .nodePoolsCount(cluster.getNodePoolsCount())
+                .nodePools(
+                        cluster.getNodePoolsList().stream()
+                                .map(
+                                        r ->
+                                                NodePool.builder()
+                                                        .name(r.getName())
+                                                        .status(r.getStatus())
+                                                        .build())
+                                .collect(Collectors.toList()))
+                .masterAuth(
+                        MasterAuth.builder()
+                                .clusterCertificat(
+                                        cluster.getMasterAuth().getClusterCaCertificate())
+                                .clientKey(cluster.getMasterAuth().getClientKey())
+                                .clientCertificat(cluster.getMasterAuth().getClientCertificate())
+                                .build())
+                .loggingService(cluster.getLoggingService())
+                .monitoringService(cluster.getMonitoringService())
+                .link(cluster.getSelfLink())
+                .build();
     }
 
     Cluster fetch(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        ClusterManagerSettings clusterManagerSettings = ClusterManagerSettings.newBuilder()
-            .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
-            .build();
+        ClusterManagerSettings clusterManagerSettings =
+                ClusterManagerSettings.newBuilder()
+                        .setCredentialsProvider(
+                                FixedCredentialsProvider.create(this.credentials(runContext)))
+                        .build();
 
         try (ClusterManagerClient client = ClusterManagerClient.create(clusterManagerSettings)) {
             return client.getCluster(
-                runContext.render(clusterProjectId),
-                runContext.render(clusterZone),
-                runContext.render(clusterId)
-            );
+                    runContext.render(clusterProjectId),
+                    runContext.render(clusterZone),
+                    runContext.render(clusterId));
         }
     }
 

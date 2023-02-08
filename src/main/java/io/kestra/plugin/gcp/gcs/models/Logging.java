@@ -12,15 +12,15 @@ public class Logging {
 
     public static Logging of(BucketInfo.Logging item) {
         return Logging.builder()
-            .logBucket(item.getLogBucket())
-            .logObjectPrefix(item.getLogObjectPrefix())
-            .build();
+                .logBucket(item.getLogBucket())
+                .logObjectPrefix(item.getLogObjectPrefix())
+                .build();
     }
 
     public BucketInfo.Logging convert() {
         return BucketInfo.Logging.newBuilder()
-            .setLogBucket(this.logBucket)
-            .setLogObjectPrefix(this.logObjectPrefix)
-            .build();
+                .setLogBucket(this.logBucket)
+                .setLogObjectPrefix(this.logObjectPrefix)
+                .build();
     }
 }

@@ -3,7 +3,6 @@ package io.kestra.plugin.gcp;
 import io.kestra.plugin.gcp.bigquery.*;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.validation.validator.constraints.ConstraintValidator;
-
 import jakarta.inject.Singleton;
 
 @Factory
@@ -24,13 +23,15 @@ public class ValidationFactory {
     }
 
     @Singleton
-    ConstraintValidator<StoreFetchDestinationValidation, Query> storeFetchDestinationValidationValidator() {
+    ConstraintValidator<StoreFetchDestinationValidation, Query>
+            storeFetchDestinationValidationValidator() {
         return (value, annotationMetadata, context) -> {
             if (value == null) {
                 return true; // nulls are allowed according to spec
             }
 
-            if ((value.isFetch() || value.isFetchOne() || value.isStore()) && value.getDestinationTable() != null) {
+            if ((value.isFetch() || value.isFetchOne() || value.isStore())
+                    && value.getDestinationTable() != null) {
                 return false;
             }
 

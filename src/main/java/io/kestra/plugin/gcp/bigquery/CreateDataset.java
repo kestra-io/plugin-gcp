@@ -4,14 +4,14 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Dataset;
 import com.google.cloud.bigquery.DatasetInfo;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 @SuperBuilder
@@ -19,26 +19,16 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Create a dataset or update if it already exists."
-)
+@Schema(title = "Create a dataset or update if it already exists.")
 @Plugin(
-    examples = {
-        @Example(
-            title = "Create a dataset if not exits",
-            code = {
-                "name: \"my_dataset\"",
-                "location: \"EU\"",
-                "ifExists: \"SKIP\""
-            }
-        )
-    }
-)
+        examples = {
+            @Example(
+                    title = "Create a dataset if not exits",
+                    code = {"name: \"my_dataset\"", "location: \"EU\"", "ifExists: \"SKIP\""})
+        })
 public class CreateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Builder.Default
-    @Schema(
-        title = "Policy to apply if a dataset already exists."
-    )
+    @Schema(title = "Policy to apply if a dataset already exists.")
     private final IfExists ifExists = IfExists.ERROR;
 
     @Override
@@ -54,7 +44,8 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
         return AbstractDataset.Output.of(dataset);
     }
 
-    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo) throws IllegalVariableEvaluationException {
+    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo)
+            throws IllegalVariableEvaluationException {
         Dataset dataset;
         try {
             dataset = connection.create(datasetInfo);

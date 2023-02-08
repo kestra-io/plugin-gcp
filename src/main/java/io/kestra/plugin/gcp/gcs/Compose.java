@@ -10,13 +10,12 @@ import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
 import java.io.FileNotFoundException;
 import java.net.URI;
 import javax.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.slf4j.Logger;
 
 @SuperBuilder
 @ToString
@@ -24,37 +23,27 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Concat files in a bucket",
-            code = {
-                "list: ",
-                "  from: \"gs://my_bucket/dir/\"",
-                "to: \"gs://my_bucket/destination/my-compose-file.txt\""
-            }
-        )
-    }
-)
-@Schema(
-    title = "List file on a GCS bucket."
-)
+        examples = {
+            @Example(
+                    title = "Concat files in a bucket",
+                    code = {
+                        "list: ",
+                        "  from: \"gs://my_bucket/dir/\"",
+                        "to: \"gs://my_bucket/destination/my-compose-file.txt\""
+                    })
+        })
+@Schema(title = "List file on a GCS bucket.")
 public class Compose extends AbstractGcs implements RunnableTask<Compose.Output> {
-    @Schema(
-        title = "The directory to list"
-    )
+    @Schema(title = "The directory to list")
     @PluginProperty(dynamic = true)
     @NotNull
     private List list;
 
-    @Schema(
-        title = "The destination path"
-    )
+    @Schema(title = "The destination path")
     @PluginProperty(dynamic = true)
     private String to;
 
-    @Schema(
-        title = "if `true`, don't failed if no result"
-    )
+    @Schema(title = "if `true`, don't failed if no result")
     @PluginProperty(dynamic = false)
     @Builder.Default
     private Boolean allowEmpty = false;
@@ -67,24 +56,30 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
         URI to = encode(runContext, this.to);
 
         // target
-        BlobInfo destination = BlobInfo
-            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1))))
-            .build();
+        BlobInfo destination =
+                BlobInfo.newBuilder(
+                                BlobId.of(
+                                        to.getScheme().equals("gs")
+                                                ? to.getAuthority()
+                                                : to.getScheme(),
+                                        blobPath(to.getPath().substring(1))))
+                        .build();
 
-        Storage.ComposeRequest.Builder builder = Storage.ComposeRequest.newBuilder()
-            .setTarget(destination);
+        Storage.ComposeRequest.Builder builder =
+                Storage.ComposeRequest.newBuilder().setTarget(destination);
 
-        io.kestra.plugin.gcp.gcs.List listActions = io.kestra.plugin.gcp.gcs.List.builder()
-            .id(this.id)
-            .type(io.kestra.plugin.gcp.gcs.List.class.getName())
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .scopes(this.scopes)
-            .from(this.list.getFrom())
-            .filter(ListInterface.Filter.FILES)
-            .listingType(this.list.getListingType())
-            .regExp(this.list.getRegExp())
-            .build();
+        io.kestra.plugin.gcp.gcs.List listActions =
+                io.kestra.plugin.gcp.gcs.List.builder()
+                        .id(this.id)
+                        .type(io.kestra.plugin.gcp.gcs.List.class.getName())
+                        .projectId(this.projectId)
+                        .serviceAccount(this.serviceAccount)
+                        .scopes(this.scopes)
+                        .from(this.list.getFrom())
+                        .filter(ListInterface.Filter.FILES)
+                        .listingType(this.list.getListingType())
+                        .regExp(this.list.getRegExp())
+                        .build();
 
         io.kestra.plugin.gcp.gcs.List.Output run = listActions.run(runContext);
 
@@ -92,8 +87,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
             throw new FileNotFoundException("No files founds");
         }
 
-        run.getBlobs()
-            .forEach(blob -> builder.addSource(blob.getUri().getPath().substring(1)));
+        run.getBlobs().forEach(blob -> builder.addSource(blob.getUri().getPath().substring(1)));
 
         Storage.ComposeRequest composeRequest = builder.build();
 
@@ -104,10 +98,9 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
         runContext.metric(Counter.of("count", run.getBlobs().size()));
         runContext.metric(Counter.of("size", compose.getSize()));
 
-        return Output
-            .builder()
-            .uri(new URI("gs://" + compose.getBucket() + "/" + encode(destination.getName())))
-            .build();
+        return Output.builder()
+                .uri(new URI("gs://" + compose.getBucket() + "/" + encode(destination.getName())))
+                .build();
     }
 
     @Builder
@@ -119,14 +112,14 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     @Builder
     @Getter
     public static class List implements ListInterface {
-        @NotNull
-        private String from;
+        @NotNull private String from;
 
         @Builder.Default
         private final io.kestra.plugin.gcp.gcs.List.Filter filter = ListInterface.Filter.BOTH;
 
         @Builder.Default
-        private final io.kestra.plugin.gcp.gcs.List.ListingType listingType = ListInterface.ListingType.DIRECTORY;
+        private final io.kestra.plugin.gcp.gcs.List.ListingType listingType =
+                ListInterface.ListingType.DIRECTORY;
 
         private String regExp;
     }

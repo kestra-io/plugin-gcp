@@ -1,30 +1,27 @@
 package io.kestra.plugin.gcp.gcs;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.junit.jupiter.api.Test;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
-
+import io.micronaut.context.annotation.Value;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import org.junit.jupiter.api.Test;
 
 @MicronautTest
 class DownloadsTest {
-    @Inject
-    private RunContextFactory runContextFactory;
+    @Inject private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.gcs.bucket}")
     private String bucket;
 
-    @Inject
-    private GcsTestUtils testUtils;
+    @Inject private GcsTestUtils testUtils;
 
     @Value("${kestra.variables.globals.random}")
     private String random;
@@ -36,12 +33,13 @@ class DownloadsTest {
         String out2 = FriendlyId.createFriendlyId();
         testUtils.upload(random + "/" + out2);
 
-        Downloads task = Downloads.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Downloads.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
-            .action(ActionInterface.Action.DELETE)
-            .build();
+        Downloads task =
+                Downloads.builder()
+                        .id(DownloadTest.class.getSimpleName())
+                        .type(Downloads.class.getName())
+                        .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
+                        .action(ActionInterface.Action.DELETE)
+                        .build();
 
         Downloads.Output run = task.run(runContext(task));
 
@@ -50,11 +48,6 @@ class DownloadsTest {
 
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
-            this.runContextFactory,
-            task,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
-        );
+                this.runContextFactory, task, ImmutableMap.of("bucket", this.bucket));
     }
 }

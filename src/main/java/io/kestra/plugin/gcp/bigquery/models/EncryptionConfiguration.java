@@ -12,25 +12,25 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 public class EncryptionConfiguration {
-    @Schema(
-        name = "the Kms key name"
-    )
+    @Schema(name = "the Kms key name")
     @PluginProperty(dynamic = true)
     private final String kmsKeyName;
 
-    public static EncryptionConfiguration of(com.google.cloud.bigquery.EncryptionConfiguration encryptionConfiguration) {
+    public static EncryptionConfiguration of(
+            com.google.cloud.bigquery.EncryptionConfiguration encryptionConfiguration) {
         if (encryptionConfiguration == null) {
             return null;
         }
 
         return EncryptionConfiguration.builder()
-            .kmsKeyName(encryptionConfiguration.getKmsKeyName())
-            .build();
+                .kmsKeyName(encryptionConfiguration.getKmsKeyName())
+                .build();
     }
 
-    public com.google.cloud.bigquery.EncryptionConfiguration to(RunContext runContext) throws IllegalVariableEvaluationException {
+    public com.google.cloud.bigquery.EncryptionConfiguration to(RunContext runContext)
+            throws IllegalVariableEvaluationException {
         return com.google.cloud.bigquery.EncryptionConfiguration.newBuilder()
-            .setKmsKeyName(runContext.render(this.kmsKeyName))
-            .build();
+                .setKmsKeyName(runContext.render(this.kmsKeyName))
+                .build();
     }
 }

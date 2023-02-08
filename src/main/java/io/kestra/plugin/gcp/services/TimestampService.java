@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.services;
 
 import com.google.protobuf.Timestamp;
-
 import java.time.Instant;
 
 public abstract class TimestampService {

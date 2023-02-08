@@ -1,11 +1,10 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.JobInfo;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.time.Duration;
 import java.util.Map;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -23,6 +22,5 @@ public abstract class AbstractJob extends AbstractBigquery implements AbstractJo
 
     protected Map<String, String> labels;
 
-    @Builder.Default
-    protected Boolean dryRun = false;
+    @Builder.Default protected Boolean dryRun = false;
 }

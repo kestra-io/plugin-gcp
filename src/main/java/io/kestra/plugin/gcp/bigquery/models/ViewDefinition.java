@@ -1,17 +1,16 @@
 package io.kestra.plugin.gcp.bigquery.models;
 
+import static io.kestra.core.utils.Rethrow.throwFunction;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @Getter
 @Builder
@@ -26,24 +25,29 @@ public class ViewDefinition {
 
     public static ViewDefinition of(com.google.cloud.bigquery.ViewDefinition viewDefinition) {
         return ViewDefinition.builder()
-            .viewUserDefinedFunctions(viewDefinition.getUserDefinedFunctions() == null ? null : viewDefinition.getUserDefinedFunctions()
-                .stream()
-                .map(UserDefinedFunction::of)
-                .collect(Collectors.toList())
-            )
-            .query(viewDefinition.getQuery())
-            .build();
+                .viewUserDefinedFunctions(
+                        viewDefinition.getUserDefinedFunctions() == null
+                                ? null
+                                : viewDefinition.getUserDefinedFunctions().stream()
+                                        .map(UserDefinedFunction::of)
+                                        .collect(Collectors.toList()))
+                .query(viewDefinition.getQuery())
+                .build();
     }
 
-    public com.google.cloud.bigquery.ViewDefinition to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.bigquery.ViewDefinition.Builder builder = com.google.cloud.bigquery.ViewDefinition.newBuilder(runContext.render(this.query));
+    public com.google.cloud.bigquery.ViewDefinition to(RunContext runContext)
+            throws IllegalVariableEvaluationException {
+        com.google.cloud.bigquery.ViewDefinition.Builder builder =
+                com.google.cloud.bigquery.ViewDefinition.newBuilder(runContext.render(this.query));
 
         if (this.viewUserDefinedFunctions != null) {
-            builder.setUserDefinedFunctions(viewUserDefinedFunctions
-                .stream()
-                .map(throwFunction(userDefinedFunction -> userDefinedFunction.to(runContext)))
-                .collect(Collectors.toList())
-            );
+            builder.setUserDefinedFunctions(
+                    viewUserDefinedFunctions.stream()
+                            .map(
+                                    throwFunction(
+                                            userDefinedFunction ->
+                                                    userDefinedFunction.to(runContext)))
+                            .collect(Collectors.toList()));
         }
 
         return builder.build();

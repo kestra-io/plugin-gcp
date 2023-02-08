@@ -1,5 +1,9 @@
 package io.kestra.plugin.gcp.gcs;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Acl;
 import com.google.cloud.storage.Bucket;
@@ -8,11 +12,16 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.gcp.gcs.models.AccessControl;
 import io.kestra.plugin.gcp.gcs.models.BucketLifecycleRule;
 import io.kestra.plugin.gcp.gcs.models.Entity;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import jakarta.inject.Inject;
+import java.util.Collections;
+import java.util.stream.Collectors;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -20,16 +29,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-
-import jakarta.inject.Inject;
-import java.util.Collections;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -37,8 +36,7 @@ class BucketTest {
     private static final String RANDOM_ID = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
     private static final String RANDOM_ID_2 = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
 
-    @Inject
-    private RunContextFactory runContextFactory;
+    @Inject private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.gcs.project}")
     private String project;
@@ -48,18 +46,15 @@ class BucketTest {
     }
 
     private RunContext runContext(String bucketId) {
-        return runContextFactory.of(ImmutableMap.of(
-            "project", this.project,
-            "bucket", bucketId
-        ));
+        return runContextFactory.of(ImmutableMap.of("project", this.project, "bucket", bucketId));
     }
 
     private CreateBucket.CreateBucketBuilder<?, ?> createBuilder() {
         return CreateBucket.builder()
-            .id(BucketTest.class.getSimpleName())
-            .type(CreateBucket.class.getName())
-            .name("{{bucket}}")
-            .projectId("{{project}}");
+                .id(BucketTest.class.getSimpleName())
+                .type(CreateBucket.class.getName())
+                .name("{{bucket}}")
+                .projectId("{{project}}");
     }
 
     @Test
@@ -76,18 +71,21 @@ class BucketTest {
     void createException() {
         CreateBucket task = createBuilder().build();
 
-        assertThrows(RuntimeException.class, () -> {
-            task.run(runContext());
-        });
+        assertThrows(
+                RuntimeException.class,
+                () -> {
+                    task.run(runContext());
+                });
     }
 
     @Test
     @Order(3)
     void createNoException() throws Exception {
-        CreateBucket task = createBuilder()
-            .indexPage("createUpdate")
-            .ifExists(CreateBucket.IfExists.SKIP)
-            .build();
+        CreateBucket task =
+                createBuilder()
+                        .indexPage("createUpdate")
+                        .ifExists(CreateBucket.IfExists.SKIP)
+                        .build();
 
         AbstractBucket.Output run = task.run(runContext());
 
@@ -97,10 +95,11 @@ class BucketTest {
     @Test
     @Order(4)
     void createUpdate() throws Exception {
-        CreateBucket task = createBuilder()
-            .indexPage("createUpdate")
-            .ifExists(CreateBucket.IfExists.UPDATE)
-            .build();
+        CreateBucket task =
+                createBuilder()
+                        .indexPage("createUpdate")
+                        .ifExists(CreateBucket.IfExists.UPDATE)
+                        .build();
 
         AbstractBucket.Output run = task.run(runContext());
 
@@ -111,13 +110,14 @@ class BucketTest {
     @Test
     @Order(5)
     void update() throws Exception {
-        UpdateBucket task = UpdateBucket.builder()
-            .id(UpdateBucket.class.getSimpleName())
-            .type(CreateBucket.class.getName())
-            .name("{{bucket}}")
-            .projectId("{{project}}")
-            .indexPage("update")
-            .build();
+        UpdateBucket task =
+                UpdateBucket.builder()
+                        .id(UpdateBucket.class.getSimpleName())
+                        .type(CreateBucket.class.getName())
+                        .name("{{bucket}}")
+                        .projectId("{{project}}")
+                        .indexPage("update")
+                        .build();
 
         AbstractBucket.Output run = task.run(runContext());
 
@@ -128,18 +128,22 @@ class BucketTest {
     @Test
     @Order(6)
     void acl() throws Exception {
-        CreateBucket task = createBuilder()
-            .indexPage("createUpdate")
-            .acl(Collections.singletonList(
-                AccessControl.builder()
-                    .entity(Entity.builder()
-                        .type(Entity.Type.USER)
-                        .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build())
-                    .role(AccessControl.Role.OWNER)
-                    .build()
-            ))
-            .ifExists(CreateBucket.IfExists.UPDATE)
-            .build();
+        CreateBucket task =
+                createBuilder()
+                        .indexPage("createUpdate")
+                        .acl(
+                                Collections.singletonList(
+                                        AccessControl.builder()
+                                                .entity(
+                                                        Entity.builder()
+                                                                .type(Entity.Type.USER)
+                                                                .value(
+                                                                        "kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com")
+                                                                .build())
+                                                .role(AccessControl.Role.OWNER)
+                                                .build()))
+                        .ifExists(CreateBucket.IfExists.UPDATE)
+                        .build();
 
         RunContext rc = runContext(RANDOM_ID_2);
 
@@ -153,28 +157,38 @@ class BucketTest {
 
         assertThat(null, not(bucket));
 
-        assertThat(bucket.getAcl(), hasItems(
-            matchingAcl(Acl.of(new Acl.User("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"), Acl.Role.OWNER))
-        ));
+        assertThat(
+                bucket.getAcl(),
+                hasItems(
+                        matchingAcl(
+                                Acl.of(
+                                        new Acl.User(
+                                                "kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"),
+                                        Acl.Role.OWNER))));
     }
 
     @Test
     @Order(7)
     void iamPolicy() throws Exception {
-        CreateBucketIamPolicy.CreateBucketIamPolicyBuilder<?, ?> builder = CreateBucketIamPolicy.builder()
-            .id(UpdateBucket.class.getSimpleName())
-            .type(CreateBucket.class.getName())
-            .name("{{bucket}}")
-            .projectId("{{project}}")
-            .member("domain:kestra.io")
-            .role("roles/storage.objectViewer");
+        CreateBucketIamPolicy.CreateBucketIamPolicyBuilder<?, ?> builder =
+                CreateBucketIamPolicy.builder()
+                        .id(UpdateBucket.class.getSimpleName())
+                        .type(CreateBucket.class.getName())
+                        .name("{{bucket}}")
+                        .projectId("{{project}}")
+                        .member("domain:kestra.io")
+                        .role("roles/storage.objectViewer");
 
         CreateBucketIamPolicy.Output run = builder.build().run(runContext());
         assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
 
-        assertThrows(Exception.class, () -> {
-            builder.ifExists(CreateBucketIamPolicy.IfExists.ERROR).build().run(runContext());
-        });
+        assertThrows(
+                Exception.class,
+                () -> {
+                    builder.ifExists(CreateBucketIamPolicy.IfExists.ERROR)
+                            .build()
+                            .run(runContext());
+                });
 
         run = builder.ifExists(CreateBucketIamPolicy.IfExists.SKIP).build().run(runContext());
         assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
@@ -185,35 +199,36 @@ class BucketTest {
     void delete() throws Exception {
         RunContext runContext = runContext();
 
-        DeleteBucket task = DeleteBucket.builder()
-            .id(BucketTest.class.getSimpleName())
-            .type(DeleteBucket.class.getName())
-            .name("{{bucket}}")
-            .projectId("{{project}}")
-            .build();
+        DeleteBucket task =
+                DeleteBucket.builder()
+                        .id(BucketTest.class.getSimpleName())
+                        .type(DeleteBucket.class.getName())
+                        .name("{{bucket}}")
+                        .projectId("{{project}}")
+                        .build();
 
         DeleteBucket.Output run = task.run(runContext);
         assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
 
         runContext = runContext(RANDOM_ID_2);
 
-        task = DeleteBucket.builder()
-            .id(BucketTest.class.getSimpleName())
-            .type(DeleteBucket.class.getName())
-            .name("{{bucket}}")
-            .projectId("{{project}}")
-            .build();
+        task =
+                DeleteBucket.builder()
+                        .id(BucketTest.class.getSimpleName())
+                        .type(DeleteBucket.class.getName())
+                        .name("{{bucket}}")
+                        .projectId("{{project}}")
+                        .build();
 
         run = task.run(runContext);
         assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
     }
 
     @SuppressWarnings("unchecked")
-    private void createBucketWithLifecycleRule(RunContext rc, java.util.List<BucketLifecycleRule> rules) throws Exception {
-        CreateBucket task = createBuilder()
-            .lifecycleRules(rules)
-            .ifExists(CreateBucket.IfExists.ERROR)
-            .build();
+    private void createBucketWithLifecycleRule(
+            RunContext rc, java.util.List<BucketLifecycleRule> rules) throws Exception {
+        CreateBucket task =
+                createBuilder().lifecycleRules(rules).ifExists(CreateBucket.IfExists.ERROR).build();
 
         AbstractBucket.Output run = task.run(rc);
 
@@ -227,17 +242,14 @@ class BucketTest {
         assertThat(bucket.getLifecycleRules(), notNullValue());
         assertThat(bucket.getLifecycleRules().size(), is(rules.size()));
 
-        java.util.List<Matcher<LifecycleRule>> matchers = task
-            .getLifecycleRules()
-            .stream()
-            .map(rule -> matchingLifecycleRuleOnTypeAndAge(rule.convert()))
-            .collect(Collectors.toList());
+        java.util.List<Matcher<LifecycleRule>> matchers =
+                task.getLifecycleRules().stream()
+                        .map(rule -> matchingLifecycleRuleOnTypeAndAge(rule.convert()))
+                        .collect(Collectors.toList());
 
         assertThat(matchers.size(), is(rules.size()));
 
-        assertThat(bucket.getLifecycleRules(), hasItems(
-            matchers.toArray(new Matcher[0])
-        ));
+        assertThat(bucket.getLifecycleRules(), hasItems(matchers.toArray(new Matcher[0])));
 
         // Delete bucket
         connection.delete(run.getBucket().getName());
@@ -250,16 +262,17 @@ class BucketTest {
 
         RunContext rc = runContext(bucketId);
         createBucketWithLifecycleRule(
-            rc,
-            Collections.singletonList(
-                BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(1).build())
-                    .action(BucketLifecycleRule.Action.builder()
-                        .type(BucketLifecycleRule.Action.Type.DELETE)
-                        .build())
-                    .build()
-            ));
+                rc,
+                Collections.singletonList(
+                        BucketLifecycleRule.builder()
+                                .condition(BucketLifecycleRule.Condition.builder().age(1).build())
+                                .action(
+                                        BucketLifecycleRule.Action.builder()
+                                                .type(BucketLifecycleRule.Action.Type.DELETE)
+                                                .build())
+                                .build()));
     }
+
     @Test
     @Order(10)
     void createBucketWithSetStorageClassLifecycleRule() throws Exception {
@@ -267,39 +280,54 @@ class BucketTest {
 
         RunContext rc = runContext(bucketId);
         createBucketWithLifecycleRule(
-            rc,
-            ImmutableList.of(
-                BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(30).build())
-                    .action(BucketLifecycleRule.Action.builder()
-                        .type(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
-                        .value(io.kestra.plugin.gcp.gcs.models.StorageClass.NEARLINE.name())
-                        .build())
-                    .build(),
-
-                BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(60).build())
-                    .action(BucketLifecycleRule.Action.builder()
-                        .type(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
-                        .value(io.kestra.plugin.gcp.gcs.models.StorageClass.COLDLINE.name())
-                        .build())
-                    .build(),
-
-                BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(90).build())
-                    .action(BucketLifecycleRule.Action.builder()
-                        .type(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS)
-                        .value(io.kestra.plugin.gcp.gcs.models.StorageClass.ARCHIVE.name())
-                        .build())
-                    .build(),
-
-                BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(1).build())
-                    .action(BucketLifecycleRule.Action.builder()
-                        .type(BucketLifecycleRule.Action.Type.DELETE)
-                        .build())
-                    .build()
-            ));
+                rc,
+                ImmutableList.of(
+                        BucketLifecycleRule.builder()
+                                .condition(BucketLifecycleRule.Condition.builder().age(30).build())
+                                .action(
+                                        BucketLifecycleRule.Action.builder()
+                                                .type(
+                                                        BucketLifecycleRule.Action.Type
+                                                                .SET_STORAGE_CLASS)
+                                                .value(
+                                                        io.kestra.plugin.gcp.gcs.models.StorageClass
+                                                                .NEARLINE
+                                                                .name())
+                                                .build())
+                                .build(),
+                        BucketLifecycleRule.builder()
+                                .condition(BucketLifecycleRule.Condition.builder().age(60).build())
+                                .action(
+                                        BucketLifecycleRule.Action.builder()
+                                                .type(
+                                                        BucketLifecycleRule.Action.Type
+                                                                .SET_STORAGE_CLASS)
+                                                .value(
+                                                        io.kestra.plugin.gcp.gcs.models.StorageClass
+                                                                .COLDLINE
+                                                                .name())
+                                                .build())
+                                .build(),
+                        BucketLifecycleRule.builder()
+                                .condition(BucketLifecycleRule.Condition.builder().age(90).build())
+                                .action(
+                                        BucketLifecycleRule.Action.builder()
+                                                .type(
+                                                        BucketLifecycleRule.Action.Type
+                                                                .SET_STORAGE_CLASS)
+                                                .value(
+                                                        io.kestra.plugin.gcp.gcs.models.StorageClass
+                                                                .ARCHIVE
+                                                                .name())
+                                                .build())
+                                .build(),
+                        BucketLifecycleRule.builder()
+                                .condition(BucketLifecycleRule.Condition.builder().age(1).build())
+                                .action(
+                                        BucketLifecycleRule.Action.builder()
+                                                .type(BucketLifecycleRule.Action.Type.DELETE)
+                                                .build())
+                                .build()));
     }
 
     // Custom match for Acl
@@ -313,7 +341,7 @@ class BucketTest {
             @Override
             protected boolean matchesSafely(Acl actual) {
                 return actual.getEntity().equals(expected.getEntity())
-                    && actual.getRole().equals(expected.getRole());
+                        && actual.getRole().equals(expected.getRole());
             }
         };
     }
@@ -328,21 +356,30 @@ class BucketTest {
 
             @Override
             protected boolean matchesSafely(LifecycleRule actual) {
-                return actual.getAction().getActionType().equals(expected.getAction().getActionType())
-                    && actual.getCondition().getAge().equals(expected.getCondition().getAge())
-                    && checkSetStorageRule(actual);
+                return actual.getAction()
+                                .getActionType()
+                                .equals(expected.getAction().getActionType())
+                        && actual.getCondition().getAge().equals(expected.getCondition().getAge())
+                        && checkSetStorageRule(actual);
             }
 
             protected boolean checkSetStorageRule(LifecycleRule actual) {
-                // If this is a set storage rule, we want to ensure that storage class value is the same
-                if (!LifecycleRule.SetStorageClassLifecycleAction.TYPE.equals(actual.getAction().getActionType())) {
+                // If this is a set storage rule, we want to ensure that storage class value is the
+                // same
+                if (!LifecycleRule.SetStorageClassLifecycleAction.TYPE.equals(
+                        actual.getAction().getActionType())) {
                     return true;
                 }
 
-                StorageClass actualStorageClass = ((LifecycleRule.SetStorageClassLifecycleAction) actual.getAction()).getStorageClass();
-                StorageClass expectedStorageClass = ((LifecycleRule.SetStorageClassLifecycleAction) expected.getAction()).getStorageClass();
+                StorageClass actualStorageClass =
+                        ((LifecycleRule.SetStorageClassLifecycleAction) actual.getAction())
+                                .getStorageClass();
+                StorageClass expectedStorageClass =
+                        ((LifecycleRule.SetStorageClassLifecycleAction) expected.getAction())
+                                .getStorageClass();
 
-                return actualStorageClass != null && actualStorageClass.equals(expectedStorageClass);
+                return actualStorageClass != null
+                        && actualStorageClass.equals(expectedStorageClass);
             }
         };
     }

@@ -1,21 +1,19 @@
 package io.kestra.plugin.gcp.firestore;
 
-import io.kestra.core.runners.RunContextFactory;
-import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+import io.kestra.core.runners.RunContextFactory;
+import io.micronaut.context.annotation.Value;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import jakarta.inject.Inject;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+
 @MicronautTest
 class DeleteTest {
-    @Inject
-    private RunContextFactory runContextFactory;
+    @Inject private RunContextFactory runContextFactory;
 
     @Value("${kestra.tasks.firestore.project}")
     private String project;
@@ -24,16 +22,16 @@ class DeleteTest {
     void run() throws Exception {
         var runContext = runContextFactory.of();
 
-        var delete = Delete.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("1")
-            .build();
+        var delete =
+                Delete.builder().projectId(project).collection("persons").childPath("1").build();
 
         // create something to delete
         try (var firestore = delete.connection(runContext)) {
-            firestore.collection("persons")
-                .document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            firestore
+                    .collection("persons")
+                    .document("1")
+                    .set(Map.of("firstname", "John", "lastname", "Doe"))
+                    .get();
         }
 
         var output = delete.run(runContext);
