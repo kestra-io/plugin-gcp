@@ -118,7 +118,10 @@ dependencies {
 // validate code formatting with Spotless
 spotless {
     java {
-        importOrderFile("eclipse-kestra.importorder")
+//        importOrder("", "\\#")
+        // you can use spotless:off / spotless:on anywhere to disable spotless on block of code
+        toggleOffOn()
+        // unused imports are removed
         removeUnusedImports()
         // we use our own config file that is based on Google Code Style with a few customization
         eclipse().configFile("eclipse-java-kestra-style.xml")
