@@ -26,29 +26,14 @@ import java.nio.file.Path;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "from: \"{{ inputs.file }}\"",
-                "to: \"gs://my_bucket/dir/file.csv\""
-            }
-        )
-    }
-)
-@Schema(
-    title = "Upload a file to a GCS bucket."
-)
+@Plugin(examples = {@Example(code = {"from: \"{{ inputs.file }}\"", "to: \"gs://my_bucket/dir/file.csv\""})})
+@Schema(title = "Upload a file to a GCS bucket.")
 public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
-    @Schema(
-        title = "The file to copy"
-    )
+    @Schema(title = "The file to copy")
     @PluginProperty(dynamic = true)
     private String from;
 
-    @Schema(
-        title = "The destination path"
-    )
+    @Schema(title = "The destination path")
     @PluginProperty(dynamic = true)
     private String to;
 
@@ -60,9 +45,9 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
         URI from = encode(runContext, this.from);
         URI to = encode(runContext, this.to);
 
-        BlobInfo destination = BlobInfo
-            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1))))
-            .build();
+        BlobInfo destination =
+                BlobInfo.newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(),
+                        blobPath(to.getPath().substring(1)))).build();
 
         logger.debug("Upload from '{}' to '{}'", from, to);
 
@@ -80,10 +65,8 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
 
             runContext.metric(Counter.of("file.size", size));
 
-            return Output
-                .builder()
-                .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
-                .build();
+            return Output.builder()
+                    .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName()))).build();
         }
     }
 

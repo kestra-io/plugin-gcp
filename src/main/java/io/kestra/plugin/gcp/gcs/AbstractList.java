@@ -31,9 +31,7 @@ public abstract class AbstractList extends AbstractGcs implements ListInterface 
     @NotNull
     protected String from;
 
-    @Schema(
-        title = "If set to `true`, lists all versions of a blob. The default is `false`."
-    )
+    @Schema(title = "If set to `true`, lists all versions of a blob. The default is `false`.")
     @PluginProperty(dynamic = true)
     private Boolean allVersions;
 

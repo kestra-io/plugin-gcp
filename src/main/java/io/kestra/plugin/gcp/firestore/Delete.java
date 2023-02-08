@@ -17,24 +17,10 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Delete a document from a collection."
-)
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "collection: \"persons\"",
-                "childPath: \"1\""
-            }
-        )
-    }
-)
+@Schema(title = "Delete a document from a collection.")
+@Plugin(examples = {@Example(code = {"collection: \"persons\"", "childPath: \"1\""})})
 public class Delete extends AbstractFirestore implements RunnableTask<Delete.Output> {
-    @Schema(
-        title = "The Firestore document child path.",
-        description = "The Firestore document child path."
-    )
+    @Schema(title = "The Firestore document child path.", description = "The Firestore document child path.")
     @PluginProperty(dynamic = true)
     @NotNull
     private String childPath;
@@ -55,9 +41,7 @@ public class Delete extends AbstractFirestore implements RunnableTask<Delete.Out
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The document updated time."
-        )
+        @Schema(title = "The document updated time.")
         private Instant updatedTime;
     }
 }

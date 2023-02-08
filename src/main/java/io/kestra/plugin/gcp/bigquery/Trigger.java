@@ -26,46 +26,26 @@ import java.util.Optional;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Wait for query on BigQuery"
-)
-@Plugin(
-    examples = {
-        @Example(
-            title = "Wait for a sql query to return results and iterate through rows",
-            full = true,
-            code = {
-                "id: bigquery-listen",
-                "namespace: io.kestra.tests",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.core.tasks.flows.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json taskrun.value}}\"",
-                "    value: \"{{ trigger.rows }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.gcp.bigquery.Trigger",
-                "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\""
-            }
-        )
-    }
-)
+@Schema(title = "Wait for query on BigQuery")
+@Plugin(examples = {@Example(title = "Wait for a sql query to return results and iterate through rows", full = true,
+        code = {"id: bigquery-listen", "namespace: io.kestra.tests", "", "tasks:", "  - id: each",
+                "    type: io.kestra.core.tasks.flows.EachSequential", "    tasks:", "      - id: return",
+                "        type: io.kestra.core.tasks.debugs.Return", "        format: \"{{json taskrun.value}}\"",
+                "    value: \"{{ trigger.rows }}\"", "", "triggers:", "  - id: watch",
+                "    type: io.kestra.plugin.gcp.bigquery.Trigger", "    interval: \"PT5M\"",
+                "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\""})})
 @StoreFetchValidation
 @StoreFetchDestinationValidation
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Query.Output>, QueryInterface {
+public class Trigger extends AbstractTrigger
+        implements PollingTriggerInterface, TriggerOutput<Query.Output>, QueryInterface {
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
     protected String projectId;
     protected String serviceAccount;
     @Builder.Default
-    protected java.util.List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+    protected java.util.List<String> scopes =
+            Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
     private String sql;
 
@@ -86,18 +66,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         RunContext runContext = conditionContext.getRunContext();
         Logger logger = runContext.logger();
 
-        Query task = Query.builder()
-            .id(this.id)
-            .type(Query.class.getName())
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .scopes(this.scopes)
-            .sql(this.sql)
-            .legacySql(this.legacySql)
-            .fetch(this.fetch)
-            .store(this.store)
-            .fetchOne(this.fetchOne)
-            .build();
+        Query task = Query.builder().id(this.id).type(Query.class.getName()).projectId(this.projectId)
+                .serviceAccount(this.serviceAccount).scopes(this.scopes).sql(this.sql).legacySql(this.legacySql)
+                .fetch(this.fetch).store(this.store).fetchOne(this.fetchOne).build();
         Query.Output run = task.run(runContext);
 
         logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql));
@@ -108,19 +79,11 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
         String executionId = IdUtils.create();
 
-        ExecutionTrigger executionTrigger = ExecutionTrigger.of(
-            this,
-            run
-        );
+        ExecutionTrigger executionTrigger = ExecutionTrigger.of(this, run);
 
-        Execution execution = Execution.builder()
-            .id(executionId)
-            .namespace(context.getNamespace())
-            .flowId(context.getFlowId())
-            .flowRevision(context.getFlowRevision())
-            .state(new State())
-            .trigger(executionTrigger)
-            .build();
+        Execution execution =
+                Execution.builder().id(executionId).namespace(context.getNamespace()).flowId(context.getFlowId())
+                        .flowRevision(context.getFlowRevision()).state(new State()).trigger(executionTrigger).build();
 
         return Optional.of(execution);
     }

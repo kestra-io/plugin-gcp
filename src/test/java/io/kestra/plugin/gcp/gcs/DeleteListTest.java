@@ -39,12 +39,8 @@ class DeleteListTest {
             ListTest.upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
         }
 
-        DeleteList task = DeleteList.builder()
-            .id(DeleteList.class.getSimpleName())
-            .type(DeleteList.class.getName())
-            .concurrent(8)
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .build();
+        DeleteList task = DeleteList.builder().id(DeleteList.class.getSimpleName()).type(DeleteList.class.getName())
+                .concurrent(8).from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/").build();
         DeleteList.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
 
         assertThat(run.getCount(), is(10L));

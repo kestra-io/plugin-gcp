@@ -41,83 +41,58 @@ class ListTest {
         upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub");
 
         // directory listing
-        List task = task()
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .build();
+        List task = task().from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/").build();
         List.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(11));
         assertThat(run.getBlobs().stream().filter(Blob::isDirectory).count(), is(1l));
 
         // only dir
-        task = task()
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(ListInterface.Filter.DIRECTORY)
-            .listingType(ListInterface.ListingType.DIRECTORY)
-            .build();
+        task = task().from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/").filter(ListInterface.Filter.DIRECTORY)
+                .listingType(ListInterface.ListingType.DIRECTORY).build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(1));
         assertThat(run.getBlobs().get(0).isDirectory(), is(true));
 
         // files only
-        task = task()
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(ListInterface.Filter.FILES)
-            .build();
+        task = task().from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/").filter(ListInterface.Filter.FILES)
+                .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(10));
 
         // recursive
-        task = task()
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .listingType(ListInterface.ListingType.RECURSIVE)
-            .build();
+        task = task().from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
+                .listingType(ListInterface.ListingType.RECURSIVE).build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(11));
         run.getBlobs().forEach(blob -> assertThat(blob.isDirectory(), is(false)));
 
         // regexp
-        task = task()
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(ListInterface.Filter.FILES)
-            .listingType(ListInterface.ListingType.DIRECTORY)
-            .regExp(".*\\/" + dir + "\\/.*")
-            .build();
+        task = task().from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/").filter(ListInterface.Filter.FILES)
+                .listingType(ListInterface.ListingType.DIRECTORY).regExp(".*\\/" + dir + "\\/.*").build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(10));
 
         // regexp on file
-        task = task()
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .filter(ListInterface.Filter.FILES)
-            .listingType(ListInterface.ListingType.DIRECTORY)
-            .regExp(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)")
-            .build();
+        task = task().from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/").filter(ListInterface.Filter.FILES)
+                .listingType(ListInterface.ListingType.DIRECTORY)
+                .regExp(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)").build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(1));
     }
 
     private static List.ListBuilder<?, ?> task() {
-        return List.builder()
-            .id(ListTest.class.getSimpleName())
-            .type(List.class.getName());
+        return List.builder().id(ListTest.class.getSimpleName()).type(List.class.getName());
     }
 
-    static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
-        URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(ListTest.class.getClassLoader()
-                .getResource("application.yml"))
-                .toURI()))
-        );
+    static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory,
+            String dir) throws Exception {
+        URI source = storageInterface.put(new URI("/" + FriendlyId.createFriendlyId()), new FileInputStream(new File(
+                Objects.requireNonNull(ListTest.class.getClassLoader().getResource("application.yml")).toURI())));
 
         String out = FriendlyId.createFriendlyId();
 
-        Upload task = Upload.builder()
-            .id(ListTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://" + bucket +  dir + "/" + out + " (1).yml")
-            .build();
+        Upload task = Upload.builder().id(ListTest.class.getSimpleName()).type(Upload.class.getName())
+                .from(source.toString()).to("gs://" + bucket + dir + "/" + out + " (1).yml").build();
 
         task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 

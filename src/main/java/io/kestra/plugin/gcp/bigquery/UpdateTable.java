@@ -20,21 +20,9 @@ import java.util.Objects;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Update table metadata"
-)
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "expirationDuration: PT2D"
-            }
-        )
-    }
-)
+@Schema(title = "Update table metadata")
+@Plugin(examples = {@Example(
+        code = {"projectId: my-project", "dataset: my-dataset", "table: my-table", "expirationDuration: PT2D"})})
 public class UpdateTable extends AbstractTableCreateUpdate implements RunnableTask<AbstractTable.Output> {
     @Override
     public Output run(RunContext runContext) throws Exception {

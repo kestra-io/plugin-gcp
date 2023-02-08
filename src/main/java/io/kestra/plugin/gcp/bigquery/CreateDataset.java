@@ -19,26 +19,12 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Create a dataset or update if it already exists."
-)
-@Plugin(
-    examples = {
-        @Example(
-            title = "Create a dataset if not exits",
-            code = {
-                "name: \"my_dataset\"",
-                "location: \"EU\"",
-                "ifExists: \"SKIP\""
-            }
-        )
-    }
-)
+@Schema(title = "Create a dataset or update if it already exists.")
+@Plugin(examples = {@Example(title = "Create a dataset if not exits",
+        code = {"name: \"my_dataset\"", "location: \"EU\"", "ifExists: \"SKIP\""})})
 public class CreateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Builder.Default
-    @Schema(
-        title = "Policy to apply if a dataset already exists."
-    )
+    @Schema(title = "Policy to apply if a dataset already exists.")
     private final IfExists ifExists = IfExists.ERROR;
 
     @Override
@@ -54,7 +40,8 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
         return AbstractDataset.Output.of(dataset);
     }
 
-    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo) throws IllegalVariableEvaluationException {
+    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo)
+            throws IllegalVariableEvaluationException {
         Dataset dataset;
         try {
             dataset = connection.create(datasetInfo);
@@ -77,8 +64,6 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
     }
 
     public enum IfExists {
-        ERROR,
-        UPDATE,
-        SKIP
+        ERROR, UPDATE, SKIP
     }
 }

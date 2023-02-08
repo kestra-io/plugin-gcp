@@ -15,29 +15,21 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Fetch an OAuth access token."
-)
+@Schema(title = "Fetch an OAuth access token.")
 public class OauthAccessToken extends AbstractTask implements RunnableTask<OauthAccessToken.Output> {
     @Override
     public Output run(RunContext runContext) throws Exception {
-        AccessToken accessToken = this.credentials(runContext)
-            .createScoped(runContext.render(this.scopes))
-            .refreshAccessToken();
+        AccessToken accessToken =
+                this.credentials(runContext).createScoped(runContext.render(this.scopes)).refreshAccessToken();
 
-        return Output
-            .builder()
-            .accessToken(accessToken)
-            .build();
+        return Output.builder().accessToken(accessToken).build();
     }
 
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @NotNull
-        @Schema(
-            title = "A oauth access token for the current user"
-        )
+        @Schema(title = "A oauth access token for the current user")
         private final AccessToken accessToken;
     }
 }

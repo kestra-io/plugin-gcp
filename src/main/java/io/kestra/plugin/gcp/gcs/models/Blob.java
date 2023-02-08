@@ -18,8 +18,8 @@ public class Blob {
     private final String generatedId;
     private final String selfLink;
     private final String cacheControl;
-//    private final List<Acl> acl;
-//    private final Acl.Entity owner;
+    // private final List<Acl> acl;
+    // private final Acl.Entity owner;
     private final Long size;
     private final String etag;
     private final String md5;
@@ -35,11 +35,11 @@ public class Blob {
     private final String contentEncoding;
     private final String contentDisposition;
     private final String contentLanguage;
-//    private final StorageClass storageClass;
+    // private final StorageClass storageClass;
     private final Instant timeStorageClassUpdated;
     private final Integer componentCount;
     private final boolean isDirectory;
-//    private final BlobInfo.CustomerEncryption customerEncryption;
+    // private final BlobInfo.CustomerEncryption customerEncryption;
     private final String kmsKeyName;
     private final Boolean eventBasedHold;
     private final Boolean temporaryHold;
@@ -50,39 +50,25 @@ public class Blob {
     }
 
     public static Blob of(com.google.cloud.storage.Blob blob) {
-        return Blob.builder()
-            .uri(uri(blob))
-            .bucket(blob.getBucket())
-            .name(blob.getName())
-            .generatedId(blob.getGeneratedId())
-            .selfLink(blob.getSelfLink())
-            .cacheControl(blob.getCacheControl())
-//            .acl(blob.getAcl())
-//            .owner(blob.getOwner())
-            .size(blob.getSize())
-            .etag(blob.getEtag())
-            .md5(blob.getMd5())
-            .crc32c(blob.getCrc32c())
-            .customTime(blob.getCustomTime() == null ? null : Instant.ofEpochMilli(blob.getCustomTime()))
-            .mediaLink(blob.getMediaLink())
-            .metadata(blob.getMetadata())
-            .metaGeneration(blob.getMetageneration())
-            .deleteTime(blob.getDeleteTime() == null ? null : Instant.ofEpochMilli(blob.getDeleteTime()))
-            .updateTime(blob.getUpdateTime() == null ? null : Instant.ofEpochMilli(blob.getUpdateTime()))
-            .createTime(blob.getCreateTime() == null ? null : Instant.ofEpochMilli(blob.getCreateTime()))
-            .contentType(blob.getContentType())
-            .contentEncoding(blob.getContentEncoding())
-            .contentDisposition(blob.getContentDisposition())
-            .contentLanguage(blob.getContentLanguage())
-//            .storageClass(StorageClass.valueOf(blob.getStorageClass().name()))
-            .timeStorageClassUpdated(blob.getTimeStorageClassUpdated() == null ? null : Instant.ofEpochMilli(blob.getTimeStorageClassUpdated()))
-            .componentCount(blob.getComponentCount())
-            .isDirectory(blob.isDirectory())
-//            .customerEncryption(blob.getCustomerEncryption())
-            .kmsKeyName(blob.getKmsKeyName())
-            .eventBasedHold(blob.getEventBasedHold())
-            .temporaryHold(blob.getTemporaryHold())
-            .retentionExpirationTime(blob.getRetentionExpirationTime())
-            .build();
+        return Blob.builder().uri(uri(blob)).bucket(blob.getBucket()).name(blob.getName())
+                .generatedId(blob.getGeneratedId()).selfLink(blob.getSelfLink()).cacheControl(blob.getCacheControl())
+                // .acl(blob.getAcl())
+                // .owner(blob.getOwner())
+                .size(blob.getSize()).etag(blob.getEtag()).md5(blob.getMd5()).crc32c(blob.getCrc32c())
+                .customTime(blob.getCustomTime() == null ? null : Instant.ofEpochMilli(blob.getCustomTime()))
+                .mediaLink(blob.getMediaLink()).metadata(blob.getMetadata()).metaGeneration(blob.getMetageneration())
+                .deleteTime(blob.getDeleteTime() == null ? null : Instant.ofEpochMilli(blob.getDeleteTime()))
+                .updateTime(blob.getUpdateTime() == null ? null : Instant.ofEpochMilli(blob.getUpdateTime()))
+                .createTime(blob.getCreateTime() == null ? null : Instant.ofEpochMilli(blob.getCreateTime()))
+                .contentType(blob.getContentType()).contentEncoding(blob.getContentEncoding())
+                .contentDisposition(blob.getContentDisposition()).contentLanguage(blob.getContentLanguage())
+                // .storageClass(StorageClass.valueOf(blob.getStorageClass().name()))
+                .timeStorageClassUpdated(blob.getTimeStorageClassUpdated() == null ? null
+                        : Instant.ofEpochMilli(blob.getTimeStorageClassUpdated()))
+                .componentCount(blob.getComponentCount()).isDirectory(blob.isDirectory())
+                // .customerEncryption(blob.getCustomerEncryption())
+                .kmsKeyName(blob.getKmsKeyName()).eventBasedHold(blob.getEventBasedHold())
+                .temporaryHold(blob.getTemporaryHold()).retentionExpirationTime(blob.getRetentionExpirationTime())
+                .build();
     }
 }

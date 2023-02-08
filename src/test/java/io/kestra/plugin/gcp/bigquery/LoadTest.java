@@ -40,26 +40,16 @@ class LoadTest {
 
     @Test
     void fromCsv() throws Exception {
-        URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
-                .getResource("bigquery/insurance_sample.csv"))
-                .toURI()))
-        );
+        URI source = storageInterface.put(new URI("/" + FriendlyId.createFriendlyId()),
+                new FileInputStream(new File(Objects
+                        .requireNonNull(LoadTest.class.getClassLoader().getResource("bigquery/insurance_sample.csv"))
+                        .toURI())));
 
-        Load task = Load.builder()
-            .id(LoadTest.class.getSimpleName())
-            .type(Load.class.getName())
-            .from(source.toString())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
-            .format(AbstractLoad.Format.CSV)
-            .autodetect(true)
-            .csvOptions(AbstractLoad.CsvOptions.builder()
-                .fieldDelimiter("|")
-                .allowJaggedRows(true)
-                .build()
-            )
-            .build();
+        Load task = Load.builder().id(LoadTest.class.getSimpleName()).type(Load.class.getName()).from(source.toString())
+                .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+                .format(AbstractLoad.Format.CSV).autodetect(true)
+                .csvOptions(AbstractLoad.CsvOptions.builder().fieldDelimiter("|").allowJaggedRows(true).build())
+                .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
@@ -70,24 +60,15 @@ class LoadTest {
 
     @Test
     void fromAvro() throws Exception {
-        URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
-                .getResource("bigquery/insurance_sample.avro"))
-                .toURI()))
-        );
+        URI source = storageInterface.put(new URI("/" + FriendlyId.createFriendlyId()),
+                new FileInputStream(new File(Objects
+                        .requireNonNull(LoadTest.class.getClassLoader().getResource("bigquery/insurance_sample.avro"))
+                        .toURI())));
 
-        Load task = Load.builder()
-            .id(LoadTest.class.getSimpleName())
-            .type(Load.class.getName())
-            .from(source.toString())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
-            .format(AbstractLoad.Format.AVRO)
-            .avroOptions(AbstractLoad.AvroOptions.builder()
-                .useAvroLogicalTypes(true)
-                .build()
-            )
-            .build();
+        Load task = Load.builder().id(LoadTest.class.getSimpleName()).type(Load.class.getName()).from(source.toString())
+                .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+                .format(AbstractLoad.Format.AVRO)
+                .avroOptions(AbstractLoad.AvroOptions.builder().useAvroLogicalTypes(true).build()).build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
@@ -98,23 +79,13 @@ class LoadTest {
 
     @Test
     void fromEmpty() throws Exception {
-        URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            IOUtils.toInputStream("", StandardCharsets.UTF_8)
-        );
+        URI source = storageInterface.put(new URI("/" + FriendlyId.createFriendlyId()),
+                IOUtils.toInputStream("", StandardCharsets.UTF_8));
 
-        Load.LoadBuilder<?, ?> task = Load.builder()
-            .id(LoadTest.class.getSimpleName())
-            .type(Load.class.getName())
-            .from(source.toString())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
-            .format(AbstractLoad.Format.CSV)
-            .autodetect(true)
-            .csvOptions(AbstractLoad.CsvOptions.builder()
-                .fieldDelimiter("|")
-                .allowJaggedRows(true)
-                .build()
-            );
+        Load.LoadBuilder<?, ?> task = Load.builder().id(LoadTest.class.getSimpleName()).type(Load.class.getName())
+                .from(source.toString()).destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+                .format(AbstractLoad.Format.CSV).autodetect(true)
+                .csvOptions(AbstractLoad.CsvOptions.builder().fieldDelimiter("|").allowJaggedRows(true).build());
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task.build(), ImmutableMap.of());
 

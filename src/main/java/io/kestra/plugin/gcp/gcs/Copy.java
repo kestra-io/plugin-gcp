@@ -23,37 +23,20 @@ import java.net.URI;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Copy a file between bucket",
-    description = "Copy the file between Internal Storage or Google Cloud Storage file"
-)
-@Plugin(
-    examples = {
-        @Example(
-            title = "Move a file between bucket path",
-            code = {
-                "from: \"{{ inputs.file }}\"",
-                "delete: true"
-            }
-        )
-    }
-)
+@Schema(title = "Copy a file between bucket",
+        description = "Copy the file between Internal Storage or Google Cloud Storage file")
+@Plugin(examples = {
+        @Example(title = "Move a file between bucket path", code = {"from: \"{{ inputs.file }}\"", "delete: true"})})
 public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
-    @Schema(
-        title = "The file to copy"
-    )
+    @Schema(title = "The file to copy")
     @PluginProperty(dynamic = true)
     private String from;
 
-    @Schema(
-        title = "The destination path"
-    )
+    @Schema(title = "The destination path")
     @PluginProperty(dynamic = true)
     private String to;
 
-    @Schema(
-        title = "Whether to delete the source files (from parameter) on success copy"
-    )
+    @Schema(title = "Whether to delete the source files (from parameter) on success copy")
     @Builder.Default
     private final Boolean delete = false;
 
@@ -65,7 +48,8 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         URI from = encode(runContext, this.from);
         URI to = encode(runContext, this.to);
 
-        BlobId source = BlobId.of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(), blobPath(from.getPath().substring(1)));
+        BlobId source = BlobId.of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(),
+                blobPath(from.getPath().substring(1)));
 
         if (from.toString().equals(to.toString())) {
             throw new IllegalArgumentException("Invalid copy to same path '" + to.toString());
@@ -74,12 +58,9 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         logger.debug("Moving from '{}' to '{}'", from, to);
 
         Blob result = connection
-            .copy(Storage.CopyRequest.newBuilder()
-                .setSource(source)
-                .setTarget(BlobId.of(to.getAuthority(), blobPath(to.getPath().substring(1))))
-                .build()
-            )
-            .getResult();
+                .copy(Storage.CopyRequest.newBuilder().setSource(source)
+                        .setTarget(BlobId.of(to.getAuthority(), blobPath(to.getPath().substring(1)))).build())
+                .getResult();
 
         runContext.metric(Counter.of("file.size", result.getSize()));
 
@@ -87,19 +68,14 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
             connection.delete(source);
         }
 
-        return Output
-            .builder()
-            .uri(new URI("gs://" + result.getBucket() + "/" + result.getName()))
-            .build();
+        return Output.builder().uri(new URI("gs://" + result.getBucket() + "/" + result.getName())).build();
     }
 
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The destination full uri",
-            description = "The full url will be like `gs://{bucket}/{path}/{file}`"
-        )
+        @Schema(title = "The destination full uri",
+                description = "The full url will be like `gs://{bucket}/{path}/{file}`")
         private URI uri;
     }
 }

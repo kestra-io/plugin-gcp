@@ -24,14 +24,8 @@ class SetTest {
     void runMap() throws Exception {
         var runContext = runContextFactory.of();
 
-        var set = Set.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("1")
-            .document(Map.of("firstname", "John",
-                "lastname", "Doe"
-            ))
-            .build();
+        var set = Set.builder().projectId(project).collection("persons").childPath("1")
+                .document(Map.of("firstname", "John", "lastname", "Doe")).build();
 
         var output = set.run(runContext);
 
@@ -47,12 +41,8 @@ class SetTest {
     void runString() throws Exception {
         var runContext = runContextFactory.of();
 
-        var set = Set.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("2")
-            .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
-            .build();
+        var set = Set.builder().projectId(project).collection("persons").childPath("2")
+                .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}").build();
 
         var output = set.run(runContext);
 
@@ -68,12 +58,7 @@ class SetTest {
     void runNull() throws Exception {
         var runContext = runContextFactory.of();
 
-        var set = Set.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("3")
-            .document(null)
-            .build();
+        var set = Set.builder().projectId(project).collection("persons").childPath("3").document(null).build();
 
         var output = set.run(runContext);
 

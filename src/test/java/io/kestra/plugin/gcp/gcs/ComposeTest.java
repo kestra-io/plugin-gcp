@@ -40,32 +40,20 @@ class ComposeTest {
         testUtils.upload("compose-" + dir + "/compose2/" + FriendlyId.createFriendlyId(), "data/2.txt");
         testUtils.upload("compose-" + dir + "/compose3/" + FriendlyId.createFriendlyId(), "data/3.txt");
 
-        Compose task = Compose.builder()
-            .id(ComposeTest.class.getSimpleName())
-            .type(Compose.class.getName())
-            .list(Compose.List.builder()
-                .from("gs://" +  bucket + "/tasks/gcp/upload/compose-" + dir + "/")
-                .listingType(ListInterface.ListingType.RECURSIVE)
-                .build()
-            )
-            .to("gs://" +  bucket + "/tasks/gcp/compose-result/compose.txt")
-            .build();
+        Compose task = Compose.builder().id(ComposeTest.class.getSimpleName()).type(Compose.class.getName())
+                .list(Compose.List.builder().from("gs://" + bucket + "/tasks/gcp/upload/compose-" + dir + "/")
+                        .listingType(ListInterface.ListingType.RECURSIVE).build())
+                .to("gs://" + bucket + "/tasks/gcp/compose-result/compose.txt").build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
         Compose.Output run = task.run(runContext);
 
-        Download download = Download.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(run.getUri().toString())
-            .build();
+        Download download = Download.builder().id(DownloadTest.class.getSimpleName()).type(Download.class.getName())
+                .from(run.getUri().toString()).build();
 
         InputStream get = storageInterface.get(download.run(runContext).getUri());
 
-        assertThat(
-            CharStreams.toString(new InputStreamReader(get)),
-            is("1\n2\n3\n")
-        );
+        assertThat(CharStreams.toString(new InputStreamReader(get)), is("1\n2\n3\n"));
 
     }
 }

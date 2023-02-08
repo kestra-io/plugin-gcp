@@ -24,17 +24,11 @@ class ClusterMetadataTest {
 
     @Test
     void run() throws Exception {
-        ClusterMetadata task = spy(ClusterMetadata.builder()
-            .id(ClusterMetadataTest.class.getSimpleName())
-            .type(Load.class.getName())
-            .clusterZone("my-zone")
-            .clusterId("my-cluster")
-            .clusterProjectId("my-project")
-            .build());
+        ClusterMetadata task =
+                spy(ClusterMetadata.builder().id(ClusterMetadataTest.class.getSimpleName()).type(Load.class.getName())
+                        .clusterZone("my-zone").clusterId("my-cluster").clusterProjectId("my-project").build());
 
-        doReturn(Cluster.newBuilder().setName("my-cluster").build())
-            .when(task)
-            .fetch(any());
+        doReturn(Cluster.newBuilder().setName("my-cluster").build()).when(task).fetch(any());
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         ClusterMetadata.Output run = task.run(runContext);

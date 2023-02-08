@@ -21,23 +21,10 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Delete partitions between interval"
-)
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "partitionType: DAY",
-                "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"",
-                "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""
-            }
-        )
-    }
-)
+@Schema(title = "Delete partitions between interval")
+@Plugin(examples = {
+        @Example(code = {"projectId: my-project", "dataset: my-dataset", "table: my-table", "partitionType: DAY",
+                "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"", "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""})})
 public class DeletePartitions extends AbstractPartition implements RunnableTask<DeletePartitions.Output> {
     @Override
     public DeletePartitions.Output run(RunContext runContext) throws Exception {
@@ -51,16 +38,14 @@ public class DeletePartitions extends AbstractPartition implements RunnableTask<
         logger.debug("Deleting partitions '{}'", partitionsToDelete);
         runContext.metric(Counter.of("size", partitionsToDelete.size()));
 
-        partitionsToDelete
-            .parallelStream()
-            .forEach(throwConsumer(s -> {
-                TableId currentPartition = this.tableId(runContext, s);
-                boolean delete = connection.delete(currentPartition);
+        partitionsToDelete.parallelStream().forEach(throwConsumer(s -> {
+            TableId currentPartition = this.tableId(runContext, s);
+            boolean delete = connection.delete(currentPartition);
 
-                if (!delete) {
-                    throw new Exception("Couldn't find partition '" + tableId + "$" + s + "'");
-                }
-            }));
+            if (!delete) {
+                throw new Exception("Couldn't find partition '" + tableId + "$" + s + "'");
+            }
+        }));
 
         return Output.of(tableId, partitionsToDelete);
     }
@@ -68,33 +53,21 @@ public class DeletePartitions extends AbstractPartition implements RunnableTask<
     @Getter
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The project's id"
-        )
+        @Schema(title = "The project's id")
         private final String projectId;
 
-        @Schema(
-            title = "The dataset's id"
-        )
+        @Schema(title = "The dataset's id")
         private final String datasetId;
 
-        @Schema(
-            title = "The table name"
-        )
+        @Schema(title = "The table name")
         private final String table;
 
-        @Schema(
-            title = "Partitions deleted"
-        )
+        @Schema(title = "Partitions deleted")
         private final List<String> partitions;
 
         public static Output of(TableId table, List<String> partitions) {
-            return Output.builder()
-                .projectId(table.getProject())
-                .datasetId(table.getDataset())
-                .table(table.getTable())
-                .partitions(partitions)
-                .build();
+            return Output.builder().projectId(table.getProject()).datasetId(table.getDataset()).table(table.getTable())
+                    .partitions(partitions).build();
         }
     }
 }

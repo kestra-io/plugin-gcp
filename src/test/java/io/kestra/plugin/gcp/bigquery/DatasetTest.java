@@ -41,18 +41,12 @@ class DatasetTest {
     }
 
     private RunContext runContext(String datasetId) {
-        return runContextFactory.of(ImmutableMap.of(
-            "project", this.project,
-            "dataset", datasetId
-        ));
+        return runContextFactory.of(ImmutableMap.of("project", this.project, "dataset", datasetId));
     }
 
     private CreateDataset.CreateDatasetBuilder<?, ?> createBuilder() {
-        return CreateDataset.builder()
-            .id(DatasetTest.class.getSimpleName())
-            .type(CreateDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}");
+        return CreateDataset.builder().id(DatasetTest.class.getSimpleName()).type(CreateDataset.class.getName())
+                .name("{{dataset}}").projectId("{{project}}");
     }
 
     @Test
@@ -77,10 +71,7 @@ class DatasetTest {
     @Test
     @Order(3)
     void createNoException() throws Exception {
-        CreateDataset task = createBuilder()
-            .description("createUpdate")
-            .ifExists(CreateDataset.IfExists.SKIP)
-            .build();
+        CreateDataset task = createBuilder().description("createUpdate").ifExists(CreateDataset.IfExists.SKIP).build();
 
         AbstractDataset.Output run = task.run(runContext());
 
@@ -90,10 +81,8 @@ class DatasetTest {
     @Test
     @Order(4)
     void createUpdate() throws Exception {
-        CreateDataset task = createBuilder()
-            .description("createUpdate")
-            .ifExists(CreateDataset.IfExists.UPDATE)
-            .build();
+        CreateDataset task =
+                createBuilder().description("createUpdate").ifExists(CreateDataset.IfExists.UPDATE).build();
 
         AbstractDataset.Output run = task.run(runContext());
 
@@ -104,13 +93,9 @@ class DatasetTest {
     @Test
     @Order(5)
     void update() throws Exception {
-        UpdateDataset task = UpdateDataset.builder()
-            .id(UpdateDataset.class.getSimpleName())
-            .type(CreateDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}")
-            .description("update")
-            .build();
+        UpdateDataset task =
+                UpdateDataset.builder().id(UpdateDataset.class.getSimpleName()).type(CreateDataset.class.getName())
+                        .name("{{dataset}}").projectId("{{project}}").description("update").build();
 
         AbstractDataset.Output run = task.run(runContext());
 
@@ -122,18 +107,12 @@ class DatasetTest {
     @Order(6)
     void acl() throws Exception {
 
-        CreateDataset task = createBuilder()
-            .description(RANDOM_ID_2)
-            .ifExists(CreateDataset.IfExists.UPDATE)
-            .acl(Collections.singletonList(
-                AccessControl.builder()
-                    .entity(Entity.builder()
-                        .type(Entity.Type.USER)
-                        .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build())
-                    .role(AccessControl.Role.OWNER)
-                    .build()
-            ))
-            .build();
+        CreateDataset task = createBuilder().description(RANDOM_ID_2).ifExists(CreateDataset.IfExists.UPDATE)
+                .acl(Collections.singletonList(AccessControl.builder()
+                        .entity(Entity.builder().type(Entity.Type.USER)
+                                .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build())
+                        .role(AccessControl.Role.OWNER).build()))
+                .build();
 
         RunContext rc = runContext(RANDOM_ID_2);
         AbstractDataset.Output run = task.run(rc);
@@ -148,8 +127,7 @@ class DatasetTest {
 
         assertThat(null, not(dataset.getAcl()));
         assertThat(dataset.getAcl(), hasItems(
-            Acl.of(new Acl.User("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"), Acl.Role.OWNER)
-        ));
+                Acl.of(new Acl.User("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"), Acl.Role.OWNER)));
     }
 
     @Test
@@ -157,26 +135,17 @@ class DatasetTest {
     void delete() throws Exception {
         RunContext runContext = runContext();
 
-        DeleteDataset task = DeleteDataset.builder()
-            .id(DatasetTest.class.getSimpleName())
-            .type(DeleteDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}")
-            .deleteContents(true)
-            .build();
+        DeleteDataset task =
+                DeleteDataset.builder().id(DatasetTest.class.getSimpleName()).type(DeleteDataset.class.getName())
+                        .name("{{dataset}}").projectId("{{project}}").deleteContents(true).build();
 
         DeleteDataset.Output run = task.run(runContext);
         assertThat(run.getDataset(), is(runContext.getVariables().get("dataset")));
 
         runContext = runContext(RANDOM_ID_2);
 
-        task = DeleteDataset.builder()
-            .id(DatasetTest.class.getSimpleName())
-            .type(DeleteDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}")
-            .deleteContents(true)
-            .build();
+        task = DeleteDataset.builder().id(DatasetTest.class.getSimpleName()).type(DeleteDataset.class.getName())
+                .name("{{dataset}}").projectId("{{project}}").deleteContents(true).build();
 
         run = task.run(runContext);
         assertThat(run.getDataset(), is(runContext.getVariables().get("dataset")));

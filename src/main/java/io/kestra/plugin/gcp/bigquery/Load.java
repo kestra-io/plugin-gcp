@@ -26,33 +26,16 @@ import java.nio.channels.Channels;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Plugin(
-    examples = {
-        @Example(
-            title = "Load an csv file from an input file",
-            code = {
-                "from: \"{{ inputs.file }}\"",
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "format: CSV",
-                "csvOptions:",
-                "  fieldDelimiter: \";\""
-            }
-        )
-    }
-)
-@Schema(
-    title = "Load data from local file to BigQuery"
-)
+@Plugin(examples = {@Example(title = "Load an csv file from an input file",
+        code = {"from: \"{{ inputs.file }}\"", "destinationTable: \"my_project.my_dataset.my_table\"", "format: CSV",
+                "csvOptions:", "  fieldDelimiter: \";\""})})
+@Schema(title = "Load data from local file to BigQuery")
 public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
-    @Schema(
-        title = "The fully-qualified URIs that point to source data"
-    )
+    @Schema(title = "The fully-qualified URIs that point to source data")
     @PluginProperty(dynamic = true)
     private String from;
 
-    @Schema(
-        title = "Does the task will failed for an empty file"
-    )
+    @Schema(title = "Does the task will failed for an empty file")
     @PluginProperty(dynamic = false)
     @Builder.Default
     private Boolean failedOnEmpty = true;
@@ -62,8 +45,8 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
-            .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)));
+        WriteChannelConfiguration.Builder builder =
+                WriteChannelConfiguration.newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)));
 
         this.setOptions(builder, runContext);
 
@@ -90,9 +73,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
                     throw new Exception("Can't load an empty file and this one don't contain any data");
                 }
 
-                return Output.builder()
-                    .rows(0L)
-                    .build();
+                return Output.builder().rows(0L).build();
             }
 
             Job job = this.waitForJob(logger, writer::getJob);

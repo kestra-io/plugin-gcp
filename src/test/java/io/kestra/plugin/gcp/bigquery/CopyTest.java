@@ -31,35 +31,25 @@ class CopyTest {
 
     @Test
     void run() throws Exception {
-        Query create = Query.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql(QueryTest.sql())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
-            .build();
+        Query create =
+                Query.builder().id(CopyTest.class.getSimpleName()).type(Query.class.getName()).sql(QueryTest.sql())
+                        .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId()).build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
         Query.Output createOutput = create.run(runContext);
         assertThat(createOutput.getJobId(), is(notNullValue()));
 
-        Copy copy = Copy.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Copy.class.getName())
-            .sourceTables(List.of(create.getDestinationTable()))
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
-            .build();
+        Copy copy = Copy.builder().id(CopyTest.class.getSimpleName()).type(Copy.class.getName())
+                .sourceTables(List.of(create.getDestinationTable()))
+                .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId()).build();
 
         runContext = TestsUtils.mockRunContext(runContextFactory, copy, ImmutableMap.of());
         Copy.Output copyOutput = copy.run(runContext);
         assertThat(copyOutput.getJobId(), is(notNullValue()));
 
 
-        Query fetch = Query.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("SELECT * FROM " + create.getDestinationTable())
-            .fetchOne(true)
-            .build();
+        Query fetch = Query.builder().id(CopyTest.class.getSimpleName()).type(Query.class.getName())
+                .sql("SELECT * FROM " + create.getDestinationTable()).fetchOne(true).build();
 
         runContext = TestsUtils.mockRunContext(runContextFactory, fetch, ImmutableMap.of());
         Query.Output fetchOutput = fetch.run(runContext);

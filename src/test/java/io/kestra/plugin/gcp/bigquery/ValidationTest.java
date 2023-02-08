@@ -23,31 +23,19 @@ class ValidationTest {
 
     @Test
     void storeFetchValidation() {
-        Query.QueryBuilder<?, ?> builder = Query.builder()
-            .id("test")
-            .type(Query.class.getName())
-            .sql("SELECT 1");
+        Query.QueryBuilder<?, ?> builder = Query.builder().id("test").type(Query.class.getName()).sql("SELECT 1");
 
-        Query task = builder
-            .store(false)
-            .fetch(true)
-            .build();
+        Query task = builder.store(false).fetch(true).build();
 
         Optional<ConstraintViolationException> valid = modelValidator.isValid(task);
         assertThat(valid.isPresent(), is(false));
 
-        task = builder
-            .fetch(true)
-            .store(true)
-            .build();
+        task = builder.fetch(true).store(true).build();
 
         valid = modelValidator.isValid(task);
         assertThat(valid.isPresent(), is(true));
 
-        task = builder
-            .fetchOne(true)
-            .store(true)
-            .build();
+        task = builder.fetchOne(true).store(true).build();
 
         valid = modelValidator.isValid(task);
         assertThat(valid.isPresent(), is(true));
@@ -55,23 +43,14 @@ class ValidationTest {
 
     @Test
     void storeFetchDestinationValidation() {
-        Query.QueryBuilder<?, ?> builder = Query.builder()
-            .id("test")
-            .type(Query.class.getName())
-            .sql("SELECT 1");
+        Query.QueryBuilder<?, ?> builder = Query.builder().id("test").type(Query.class.getName()).sql("SELECT 1");
 
-        Query task = builder
-            .store(false)
-            .destinationTable("project.dataset.table")
-            .build();
+        Query task = builder.store(false).destinationTable("project.dataset.table").build();
 
         Optional<ConstraintViolationException> valid = modelValidator.isValid(task);
         assertThat(valid.isPresent(), is(false));
 
-        task = builder
-            .store(true)
-            .destinationTable("project.dataset.table")
-            .build();
+        task = builder.store(true).destinationTable("project.dataset.table").build();
 
         valid = modelValidator.isValid(task);
         assertThat(valid.isPresent(), is(true));
@@ -79,21 +58,14 @@ class ValidationTest {
 
     @Test
     void loadCsvValidation() {
-        Load.LoadBuilder<?, ?> builder = Load.builder()
-            .id("test")
-            .type(Query.class.getName());
+        Load.LoadBuilder<?, ?> builder = Load.builder().id("test").type(Query.class.getName());
 
-        Load task = builder
-            .format(AbstractLoad.Format.AVRO)
-            .build();
+        Load task = builder.format(AbstractLoad.Format.AVRO).build();
 
         Optional<ConstraintViolationException> valid = modelValidator.isValid(task);
         assertThat(valid.isPresent(), is(false));
 
-        task = builder
-            .format(AbstractLoad.Format.CSV)
-            .csvOptions(null)
-            .build();
+        task = builder.format(AbstractLoad.Format.CSV).csvOptions(null).build();
 
         valid = modelValidator.isValid(task);
         assertThat(valid.isPresent(), is(true));

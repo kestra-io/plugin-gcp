@@ -11,16 +11,11 @@ public class Logging {
     private String logObjectPrefix;
 
     public static Logging of(BucketInfo.Logging item) {
-        return Logging.builder()
-            .logBucket(item.getLogBucket())
-            .logObjectPrefix(item.getLogObjectPrefix())
-            .build();
+        return Logging.builder().logBucket(item.getLogBucket()).logObjectPrefix(item.getLogObjectPrefix()).build();
     }
 
     public BucketInfo.Logging convert() {
-        return BucketInfo.Logging.newBuilder()
-            .setLogBucket(this.logBucket)
-            .setLogObjectPrefix(this.logObjectPrefix)
-            .build();
+        return BucketInfo.Logging.newBuilder().setLogBucket(this.logBucket).setLogObjectPrefix(this.logObjectPrefix)
+                .build();
     }
 }

@@ -67,7 +67,7 @@ class TriggerTest {
 
         // scheduler
         try (AbstractScheduler scheduler = new DefaultScheduler(this.applicationContext, this.flowListenersService,
-            this.executionState, this.triggerState)) {
+                this.executionState, this.triggerState)) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
@@ -81,21 +81,17 @@ class TriggerTest {
 
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/pubsub")));
+            repositoryLoader
+                    .load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/pubsub")));
 
             // publish two messages to trigger the flow
-            Publish task = Publish.builder()
-                .id(Publish.class.getSimpleName())
-                .type(Publish.class.getName())
-                .topic("test-topic")
-                .projectId(this.project)
-                .from(
-                    List.of(
-                        Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build(),
-                        Message.builder().attributes(Map.of("key", "value")).build()
-                    )
-                )
-                .build();
+            Publish task =
+                    Publish.builder().id(Publish.class.getSimpleName()).type(Publish.class.getName())
+                            .topic("test-topic").projectId(this.project)
+                            .from(List.of(Message.builder()
+                                    .data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build(),
+                                    Message.builder().attributes(Map.of("key", "value")).build()))
+                            .build();
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
             queueCount.await(1, TimeUnit.MINUTES);

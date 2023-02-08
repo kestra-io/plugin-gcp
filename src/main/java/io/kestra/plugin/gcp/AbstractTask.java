@@ -30,7 +30,8 @@ public abstract class AbstractTask extends Task implements GcpInterface {
     @Builder.Default
     protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
-    protected GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected GoogleCredentials credentials(RunContext runContext)
+            throws IllegalVariableEvaluationException, IOException {
         GoogleCredentials credentials;
 
 
@@ -42,9 +43,10 @@ public abstract class AbstractTask extends Task implements GcpInterface {
 
             if (logger.isTraceEnabled()) {
                 byteArrayInputStream.reset();
-                Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {});
+                Map<String, String> jsonKey =
+                        JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {});
                 if (jsonKey.containsKey("client_email")) {
-                    logger.trace(" • Using service account: {}", jsonKey.get("client_email") );
+                    logger.trace(" • Using service account: {}", jsonKey.get("client_email"));
                 }
             }
         } else {

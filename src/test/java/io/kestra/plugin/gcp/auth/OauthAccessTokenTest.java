@@ -21,10 +21,8 @@ class OauthAccessTokenTest {
 
     @Test
     void run() throws Exception {
-        OauthAccessToken task = OauthAccessToken.builder()
-            .id(OauthAccessTokenTest.class.getSimpleName())
-            .type(Load.class.getName())
-            .build();
+        OauthAccessToken task = OauthAccessToken.builder().id(OauthAccessTokenTest.class.getSimpleName())
+                .type(Load.class.getName()).build();
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         OauthAccessToken.Output run = task.run(runContext);

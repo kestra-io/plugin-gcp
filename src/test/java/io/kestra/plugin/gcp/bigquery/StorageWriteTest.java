@@ -44,13 +44,10 @@ class StorageWriteTest {
 
     @Test
     void run() throws Exception {
-        String table = this.project  + "." + this.dataset + "." + FriendlyId.createFriendlyId();
+        String table = this.project + "." + this.dataset + "." + FriendlyId.createFriendlyId();
 
-        Query create = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("CREATE TABLE " + table + " AS " + QueryTest.sql())
-            .build();
+        Query create = Query.builder().id(QueryTest.class.getSimpleName()).type(Query.class.getName())
+                .sql("CREATE TABLE " + table + " AS " + QueryTest.sql()).build();
         create.run(TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of()));
 
         HashMap<String, Object> object = new HashMap<>();
@@ -71,24 +68,16 @@ class StorageWriteTest {
             FileSerde.write(outputStream, object);
         }
 
-        URI put = storageInterface.put(
-            new URI("/" + IdUtils.create() + ".ion"),
-            new FileInputStream(tempFile)
-        );
+        URI put = storageInterface.put(new URI("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
-        StorageWrite task = StorageWrite.builder()
-            .id("test-unit")
-            .type(StorageWrite.class.getName())
-            .destinationTable(table)
-            .location("EU")
-            .from(put.toString())
-            .build();
+        StorageWrite task = StorageWrite.builder().id("test-unit").type(StorageWrite.class.getName())
+                .destinationTable(table).location("EU").from(put.toString()).build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         StorageWrite.Output run = task.run(runContext);
 
 
-//        assertThat(run.getRowsCount(), is(1));
+        // assertThat(run.getRowsCount(), is(1));
         assertThat(run.getRows(), is(1));
     }
 }

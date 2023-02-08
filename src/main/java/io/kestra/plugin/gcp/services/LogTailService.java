@@ -12,35 +12,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.kestra.core.utils.Rethrow.throwRunnable;
 
 public class LogTailService {
-    public static Thread tail(Logger logger, String projectId, Credentials credential, String filter, AtomicBoolean stopSignal) throws Exception {
-        LoggingOptions options = LoggingOptions.newBuilder()
-            .setCredentials(credential)
-            .setProjectId(projectId)
-            .build();
+    public static Thread tail(Logger logger, String projectId, Credentials credential, String filter,
+            AtomicBoolean stopSignal) throws Exception {
+        LoggingOptions options = LoggingOptions.newBuilder().setCredentials(credential).setProjectId(projectId).build();
 
-        Thread thread = new Thread(
-            throwRunnable(() -> {
-                try (Logging logging = options.getService()) {
-                    LogEntryServerStream stream = logging.tailLogEntries(
-                        Logging.TailOption.project(projectId),
-                        Logging.TailOption.filter(filter)
-                    );
+        Thread thread = new Thread(throwRunnable(() -> {
+            try (Logging logging = options.getService()) {
+                LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.project(projectId),
+                        Logging.TailOption.filter(filter));
 
-                    for (LogEntry logEntry : stream) {
-                        LogTailService.log(logger, logEntry);
+                for (LogEntry logEntry : stream) {
+                    LogTailService.log(logger, logEntry);
 
-                        if (stopSignal.get()) {
-                            if (stream.isReceiveReady()) {
-                                stream.iterator().forEachRemaining(l -> LogTailService.log(logger, l));
-                            }
-
-                            stream.cancel();
+                    if (stopSignal.get()) {
+                        if (stream.isReceiveReady()) {
+                            stream.iterator().forEachRemaining(l -> LogTailService.log(logger, l));
                         }
+
+                        stream.cancel();
                     }
                 }
-            }),
-            "gcp-log-tail"
-        );
+            }
+        }), "gcp-log-tail");
 
         thread.start();
         thread.setUncaughtExceptionHandler((t, e) -> {

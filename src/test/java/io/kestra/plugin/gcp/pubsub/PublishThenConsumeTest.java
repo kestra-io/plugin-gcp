@@ -38,26 +38,17 @@ class PublishThenConsumeTest {
     void runWithList() throws Exception {
         var runContext = runContextFactory.of();
 
-        var publish = Publish.builder()
-            .projectId(project)
-            .topic("test-topic")
-            .from(
-                List.of(
-                    Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build(),
-                    Message.builder().attributes(Map.of("key", "value")).build()
-                )
-            )
-            .build();
+        var publish = Publish.builder().projectId(project).topic("test-topic")
+                .from(List.of(
+                        Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build(),
+                        Message.builder().attributes(Map.of("key", "value")).build()))
+                .build();
 
         var publishOutput = publish.run(runContext);
         assertThat(publishOutput.getMessagesCount(), is(2));
 
-        var consume = Consume.builder()
-            .projectId(project)
-            .topic("test-topic")
-            .subscription("test-subscription")
-            .maxRecords(2)
-            .build();
+        var consume = Consume.builder().projectId(project).topic("test-topic").subscription("test-subscription")
+                .maxRecords(2).build();
 
         var consumeOutput = consume.run(runContextFactory.of());
         assertThat(consumeOutput.getCount(), is(2));
@@ -68,22 +59,14 @@ class PublishThenConsumeTest {
         var runContext = runContextFactory.of();
         var uri = createTestFile(runContext);
 
-        var publish = Publish.builder()
-            .projectId(project)
-            .topic("test-topic")
-            .from(uri.toString())
-            .build();
+        var publish = Publish.builder().projectId(project).topic("test-topic").from(uri.toString()).build();
 
         var publishOutput = publish.run(runContext);
         assertThat(publishOutput.getMessagesCount(), is(2));
 
 
-        var consume = Consume.builder()
-            .projectId(project)
-            .topic("test-topic")
-            .subscription("test-subscription")
-            .maxRecords(2)
-            .build();
+        var consume = Consume.builder().projectId(project).topic("test-topic").subscription("test-subscription")
+                .maxRecords(2).build();
 
         var consumeOutput = consume.run(runContextFactory.of());
         assertThat(consumeOutput.getCount(), is(2));
@@ -94,9 +77,8 @@ class PublishThenConsumeTest {
         OutputStream output = new FileOutputStream(tempFile);
 
         FileSerde.write(output,
-            Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build());
-        FileSerde.write(output,
-            Message.builder().attributes(Map.of("key", "value")).build());
+                Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build());
+        FileSerde.write(output, Message.builder().attributes(Map.of("key", "value")).build());
         return storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
     }
 }

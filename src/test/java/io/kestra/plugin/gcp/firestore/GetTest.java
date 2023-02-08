@@ -23,16 +23,11 @@ class GetTest {
     void run() throws Exception {
         var runContext = runContextFactory.of();
 
-        var get = Get.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("1")
-            .build();
+        var get = Get.builder().projectId(project).collection("persons").childPath("1").build();
 
         // create something to get
         try (var firestore = get.connection(runContext)) {
-            firestore.collection("persons")
-                .document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            firestore.collection("persons").document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
         }
 
         var output = get.run(runContext);

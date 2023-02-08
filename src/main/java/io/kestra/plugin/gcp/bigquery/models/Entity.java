@@ -15,24 +15,17 @@ import javax.validation.constraints.NotNull;
 @Jacksonized
 public class Entity {
     @NotNull
-    @Schema(
-        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
-    )
+    @Schema(title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)")
     @PluginProperty(dynamic = true)
     private final Type type;
 
     @NotNull
-    @Schema(
-        title = "The value for the entity (ex : user email if the type is USER ...)"
-    )
+    @Schema(title = "The value for the entity (ex : user email if the type is USER ...)")
     @PluginProperty(dynamic = true)
     private final String value;
 
     @SuppressWarnings("unused")
     public enum Type {
-        DOMAIN,
-        GROUP,
-        USER,
-        IAM_MEMBER
+        DOMAIN, GROUP, USER, IAM_MEMBER
     }
 }

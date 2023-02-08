@@ -17,21 +17,9 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Delete a table or a partition"
-)
-@Plugin(
-    examples = {
-        @Example(
-            title = "Delete a partition",
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table$20130908"
-            }
-        )
-    }
-)
+@Schema(title = "Delete a table or a partition")
+@Plugin(examples = {@Example(title = "Delete a partition",
+        code = {"projectId: my-project", "dataset: my-dataset", "table: my-table$20130908"})})
 public class DeleteTable extends AbstractTable implements RunnableTask<DeleteTable.Output> {
     @Override
     public DeleteTable.Output run(RunContext runContext) throws Exception {
@@ -54,27 +42,18 @@ public class DeleteTable extends AbstractTable implements RunnableTask<DeleteTab
     @Getter
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The project's id"
-        )
+        @Schema(title = "The project's id")
         private final String projectId;
 
-        @Schema(
-            title = "The dataset's id"
-        )
+        @Schema(title = "The dataset's id")
         private final String datasetId;
 
-        @Schema(
-            title = "The table name"
-        )
+        @Schema(title = "The table name")
         private final String table;
 
         public static Output of(TableId table) {
-            return Output.builder()
-                .projectId(table.getProject())
-                .datasetId(table.getDataset())
-                .table(table.getTable())
-                .build();
+            return Output.builder().projectId(table.getProject()).datasetId(table.getDataset()).table(table.getTable())
+                    .build();
         }
     }
 }

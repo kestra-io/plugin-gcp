@@ -29,8 +29,8 @@ public class TableDefinition {
     private final ExternalTableDefinition externalTableDefinition;
 
     public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(T tableDefinition) {
-        TableDefinitionBuilder tableDefinitionBuilder = TableDefinition.builder()
-            .type(Type.valueOf(tableDefinition.getType().toString()));
+        TableDefinitionBuilder tableDefinitionBuilder =
+                TableDefinition.builder().type(Type.valueOf(tableDefinition.getType().toString()));
 
         if (tableDefinition.getSchema() != null) {
             tableDefinitionBuilder.schema(io.kestra.plugin.gcp.bigquery.models.Schema.of(tableDefinition.getSchema()));
@@ -43,7 +43,8 @@ public class TableDefinition {
         } else if (tableDefinition instanceof com.google.cloud.bigquery.MaterializedViewDefinition) {
             var materializedViewDefinition = ((com.google.cloud.bigquery.MaterializedViewDefinition) tableDefinition);
 
-            tableDefinitionBuilder.materializedViewDefinition(MaterializedViewDefinition.of(materializedViewDefinition));
+            tableDefinitionBuilder
+                    .materializedViewDefinition(MaterializedViewDefinition.of(materializedViewDefinition));
         } else if (tableDefinition instanceof com.google.cloud.bigquery.ExternalTableDefinition) {
             var externalTableDefinition = ((com.google.cloud.bigquery.ExternalTableDefinition) tableDefinition);
 
@@ -63,8 +64,8 @@ public class TableDefinition {
             case VIEW:
                 return (T) this.viewDefinition.to(runContext);
             case TABLE:
-                return (T) (this.standardTableDefinition == null ? StandardTableDefinition.builder().build() : this.standardTableDefinition)
-                    .to(runContext, this.schema);
+                return (T) (this.standardTableDefinition == null ? StandardTableDefinition.builder().build()
+                        : this.standardTableDefinition).to(runContext, this.schema);
             case EXTERNAL:
                 return (T) this.externalTableDefinition.to(runContext, this.schema);
             case MATERIALIZED_VIEW:
@@ -76,10 +77,6 @@ public class TableDefinition {
 
     @SuppressWarnings("unused")
     public enum Type {
-        TABLE,
-        VIEW,
-        MATERIALIZED_VIEW,
-        EXTERNAL,
-        MODEL
+        TABLE, VIEW, MATERIALIZED_VIEW, EXTERNAL, MODEL
     }
 }

@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import javax.validation.Constraint;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = { })
+@Constraint(validatedBy = {})
 @Inherited
 public @interface LoadCsvValidation {
     String message() default "missing csv option with CSV fileType";

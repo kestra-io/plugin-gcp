@@ -24,16 +24,11 @@ class DeleteTest {
     void run() throws Exception {
         var runContext = runContextFactory.of();
 
-        var delete = Delete.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("1")
-            .build();
+        var delete = Delete.builder().projectId(project).collection("persons").childPath("1").build();
 
         // create something to delete
         try (var firestore = delete.connection(runContext)) {
-            firestore.collection("persons")
-                .document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+            firestore.collection("persons").document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
         }
 
         var output = delete.run(runContext);

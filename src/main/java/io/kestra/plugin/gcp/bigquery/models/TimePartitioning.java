@@ -31,16 +31,17 @@ public class TimePartitioning {
     private final Boolean requirePartitionFilter;
 
     public static TimePartitioning of(com.google.cloud.bigquery.TimePartitioning timePartitioning) {
-        return TimePartitioning.builder()
-            .type(timePartitioning.getType())
-            .expiration(timePartitioning.getExpirationMs() == null ? null : Duration.ofMillis(timePartitioning.getExpirationMs()))
-            .field(timePartitioning.getField())
-            .requirePartitionFilter(timePartitioning.getRequirePartitionFilter())
-            .build();
+        return TimePartitioning.builder().type(timePartitioning.getType())
+                .expiration(timePartitioning.getExpirationMs() == null ? null
+                        : Duration.ofMillis(timePartitioning.getExpirationMs()))
+                .field(timePartitioning.getField()).requirePartitionFilter(timePartitioning.getRequirePartitionFilter())
+                .build();
     }
 
-    public com.google.cloud.bigquery.TimePartitioning to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.bigquery.TimePartitioning.Builder builder = com.google.cloud.bigquery.TimePartitioning.newBuilder(this.type);
+    public com.google.cloud.bigquery.TimePartitioning to(RunContext runContext)
+            throws IllegalVariableEvaluationException {
+        com.google.cloud.bigquery.TimePartitioning.Builder builder =
+                com.google.cloud.bigquery.TimePartitioning.newBuilder(this.type);
 
         if (this.getExpiration() != null) {
             builder.setExpirationMs(this.getExpiration().toMillis());

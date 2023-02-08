@@ -17,24 +17,11 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Get a document from a collection."
-)
-@Plugin(
-    examples = {
-        @Example(
-            title = "Get a document from its path.",
-            code = {
-                "collection: \"persons\"",
-                "childPath: \"1\""
-            }
-        )
-    }
-)
+@Schema(title = "Get a document from a collection.")
+@Plugin(examples = {
+        @Example(title = "Get a document from its path.", code = {"collection: \"persons\"", "childPath: \"1\""})})
 public class Get extends AbstractFirestore implements RunnableTask<Get.Output> {
-    @Schema(
-        title = "The Firestore document child path."
-    )
+    @Schema(title = "The Firestore document child path.")
     @PluginProperty(dynamic = true)
     @NotNull
     private String childPath;
@@ -44,9 +31,7 @@ public class Get extends AbstractFirestore implements RunnableTask<Get.Output> {
         try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
             var data = collectionRef.document(this.childPath).get().get().getData();
-            return Get.Output.builder()
-                .row(data)
-                .build();
+            return Get.Output.builder().row(data).build();
         }
     }
 
@@ -54,9 +39,7 @@ public class Get extends AbstractFirestore implements RunnableTask<Get.Output> {
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
-        @Schema(
-            title = "Map containing the fetched document."
-        )
+        @Schema(title = "Map containing the fetched document.")
         private Map<String, Object> row;
     }
 }

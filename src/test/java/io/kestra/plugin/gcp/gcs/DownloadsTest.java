@@ -36,12 +36,9 @@ class DownloadsTest {
         String out2 = FriendlyId.createFriendlyId();
         testUtils.upload(random + "/" + out2);
 
-        Downloads task = Downloads.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Downloads.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
-            .action(ActionInterface.Action.DELETE)
-            .build();
+        Downloads task = Downloads.builder().id(DownloadTest.class.getSimpleName()).type(Downloads.class.getName())
+                .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/").action(ActionInterface.Action.DELETE)
+                .build();
 
         Downloads.Output run = task.run(runContext(task));
 
@@ -49,12 +46,6 @@ class DownloadsTest {
     }
 
     private RunContext runContext(Task task) {
-        return TestsUtils.mockRunContext(
-            this.runContextFactory,
-            task,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
-        );
+        return TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of("bucket", this.bucket));
     }
 }

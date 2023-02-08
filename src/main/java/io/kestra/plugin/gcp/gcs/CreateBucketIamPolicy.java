@@ -22,47 +22,28 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Plugin(
-    examples = {
-        @Example(
-            title = "Add role to a service account on a bucket",
-            code = {
-                "name: \"my-bucket\"",
-                "member: \"sa@project.iam.gserviceaccount.com\"",
-                "role: \"roles/storage.admin\""
-            }
-        )
-    }
-)
-@Schema(
-    title = "Add role on an existing bucket."
-)
+@Plugin(examples = {@Example(title = "Add role to a service account on a bucket",
+        code = {"name: \"my-bucket\"", "member: \"sa@project.iam.gserviceaccount.com\"",
+                "role: \"roles/storage.admin\""})})
+@Schema(title = "Add role on an existing bucket.")
 public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<CreateBucketIamPolicy.Output> {
     @NotNull
-    @Schema(
-        title = "Bucket's unique name"
-    )
+    @Schema(title = "Bucket's unique name")
     @PluginProperty(dynamic = true)
     protected String name;
 
     @NotNull
-    @Schema(
-        title = "Bucket's unique name"
-    )
+    @Schema(title = "Bucket's unique name")
     @PluginProperty(dynamic = true)
     protected String member;
 
     @NotNull
-    @Schema(
-        title = "Bucket's unique name"
-    )
+    @Schema(title = "Bucket's unique name")
     @PluginProperty(dynamic = true)
     protected String role;
 
     @Builder.Default
-    @Schema(
-        title = "Policy to apply if a policy already exists."
-    )
+    @Schema(title = "Policy to apply if a policy already exists.")
     private IfExists ifExists = IfExists.SKIP;
 
     @Override
@@ -77,20 +58,12 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
 
         Policy currentPolicy = connection.getIamPolicy(bucketName);
 
-        boolean exists = currentPolicy
-            .getBindingsList()
-            .stream()
-            .anyMatch(binding -> binding.getRole().equals(role.getValue()) &&
-                binding
-                    .getMembers()
-                    .stream()
-                    .anyMatch(s -> s.equals(identity.strValue()))
-            );
+        boolean exists =
+                currentPolicy.getBindingsList().stream().anyMatch(binding -> binding.getRole().equals(role.getValue())
+                        && binding.getMembers().stream().anyMatch(s -> s.equals(identity.strValue())));
 
-        Output.OutputBuilder output = Output.builder()
-            .bucket(bucketName)
-            .member(identity.getValue())
-            .role(role.getValue());
+        Output.OutputBuilder output =
+                Output.builder().bucket(bucketName).member(identity.getValue()).role(role.getValue());
 
         if (exists) {
             String exception = "Binding " + role.getValue() + " for member " + member + " already exists";
@@ -102,10 +75,7 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
             }
         }
 
-        Policy updated = currentPolicy
-            .toBuilder()
-            .addIdentity(role, identity)
-            .build();
+        Policy updated = currentPolicy.toBuilder().addIdentity(role, identity).build();
 
         logger.debug("Updating policy on bucket '{}', adding '{}' with role '{}", bucketName, identity, role);
 
@@ -117,29 +87,20 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The bucket uri"
-        )
+        @Schema(title = "The bucket uri")
         private String bucket;
 
-        @Schema(
-            title = "The bucket uri"
-        )
+        @Schema(title = "The bucket uri")
         private String member;
 
-        @Schema(
-            title = "The bucket uri"
-        )
+        @Schema(title = "The bucket uri")
         private String role;
 
-        @Schema(
-            title = "If the binding was added, or already exist"
-        )
+        @Schema(title = "If the binding was added, or already exist")
         private Boolean created;
     }
 
     public enum IfExists {
-        ERROR,
-        SKIP
+        ERROR, SKIP
     }
 }

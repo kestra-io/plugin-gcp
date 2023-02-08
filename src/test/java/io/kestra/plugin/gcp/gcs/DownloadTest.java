@@ -36,51 +36,32 @@ class DownloadTest {
 
     @Test
     void fromStorage() throws Exception {
-        File file = new File(Objects.requireNonNull(DownloadTest.class.getClassLoader()
-            .getResource("application.yml"))
-            .toURI());
+        File file = new File(
+                Objects.requireNonNull(DownloadTest.class.getClassLoader().getResource("application.yml")).toURI());
 
-        URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(file)
-        );
+        URI source = storageInterface.put(new URI("/" + FriendlyId.createFriendlyId()), new FileInputStream(file));
 
         String out = FriendlyId.createFriendlyId();
 
-        Upload upload = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
-            .build();
+        Upload upload = Upload.builder().id(UploadTest.class.getSimpleName()).type(Upload.class.getName())
+                .from(source.toString()).to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml").build();
 
         Upload.Output uploadOutput = upload.run(runContext(upload));
 
-        Download task = Download.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(uploadOutput.getUri().toString())
-            .build();
+        Download task = Download.builder().id(DownloadTest.class.getSimpleName()).type(Download.class.getName())
+                .from(uploadOutput.getUri().toString()).build();
 
 
         Download.Output run = task.run(runContext(task));
 
         InputStream get = storageInterface.get(run.getUri());
 
-        assertThat(
-            CharStreams.toString(new InputStreamReader(get)),
-            is(CharStreams.toString(new InputStreamReader(new FileInputStream(file))))
-        );
+        assertThat(CharStreams.toString(new InputStreamReader(get)),
+                is(CharStreams.toString(new InputStreamReader(new FileInputStream(file)))));
     }
 
 
     private RunContext runContext(Task task) {
-        return TestsUtils.mockRunContext(
-            this.runContextFactory,
-            task,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
-        );
+        return TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of("bucket", this.bucket));
     }
 }

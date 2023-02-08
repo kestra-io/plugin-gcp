@@ -37,61 +37,35 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Query documents of a collection."
-)
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "collection: \"persons\"",
-                "filters: ",
-                "- field: \"lastname\"",
-                "  value: \"Doe\""
-            }
-        )
-    }
-)
+@Schema(title = "Query documents of a collection.")
+@Plugin(examples = {
+        @Example(code = {"collection: \"persons\"", "filters: ", "- field: \"lastname\"", "  value: \"Doe\""})})
 public class Query extends AbstractFirestore implements RunnableTask<FetchOutput> {
-    @Schema(
-        title = "The way you want to store the data",
-        description = "FETCH_ONE output the first row, "
-            + "FETCH output all the rows, "
-            + "STORE store all rows in a file, "
-            + "NONE do nothing."
-    )
+    @Schema(title = "The way you want to store the data",
+            description = "FETCH_ONE output the first row, " + "FETCH output all the rows, "
+                    + "STORE store all rows in a file, " + "NONE do nothing.")
     @Builder.Default
     @PluginProperty
     private FetchType fetchType = FetchType.STORE;
 
-    @Schema(
-        title = "List of query filters that will be added as a where clause."
-    )
+    @Schema(title = "List of query filters that will be added as a where clause.")
     @PluginProperty(dynamic = false)
     private List<Filter> filters;
 
-    @Schema(
-        title = "Field name for the order by clause."
-    )
+    @Schema(title = "Field name for the order by clause.")
     @PluginProperty(dynamic = false)
     private String orderBy;
 
-    @Schema(
-        title = "Field name for the order by clause."
-    )
+    @Schema(title = "Field name for the order by clause.")
     @PluginProperty(dynamic = false)
     @Builder.Default
     private Direction orderDirection = Direction.ASCENDING;
 
-    @Schema(
-        title = "Start offset for pagination of the query results."
-    )
+    @Schema(title = "Start offset for pagination of the query results.")
     @PluginProperty(dynamic = false)
     private Integer offset;
 
-    @Schema(
-        title = "Maximum numbers of returned results."
-    )
+    @Schema(title = "Maximum numbers of returned results.")
     @PluginProperty(dynamic = false)
     private Integer limit;
 
@@ -120,55 +94,45 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             switch (fetchType) {
                 case FETCH:
                     Pair<List<Object>, Long> fetch = this.fetch(queryDocumentSnapshots);
-                    outputBuilder
-                        .rows(fetch.getLeft())
-                        .size(fetch.getRight());
-                break;
+                    outputBuilder.rows(fetch.getLeft()).size(fetch.getRight());
+                    break;
 
                 case FETCH_ONE:
                     var o = this.fetchOne(queryDocumentSnapshots);
 
-                    outputBuilder
-                        .row(o)
-                        .size(o != null ? 1L : 0L);
-                break;
+                    outputBuilder.row(o).size(o != null ? 1L : 0L);
+                    break;
 
                 case STORE:
                     Pair<URI, Long> store = this.store(runContext, queryDocumentSnapshots);
-                    outputBuilder
-                        .uri(store.getLeft())
-                        .size(store.getRight());
-                break;
+                    outputBuilder.uri(store.getLeft()).size(store.getRight());
+                    break;
             }
 
             var output = outputBuilder.build();
 
-            runContext.metric(Counter.of(
-                "records", output.getSize(),
-                "collection", collectionRef.getId()
-            ));
+            runContext.metric(Counter.of("records", output.getSize(), "collection", collectionRef.getId()));
 
             return output;
         }
     }
 
-    private com.google.cloud.firestore.Query getQuery(RunContext runContext, CollectionReference collectionRef, List<Filter> filters)
-        throws IllegalVariableEvaluationException {
+    private com.google.cloud.firestore.Query getQuery(RunContext runContext, CollectionReference collectionRef,
+            List<Filter> filters) throws IllegalVariableEvaluationException {
         // this is a no-op but allow to create an empty query
         var query = collectionRef.offset(0);
         if (this.filters == null || this.filters.isEmpty()) {
             return query;
         }
 
-        for(Filter option : filters)  {
-           query = appendQueryPart(runContext, query, option);
+        for (Filter option : filters) {
+            query = appendQueryPart(runContext, query, option);
         }
         return query;
     }
 
-    private com.google.cloud.firestore.Query appendQueryPart(RunContext runContext, com.google.cloud.firestore.Query query,
-                                                             Filter filter)
-        throws IllegalVariableEvaluationException {
+    private com.google.cloud.firestore.Query appendQueryPart(RunContext runContext,
+            com.google.cloud.firestore.Query query, Filter filter) throws IllegalVariableEvaluationException {
         switch (filter.getOperator()) {
             case EQUAL_TO: {
                 return query.whereEqualTo(filter.getField(), runContext.render(filter.getValue()));
@@ -205,10 +169,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             }));
         }
 
-        return Pair.of(
-            runContext.putTempFile(tempFile),
-            count.get()
-        );
+        return Pair.of(runContext.putTempFile(tempFile), count.get());
     }
 
     private Pair<List<Object>, Long> fetch(List<QueryDocumentSnapshot> documents) {
@@ -236,39 +197,26 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     @NoArgsConstructor
     @Getter
     @Introspected
-    @Schema(
-        title = "A filter for the where clause"
-    )
+    @Schema(title = "A filter for the where clause")
     public static class Filter {
-        @Schema(
-            title = "Field name for the filter."
-        )
+        @Schema(title = "Field name for the filter.")
         @PluginProperty(dynamic = false)
         @NotNull
         private String field;
 
-        @Schema(
-            title = "Field value for the filter.",
-            description = "Field value for the filter. Only strings are supported at the moment."
-        )
+        @Schema(title = "Field value for the filter.",
+                description = "Field value for the filter. Only strings are supported at the moment.")
         @PluginProperty(dynamic = true)
         @NotNull
         private String value;
 
-        @Schema(
-            title = "The operator for the filter, by default EQUAL_TO that will call 'collection.whereEqualTo(name, value)'"
-        )
+        @Schema(title = "The operator for the filter, by default EQUAL_TO that will call 'collection.whereEqualTo(name, value)'")
         @PluginProperty(dynamic = false)
         @Builder.Default
         private QueryOperator operator = QueryOperator.EQUAL_TO;
     }
 
     public enum QueryOperator {
-        EQUAL_TO,
-        NOT_EQUAL_TO,
-        LESS_THAN,
-        LESS_THAN_OR_EQUAL_TO,
-        GREATER_THAN,
-        GREATER_THAN_OR_EQUAL_TO
+        EQUAL_TO, NOT_EQUAL_TO, LESS_THAN, LESS_THAN_OR_EQUAL_TO, GREATER_THAN, GREATER_THAN_OR_EQUAL_TO
     }
 }

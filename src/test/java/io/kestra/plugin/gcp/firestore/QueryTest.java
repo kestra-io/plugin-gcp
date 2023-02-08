@@ -25,14 +25,9 @@ class QueryTest {
     void runFetch() throws Exception {
         var runContext = runContextFactory.of();
 
-        var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build())
-            )
-            .fetchType(FetchType.FETCH)
-            .build();
+        var query = Query.builder().projectId(project).collection("persons")
+                .filters(List.of(Query.Filter.builder().field("lastname").value("Doe").build()))
+                .fetchType(FetchType.FETCH).build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -58,15 +53,10 @@ class QueryTest {
     void runFetchMultipleWhere() throws Exception {
         var runContext = runContextFactory.of();
 
-        var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build(),
-                Query.Filter.builder().field("firstname").value("Jane").build())
-            )
-            .fetchType(FetchType.FETCH)
-            .build();
+        var query = Query.builder().projectId(project).collection("persons")
+                .filters(List.of(Query.Filter.builder().field("lastname").value("Doe").build(),
+                        Query.Filter.builder().field("firstname").value("Jane").build()))
+                .fetchType(FetchType.FETCH).build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -92,11 +82,7 @@ class QueryTest {
     void runFetchNoWhere() throws Exception {
         var runContext = runContextFactory.of();
 
-        var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .fetchType(FetchType.FETCH)
-            .build();
+        var query = Query.builder().projectId(project).collection("persons").fetchType(FetchType.FETCH).build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -122,15 +108,10 @@ class QueryTest {
     void runFetchNotEqualToWithOrderBy() throws Exception {
         var runContext = runContextFactory.of();
 
-        var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO).build())
-            )
-            .orderBy("firstname")
-            .fetchType(FetchType.FETCH)
-            .build();
+        var query = Query.builder().projectId(project).collection("persons")
+                .filters(List.of(Query.Filter.builder().field("lastname").value("Doe")
+                        .operator(Query.QueryOperator.NOT_EQUAL_TO).build()))
+                .orderBy("firstname").fetchType(FetchType.FETCH).build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -156,14 +137,9 @@ class QueryTest {
     void runStored() throws Exception {
         var runContext = runContextFactory.of();
 
-        var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build())
-            )
-            .fetchType(FetchType.STORE)
-            .build();
+        var query = Query.builder().projectId(project).collection("persons")
+                .filters(List.of(Query.Filter.builder().field("lastname").value("Doe").build()))
+                .fetchType(FetchType.STORE).build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {

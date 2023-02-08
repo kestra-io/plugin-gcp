@@ -20,20 +20,9 @@ import org.slf4j.Logger;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Update a dataset."
-)
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "name: \"my_dataset\"",
-                "location: \"EU\"",
-                "friendlyName: \"new Friendly Name\""
-            }
-        )
-    }
-)
+@Schema(title = "Update a dataset.")
+@Plugin(examples = {
+        @Example(code = {"name: \"my_dataset\"", "location: \"EU\"", "friendlyName: \"new Friendly Name\""})})
 public class UpdateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {

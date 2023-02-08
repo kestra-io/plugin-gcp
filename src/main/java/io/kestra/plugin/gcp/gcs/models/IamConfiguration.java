@@ -11,16 +11,13 @@ public class IamConfiguration {
     private final BucketInfo.PublicAccessPrevention publicAccessPrevention;
 
     public static IamConfiguration of(BucketInfo.IamConfiguration item) {
-        return IamConfiguration.builder()
-            .uniformBucketLevelAccessEnabled(item.isUniformBucketLevelAccessEnabled())
-            .publicAccessPrevention(item.getPublicAccessPrevention())
-            .build();
+        return IamConfiguration.builder().uniformBucketLevelAccessEnabled(item.isUniformBucketLevelAccessEnabled())
+                .publicAccessPrevention(item.getPublicAccessPrevention()).build();
     }
 
     public BucketInfo.IamConfiguration convert() {
         return BucketInfo.IamConfiguration.newBuilder()
-            .setIsUniformBucketLevelAccessEnabled(this.uniformBucketLevelAccessEnabled)
-            .setPublicAccessPrevention(this.publicAccessPrevention)
-            .build();
+                .setIsUniformBucketLevelAccessEnabled(this.uniformBucketLevelAccessEnabled)
+                .setPublicAccessPrevention(this.publicAccessPrevention).build();
     }
 }

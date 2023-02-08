@@ -49,13 +49,8 @@ public class ExtractToGcsTest extends AbstractBigquery {
     private Boolean printHeader;
 
     private Job query(BigQuery bigQuery, String query) throws InterruptedException {
-        return bigQuery
-            .create(JobInfo
-                .newBuilder(QueryJobConfiguration.newBuilder(query).build())
-                .setJobId(JobId.of(UUID.randomUUID().toString()))
-                .build()
-            )
-            .waitFor();
+        return bigQuery.create(JobInfo.newBuilder(QueryJobConfiguration.newBuilder(query).build())
+                .setJobId(JobId.of(UUID.randomUUID().toString())).build()).waitFor();
     }
 
     @Test
@@ -63,63 +58,40 @@ public class ExtractToGcsTest extends AbstractBigquery {
         // Sample table
 
         // Extract task
-        ExtractToGcs task = ExtractToGcs.builder()
-            .id(ExtractToGcsTest.class.getSimpleName())
-            .type(ExtractToGcs.class.getName())
-            .destinationUris(Collections.singletonList(
-                "gs://" + this.bucket + "/" + this.filename
-            ))
-            .sourceTable(this.project + "." + this.dataset + "." + this.table)
-            .printHeader(printHeader)
-            .build();
+        ExtractToGcs task = ExtractToGcs.builder().id(ExtractToGcsTest.class.getSimpleName())
+                .type(ExtractToGcs.class.getName())
+                .destinationUris(Collections.singletonList("gs://" + this.bucket + "/" + this.filename))
+                .sourceTable(this.project + "." + this.dataset + "." + this.table).printHeader(printHeader).build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
-        query(
-            task.connection(runContext),
-            "CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
-            "(product STRING, quantity INT64)" +
-            ";" +
-            "INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
-            "VALUES('top load washer', 10)" +
-            ";"
-        );
+        query(task.connection(runContext),
+                "CREATE OR REPLACE TABLE  `" + this.dataset + "." + this.table + "`"
+                        + "(product STRING, quantity INT64)" + ";" + "INSERT `" + this.dataset + "." + this.table
+                        + "` (product, quantity)" + "VALUES('top load washer', 10)" + ";");
 
         ExtractToGcs.Output extractOutput = task.run(runContext);
 
         // Download task
-        String testString = "product,quantity\n" +
-            "top load washer,10\n";
+        String testString = "product,quantity\n" + "top load washer,10\n";
 
-        Download downloadTask = Download.builder()
-            .id(ExtractToGcsTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(extractOutput.getDestinationUris().get(0))
-            .build();
+        Download downloadTask = Download.builder().id(ExtractToGcsTest.class.getSimpleName())
+                .type(Download.class.getName()).from(extractOutput.getDestinationUris().get(0)).build();
 
         Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
         InputStream get = storageInterface.get(downloadOutput.getUri());
 
         // Tests
         assertThat(extractOutput.getFileCounts().get(0), is(1L));
-        assertThat(
-            CharStreams.toString(new InputStreamReader(get)),
-            is(testString)
-        );
+        assertThat(CharStreams.toString(new InputStreamReader(get)), is(testString));
 
         // Clean sample table
-        query(task.connection(runContext), "DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
+        query(task.connection(runContext), "DROP TABLE  `" + this.dataset + "." + this.table + "` ;");
 
     }
 
     private RunContext runContext(Task task) {
-        return TestsUtils.mockRunContext(
-            this.runContextFactory,
-            task,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
-        );
+        return TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of("bucket", this.bucket));
     }
 }
 

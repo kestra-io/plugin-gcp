@@ -26,25 +26,12 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Copy partitions between interval to another table "
-)
-@Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "destinationTable: my-dest-table",
-                "partitionType: DAY",
-                "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"",
-                "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""
-            }
-        )
-    }
-)
-public class CopyPartitions extends AbstractPartition implements RunnableTask<CopyPartitions.Output>, AbstractJobInterface {
+@Schema(title = "Copy partitions between interval to another table ")
+@Plugin(examples = {@Example(code = {"projectId: my-project", "dataset: my-dataset", "table: my-table",
+        "destinationTable: my-dest-table", "partitionType: DAY", "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"",
+        "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""})})
+public class CopyPartitions extends AbstractPartition
+        implements RunnableTask<CopyPartitions.Output>, AbstractJobInterface {
     protected String destinationTable;
 
     protected JobInfo.WriteDisposition writeDisposition;
@@ -70,37 +57,22 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         logger.debug("Copying partitions '{}'", partitionToCopy);
         runContext.metric(Counter.of("size", partitionToCopy.size()));
 
-        Copy task = Copy.builder()
-            .sourceTables(partitionToCopy
-                .stream()
-                .map(throwFunction(s -> {
-                    TableId current = this.tableId(runContext, s);
-                    List<String> source = new ArrayList<>();
-                    if (current.getProject() != null) {
-                        source.add(current.getProject());
-                    }
+        Copy task = Copy.builder().sourceTables(partitionToCopy.stream().map(throwFunction(s -> {
+            TableId current = this.tableId(runContext, s);
+            List<String> source = new ArrayList<>();
+            if (current.getProject() != null) {
+                source.add(current.getProject());
+            }
 
-                    source.add(current.getDataset());
-                    source.add(current.getTable());
+            source.add(current.getDataset());
+            source.add(current.getTable());
 
-                    return String.join(".", source);
-                }))
-                .collect(Collectors.toList())
-            )
-            .destinationTable(this.destinationTable)
-            .writeDisposition(this.writeDisposition)
-            .createDisposition(this.createDisposition)
-            .jobTimeout(this.jobTimeout)
-            .labels(this.labels)
-            .dryRun(this.dryRun)
-            .location(this.location)
-            .retryAuto(this.retryAuto)
-            .retryReasons(this.retryReasons)
-            .retryMessages(this.retryMessages)
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .scopes(this.scopes)
-            .build();
+            return String.join(".", source);
+        })).collect(Collectors.toList())).destinationTable(this.destinationTable)
+                .writeDisposition(this.writeDisposition).createDisposition(this.createDisposition)
+                .jobTimeout(this.jobTimeout).labels(this.labels).dryRun(this.dryRun).location(this.location)
+                .retryAuto(this.retryAuto).retryReasons(this.retryReasons).retryMessages(this.retryMessages)
+                .projectId(this.projectId).serviceAccount(this.serviceAccount).scopes(this.scopes).build();
 
         Copy.Output run = task.run(runContext);
 
@@ -110,38 +82,24 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
     @Getter
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The project's id"
-        )
+        @Schema(title = "The project's id")
         private final String projectId;
 
-        @Schema(
-            title = "The dataset's id"
-        )
+        @Schema(title = "The dataset's id")
         private final String datasetId;
 
-        @Schema(
-            title = "The table name"
-        )
+        @Schema(title = "The table name")
         private final String table;
 
-        @Schema(
-            title = "Partitions copied"
-        )
+        @Schema(title = "Partitions copied")
         private final List<String> partitions;
 
-        @Schema(
-            title = "The job id"
-        )
+        @Schema(title = "The job id")
         private String jobId;
 
         public static Output of(TableId table, List<String> partitions, String jobId) {
-            return Output.builder()
-                .projectId(table.getProject())
-                .datasetId(table.getDataset())
-                .table(table.getTable())
-                .partitions(partitions)
-                .build();
+            return Output.builder().projectId(table.getProject()).datasetId(table.getDataset()).table(table.getTable())
+                    .partitions(partitions).build();
         }
     }
 }

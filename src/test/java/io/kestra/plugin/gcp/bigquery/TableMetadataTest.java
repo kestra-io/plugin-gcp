@@ -33,40 +33,25 @@ class TableMetadataTest {
     private String dataset;
 
     private Job query(BigQuery bigQuery, String query) throws InterruptedException {
-        return bigQuery
-            .create(JobInfo
-                .newBuilder(QueryJobConfiguration.newBuilder(query).build())
-                .setJobId(JobId.of(UUID.randomUUID().toString()))
-                .build()
-            )
-            .waitFor();
+        return bigQuery.create(JobInfo.newBuilder(QueryJobConfiguration.newBuilder(query).build())
+                .setJobId(JobId.of(UUID.randomUUID().toString())).build()).waitFor();
     }
 
     @Test
     void table() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
 
-        TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .build();
+        TableMetadata task =
+                TableMetadata.builder().projectId(this.project).dataset(this.dataset).table(friendlyId).build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        query(
-            task.connection(runContext),
-            "CREATE TABLE `" + this.dataset + "." + friendlyId + "`" +
-                "(product STRING, quantity INT64, date TIMESTAMP)" +
-                " PARTITION BY DATE(date)" +
-                " CLUSTER BY quantity" +
-                " OPTIONS(" +
-                "  expiration_timestamp=TIMESTAMP_ADD(" +
-                "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)," +
-                "  friendly_name=\"new_view\"," +
-                "  description=\"a view that expires in 2 days\"," +
-                "  labels=[(\"org_unit\", \"development\")]" +
-                ");"
-        );
+        query(task.connection(runContext),
+                "CREATE TABLE `" + this.dataset + "." + friendlyId + "`"
+                        + "(product STRING, quantity INT64, date TIMESTAMP)" + " PARTITION BY DATE(date)"
+                        + " CLUSTER BY quantity" + " OPTIONS(" + "  expiration_timestamp=TIMESTAMP_ADD("
+                        + "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)," + "  friendly_name=\"new_view\","
+                        + "  description=\"a view that expires in 2 days\","
+                        + "  labels=[(\"org_unit\", \"development\")]" + ");");
 
         TableMetadata.Output run = task.run(runContext);
 
@@ -83,26 +68,17 @@ class TableMetadataTest {
     void view() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
 
-        TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .build();
+        TableMetadata task =
+                TableMetadata.builder().projectId(this.project).dataset(this.dataset).table(friendlyId).build();
 
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        query(
-            task.connection(runContext),
-            "CREATE VIEW `" + this.dataset + "." + friendlyId + "`\n" +
-                "OPTIONS(" +
-                "  expiration_timestamp=TIMESTAMP_ADD(" +
-                "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)," +
-                "  friendly_name=\"new_view\"," +
-                "  description=\"a view that expires in 2 days\"," +
-                "  labels=[(\"org_unit\", \"development\")]" +
-                ")\n" +
-                "AS SELECT 'name' as name, 'state' as state, 1.23 as float, 1 as int"
-        );
+        query(task.connection(runContext),
+                "CREATE VIEW `" + this.dataset + "." + friendlyId + "`\n" + "OPTIONS("
+                        + "  expiration_timestamp=TIMESTAMP_ADD(" + "  CURRENT_TIMESTAMP(), INTERVAL 48 HOUR),"
+                        + "  friendly_name=\"new_view\"," + "  description=\"a view that expires in 2 days\","
+                        + "  labels=[(\"org_unit\", \"development\")]" + ")\n"
+                        + "AS SELECT 'name' as name, 'state' as state, 1.23 as float, 1 as int");
 
 
         TableMetadata.Output run = task.run(runContext);
@@ -119,11 +95,8 @@ class TableMetadataTest {
     void dontExistsError() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
 
-        TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .build();
+        TableMetadata task =
+                TableMetadata.builder().projectId(this.project).dataset(this.dataset).table(friendlyId).build();
 
         // flow is not created
         assertThrows(IllegalArgumentException.class, () -> {
@@ -135,12 +108,8 @@ class TableMetadataTest {
     void dontExistsNoError() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
 
-        TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .ifNotExists(TableMetadata.IfNotExists.SKIP)
-            .build();
+        TableMetadata task = TableMetadata.builder().projectId(this.project).dataset(this.dataset).table(friendlyId)
+                .ifNotExists(TableMetadata.IfNotExists.SKIP).build();
 
         TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));
 
