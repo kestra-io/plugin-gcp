@@ -115,10 +115,12 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
 }
 
-// line length, nb spaces, ...
+// validate code formatting with Spotless
 spotless {
     java {
-        // we use Android Open Source Project variant as it set 4 spaces for a tab
+        importOrderFile("eclipse-kestra.importorder")
+        removeUnusedImports()
+        // we use our own config file that is based on Google Code Style with a few customization
         eclipse().configFile("eclipse-java-kestra-style.xml")
     }
 }
