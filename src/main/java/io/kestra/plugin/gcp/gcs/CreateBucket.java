@@ -18,25 +18,25 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Create a new bucket with some options",
-            code = {
-                "name: \"my-bucket\"",
-                "versioningEnabled: true",
-                "labels: ",
-                "  my-label: my-value"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Create a new bucket with some options",
+                        code = {
+                                "name: \"my-bucket\"",
+                                "versioningEnabled: true",
+                                "labels: ",
+                                "  my-label: my-value"
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Create a bucket or update if it already exists."
+        title = "Create a bucket or update if it already exists."
 )
 public class CreateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Builder.Default
     @Schema(
-        title = "Policy to apply if a bucket already exists."
+            title = "Policy to apply if a bucket already exists."
     )
     private IfExists ifExists = IfExists.ERROR;
 
@@ -53,26 +53,28 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
         if (bucket == null) {
             logger.debug("Creating bucket '{}'", bucketInfo);
             return Output.builder()
-                .bucket(Bucket.of(connection.create(bucketInfo)))
-                .created(true)
-                .build();
+                    .bucket(Bucket.of(connection.create(bucketInfo)))
+                    .created(true)
+                    .build();
         }
 
         // Bucket exists, we check the ifExists policy
         if (this.ifExists == IfExists.UPDATE) {
             logger.debug("Updating bucket '{}'", bucketInfo);
             return Output.builder()
-                .bucket(Bucket.of(connection.update(bucketInfo)))
-                .updated(true)
-                .build();
+                    .bucket(Bucket.of(connection.update(bucketInfo)))
+                    .updated(true)
+                    .build();
 
         } else if (this.ifExists == IfExists.SKIP) {
             logger.debug("Bucket '{}' already exists, skipping", bucketInfo);
             return Output.builder()
-                .bucket(Bucket.of(connection.update(bucketInfo)))
-                .build();
+                    .bucket(Bucket.of(connection.update(bucketInfo)))
+                    .build();
         } else {
-            throw new RuntimeException("Bucket " + bucketInfo.getName() + " already exists and ifExists policy is set to ERROR !");
+            throw new RuntimeException(
+                    "Bucket " + bucketInfo.getName() + " already exists and ifExists policy is set to ERROR !"
+            );
         }
     }
 

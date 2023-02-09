@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.TableInfo;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Rethrow;
@@ -26,42 +25,42 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 abstract public class AbstractTableCreateUpdate extends AbstractTable {
     @Schema(
-        title = "The table definition"
+            title = "The table definition"
     )
     protected TableDefinition tableDefinition;
 
     @Schema(
-        title = "The user-friendly name for the table"
+            title = "The user-friendly name for the table"
     )
     @PluginProperty(dynamic = true)
     protected String friendlyName;
 
     @Schema(
-        title = "The user-friendly description for the table"
+            title = "The user-friendly description for the table"
     )
     @PluginProperty(dynamic = true)
     protected String description;
 
     @Schema(
-        title = "Return a map for labels applied to the table"
+            title = "Return a map for labels applied to the table"
     )
     @PluginProperty(dynamic = true)
     protected Map<String, String> labels;
 
     @Schema(
-        title = "Return true if a partition filter (that can be used for partition elimination) " +
-            "is required for queries over this table."
+            title = "Return true if a partition filter (that can be used for partition elimination) " +
+                    "is required for queries over this table."
     )
     protected Boolean requirePartitionFilter;
 
     @Schema(
-        title = "The encryption configuration"
+            title = "The encryption configuration"
     )
     protected EncryptionConfiguration encryptionConfiguration;
 
     @Schema(
-        title = "Sets the duration since now when this table expires.",
-        description = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
+            title = "Sets the duration since now when this table expires.",
+            description = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
     )
     protected Duration expirationDuration;
 
@@ -80,11 +79,13 @@ abstract public class AbstractTableCreateUpdate extends AbstractTable {
 
         if (this.labels != null) {
             builder.setLabels(
-                this.labels.entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
-                    ))
+                    this.labels.entrySet().stream()
+                            .collect(
+                                    Collectors.toMap(
+                                            Map.Entry::getKey,
+                                            Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                                    )
+                            )
             );
         }
 

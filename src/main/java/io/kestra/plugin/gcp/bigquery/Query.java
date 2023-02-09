@@ -8,7 +8,6 @@ import io.reactivex.Single;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.ArrayUtils;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -42,51 +41,51 @@ import java.util.stream.StreamSupport;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Create a table with a custom query",
-            code = {
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "writeDisposition: WRITE_APPEND",
-                "sql: |",
-                "  SELECT ",
-                "    \"hello\" as string,",
-                "    NULL AS `nullable`,",
-                "    1 as int,",
-                "    1.25 AS float,",
-                "    DATE(\"2008-12-25\") AS date,",
-                "    DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,",
-                "    TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,",
-                "    TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,",
-                "    ST_GEOGPOINT(50.6833, 2.9) AS geopoint,",
-                "    ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,",
-                "    STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
-            }
-        ),
-        @Example(
-            full = true,
-            title = "Execute a query and fetch results sets on another task",
-            code = {
-                "tasks:",
-                "- id: fetch",
-                "  type: io.kestra.plugin.gcp.bigquery.Query",
-                "  fetch: true",
-                "  sql: |",
-                "    SELECT 1 as id, \"John\" as name",
-                "    UNION ALL",
-                "    SELECT 2 as id, \"Doe\" as name",
-                "- id: use-fetched-data",
-                "  type: io.kestra.core.tasks.debugs.Return",
-                "  format: |",
-                "    {{#each outputs.fetch.rows}}",
-                "    id : {{ this.id }}, name: {{ this.name }}",
-                "    {{/each}}"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Create a table with a custom query",
+                        code = {
+                                "destinationTable: \"my_project.my_dataset.my_table\"",
+                                "writeDisposition: WRITE_APPEND",
+                                "sql: |",
+                                "  SELECT ",
+                                "    \"hello\" as string,",
+                                "    NULL AS `nullable`,",
+                                "    1 as int,",
+                                "    1.25 AS float,",
+                                "    DATE(\"2008-12-25\") AS date,",
+                                "    DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,",
+                                "    TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,",
+                                "    TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,",
+                                "    ST_GEOGPOINT(50.6833, 2.9) AS geopoint,",
+                                "    ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,",
+                                "    STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
+                        }
+                ),
+                @Example(
+                        full = true,
+                        title = "Execute a query and fetch results sets on another task",
+                        code = {
+                                "tasks:",
+                                "- id: fetch",
+                                "  type: io.kestra.plugin.gcp.bigquery.Query",
+                                "  fetch: true",
+                                "  sql: |",
+                                "    SELECT 1 as id, \"John\" as name",
+                                "    UNION ALL",
+                                "    SELECT 2 as id, \"Doe\" as name",
+                                "- id: use-fetched-data",
+                                "  type: io.kestra.core.tasks.debugs.Return",
+                                "  format: |",
+                                "    {{#each outputs.fetch.rows}}",
+                                "    id : {{ this.id }}, name: {{ this.name }}",
+                                "    {{/each}}"
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Execute BigQuery SQL query in a specific BigQuery database"
+        title = "Execute BigQuery SQL query in a specific BigQuery database"
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
@@ -110,130 +109,130 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     // private Map<String, String> namedParameters;
 
     @Schema(
-        title = "The clustering specification for the destination table"
+            title = "The clustering specification for the destination table"
     )
     @PluginProperty(dynamic = true)
     private List<String> clusteringFields;
 
     @Schema(
-        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
-        description = " Schema update options are supported in two cases: " +
-            "* when writeDisposition is WRITE_APPEND; \n" +
-            "* when writeDisposition is WRITE_TRUNCATE and the destination" +
-            " table is a partition of a table, specified by partition decorators. " +
-            "\n" +
-            " For normal tables, WRITE_TRUNCATE will always overwrite the schema."
+            title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
+            description = " Schema update options are supported in two cases: " +
+                    "* when writeDisposition is WRITE_APPEND; \n" +
+                    "* when writeDisposition is WRITE_TRUNCATE and the destination" +
+                    " table is a partition of a table, specified by partition decorators. " +
+                    "\n" +
+                    " For normal tables, WRITE_TRUNCATE will always overwrite the schema."
     )
     @PluginProperty(dynamic = false)
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
     @Schema(
-        title = "The time partitioning field for the destination table."
+            title = "The time partitioning field for the destination table."
     )
     @PluginProperty(dynamic = true)
     private String timePartitioningField;
 
     @Schema(
-        title = "The time partitioning type specification."
+            title = "The time partitioning type specification."
     )
     @PluginProperty(dynamic = true)
     @Builder.Default
     private TimePartitioning.Type timePartitioningType = TimePartitioning.Type.DAY;
 
     @Schema(
-        title = "Range partitioning field for the destination table."
+            title = "Range partitioning field for the destination table."
     )
     @PluginProperty(dynamic = true)
     private String rangePartitioningField;
 
     @Schema(
-        title = "The start of range partitioning, inclusive."
+            title = "The start of range partitioning, inclusive."
     )
     @PluginProperty(dynamic = true)
     private Long rangePartitioningStart;
 
     @Schema(
-        title = "The end range partitioning, inclusive."
+            title = "The end range partitioning, inclusive."
     )
     @PluginProperty(dynamic = true)
     private Long rangePartitioningEnd;
 
     @Schema(
-        title = "The width of each interval."
+            title = "The width of each interval."
     )
     @PluginProperty(dynamic = true)
     private Long rangePartitioningInterval;
 
     @Schema(
-        title = "Sets the default dataset.",
-        description = "This dataset is used for all unqualified table names used in the query."
+            title = "Sets the default dataset.",
+            description = "This dataset is used for all unqualified table names used in the query."
     )
     @PluginProperty(dynamic = true)
     private String defaultDataset;
 
     @Schema(
-        title = "Sets a priority for the query."
+            title = "Sets a priority for the query."
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
     private QueryJobConfiguration.Priority priority = QueryJobConfiguration.Priority.INTERACTIVE;
 
     @Schema(
-        title = "Sets whether the job is enabled to create arbitrarily large results.",
-        description = "If `true` the query is allowed to create large results at a slight cost in performance. " +
-            "`destinationTable` must be provide"
+            title = "Sets whether the job is enabled to create arbitrarily large results.",
+            description = "If `true` the query is allowed to create large results at a slight cost in performance. " +
+                    "`destinationTable` must be provide"
     )
     @PluginProperty(dynamic = false)
     private Boolean allowLargeResults;
 
     @Schema(
-        title = "Sets whether to look for the result in the query cache.",
-        description = "The query cache is a best-effort cache that will be flushed whenever tables in the query are " +
-            "modified. Moreover, the query cache is only available when `destinationTable` is not set "
+            title = "Sets whether to look for the result in the query cache.",
+            description = "The query cache is a best-effort cache that will be flushed whenever tables in the query are " +
+                    "modified. Moreover, the query cache is only available when `destinationTable` is not set "
     )
     @PluginProperty(dynamic = false)
     private Boolean useQueryCache;
 
     @Schema(
-        title = "Sets whether nested and repeated fields should be flattened.",
-        description = "If set to `false`, allowLargeResults must be `true`"
+            title = "Sets whether nested and repeated fields should be flattened.",
+            description = "If set to `false`, allowLargeResults must be `true`"
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
     private Boolean flattenResults = true;
 
     @Schema(
-        title = "Sets whether to use BigQuery's legacy SQL dialect for this query.",
-        description = " A valid query will return a mostly empty response with some processing statistics, " +
-            "while an invalid query will return the same error it would if it wasn't a dry run."
+            title = "Sets whether to use BigQuery's legacy SQL dialect for this query.",
+            description = " A valid query will return a mostly empty response with some processing statistics, " +
+                    "while an invalid query will return the same error it would if it wasn't a dry run."
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
     private Boolean useLegacySql = false;
 
     @Schema(
-        title = "Limits the billing tier for this job.",
-        description = "Queries that have resource usage beyond this tier will fail (without incurring a charge). " +
-            "If unspecified, this will be set to your project default."
+            title = "Limits the billing tier for this job.",
+            description = "Queries that have resource usage beyond this tier will fail (without incurring a charge). " +
+                    "If unspecified, this will be set to your project default."
     )
     @PluginProperty(dynamic = false)
     private Integer maximumBillingTier;
 
     @Schema(
-        title = "Limits the bytes billed for this job.",
-        description = "Queries that will have bytes billed beyond this limit will fail (without incurring a charge). " +
-            "If unspecified, this will be set to your project default."
+            title = "Limits the bytes billed for this job.",
+            description = "Queries that will have bytes billed beyond this limit will fail (without incurring a charge). " +
+                    "If unspecified, this will be set to your project default."
     )
     @PluginProperty(dynamic = false)
     private Long maximumBytesBilled;
 
     @Schema(
-        title = "This is only supported in the fast query path.",
-        description = "The maximum number of rows of data " +
-            "to return per page of results. Setting this flag to a small value such as 1000 and then " +
-            "paging through results might improve reliability when the query result set is large. In " +
-            "addition to this limit, responses are also limited to 10 MB. By default, there is no maximum " +
-            "row count, and only the byte limit applies."
+            title = "This is only supported in the fast query path.",
+            description = "The maximum number of rows of data " +
+                    "to return per page of results. Setting this flag to a small value such as 1000 and then " +
+                    "paging through results might improve reliability when the query result set is large. In " +
+                    "addition to this limit, responses are also limited to 10 MB. By default, there is no maximum " +
+                    "row count, and only the byte limit applies."
     )
     @PluginProperty(dynamic = false)
     private Long maxResults;
@@ -248,13 +247,14 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         logger.debug("Starting query: {}", jobConfiguration.getQuery());
 
         Job queryJob = this.waitForJob(
-            logger,
-            () -> connection
-                .create(JobInfo.newBuilder(jobConfiguration)
-                    .setJobId(BigQueryService.jobId(runContext, this))
-                    .build()
-                ),
-            this.dryRun
+                logger,
+                () -> connection
+                        .create(
+                                JobInfo.newBuilder(jobConfiguration)
+                                        .setJobId(BigQueryService.jobId(runContext, this))
+                                        .build()
+                        ),
+                this.dryRun
         );
         JobStatistics.QueryStatistics queryJobStatistics = queryJob.getStatistics();
 
@@ -268,7 +268,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         this.metrics(runContext, queryJobStatistics, queryJob);
 
         Output.OutputBuilder output = Output.builder()
-            .jobId(queryJob.getJobId().getJob());
+                .jobId(queryJob.getJobId().getJob());
 
         if (this.fetch || this.fetchOne || this.store) {
             TableResult result = queryJob.getQueryResults();
@@ -281,14 +281,16 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
                 runContext.metric(Counter.of("fetch.rows", store.getValue(), tags));
                 output
-                    .uri(store.getKey())
-                    .size(store.getValue());
+                        .uri(store.getKey())
+                        .size(store.getValue());
 
             } else {
                 List<Map<String, Object>> fetch = this.fetchResult(result);
 
                 if (result.getTotalRows() > fetch.size()) {
-                    throw new IllegalStateException("Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows());
+                    throw new IllegalStateException(
+                            "Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows()
+                    );
                 }
 
                 runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
@@ -303,7 +305,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (tableIdentity != null) {
-            DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable());
+            DestinationTable destinationTable = new DestinationTable(
+                    tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable()
+            );
             output.destinationTable(destinationTable);
         }
 
@@ -314,7 +318,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         String sql = runContext.render(this.sql);
 
         QueryJobConfiguration.Builder builder = QueryJobConfiguration.newBuilder(sql)
-            .setUseLegacySql(this.legacySql);
+                .setUseLegacySql(this.legacySql);
 
         if (this.clusteringFields != null) {
             builder.setClustering(Clustering.newBuilder().setFields(runContext.render(this.clusteringFields)).build());
@@ -329,22 +333,25 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(this.timePartitioningType)
-                .setField(runContext.render(this.timePartitioningField))
-                .build()
+            builder.setTimePartitioning(
+                    TimePartitioning.newBuilder(this.timePartitioningType)
+                            .setField(runContext.render(this.timePartitioningField))
+                            .build()
             );
         }
 
         if (this.rangePartitioningField != null) {
-            builder.setRangePartitioning(RangePartitioning.newBuilder()
-                .setField(runContext.render(this.rangePartitioningField))
-                .setRange(RangePartitioning.Range.newBuilder()
-                    .setStart(this.rangePartitioningStart)
-                    .setEnd(this.rangePartitioningEnd)
-                    .setInterval(this.rangePartitioningInterval)
-                    .build()
-                )
-                .build()
+            builder.setRangePartitioning(
+                    RangePartitioning.newBuilder()
+                            .setField(runContext.render(this.rangePartitioningField))
+                            .setRange(
+                                    RangePartitioning.Range.newBuilder()
+                                            .setStart(this.rangePartitioningStart)
+                                            .setEnd(this.rangePartitioningEnd)
+                                            .setInterval(this.rangePartitioningInterval)
+                                            .build()
+                            )
+                            .build()
             );
         }
 
@@ -411,46 +418,46 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The job id"
+                title = "The job id"
         )
         private String jobId;
 
         @Schema(
-            title = "List containing the fetched data",
-            description = "Only populated if 'fetch' parameter is set to true."
+                title = "List containing the fetched data",
+                description = "Only populated if 'fetch' parameter is set to true."
         )
         private List<Map<String, Object>> rows;
 
         @Schema(
-            title = "Map containing the first row of fetched data",
-            description = "Only populated if 'fetchOne' parameter is set to true."
+                title = "Map containing the first row of fetched data",
+                description = "Only populated if 'fetchOne' parameter is set to true."
         )
         private Map<String, Object> row;
 
         @Schema(
-            title = "The size of the rows fetch"
+                title = "The size of the rows fetch"
         )
         private Long size;
 
         @Schema(
-            title = "The uri of store result",
-            description = "Only populated if 'store' is set to true."
+                title = "The uri of store result",
+                description = "Only populated if 'store' is set to true."
         )
         private URI uri;
 
         @Schema(
-            title = "The destination table (if one) or the temporary table created automatically "
+                title = "The destination table (if one) or the temporary table created automatically "
         )
         private DestinationTable destinationTable;
     }
 
     private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
-        return new String[]{
-            "statement_type", stats.getStatementType().name(),
-            "fetch", this.fetch || this.fetchOne ? "true" : "false",
-            "store", this.store ? "true" : "false",
-            "project_id", queryJob.getJobId().getProject(),
-            "location", queryJob.getJobId().getLocation(),
+        return new String[] {
+                "statement_type", stats.getStatementType().name(),
+                "fetch", this.fetch || this.fetchOne ? "true" : "false",
+                "store", this.store ? "true" : "false",
+                "project_id", queryJob.getJobId().getProject(),
+                "location", queryJob.getJobId().getLocation(),
         };
     }
 
@@ -469,7 +476,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         )
         private String table;
 
-        public DestinationTable(String project, String dataset, String table){
+        public DestinationTable(String project, String dataset, String table) {
             this.project = project;
             this.dataset = dataset;
             this.table = table;
@@ -488,7 +495,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob)
+            throws IllegalVariableEvaluationException {
         String[] tags = this.tags(stats, queryJob);
 
         if (stats.getEstimatedBytesProcessed() != null) {
@@ -515,7 +523,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             runContext.metric(Counter.of("referenced.tables", stats.getReferencedTables().size(), tags));
         }
 
-
         if (stats.getTotalSlotMs() != null) {
             runContext.metric(Counter.of("total.slot.ms", stats.getTotalSlotMs(), tags));
         }
@@ -533,9 +540,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     private List<Map<String, Object>> fetchResult(TableResult result) {
         return StreamSupport
-            .stream(result.iterateAll().spliterator(), false)
-            .map(fieldValues -> this.convertRows(result, fieldValues))
-            .collect(Collectors.toList());
+                .stream(result.iterateAll().spliterator(), false)
+                .map(fieldValues -> this.convertRows(result, fieldValues))
+                .collect(Collectors.toList());
     }
 
     private Map.Entry<URI, Long> storeResult(TableResult result, RunContext runContext) throws IOException {
@@ -543,22 +550,22 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         File tempFile = runContext.tempFile(".ion").toFile();
 
         try (
-            OutputStream output = new FileOutputStream(tempFile);
+                OutputStream output = new FileOutputStream(tempFile);
         ) {
             Flowable<Object> flowable = Flowable
-                .create(
-                    s -> {
-                        StreamSupport
-                            .stream(result.iterateAll().spliterator(), false)
-                            .forEach(fieldValues -> {
-                                s.onNext(this.convertRows(result, fieldValues));
-                            });
+                    .create(
+                            s -> {
+                                StreamSupport
+                                        .stream(result.iterateAll().spliterator(), false)
+                                        .forEach(fieldValues -> {
+                                            s.onNext(this.convertRows(result, fieldValues));
+                                        });
 
-                        s.onComplete();
-                    },
-                    BackpressureStrategy.BUFFER
-                )
-                .doOnNext(row -> FileSerde.write(output, row));
+                                s.onComplete();
+                            },
+                            BackpressureStrategy.BUFFER
+                    )
+                    .doOnNext(row -> FileSerde.write(output, row));
 
             // metrics & finalize
             Single<Long> count = flowable.count();
@@ -567,8 +574,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             output.flush();
 
             return new AbstractMap.SimpleEntry<>(
-                runContext.putTempFile(tempFile),
-                lineCount
+                    runContext.putTempFile(tempFile),
+                    lineCount
             );
         }
     }
@@ -576,11 +583,11 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Map<String, Object> convertRows(TableResult result, FieldValueList fieldValues) {
         Map<String, Object> row = new LinkedHashMap<>();
         result
-            .getSchema()
-            .getFields()
-            .forEach(field -> {
-                row.put(field.getName(), convertCell(field, fieldValues.get(field.getName()), false));
-            });
+                .getSchema()
+                .getFields()
+                .forEach(field -> {
+                    row.put(field.getName(), convertCell(field, fieldValues.get(field.getName()), false));
+                });
 
         return row;
     }
@@ -588,10 +595,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Object convertCell(Field field, FieldValue value, boolean isRepeated) {
         if (field.getMode() == Field.Mode.REPEATED && !isRepeated) {
             return value
-                .getRepeatedValue()
-                .stream()
-                .map(fieldValue -> this.convertCell(field, fieldValue, true))
-                .collect(Collectors.toList());
+                    .getRepeatedValue()
+                    .stream()
+                    .map(fieldValue -> this.convertCell(field, fieldValue, true))
+                    .collect(Collectors.toList());
         }
 
         if (value.isNull()) {
@@ -624,8 +631,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
             if (m.find()) {
                 return Arrays.asList(
-                    Double.parseDouble(m.group(1)),
-                    Double.parseDouble(m.group(2))
+                        Double.parseDouble(m.group(1)),
+                        Double.parseDouble(m.group(2))
                 );
             }
 
@@ -644,15 +651,17 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             AtomicInteger counter = new AtomicInteger(0);
 
             return field
-                .getSubFields()
-                .stream()
-                .map(sub -> new AbstractMap.SimpleEntry<>(
-                    sub.getName(),
-                    this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
-                ))
-                .peek(u -> counter.getAndIncrement())
-                // https://bugs.openjdk.java.net/browse/JDK-8148463
-                .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+                    .getSubFields()
+                    .stream()
+                    .map(
+                            sub -> new AbstractMap.SimpleEntry<>(
+                                    sub.getName(),
+                                    this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
+                            )
+                    )
+                    .peek(u -> counter.getAndIncrement())
+                    // https://bugs.openjdk.java.net/browse/JDK-8148463
+                    .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
         }
 
         if (LegacySQLTypeName.STRING.equals(field.getType())) {

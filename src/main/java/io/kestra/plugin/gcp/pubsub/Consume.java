@@ -22,38 +22,36 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.kestra.core.utils.Rethrow.throwRunnable;
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Consume messages from a Pub/Sub topic.",
-    description = "Required a maxDuration or a maxRecords."
+        title = "Consume messages from a Pub/Sub topic.",
+        description = "Required a maxDuration or a maxRecords."
 )
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "topic: topic-test",
-                "maxRecords: 10"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "topic: topic-test",
+                                "maxRecords: 10"
+                        }
+                )
+        }
 )
 public class Consume extends AbstractPubSub implements RunnableTask<Consume.Output> {
 
     @Schema(
-        title = "The Pub/Sub subscription",
-        description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
+            title = "The Pub/Sub subscription",
+            description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
     )
     @PluginProperty(dynamic = true)
     private String subscription;
 
     @Schema(
-        title = "Whether the Pub/Sub subscription should be created if not exist"
+            title = "Whether the Pub/Sub subscription should be created if not exist"
     )
     @PluginProperty
     @Builder.Default
@@ -66,7 +64,6 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @PluginProperty
     @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
     private Duration maxDuration;
-
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -86,8 +83,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                     FileSerde.write(outputFile, Message.of(message));
                     total.getAndIncrement();
                     consumer.ack();
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     threadException.set(e);
                     consumer.nack();
                 }
@@ -108,9 +104,9 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             outputFile.flush();
         }
         return Output.builder()
-            .uri(runContext.putTempFile(tempFile))
-            .count(total.get())
-            .build();
+                .uri(runContext.putTempFile(tempFile))
+                .count(total.get())
+                .build();
     }
 
     private boolean ended(AtomicInteger count, ZonedDateTime start) {
@@ -128,11 +124,11 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "Number of consumed rows."
+                title = "Number of consumed rows."
         )
         private final Integer count;
         @Schema(
-            title = "File URI containing consumed messages."
+                title = "File URI containing consumed messages."
         )
         private final URI uri;
     }

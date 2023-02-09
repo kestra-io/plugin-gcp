@@ -20,19 +20,19 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Update some bucket labels",
-            code = {
-                "name: \"my-bucket\"",
-                "labels:",
-                "  my-label: my-value"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Update some bucket labels",
+                        code = {
+                                "name: \"my-bucket\"",
+                                "labels:",
+                                "  my-label: my-value"
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Update a bucket."
+        title = "Update a bucket."
 )
 public class UpdateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Override
@@ -45,9 +45,9 @@ public class UpdateBucket extends AbstractBucket implements RunnableTask<Abstrac
         logger.debug("Updating bucket '{}'", bucketInfo);
 
         return Output.builder()
-            .bucket(io.kestra.plugin.gcp.gcs.models.Bucket.of(connection.update(bucketInfo)))
-            .updated(true)
-            .build();
+                .bucket(io.kestra.plugin.gcp.gcs.models.Bucket.of(connection.update(bucketInfo)))
+                .updated(true)
+                .build();
 
     }
 }

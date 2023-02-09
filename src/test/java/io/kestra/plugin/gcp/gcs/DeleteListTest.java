@@ -5,15 +5,10 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.plugin.gcp.gcs.models.Blob;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.net.URI;
-import java.util.Objects;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,11 +35,11 @@ class DeleteListTest {
         }
 
         DeleteList task = DeleteList.builder()
-            .id(DeleteList.class.getSimpleName())
-            .type(DeleteList.class.getName())
-            .concurrent(8)
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
-            .build();
+                .id(DeleteList.class.getSimpleName())
+                .type(DeleteList.class.getName())
+                .concurrent(8)
+                .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
+                .build();
         DeleteList.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
 
         assertThat(run.getCount(), is(10L));

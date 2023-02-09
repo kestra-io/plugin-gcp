@@ -7,14 +7,14 @@ import javax.validation.constraints.NotNull;
 
 public interface ActionInterface {
     @Schema(
-        title = "The action to do on find files"
+            title = "The action to do on find files"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     ActionInterface.Action getAction();
 
     @Schema(
-        title = "The destination directory in case off `MOVE` "
+            title = "The destination directory in case off `MOVE` "
     )
     @PluginProperty(dynamic = true)
     String getMoveDirectory();

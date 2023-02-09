@@ -26,13 +26,15 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build())
-            )
-            .fetchType(FetchType.FETCH)
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .filters(
+                        List.of(
+                                Query.Filter.builder().field("lastname").value("Doe").build()
+                        )
+                )
+                .fetchType(FetchType.FETCH)
+                .build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -59,14 +61,16 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build(),
-                Query.Filter.builder().field("firstname").value("Jane").build())
-            )
-            .fetchType(FetchType.FETCH)
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .filters(
+                        List.of(
+                                Query.Filter.builder().field("lastname").value("Doe").build(),
+                                Query.Filter.builder().field("firstname").value("Jane").build()
+                        )
+                )
+                .fetchType(FetchType.FETCH)
+                .build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -93,10 +97,10 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .fetchType(FetchType.FETCH)
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .fetchType(FetchType.FETCH)
+                .build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -123,14 +127,17 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO).build())
-            )
-            .orderBy("firstname")
-            .fetchType(FetchType.FETCH)
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .filters(
+                        List.of(
+                                Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO)
+                                        .build()
+                        )
+                )
+                .orderBy("firstname")
+                .fetchType(FetchType.FETCH)
+                .build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
@@ -157,13 +164,15 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
-            .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build())
-            )
-            .fetchType(FetchType.STORE)
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .filters(
+                        List.of(
+                                Query.Filter.builder().field("lastname").value("Doe").build()
+                        )
+                )
+                .fetchType(FetchType.STORE)
+                .build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {

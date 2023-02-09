@@ -28,32 +28,32 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Publish a message to a Pub/Sub topic"
+        title = "Publish a message to a Pub/Sub topic"
 )
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "topic: topic-test",
-                "from:",
-                "-  data: {{ 'base64-encoded-string-1' | base64encode }}",
-                "   attributes:",
-                "       testAttribute: KestraTest",
-                "   messageId: '1234'",
-                "   orderingKey: 'foo'",
-                "-  data: {{ 'base64-encoded-string-2' | base64encode }}",
-                "-  attributes:",
-                "       testAttribute: KestraTest"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "topic: topic-test",
+                                "from:",
+                                "-  data: {{ 'base64-encoded-string-1' | base64encode }}",
+                                "   attributes:",
+                                "       testAttribute: KestraTest",
+                                "   messageId: '1234'",
+                                "   orderingKey: 'foo'",
+                                "-  data: {{ 'base64-encoded-string-2' | base64encode }}",
+                                "-  attributes:",
+                                "       testAttribute: KestraTest"
+                        }
+                )
+        }
 )
 public class Publish extends AbstractPubSub implements RunnableTask<Publish.Output> {
     @PluginProperty(dynamic = true)
     @NotNull
     @Schema(
-        title = "The source of the published data.",
-        description = "Can be an internal storage URI, a list of Pub/Sub messages, or a single Pub/Sub message."
+            title = "The source of the published data.",
+            description = "Can be an internal storage URI, a list of Pub/Sub messages, or a single Pub/Sub message."
     )
     private Object from;
 
@@ -66,7 +66,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
         if (this.from instanceof String) {
             URI from = new URI(runContext.render((String) this.from));
-            if(!from.getScheme().equals("kestra")) {
+            if (!from.getScheme().equals("kestra")) {
                 throw new Exception("Invalid from parameter, must be a Kestra internal storage URI");
             }
 
@@ -79,8 +79,8 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
         } else if (this.from instanceof List) {
             flowable = Flowable
-                .fromArray(((List<Object>) this.from).toArray())
-                .map(o -> JacksonMapper.toMap(o, Message.class));
+                    .fromArray(((List<Object>) this.from).toArray())
+                    .map(o -> JacksonMapper.toMap(o, Message.class));
 
             resultFlowable = this.buildFlowable(flowable, publisher);
 
@@ -96,16 +96,16 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
         runContext.metric(Counter.of("records", count, "topic", runContext.render(this.getTopic())));
 
         return Output.builder()
-            .messagesCount(count)
-        .build();
+                .messagesCount(count)
+                .build();
     }
 
     private Flowable<Integer> buildFlowable(Flowable<Message> flowable, Publisher publisher) {
         return flowable
-            .map(message -> {
-                publisher.publish(message.to());
-                return 1;
-            });
+                .map(message -> {
+                    publisher.publish(message.to());
+                    return 1;
+                });
     }
 
     @Builder

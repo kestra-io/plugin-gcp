@@ -23,26 +23,26 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for messages in a Pub/Sub topic"
+        title = "Wait for messages in a Pub/Sub topic"
 )
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "topic: tes-topic",
-                "maxRecords: 10"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "topic: tes-topic",
+                                "maxRecords: 10"
+                        }
+                )
+        }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
+public class Trigger extends AbstractTrigger
+        implements PollingTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
 
     private String projectId;
 
@@ -54,14 +54,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private String topic;
 
     @Schema(
-        title = "The Pub/Sub subscription",
-        description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
+            title = "The Pub/Sub subscription",
+            description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
     )
     @PluginProperty(dynamic = true)
     private String subscription;
 
     @Schema(
-        title = "Whether the Pub/Sub subscription should be created if not exist"
+            title = "Whether the Pub/Sub subscription should be created if not exist"
     )
     @PluginProperty
     @Builder.Default
@@ -84,15 +84,15 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         Logger logger = runContext.logger();
 
         Consume task = Consume.builder()
-            .topic(this.topic)
-            .subscription(this.subscription)
-            .autoCreateSubscription(this.autoCreateSubscription)
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .scopes(this.scopes)
-            .maxRecords(this.maxRecords)
-            .maxDuration(this.maxDuration)
-            .build();
+                .topic(this.topic)
+                .subscription(this.subscription)
+                .autoCreateSubscription(this.autoCreateSubscription)
+                .projectId(this.projectId)
+                .serviceAccount(this.serviceAccount)
+                .scopes(this.scopes)
+                .maxRecords(this.maxRecords)
+                .maxDuration(this.maxDuration)
+                .build();
 
         Consume.Output run = task.run(runContext);
 
@@ -107,18 +107,18 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         String executionId = IdUtils.create();
 
         ExecutionTrigger executionTrigger = ExecutionTrigger.of(
-            this,
-            run
+                this,
+                run
         );
 
         Execution execution = Execution.builder()
-            .id(executionId)
-            .namespace(context.getNamespace())
-            .flowId(context.getFlowId())
-            .flowRevision(context.getFlowRevision())
-            .state(new State())
-            .trigger(executionTrigger)
-            .build();
+                .id(executionId)
+                .namespace(context.getNamespace())
+                .flowId(context.getFlowId())
+                .flowRevision(context.getFlowRevision())
+                .state(new State())
+                .trigger(executionTrigger)
+                .build();
 
         return Optional.of(execution);
     }

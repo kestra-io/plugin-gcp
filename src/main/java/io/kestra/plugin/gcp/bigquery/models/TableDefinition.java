@@ -30,7 +30,7 @@ public class TableDefinition {
 
     public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(T tableDefinition) {
         TableDefinitionBuilder tableDefinitionBuilder = TableDefinition.builder()
-            .type(Type.valueOf(tableDefinition.getType().toString()));
+                .type(Type.valueOf(tableDefinition.getType().toString()));
 
         if (tableDefinition.getSchema() != null) {
             tableDefinitionBuilder.schema(io.kestra.plugin.gcp.bigquery.models.Schema.of(tableDefinition.getSchema()));
@@ -63,8 +63,9 @@ public class TableDefinition {
             case VIEW:
                 return (T) this.viewDefinition.to(runContext);
             case TABLE:
-                return (T) (this.standardTableDefinition == null ? StandardTableDefinition.builder().build() : this.standardTableDefinition)
-                    .to(runContext, this.schema);
+                return (T) (this.standardTableDefinition == null ? StandardTableDefinition.builder().build()
+                        : this.standardTableDefinition)
+                                .to(runContext, this.schema);
             case EXTERNAL:
                 return (T) this.externalTableDefinition.to(runContext, this.schema);
             case MATERIALIZED_VIEW:

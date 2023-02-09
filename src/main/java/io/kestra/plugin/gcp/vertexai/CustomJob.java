@@ -32,51 +32,51 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Start a Vertex AI [custom job](https://cloud.google.com/vertex-ai/docs/training/create-custom-job)."
+        title = "Start a Vertex AI [custom job](https://cloud.google.com/vertex-ai/docs/training/create-custom-job)."
 )
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-gcp-project",
-                "region: europe-west1",
-                "displayName: Start Custom Job",
-                "spec:",
-                "  workerPoolSpecs:",
-                "  - containerSpec:",
-                "      imageUri: gcr.io/my-gcp-project/my-dir/my-image:latest",
-                "    machineSpec:",
-                "      machineType: n1-standard-4",
-                "    replicaCount: 1",
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "projectId: my-gcp-project",
+                                "region: europe-west1",
+                                "displayName: Start Custom Job",
+                                "spec:",
+                                "  workerPoolSpecs:",
+                                "  - containerSpec:",
+                                "      imageUri: gcr.io/my-gcp-project/my-dir/my-image:latest",
+                                "    machineSpec:",
+                                "      machineType: n1-standard-4",
+                                "    replicaCount: 1",
+                        }
+                )
+        }
 )
 public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Output> {
     @Schema(
-        title = "The region"
+            title = "The region"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String region;
 
     @Schema(
-        title = "The job display name"
+            title = "The job display name"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String displayName;
 
     @Schema(
-        title = "The job specification"
+            title = "The job specification"
     )
     @PluginProperty(dynamic = false)
     @NotNull
     private CustomJobSpec spec;
 
     @Schema(
-        title = "Wait for the end of the job.",
-        description = "Allowing to capture job status & logs"
+            title = "Wait for the end of the job.",
+            description = "Allowing to capture job status & logs"
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -84,7 +84,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     private Boolean wait = true;
 
     @Schema(
-        title = "Delete the job at the end."
+            title = "Delete the job at the end."
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -99,20 +99,20 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
         AtomicBoolean stopLog = new AtomicBoolean(false);
 
         JobServiceSettings pipelineServiceSettings = JobServiceSettings.newBuilder()
-            .setEndpoint(runContext.render(this.region) + "-aiplatform.googleapis.com:443")
-            .setCredentialsProvider(fixedCredentialsProvider)
-            .build();
+                .setEndpoint(runContext.render(this.region) + "-aiplatform.googleapis.com:443")
+                .setCredentialsProvider(fixedCredentialsProvider)
+                .build();
 
         String jobName = runContext.render(this.displayName);
 
         try (JobServiceClient client = JobServiceClient.create(pipelineServiceSettings)) {
             com.google.cloud.aiplatform.v1.CustomJob.Builder builder = com.google.cloud.aiplatform.v1.CustomJob.newBuilder()
-                .setJobSpec(this.getSpec().to(runContext))
-                .setDisplayName(jobName);
+                    .setJobSpec(this.getSpec().to(runContext))
+                    .setDisplayName(jobName);
 
             LocationName parent = LocationName.of(
-                runContext.render(this.projectId),
-                runContext.render(this.region)
+                    runContext.render(this.projectId),
+                    runContext.render(this.region)
             );
 
             com.google.cloud.aiplatform.v1.CustomJob response = client.createCustomJob(parent, builder.build());
@@ -128,47 +128,50 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
             }
 
             Output.OutputBuilder outputBuilder = Output.builder()
-                .name(response.getName())
-                .createDate(TimestampService.of(response.getCreateTime()))
-                .updateDate(TimestampService.of(response.getUpdateTime()))
-                .state(response.getState());
+                    .name(response.getName())
+                    .createDate(TimestampService.of(response.getCreateTime()))
+                    .updateDate(TimestampService.of(response.getUpdateTime()))
+                    .state(response.getState());
 
             Thread tailThread = null;
             try {
                 tailThread = LogTailService.tail(
-                    logger,
-                    runContext.render(this.projectId),
-                    credentials,
-                    "resource.labels.job_id=\"" + response.getName()
-                        .substring(response.getName().lastIndexOf("/") + 1) + "\" AND " +
-                        "resource.type=\"ml_job\"",
-                    stopLog
+                        logger,
+                        runContext.render(this.projectId),
+                        credentials,
+                        "resource.labels.job_id=\"" + response.getName()
+                                .substring(response.getName().lastIndexOf("/") + 1) + "\" AND " +
+                                "resource.type=\"ml_job\"",
+                        stopLog
                 );
 
                 if (this.wait) {
                     com.google.cloud.aiplatform.v1.CustomJob result = Await.until(
-                        () -> {
-                            com.google.cloud.aiplatform.v1.CustomJob customJob = client.getCustomJob(response.getName());
+                            () -> {
+                                com.google.cloud.aiplatform.v1.CustomJob customJob = client.getCustomJob(response.getName());
 
-                            if (!customJob.hasEndTime()) {
-                                return null;
-                            }
+                                if (!customJob.hasEndTime()) {
+                                    return null;
+                                }
 
-                            return customJob;
-                        },
-                        Duration.ofSeconds(30)
+                                return customJob;
+                            },
+                            Duration.ofSeconds(30)
                     );
 
                     stopLog.set(true);
 
                     outputBuilder
-                        .endDate(TimestampService.of(result.getEndTime()))
-                        .state(result.getState());
+                            .endDate(TimestampService.of(result.getEndTime()))
+                            .state(result.getState());
 
-                    logger.info("Job {} ended with in {} with status {}",
-                        result.getName(),
-                        Duration.between(TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime())),
-                        result.getState()
+                    logger.info(
+                            "Job {} ended with in {} with status {}",
+                            result.getName(),
+                            Duration.between(
+                                    TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime())
+                            ),
+                            result.getState()
                     );
 
                     // wait a little for log
@@ -198,32 +201,31 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     public static class Output implements io.kestra.core.models.tasks.Output {
         @NotNull
         @Schema(
-            title = "Resource name of a CustomJob."
+                title = "Resource name of a CustomJob."
         )
         private final String name;
 
         @NotNull
         @Schema(
-            title = "Time when the CustomJob was created."
+                title = "Time when the CustomJob was created."
         )
         private final Instant createDate;
 
-
         @NotNull
         @Schema(
-            title = "Time when the CustomJob was created."
+                title = "Time when the CustomJob was created."
         )
         private final Instant updateDate;
 
         @NotNull
         @Schema(
-            title = "Time when the CustomJob was ended."
+                title = "Time when the CustomJob was ended."
         )
         private final Instant endDate;
 
         @NotNull
         @Schema(
-            title = "The detailed state of the job."
+                title = "The detailed state of the job."
         )
         private final JobState state;
     }

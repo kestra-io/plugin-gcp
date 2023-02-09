@@ -15,15 +15,16 @@ import javax.validation.constraints.NotNull;
 @Jacksonized
 public class GcsDestination {
     @Schema(
-        title = "Google Cloud Storage URI to output directory.",
-        description = "If the uri doesn't end with '/', a '/' will be automatically appended. The directory is created if it doesn't exist."
+            title = "Google Cloud Storage URI to output directory.",
+            description = "If the uri doesn't end with '/', a '/' will be automatically appended. The directory is created if it doesn't exist."
     )
     @PluginProperty(dynamic = false)
     @NotNull
     private String outputUriPrefix;
 
     public com.google.cloud.aiplatform.v1.GcsDestination to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.aiplatform.v1.GcsDestination.Builder builder = com.google.cloud.aiplatform.v1.GcsDestination.newBuilder();
+        com.google.cloud.aiplatform.v1.GcsDestination.Builder builder = com.google.cloud.aiplatform.v1.GcsDestination
+                .newBuilder();
 
         if (this.getOutputUriPrefix() != null) {
             builder.setOutputUriPrefix(runContext.render(this.getOutputUriPrefix()));

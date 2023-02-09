@@ -11,11 +11,12 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 
 public class BigQueryService {
-    public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
+    public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery)
+            throws IllegalVariableEvaluationException {
         return JobId.newBuilder()
-            .setProject(runContext.render(abstractBigquery.getProjectId()))
-            .setLocation(runContext.render(abstractBigquery.getLocation()))
-            .build();
+                .setProject(runContext.render(abstractBigquery.getProjectId()))
+                .setLocation(runContext.render(abstractBigquery.getLocation()))
+                .build();
     }
 
     public static TableId tableId(String table) {
@@ -44,9 +45,9 @@ public class BigQueryService {
 
             if (errors.size() > 0) {
                 logger.warn(
-                    "Error query on job '{}' with errors:\n[\n - {}\n]",
-                     "job '" + job.getJobId().getJob() + "'",
-                    String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
+                        "Error query on job '{}' with errors:\n[\n - {}\n]",
+                        "job '" + job.getJobId().getJob() + "'",
+                        String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
                 );
 
                 throw new BigQueryException(errors);

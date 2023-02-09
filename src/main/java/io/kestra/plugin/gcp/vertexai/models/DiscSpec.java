@@ -15,24 +15,24 @@ import java.util.Locale;
 @Jacksonized
 public class DiscSpec {
     @Schema(
-        title = "Type of the boot disk."
+            title = "Type of the boot disk."
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
     private DiskType bootDiskType = DiskType.PD_SSD;
 
     @Schema(
-        title = "Size in GB of the boot disk."
+            title = "Size in GB of the boot disk."
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
     private Integer bootDiskSizeGb = 100;
 
-    public  com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
+    public com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
         return com.google.cloud.aiplatform.v1.DiskSpec.newBuilder()
-            .setBootDiskType(this.getBootDiskType().value())
-            .setBootDiskSizeGb(this.getBootDiskSizeGb())
-            .build();
+                .setBootDiskType(this.getBootDiskType().value())
+                .setBootDiskSizeGb(this.getBootDiskSizeGb())
+                .build();
     }
 
     public enum DiskType {

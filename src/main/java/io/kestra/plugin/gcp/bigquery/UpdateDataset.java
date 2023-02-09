@@ -21,18 +21,18 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Update a dataset."
+        title = "Update a dataset."
 )
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "name: \"my_dataset\"",
-                "location: \"EU\"",
-                "friendlyName: \"new Friendly Name\""
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "name: \"my_dataset\"",
+                                "location: \"EU\"",
+                                "friendlyName: \"new Friendly Name\""
+                        }
+                )
+        }
 )
 public class UpdateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Override

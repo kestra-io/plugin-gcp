@@ -15,20 +15,20 @@ import java.util.List;
 @Jacksonized
 public class PolicyTags {
     @Schema(
-        name = "the policy tags names."
+            name = "the policy tags names."
     )
     @PluginProperty(dynamic = true)
     private final List<String> names;
 
     public static PolicyTags of(com.google.cloud.bigquery.PolicyTags policyTags) {
         return PolicyTags.builder()
-            .names(policyTags.getNames())
-            .build();
+                .names(policyTags.getNames())
+                .build();
     }
 
     public com.google.cloud.bigquery.PolicyTags to(RunContext runContext) throws IllegalVariableEvaluationException {
         return com.google.cloud.bigquery.PolicyTags.newBuilder()
-            .setNames(runContext.render(this.names))
-            .build();
+                .setNames(runContext.render(this.names))
+                .build();
     }
 }

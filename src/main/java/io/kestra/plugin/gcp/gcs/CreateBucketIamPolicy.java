@@ -4,7 +4,6 @@ import com.google.cloud.Identity;
 import com.google.cloud.Policy;
 import com.google.cloud.Role;
 import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageRoles;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -23,45 +22,45 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Add role to a service account on a bucket",
-            code = {
-                "name: \"my-bucket\"",
-                "member: \"sa@project.iam.gserviceaccount.com\"",
-                "role: \"roles/storage.admin\""
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Add role to a service account on a bucket",
+                        code = {
+                                "name: \"my-bucket\"",
+                                "member: \"sa@project.iam.gserviceaccount.com\"",
+                                "role: \"roles/storage.admin\""
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Add role on an existing bucket."
+        title = "Add role on an existing bucket."
 )
 public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<CreateBucketIamPolicy.Output> {
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+            title = "Bucket's unique name"
     )
     @PluginProperty(dynamic = true)
     protected String name;
 
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+            title = "Bucket's unique name"
     )
     @PluginProperty(dynamic = true)
     protected String member;
 
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+            title = "Bucket's unique name"
     )
     @PluginProperty(dynamic = true)
     protected String role;
 
     @Builder.Default
     @Schema(
-        title = "Policy to apply if a policy already exists."
+            title = "Policy to apply if a policy already exists."
     )
     private IfExists ifExists = IfExists.SKIP;
 
@@ -78,19 +77,20 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
         Policy currentPolicy = connection.getIamPolicy(bucketName);
 
         boolean exists = currentPolicy
-            .getBindingsList()
-            .stream()
-            .anyMatch(binding -> binding.getRole().equals(role.getValue()) &&
-                binding
-                    .getMembers()
-                    .stream()
-                    .anyMatch(s -> s.equals(identity.strValue()))
-            );
+                .getBindingsList()
+                .stream()
+                .anyMatch(
+                        binding -> binding.getRole().equals(role.getValue()) &&
+                                binding
+                                        .getMembers()
+                                        .stream()
+                                        .anyMatch(s -> s.equals(identity.strValue()))
+                );
 
         Output.OutputBuilder output = Output.builder()
-            .bucket(bucketName)
-            .member(identity.getValue())
-            .role(role.getValue());
+                .bucket(bucketName)
+                .member(identity.getValue())
+                .role(role.getValue());
 
         if (exists) {
             String exception = "Binding " + role.getValue() + " for member " + member + " already exists";
@@ -103,9 +103,9 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
         }
 
         Policy updated = currentPolicy
-            .toBuilder()
-            .addIdentity(role, identity)
-            .build();
+                .toBuilder()
+                .addIdentity(role, identity)
+                .build();
 
         logger.debug("Updating policy on bucket '{}', adding '{}' with role '{}", bucketName, identity, role);
 
@@ -118,22 +118,22 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The bucket uri"
+                title = "The bucket uri"
         )
         private String bucket;
 
         @Schema(
-            title = "The bucket uri"
+                title = "The bucket uri"
         )
         private String member;
 
         @Schema(
-            title = "The bucket uri"
+                title = "The bucket uri"
         )
         private String role;
 
         @Schema(
-            title = "If the binding was added, or already exist"
+                title = "If the binding was added, or already exist"
         )
         private Boolean created;
     }

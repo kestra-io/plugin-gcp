@@ -24,15 +24,15 @@ class GetTest {
         var runContext = runContextFactory.of();
 
         var get = Get.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("1")
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .childPath("1")
+                .build();
 
         // create something to get
         try (var firestore = get.connection(runContext)) {
             firestore.collection("persons")
-                .document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
+                    .document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
         }
 
         var output = get.run(runContext);

@@ -26,7 +26,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -36,43 +35,44 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for files on Google cloud storage",
-    description = "This trigger will poll every `interval` a GCS bucket. " +
-        "You can search for all files in a bucket or directory in `from` or you can filter the files with a `regExp`." +
-        "The detection is atomic, internally we do a list and interact only with files listed.\n" +
-        "Once a file is detected, we download the file on internal storage and processed with declared `action` " +
-        "in order to move or delete the files from the bucket (to avoid double detection on new poll)"
+        title = "Wait for files on Google cloud storage",
+        description = "This trigger will poll every `interval` a GCS bucket. " +
+                "You can search for all files in a bucket or directory in `from` or you can filter the files with a `regExp`." +
+                "The detection is atomic, internally we do a list and interact only with files listed.\n" +
+                "Once a file is detected, we download the file on internal storage and processed with declared `action` " +
+                "in order to move or delete the files from the bucket (to avoid double detection on new poll)"
 )
 @Plugin(
-    examples = {
-        @Example(
-            title = "Wait for a list of file on a GCS bucket and iterate through the files",
-            full = true,
-            code = {
-                "id: gcs-listen",
-                "namespace: io.kestra.tests",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.core.tasks.flows.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{taskrun.value}}\"",
-                "    value: \"{{ trigger.blobs | jq('.[].uri') }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.gcp.gcs.Trigger",
-                "    interval: \"PT5M\"",
-                "    from: gs://my-bucket/kestra/listen/",
-                "    action: MOVE",
-                "    moveDirectory: gs://my-bucket/kestra/archive/",
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Wait for a list of file on a GCS bucket and iterate through the files",
+                        full = true,
+                        code = {
+                                "id: gcs-listen",
+                                "namespace: io.kestra.tests",
+                                "",
+                                "tasks:",
+                                "  - id: each",
+                                "    type: io.kestra.core.tasks.flows.EachSequential",
+                                "    tasks:",
+                                "      - id: return",
+                                "        type: io.kestra.core.tasks.debugs.Return",
+                                "        format: \"{{taskrun.value}}\"",
+                                "    value: \"{{ trigger.blobs | jq('.[].uri') }}\"",
+                                "",
+                                "triggers:",
+                                "  - id: watch",
+                                "    type: io.kestra.plugin.gcp.gcs.Trigger",
+                                "    interval: \"PT5M\"",
+                                "    from: gs://my-bucket/kestra/listen/",
+                                "    action: MOVE",
+                                "    moveDirectory: gs://my-bucket/kestra/archive/",
+                        }
+                )
+        }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface, ListInterface, ActionInterface{
+public class Trigger extends AbstractTrigger
+        implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface, ListInterface, ActionInterface {
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
@@ -98,16 +98,16 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();
         List task = List.builder()
-            .id(this.id)
-            .type(List.class.getName())
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .scopes(this.scopes)
-            .from(this.from)
-            .filter(ListInterface.Filter.FILES)
-            .listingType(this.listingType)
-            .regExp(this.regExp)
-            .build();
+                .id(this.id)
+                .type(List.class.getName())
+                .projectId(this.projectId)
+                .serviceAccount(this.serviceAccount)
+                .scopes(this.scopes)
+                .from(this.from)
+                .filter(ListInterface.Filter.FILES)
+                .listingType(this.listingType)
+                .regExp(this.regExp)
+                .build();
         List.Output run = task.run(runContext);
 
         if (run.getBlobs().size() == 0) {
@@ -119,42 +119,42 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         Storage connection = task.connection(runContext);
 
         java.util.List<Blob> list = run
-            .getBlobs()
-            .stream()
-            .map(throwFunction(blob -> {
-                URI uri = runContext.putTempFile(
-                    Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName())),
-                    executionId,
-                    this
-                );
+                .getBlobs()
+                .stream()
+                .map(throwFunction(blob -> {
+                    URI uri = runContext.putTempFile(
+                            Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName())),
+                            executionId,
+                            this
+                    );
 
-                return blob.withUri(uri);
-            }))
-            .collect(Collectors.toList());
+                    return blob.withUri(uri);
+                }))
+                .collect(Collectors.toList());
 
         Downloads.archive(
-            run.getBlobs(),
-            this.action,
-            this.moveDirectory,
-            runContext,
-            this.projectId,
-            this.serviceAccount,
-            this.scopes
+                run.getBlobs(),
+                this.action,
+                this.moveDirectory,
+                runContext,
+                this.projectId,
+                this.serviceAccount,
+                this.scopes
         );
 
         ExecutionTrigger executionTrigger = ExecutionTrigger.of(
-            this,
-            Downloads.Output.builder().blobs(list).build()
+                this,
+                Downloads.Output.builder().blobs(list).build()
         );
 
         Execution execution = Execution.builder()
-            .id(executionId)
-            .namespace(context.getNamespace())
-            .flowId(context.getFlowId())
-            .flowRevision(context.getFlowRevision())
-            .state(new State())
-            .trigger(executionTrigger)
-            .build();
+                .id(executionId)
+                .namespace(context.getNamespace())
+                .flowId(context.getFlowId())
+                .flowRevision(context.getFlowRevision())
+                .state(new State())
+                .trigger(executionTrigger)
+                .build();
 
         return Optional.of(execution);
     }

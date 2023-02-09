@@ -27,34 +27,34 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on BigQuery"
+        title = "Wait for query on BigQuery"
 )
 @Plugin(
-    examples = {
-        @Example(
-            title = "Wait for a sql query to return results and iterate through rows",
-            full = true,
-            code = {
-                "id: bigquery-listen",
-                "namespace: io.kestra.tests",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.core.tasks.flows.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json taskrun.value}}\"",
-                "    value: \"{{ trigger.rows }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.gcp.bigquery.Trigger",
-                "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\""
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Wait for a sql query to return results and iterate through rows",
+                        full = true,
+                        code = {
+                                "id: bigquery-listen",
+                                "namespace: io.kestra.tests",
+                                "",
+                                "tasks:",
+                                "  - id: each",
+                                "    type: io.kestra.core.tasks.flows.EachSequential",
+                                "    tasks:",
+                                "      - id: return",
+                                "        type: io.kestra.core.tasks.debugs.Return",
+                                "        format: \"{{json taskrun.value}}\"",
+                                "    value: \"{{ trigger.rows }}\"",
+                                "",
+                                "triggers:",
+                                "  - id: watch",
+                                "    type: io.kestra.plugin.gcp.bigquery.Trigger",
+                                "    interval: \"PT5M\"",
+                                "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\""
+                        }
+                )
+        }
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
@@ -87,17 +87,17 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         Logger logger = runContext.logger();
 
         Query task = Query.builder()
-            .id(this.id)
-            .type(Query.class.getName())
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .scopes(this.scopes)
-            .sql(this.sql)
-            .legacySql(this.legacySql)
-            .fetch(this.fetch)
-            .store(this.store)
-            .fetchOne(this.fetchOne)
-            .build();
+                .id(this.id)
+                .type(Query.class.getName())
+                .projectId(this.projectId)
+                .serviceAccount(this.serviceAccount)
+                .scopes(this.scopes)
+                .sql(this.sql)
+                .legacySql(this.legacySql)
+                .fetch(this.fetch)
+                .store(this.store)
+                .fetchOne(this.fetchOne)
+                .build();
         Query.Output run = task.run(runContext);
 
         logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql));
@@ -109,18 +109,18 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         String executionId = IdUtils.create();
 
         ExecutionTrigger executionTrigger = ExecutionTrigger.of(
-            this,
-            run
+                this,
+                run
         );
 
         Execution execution = Execution.builder()
-            .id(executionId)
-            .namespace(context.getNamespace())
-            .flowId(context.getFlowId())
-            .flowRevision(context.getFlowRevision())
-            .state(new State())
-            .trigger(executionTrigger)
-            .build();
+                .id(executionId)
+                .namespace(context.getNamespace())
+                .flowId(context.getFlowId())
+                .flowRevision(context.getFlowRevision())
+                .state(new State())
+                .trigger(executionTrigger)
+                .build();
 
         return Optional.of(execution);
     }

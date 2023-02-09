@@ -24,31 +24,31 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a table"
+        title = "Create a table"
 )
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "tableDefinition:",
-                "  type: TABLE",
-                "  schema:",
-                "    fields:",
-                "    - name: id",
-                "      type: INT64",
-                "    - name: name",
-                "      type: STRING",
-                "  standardTableDefinition:",
-                "    clustering:",
-                "    - id",
-                "    - name",
-                "friendlyName: new_table"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "projectId: my-project",
+                                "dataset: my-dataset",
+                                "table: my-table",
+                                "tableDefinition:",
+                                "  type: TABLE",
+                                "  schema:",
+                                "    fields:",
+                                "    - name: id",
+                                "      type: INT64",
+                                "    - name: name",
+                                "      type: STRING",
+                                "  standardTableDefinition:",
+                                "    clustering:",
+                                "    - id",
+                                "    - name",
+                                "friendlyName: new_table"
+                        }
+                )
+        }
 )
 public class CreateTable extends AbstractTableCreateUpdate implements RunnableTask<AbstractTable.Output> {
     @Override

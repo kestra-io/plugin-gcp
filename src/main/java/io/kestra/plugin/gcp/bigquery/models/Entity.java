@@ -2,10 +2,8 @@ package io.kestra.plugin.gcp.bigquery.models;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 
 import javax.validation.constraints.NotNull;
@@ -16,14 +14,14 @@ import javax.validation.constraints.NotNull;
 public class Entity {
     @NotNull
     @Schema(
-        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
+            title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
     )
     @PluginProperty(dynamic = true)
     private final Type type;
 
     @NotNull
     @Schema(
-        title = "The value for the entity (ex : user email if the type is USER ...)"
+            title = "The value for the entity (ex : user email if the type is USER ...)"
     )
     @PluginProperty(dynamic = true)
     private final String value;

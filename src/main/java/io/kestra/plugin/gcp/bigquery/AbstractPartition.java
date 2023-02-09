@@ -29,46 +29,48 @@ import static io.kestra.plugin.gcp.bigquery.AbstractPartition.PartitionType.YEAR
 @NoArgsConstructor
 abstract public class AbstractPartition extends AbstractTable {
     private static final Map<AbstractPartition.PartitionType, String> ADDED_DATE = Map.of(
-        HOUR, "0000",
-        DAY, "000000",
-        MONTH, "01000000",
-        YEAR, "0101000000"
+            HOUR, "0000",
+            DAY, "000000",
+            MONTH, "01000000",
+            YEAR, "0101000000"
     );
 
     @NotNull
     @Schema(
-        title = "The partition type of the table"
+            title = "The partition type of the table"
     )
     @PluginProperty(dynamic = true)
     protected AbstractPartition.PartitionType partitionType;
 
     @NotNull
     @Schema(
-        title = "The inclusive starting date or integer",
-        description = "If the partition :" +
-            "- is a numeric range, must be a valid integer\n" +
-            "- is a date, must a valid datetime like `{{ now() }}`"
+            title = "The inclusive starting date or integer",
+            description = "If the partition :" +
+                    "- is a numeric range, must be a valid integer\n" +
+                    "- is a date, must a valid datetime like `{{ now() }}`"
     )
     @PluginProperty(dynamic = true)
     protected String from;
 
     @NotNull
     @Schema(
-        title = "The inclusive ending date or integer",
-        description = "If the partition :" +
-            "- is a numeric range, must be a valid integer\n" +
-            "- is a date, must a valid datetime like `{{ now() }}`"
+            title = "The inclusive ending date or integer",
+            description = "If the partition :" +
+                    "- is a numeric range, must be a valid integer\n" +
+                    "- is a date, must a valid datetime like `{{ now() }}`"
     )
     @PluginProperty(dynamic = true)
     protected String to;
 
     protected TableId tableId(RunContext runContext, String partition) throws IllegalVariableEvaluationException {
-        return this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table) + "$" + partition) :
-            TableId.of(runContext.render(this.dataset), runContext.render(this.table) + "$" + partition);
+        return this.projectId != null ? TableId.of(
+                runContext.render(this.projectId), runContext.render(this.dataset),
+                runContext.render(this.table) + "$" + partition
+        ) : TableId.of(runContext.render(this.dataset), runContext.render(this.table) + "$" + partition);
     }
 
-    protected List<String> listPartitions(RunContext runContext, BigQuery connection, TableId tableId) throws IllegalVariableEvaluationException {
+    protected List<String> listPartitions(RunContext runContext, BigQuery connection, TableId tableId)
+            throws IllegalVariableEvaluationException {
         List<String> partitions = connection.listPartitions(tableId);
 
         if (partitionType == RANGE) {
@@ -76,30 +78,32 @@ abstract public class AbstractPartition extends AbstractTable {
             int to = Integer.parseInt(runContext.render(this.to));
 
             return partitions
-                .stream()
-                .filter(s -> {
-                    int current = Integer.parseInt(s);
+                    .stream()
+                    .filter(s -> {
+                        int current = Integer.parseInt(s);
 
-                    return current >= from &&
-                        current <= to;
-                })
-                .collect(Collectors.toList());
+                        return current >= from &&
+                                current <= to;
+                    })
+                    .collect(Collectors.toList());
         } else {
-            LocalDateTime from = LocalDateTime.parse(runContext.render(this.from), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
-            LocalDateTime to = LocalDateTime.parse(runContext.render(this.to), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
+            LocalDateTime from = LocalDateTime
+                    .parse(runContext.render(this.from), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
+            LocalDateTime to = LocalDateTime
+                    .parse(runContext.render(this.to), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
             return partitions
-                .stream()
-                .filter(s -> !s.equals("__NULL__"))
-                .filter(s -> {
-                    LocalDateTime current = LocalDateTime.parse(
-                        s + ADDED_DATE.get(partitionType),
-                        DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-                    );
+                    .stream()
+                    .filter(s -> !s.equals("__NULL__"))
+                    .filter(s -> {
+                        LocalDateTime current = LocalDateTime.parse(
+                                s + ADDED_DATE.get(partitionType),
+                                DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+                        );
 
-                    return current.compareTo(from) >= 0 &&
-                        current.compareTo(to) <= 0;
-                })
-                .collect(Collectors.toList());
+                        return current.compareTo(from) >= 0 &&
+                                current.compareTo(to) <= 0;
+                    })
+                    .collect(Collectors.toList());
         }
     }
 

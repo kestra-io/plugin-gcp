@@ -20,7 +20,6 @@ import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
 @Slf4j
@@ -39,34 +38,38 @@ class CreateUpdateTableTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         CreateTable task = CreateTable.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .friendlyName("new_table")
-            .tableDefinition(TableDefinition.builder()
-                .type(TableDefinition.Type.TABLE)
-                .schema(Schema.builder()
-                    .fields(Arrays.asList(
-                        Field.builder()
-                            .name("id")
-                            .type(StandardSQLTypeName.INT64)
-                            .build(),
-                        Field.builder()
-                            .name("name")
-                            .type(StandardSQLTypeName.STRING)
-                            .build()
-                    ))
-                    .build()
+                .projectId(this.project)
+                .dataset(this.dataset)
+                .table(friendlyId)
+                .friendlyName("new_table")
+                .tableDefinition(
+                        TableDefinition.builder()
+                                .type(TableDefinition.Type.TABLE)
+                                .schema(
+                                        Schema.builder()
+                                                .fields(
+                                                        Arrays.asList(
+                                                                Field.builder()
+                                                                        .name("id")
+                                                                        .type(StandardSQLTypeName.INT64)
+                                                                        .build(),
+                                                                Field.builder()
+                                                                        .name("name")
+                                                                        .type(StandardSQLTypeName.STRING)
+                                                                        .build()
+                                                        )
+                                                )
+                                                .build()
+                                )
+                                .standardTableDefinition(
+                                        StandardTableDefinition.builder()
+                                                .clustering(Arrays.asList("id", "name"))
+                                                .build()
+                                )
+                                .build()
                 )
-                .standardTableDefinition(StandardTableDefinition.builder()
-                    .clustering(Arrays.asList("id", "name"))
-                    .build()
-                )
-                .build()
-            )
-            .build();
+                .build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         CreateTable.Output run = task.run(runContext);
 
@@ -80,12 +83,12 @@ class CreateUpdateTableTest {
         assertThat(run.getExpirationTime(), notNullValue());
 
         UpdateTable updateTask = UpdateTable.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .friendlyName("new_table_2")
-            .expirationDuration(Duration.ofHours(2))
-            .build();
+                .projectId(this.project)
+                .dataset(this.dataset)
+                .table(friendlyId)
+                .friendlyName("new_table_2")
+                .expirationDuration(Duration.ofHours(2))
+                .build();
 
         UpdateTable.Output updateRun = updateTask.run(runContext);
 
@@ -102,26 +105,29 @@ class CreateUpdateTableTest {
                 .dataset(this.dataset)
                 .table(friendlyId)
                 .friendlyName("new_table")
-                .tableDefinition(TableDefinition.builder()
-                        .type(TableDefinition.Type.TABLE)
-                        .schema(Schema.builder()
-                                .fields(Arrays.asList(
-                                        Field.builder()
-                                                .name("id")
-                                                .type(StandardSQLTypeName.INT64)
-                                                .build(),
-                                        Field.builder()
-                                                .name("name")
-                                                .type(StandardSQLTypeName.STRING)
+                .tableDefinition(
+                        TableDefinition.builder()
+                                .type(TableDefinition.Type.TABLE)
+                                .schema(
+                                        Schema.builder()
+                                                .fields(
+                                                        Arrays.asList(
+                                                                Field.builder()
+                                                                        .name("id")
+                                                                        .type(StandardSQLTypeName.INT64)
+                                                                        .build(),
+                                                                Field.builder()
+                                                                        .name("name")
+                                                                        .type(StandardSQLTypeName.STRING)
+                                                                        .build()
+                                                        )
+                                                )
                                                 .build()
-                                ))
+                                )
                                 .build()
-                        )
-                        .build()
                 )
                 .build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         CreateTable.Output run = task.run(runContext);
 

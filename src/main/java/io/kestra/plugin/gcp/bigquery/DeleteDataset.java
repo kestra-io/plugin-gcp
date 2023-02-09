@@ -20,31 +20,31 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Delete a dataset",
-            code = {
-                "name: \"my-bucket\"",
-                "deleteContents: true"
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Delete a dataset",
+                        code = {
+                                "name: \"my-bucket\"",
+                                "deleteContents: true"
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Delete a dataset."
+        title = "Delete a dataset."
 )
 public class DeleteDataset extends AbstractBigquery implements RunnableTask<DeleteDataset.Output> {
     @NotNull
     @Schema(
-        title = "The dataset's user-defined id"
+            title = "The dataset's user-defined id"
     )
     @PluginProperty(dynamic = true)
     private String name;
 
     @Schema(
-        title = "Whether to delete a dataset even if non-empty",
-        description = "If not provided, attempting to" +
-            " delete a non-empty dataset will result in a exception being thrown."
+            title = "Whether to delete a dataset even if non-empty",
+            description = "If not provided, attempting to" +
+                    " delete a non-empty dataset will result in a exception being thrown."
     )
     private Boolean deleteContents;
 
@@ -69,9 +69,9 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
         }
 
         return Output
-            .builder()
-            .dataset(name)
-            .build();
+                .builder()
+                .dataset(name)
+                .build();
     }
 
     @Builder
@@ -79,7 +79,7 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
     public static class Output implements io.kestra.core.models.tasks.Output {
         @NotNull
         @Schema(
-            title = "The dataset's user-defined id"
+                title = "The dataset's user-defined id"
         )
         private String dataset;
     }

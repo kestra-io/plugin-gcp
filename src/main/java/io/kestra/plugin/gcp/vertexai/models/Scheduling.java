@@ -16,15 +16,15 @@ import javax.validation.constraints.NotNull;
 @Jacksonized
 public class Scheduling {
     @Schema(
-        title = "The maximum job running time. The default is 7 days."
+            title = "The maximum job running time. The default is 7 days."
     )
     @PluginProperty(dynamic = false)
     @NotNull
     private Duration timeOut;
 
     @Schema(
-        title = "Restarts the entire CustomJob if a worker gets restarted.",
-        description = "This feature can be used by distributed training jobs that are not resilient to workers leaving and joining a job."
+            title = "Restarts the entire CustomJob if a worker gets restarted.",
+            description = "This feature can be used by distributed training jobs that are not resilient to workers leaving and joining a job."
     )
     @PluginProperty(dynamic = false)
     @NotNull
@@ -34,7 +34,10 @@ public class Scheduling {
         com.google.cloud.aiplatform.v1.Scheduling.Builder builder = com.google.cloud.aiplatform.v1.Scheduling.newBuilder();
 
         if (this.getTimeOut() != null) {
-            builder.setTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(this.getTimeOut().getSeconds()).setNanos(this.getTimeOut().getNano()).build());
+            builder.setTimeout(
+                    com.google.protobuf.Duration.newBuilder().setSeconds(this.getTimeOut().getSeconds())
+                            .setNanos(this.getTimeOut().getNano()).build()
+            );
         }
 
         if (this.getRestartJobOnWorkerRestart() != null) {

@@ -27,12 +27,12 @@ public abstract class AbstractGcs extends AbstractTask {
         VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
 
         return StorageOptions
-            .newBuilder()
-            .setCredentials(this.credentials(runContext))
-            .setProjectId(runContext.render(projectId))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
-            .build()
-            .getService();
+                .newBuilder()
+                .setCredentials(this.credentials(runContext))
+                .setProjectId(runContext.render(projectId))
+                .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
+                .build()
+                .getService();
     }
 
     static URI encode(RunContext runContext, String blob) throws IllegalVariableEvaluationException, URISyntaxException {

@@ -11,15 +11,13 @@ import com.google.common.collect.ImmutableMap;
  * https://github.com/googleapis/java-bigquerystorage/blob/main/samples/snippets/src/main/java/com/example/bigquerystorage/BqToBqStorageSchemaConverter.java
  */
 public class BigQueryToBigQueryStorageSchemaConverter {
-    private static final ImmutableMap<Field.Mode, TableFieldSchema.Mode> BQ_TABLE_SCHEMA_MODE_MAP =
-        ImmutableMap.of(
+    private static final ImmutableMap<Field.Mode, TableFieldSchema.Mode> BQ_TABLE_SCHEMA_MODE_MAP = ImmutableMap.of(
             Field.Mode.NULLABLE, TableFieldSchema.Mode.NULLABLE,
             Field.Mode.REPEATED, TableFieldSchema.Mode.REPEATED,
             Field.Mode.REQUIRED, TableFieldSchema.Mode.REQUIRED
-        );
+    );
 
-    private static ImmutableMap<StandardSQLTypeName, TableFieldSchema.Type> BQ_TABLE_SCHEMA_TYPE_MAP =
-        new ImmutableMap.Builder<StandardSQLTypeName, TableFieldSchema.Type>()
+    private static ImmutableMap<StandardSQLTypeName, TableFieldSchema.Type> BQ_TABLE_SCHEMA_TYPE_MAP = new ImmutableMap.Builder<StandardSQLTypeName, TableFieldSchema.Type>()
             .put(StandardSQLTypeName.BOOL, TableFieldSchema.Type.BOOL)
             .put(StandardSQLTypeName.BYTES, TableFieldSchema.Type.BYTES)
             .put(StandardSQLTypeName.DATE, TableFieldSchema.Type.DATE)

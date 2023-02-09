@@ -29,20 +29,20 @@ import javax.validation.constraints.Min;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "from: \"gs://my_bucket/dir/\""
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "from: \"gs://my_bucket/dir/\""
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Delete all file to a GCS bucket."
+        title = "Delete all file to a GCS bucket."
 )
 public class DeleteList extends AbstractList implements RunnableTask<DeleteList.Output>, ListInterface {
     @Schema(
-        title = "raise an error if the file is not found"
+            title = "raise an error if the file is not found"
     )
     @PluginProperty(dynamic = true)
     @Builder.Default
@@ -50,7 +50,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
 
     @Min(2)
     @Schema(
-        title = "Number of concurrent parrallels deletion"
+            title = "Number of concurrent parrallels deletion"
     )
     @PluginProperty(dynamic = false)
     private Integer concurrent;
@@ -63,32 +63,31 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         URI from = encode(runContext, this.from);
         String regExp = runContext.render(this.regExp);
 
-
         Flowable<com.google.cloud.storage.Blob> flowable = Flowable
-            .create(emitter -> {
-                this.iterator(connection, from)
-                    .forEachRemaining(emitter::onNext);
-                emitter.onComplete();
-            }, BackpressureStrategy.BUFFER);
+                .create(emitter -> {
+                    this.iterator(connection, from)
+                            .forEachRemaining(emitter::onNext);
+                    emitter.onComplete();
+                }, BackpressureStrategy.BUFFER);
 
         Flowable<Long> result;
 
         if (this.concurrent != null) {
             result = flowable
-                .parallel(this.concurrent)
-                .runOn(Schedulers.io())
-                .filter(blob -> this.filter(blob, regExp))
-                .map(delete(logger, connection))
-                .sequential();
+                    .parallel(this.concurrent)
+                    .runOn(Schedulers.io())
+                    .filter(blob -> this.filter(blob, regExp))
+                    .map(delete(logger, connection))
+                    .sequential();
         } else {
             result = flowable
-                .filter(blob -> this.filter(blob, regExp))
-                .map(delete(logger, connection));
+                    .filter(blob -> this.filter(blob, regExp))
+                    .map(delete(logger, connection));
         }
 
         Pair<Long, Long> finalResult = result
-            .reduce(Pair.of(0L, 0L), (pair, size) -> Pair.of(pair.getLeft() + 1, pair.getRight() + size))
-            .blockingGet();
+                .reduce(Pair.of(0L, 0L), (pair, size) -> Pair.of(pair.getLeft() + 1, pair.getRight() + size))
+                .blockingGet();
 
         runContext.metric(Counter.of("count", finalResult.getLeft()));
         runContext.metric(Counter.of("size", finalResult.getRight()));
@@ -100,10 +99,10 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         logger.info("Deleted {} files for {} bytes", finalResult.getLeft(), finalResult.getValue());
 
         return Output
-            .builder()
-            .count(finalResult.getLeft())
-            .size(finalResult.getRight())
-            .build();
+                .builder()
+                .count(finalResult.getLeft())
+                .size(finalResult.getRight())
+                .build();
     }
 
     protected boolean filter(com.google.cloud.storage.Blob blob, String regExp) {
@@ -112,7 +111,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
 
     private static Function<Blob, Long> delete(Logger logger, Storage connection) {
         return o -> {
-            logger.debug("Deleting '{}'" , io.kestra.plugin.gcp.gcs.models.Blob.uri(o));
+            logger.debug("Deleting '{}'", io.kestra.plugin.gcp.gcs.models.Blob.uri(o));
             if (connection.delete(BlobId.of(o.getBucket(), o.getName()))) {
                 return o.getSize();
             } else {
@@ -126,13 +125,13 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Builder.Default
         @Schema(
-            title = "The count of blobs deleted"
+                title = "The count of blobs deleted"
         )
         private final long count = 0;
 
         @Builder.Default
         @Schema(
-            title = "The size of all blobs deleted"
+                title = "The size of all blobs deleted"
         )
         private final long size = 0;
     }

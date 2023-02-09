@@ -17,14 +17,14 @@ import javax.validation.constraints.NotNull;
 public class AccessControl {
     @NotNull
     @Schema(
-        title = "The entity"
+            title = "The entity"
     )
     @PluginProperty(dynamic = true)
     private final Entity entity;
 
     @NotNull
     @Schema(
-        title = "The role to assign to the entity"
+            title = "The role to assign to the entity"
     )
     @PluginProperty(dynamic = true)
     private final Role role;
@@ -37,9 +37,9 @@ public class AccessControl {
 
     public static List<Acl> convert(List<AccessControl> accessControls) {
         return accessControls
-            .stream()
-            .map(c -> c.convert())
-            .collect(Collectors.toList());
+                .stream()
+                .map(c -> c.convert())
+                .collect(Collectors.toList());
     }
 
     private Acl convert() {

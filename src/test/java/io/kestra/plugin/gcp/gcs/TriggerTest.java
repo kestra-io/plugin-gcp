@@ -73,12 +73,14 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (AbstractScheduler scheduler = new DefaultScheduler(
-            this.applicationContext,
-            this.flowListenersService,
-            this.executionState,
-            this.triggerState
-        )) {
+        try (
+                AbstractScheduler scheduler = new DefaultScheduler(
+                        this.applicationContext,
+                        this.flowListenersService,
+                        this.executionState,
+                        this.triggerState
+                )
+        ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
@@ -88,7 +90,6 @@ class TriggerTest {
                 queueCount.countDown();
                 assertThat(execution.getFlowId(), is("gcs-listen"));
             });
-
 
             String out1 = FriendlyId.createFriendlyId();
             testUtils.upload(random + "/" + out1);
@@ -110,12 +111,12 @@ class TriggerTest {
     @Test
     void move() throws Exception {
         Trigger trigger = Trigger.builder()
-            .id(TriggerTest.class.getSimpleName())
-            .type(Trigger.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
-            .action(ActionInterface.Action.MOVE)
-            .moveDirectory("gs://" + bucket + "/test/move")
-            .build();
+                .id(TriggerTest.class.getSimpleName())
+                .type(Trigger.class.getName())
+                .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
+                .action(ActionInterface.Action.MOVE)
+                .moveDirectory("gs://" + bucket + "/test/move")
+                .build();
 
         String out = FriendlyId.createFriendlyId();
         Upload.Output upload = testUtils.upload(random + "/" + out);
@@ -131,20 +132,19 @@ class TriggerTest {
 
         assertThrows(IllegalArgumentException.class, () -> {
             Download task = Download.builder()
-                .id(DownloadTest.class.getSimpleName())
-                .type(Download.class.getName())
-                .from(upload.getUri().toString())
-                .build();
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(upload.getUri().toString())
+                    .build();
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         });
 
-
         Download task = Download.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from("gs://" + bucket + "/test/move/" + out + ".yml")
-            .build();
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .from("gs://" + bucket + "/test/move/" + out + ".yml")
+                .build();
 
         Download.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBucket(), is(bucket));

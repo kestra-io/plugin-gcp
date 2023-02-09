@@ -12,14 +12,12 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 
 @SuperBuilder
 @ToString
@@ -27,27 +25,27 @@ import java.nio.file.Path;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "from: \"{{ inputs.file }}\"",
-                "to: \"gs://my_bucket/dir/file.csv\""
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "from: \"{{ inputs.file }}\"",
+                                "to: \"gs://my_bucket/dir/file.csv\""
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Upload a file to a GCS bucket."
+        title = "Upload a file to a GCS bucket."
 )
 public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
     @Schema(
-        title = "The file to copy"
+            title = "The file to copy"
     )
     @PluginProperty(dynamic = true)
     private String from;
 
     @Schema(
-        title = "The destination path"
+            title = "The destination path"
     )
     @PluginProperty(dynamic = true)
     private String to;
@@ -61,8 +59,13 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
         URI to = encode(runContext, this.to);
 
         BlobInfo destination = BlobInfo
-            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1))))
-            .build();
+                .newBuilder(
+                        BlobId.of(
+                                to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(),
+                                blobPath(to.getPath().substring(1))
+                        )
+                )
+                .build();
 
         logger.debug("Upload from '{}' to '{}'", from, to);
 
@@ -81,9 +84,9 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
             runContext.metric(Counter.of("file.size", size));
 
             return Output
-                .builder()
-                .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
-                .build();
+                    .builder()
+                    .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
+                    .build();
         }
     }
 

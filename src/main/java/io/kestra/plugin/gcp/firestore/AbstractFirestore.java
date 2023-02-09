@@ -25,7 +25,7 @@ import java.util.Map;
 @NoArgsConstructor
 abstract class AbstractFirestore extends AbstractTask {
     @Schema(
-        title = "The Firestore collection"
+            title = "The Firestore collection"
     )
     @PluginProperty(dynamic = true)
     protected String collection;
@@ -34,11 +34,11 @@ abstract class AbstractFirestore extends AbstractTask {
         VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
 
         return FirestoreOptions.newBuilder()
-            .setCredentials(this.credentials(runContext))
-            .setProjectId(runContext.render(projectId))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
-            .build()
-            .getService();
+                .setCredentials(this.credentials(runContext))
+                .setProjectId(runContext.render(projectId))
+                .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
+                .build()
+                .getService();
     }
 
     CollectionReference collection(RunContext runContext, Firestore firestore) throws IllegalVariableEvaluationException {

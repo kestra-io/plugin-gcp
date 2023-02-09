@@ -34,29 +34,35 @@ class GcsTestUtils {
 
     Upload.Output upload(String out, String resource) throws Exception {
         URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
-                .getResource(resource))
-                .toURI()))
+                new URI("/" + FriendlyId.createFriendlyId()),
+                new FileInputStream(
+                        new File(
+                                Objects.requireNonNull(
+                                        UploadTest.class.getClassLoader()
+                                                .getResource(resource)
+                                )
+                                        .toURI()
+                        )
+                )
         );
 
         Upload task = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource))
-            .build();
+                .id(UploadTest.class.getSimpleName())
+                .type(Upload.class.getName())
+                .from(source.toString())
+                .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource))
+                .build();
 
         return task.run(runContext(task));
     }
 
     RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
-            this.runContextFactory,
-            task,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
+                this.runContextFactory,
+                task,
+                ImmutableMap.of(
+                        "bucket", this.bucket
+                )
         );
     }
 }

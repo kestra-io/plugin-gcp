@@ -9,7 +9,6 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import jakarta.inject.Inject;
@@ -36,36 +35,40 @@ class DeleteTableTest {
         String partition = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         Query create = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
-                "PARTITION BY DATE(transaction_date)\n" +
-                "AS (SELECT 1, DATETIME '" + today.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n" +
-                "UNION ALL\n" +
-                "(SELECT 2, DATETIME '" + previous.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n")
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql(
+                        "CREATE TABLE `" + project + "." + dataset + "." + table
+                                + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+                                "PARTITION BY DATE(transaction_date)\n" +
+                                "AS (SELECT 1, DATETIME '" + today.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n"
+                                +
+                                "UNION ALL\n" +
+                                "(SELECT 2, DATETIME '" + previous.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n"
+                )
+                .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
         create.run(runContext);
 
         DeleteTable task = DeleteTable.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(DeleteTable.class.getName())
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(table + "$" + partition)
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(DeleteTable.class.getName())
+                .projectId(this.project)
+                .dataset(this.dataset)
+                .table(table + "$" + partition)
+                .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         DeleteTable.Output run = task.run(runContext);
 
         assertThat(run.getTable(), is(table + "$" + partition));
 
         Query query = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .fetchOne(true)
-            .sql("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;")
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .fetchOne(true)
+                .sql("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;")
+                .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, query, ImmutableMap.of());
         Query.Output queryRun = query.run(runContext);
 

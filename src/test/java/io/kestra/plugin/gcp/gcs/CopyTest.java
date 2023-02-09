@@ -38,27 +38,33 @@ class CopyTest {
         String out = FriendlyId.createFriendlyId();
 
         URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
-                .getResource("application.yml"))
-                .toURI()))
+                new URI("/" + FriendlyId.createFriendlyId()),
+                new FileInputStream(
+                        new File(
+                                Objects.requireNonNull(
+                                        UploadTest.class.getClassLoader()
+                                                .getResource("application.yml")
+                                )
+                                        .toURI()
+                        )
+                )
         );
 
         Upload upload = Upload.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
-            .build();
+                .id(CopyTest.class.getSimpleName())
+                .type(Upload.class.getName())
+                .from(source.toString())
+                .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
+                .build();
 
         upload.run(runContext(upload));
 
         Copy task = Copy.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Copy.class.getName())
-            .from("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
-            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml")
-            .build();
+                .id(CopyTest.class.getSimpleName())
+                .type(Copy.class.getName())
+                .from("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
+                .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml")
+                .build();
 
         Copy.Output run = task.run(runContext(task));
 
@@ -70,11 +76,11 @@ class CopyTest {
         String in = FriendlyId.createFriendlyId();
 
         Copy task = Copy.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Copy.class.getName())
-            .from("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
-            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
-            .build();
+                .id(CopyTest.class.getSimpleName())
+                .type(Copy.class.getName())
+                .from("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
+                .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
+                .build();
 
         assertThrows(IllegalArgumentException.class, () -> {
             task.run(runContext(task));
@@ -83,11 +89,11 @@ class CopyTest {
 
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
-            this.runContextFactory,
-            task,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
+                this.runContextFactory,
+                task,
+                ImmutableMap.of(
+                        "bucket", this.bucket
+                )
         );
     }
 }

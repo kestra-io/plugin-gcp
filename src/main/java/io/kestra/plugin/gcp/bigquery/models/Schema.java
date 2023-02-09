@@ -16,26 +16,27 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Jacksonized
 public class Schema {
     @io.swagger.v3.oas.annotations.media.Schema(
-        name = "the fields associated to this schema."
+            name = "the fields associated to this schema."
     )
     private final List<Field> fields;
 
     public static Schema of(com.google.cloud.bigquery.Schema schema) {
         return Schema.builder()
-            .fields(schema.getFields()
-                .stream()
-                .map(Field::of)
-                .collect(Collectors.toList())
-            )
-            .build();
+                .fields(
+                        schema.getFields()
+                                .stream()
+                                .map(Field::of)
+                                .collect(Collectors.toList())
+                )
+                .build();
     }
 
     public com.google.cloud.bigquery.Schema to(RunContext runContext) throws IllegalVariableEvaluationException {
         return com.google.cloud.bigquery.Schema.of(
-            this.getFields()
-                .stream()
-                .map(throwFunction(field -> field.to(runContext)))
-                .collect(Collectors.toList())
+                this.getFields()
+                        .stream()
+                        .map(throwFunction(field -> field.to(runContext)))
+                        .collect(Collectors.toList())
         );
     }
 }

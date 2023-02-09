@@ -20,24 +20,24 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get table metadata"
+        title = "Get table metadata"
 )
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "projectId: my-project",
+                                "dataset: my-dataset",
+                                "table: my-table",
+                        }
+                )
+        }
 )
 public class TableMetadata extends AbstractTable implements RunnableTask<AbstractTable.Output> {
     @Builder.Default
     @Schema(
-        title = "Policy to apply if a table don't exists.",
-        description = "If the policy is `SKIP`, the output will contain only null value, otherwize an error is raised."
+            title = "Policy to apply if a table don't exists.",
+            description = "If the policy is `SKIP`, the output will contain only null value, otherwize an error is raised."
     )
     private final IfNotExists ifNotExists = IfNotExists.ERROR;
 
@@ -46,9 +46,9 @@ public class TableMetadata extends AbstractTable implements RunnableTask<Abstrac
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        TableId tableId = this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table)) :
-            TableId.of(runContext.render(this.dataset), runContext.render(this.table));
+        TableId tableId = this.projectId != null
+                ? TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table))
+                : TableId.of(runContext.render(this.dataset), runContext.render(this.table));
 
         logger.debug("Getting table metadata '{}'", tableId);
 
@@ -56,10 +56,13 @@ public class TableMetadata extends AbstractTable implements RunnableTask<Abstrac
 
         if (table == null) {
             if (ifNotExists == IfNotExists.ERROR) {
-                throw new IllegalArgumentException("Unable to find table '" + tableId.getProject() + ":" + tableId.getDataset() + "." + tableId.getTable() + "'");
+                throw new IllegalArgumentException(
+                        "Unable to find table '" + tableId.getProject() + ":" + tableId.getDataset() + "." + tableId.getTable()
+                                + "'"
+                );
             } else if (ifNotExists == IfNotExists.SKIP) {
                 return Output.builder()
-                    .build();
+                        .build();
             }
         }
 

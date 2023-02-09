@@ -33,32 +33,35 @@ class DeleteTest {
 
     @Test
     void fromStorage() throws Exception {
-        File file = new File(Objects.requireNonNull(DeleteTest.class.getClassLoader()
-            .getResource("application.yml"))
-            .toURI());
+        File file = new File(
+                Objects.requireNonNull(
+                        DeleteTest.class.getClassLoader()
+                                .getResource("application.yml")
+                )
+                        .toURI()
+        );
 
         URI source = storageInterface.put(
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(file)
+                new URI("/" + FriendlyId.createFriendlyId()),
+                new FileInputStream(file)
         );
 
         String out = FriendlyId.createFriendlyId();
 
         Upload upload = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
-            .build();
+                .id(UploadTest.class.getSimpleName())
+                .type(Upload.class.getName())
+                .from(source.toString())
+                .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
+                .build();
 
         Upload.Output uploadOutput = upload.run(runContext(upload));
 
         Delete task = Delete.builder()
-            .id(DeleteTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .uri(uploadOutput.getUri().toString())
-            .build();
-
+                .id(DeleteTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .uri(uploadOutput.getUri().toString())
+                .build();
 
         Delete.Output run = task.run(runContext(task));
 
@@ -69,14 +72,13 @@ class DeleteTest {
         assertThat(run.getDeleted(), is(false));
     }
 
-
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
-            this.runContextFactory,
-            task,
-            ImmutableMap.of(
-                "bucket", this.bucket
-            )
+                this.runContextFactory,
+                task,
+                ImmutableMap.of(
+                        "bucket", this.bucket
+                )
         );
     }
 }

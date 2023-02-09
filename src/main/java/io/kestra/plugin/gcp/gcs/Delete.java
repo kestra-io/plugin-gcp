@@ -9,7 +9,6 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
@@ -22,26 +21,26 @@ import java.util.NoSuchElementException;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            code = {
-                "uri: \"gs://my_bucket/dir/file.csv\""
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        code = {
+                                "uri: \"gs://my_bucket/dir/file.csv\""
+                        }
+                )
+        }
 )
 @Schema(
-    title = "Delete a file to a GCS bucket."
+        title = "Delete a file to a GCS bucket."
 )
 public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Schema(
-        title = "The file to delete"
+            title = "The file to delete"
     )
     @PluginProperty(dynamic = true)
     private String uri;
 
     @Schema(
-        title = "raise an error if the file is not found"
+            title = "raise an error if the file is not found"
     )
     @PluginProperty(dynamic = true)
     @Builder.Default
@@ -55,8 +54,8 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
         URI render = encode(runContext, this.uri);
 
         BlobId source = BlobId.of(
-            render.getAuthority(),
-            blobPath(render.getPath().substring(1))
+                render.getAuthority(),
+                blobPath(render.getPath().substring(1))
         );
 
         logger.debug("Delete '{}'", render);
@@ -68,22 +67,22 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
         }
 
         return Output
-            .builder()
-            .uri(render)
-            .deleted(delete)
-            .build();
+                .builder()
+                .uri(render)
+                .deleted(delete)
+                .build();
     }
 
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The deleted uri"
+                title = "The deleted uri"
         )
         private final URI uri;
 
         @Schema(
-            title = "If the files was really deleted"
+                title = "If the files was really deleted"
         )
         private final Boolean deleted;
     }

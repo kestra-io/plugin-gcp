@@ -25,13 +25,16 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("1")
-            .document(Map.of("firstname", "John",
-                "lastname", "Doe"
-            ))
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .childPath("1")
+                .document(
+                        Map.of(
+                                "firstname", "John",
+                                "lastname", "Doe"
+                        )
+                )
+                .build();
 
         var output = set.run(runContext);
 
@@ -48,11 +51,11 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("2")
-            .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .childPath("2")
+                .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
+                .build();
 
         var output = set.run(runContext);
 
@@ -69,11 +72,11 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(project)
-            .collection("persons")
-            .childPath("3")
-            .document(null)
-            .build();
+                .projectId(project)
+                .collection("persons")
+                .childPath("3")
+                .document(null)
+                .build();
 
         var output = set.run(runContext);
 

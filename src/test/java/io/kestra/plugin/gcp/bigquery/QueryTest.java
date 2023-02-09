@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
-import com.google.cloud.bigquery.JobException;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -20,7 +19,6 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
 
-import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -54,35 +52,37 @@ class QueryTest {
 
     static String sql() {
         return "SELECT \n" +
-            "  \"hello\" as string,\n" +
-            "  CAST(NULL AS INT) AS `nullable`,\n" +
-            "  TRUE AS `bool`,\n" +
-            "  1 as int,\n" +
-            "  1.25 AS float,\n" +
-            "  DATE(\"2008-12-25\") AS date,\n" +
-            "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
-            "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
-            "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
-            "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
-            "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
-            "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`";
+                "  \"hello\" as string,\n" +
+                "  CAST(NULL AS INT) AS `nullable`,\n" +
+                "  TRUE AS `bool`,\n" +
+                "  1 as int,\n" +
+                "  1.25 AS float,\n" +
+                "  DATE(\"2008-12-25\") AS date,\n" +
+                "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
+                "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
+                "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
+                "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
+                "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
+                "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`";
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void fetch() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of(
-            "sql", sql(),
-            "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "io.kestra.tests"),
-            "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
-            "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
-        ));
+        RunContext runContext = runContextFactory.of(
+                ImmutableMap.of(
+                        "sql", sql(),
+                        "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "io.kestra.tests"),
+                        "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
+                        "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
+                )
+        );
 
         Query task = Query.builder()
-            .sql("{{sql}}")
-            .location("EU")
-            .fetch(true)
-            .build();
+                .sql("{{sql}}")
+                .location("EU")
+                .fetch(true)
+                .build();
 
         Query.Output run = task.run(runContext);
 
@@ -107,31 +107,33 @@ class QueryTest {
     @Test
     void store() throws Exception {
         Query task = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql(sql() + "\n UNION ALL \n " + sql())
-            .store(true)
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql(sql() + "\n UNION ALL \n " + sql())
+                .store(true)
+                .build();
 
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
         assertThat(
-            CharStreams.toString(new InputStreamReader(storageInterface.get(run.getUri()))),
-            is(StringUtils.repeat(
-                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{v:null,x:4,y:0,z:[1,2,3]}}\n",
-                2
-            ))
+                CharStreams.toString(new InputStreamReader(storageInterface.get(run.getUri()))),
+                is(
+                        StringUtils.repeat(
+                                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{v:null,x:4,y:0,z:[1,2,3]}}\n",
+                                2
+                        )
+                )
         );
     }
 
     @Test
     void fetchLongPage() throws Exception {
         Query task = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("SELECT repository_forks FROM `bigquery-public-data.samples.github_timeline` LIMIT 100000")
-            .fetch(true)
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql("SELECT repository_forks FROM `bigquery-public-data.samples.github_timeline` LIMIT 100000")
+                .fetch(true)
+                .build();
 
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
@@ -143,41 +145,45 @@ class QueryTest {
     void destination() throws Exception {
         String friendlyId = FriendlyId.createFriendlyId();
         Query task = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("{% for input in inputs.loop %}" +
-                "SELECT" +
-                "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\")}}\" as execution_date," +
-                "  {{ input }} as counter" +
-                "{{ loop.last  == false ? '\nUNION ALL\n' : '\n' }}" +
-                "{% endfor %}"
-            )
-            .destinationTable(project + "." + dataset + "." + friendlyId)
-            .timePartitioningField("execution_date")
-            .clusteringFields(Arrays.asList("execution_id", "counter"))
-            .schemaUpdateOptions(Collections.singletonList(JobInfo.SchemaUpdateOption.ALLOW_FIELD_ADDITION))
-            .writeDisposition(JobInfo.WriteDisposition.WRITE_APPEND)
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql(
+                        "{% for input in inputs.loop %}" +
+                                "SELECT" +
+                                "  \"{{execution.id}}\" as execution_id," +
+                                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\")}}\" as execution_date,"
+                                +
+                                "  {{ input }} as counter" +
+                                "{{ loop.last  == false ? '\nUNION ALL\n' : '\n' }}" +
+                                "{% endfor %}"
+                )
+                .destinationTable(project + "." + dataset + "." + friendlyId)
+                .timePartitioningField("execution_date")
+                .clusteringFields(Arrays.asList("execution_id", "counter"))
+                .schemaUpdateOptions(Collections.singletonList(JobInfo.SchemaUpdateOption.ALLOW_FIELD_ADDITION))
+                .writeDisposition(JobInfo.WriteDisposition.WRITE_APPEND)
+                .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", ContiguousSet.create(Range.closed(1, 25), DiscreteDomain.integers())
-        ));
+        RunContext runContext = TestsUtils.mockRunContext(
+                runContextFactory, task, ImmutableMap.of(
+                        "loop", ContiguousSet.create(Range.closed(1, 25), DiscreteDomain.integers())
+                )
+        );
 
         Query.Output run = task.run(runContext);
         assertThat(run.getJobId(), is(notNullValue()));
-        assertThat(run.getDestinationTable().getProject(),is(project));
-        assertThat(run.getDestinationTable().getDataset(),is(dataset));
-        assertThat(run.getDestinationTable().getTable(),is(friendlyId));
+        assertThat(run.getDestinationTable().getProject(), is(project));
+        assertThat(run.getDestinationTable().getDataset(), is(dataset));
+        assertThat(run.getDestinationTable().getTable(), is(friendlyId));
     }
 
     @Test
     void error() {
         Query task = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("SELECT * from `{{execution.id}}`")
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql("SELECT * from `{{execution.id}}`")
+                .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
@@ -191,20 +197,24 @@ class QueryTest {
     @Test
     void script() throws Exception {
         Query task = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("{% for input in inputs.loop %}" +
-                "SELECT" +
-                "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\") }}\" as execution_date," +
-                "  {{input}} as counter;" +
-                "{% endfor %}"
-            )
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql(
+                        "{% for input in inputs.loop %}" +
+                                "SELECT" +
+                                "  \"{{execution.id}}\" as execution_id," +
+                                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\") }}\" as execution_date,"
+                                +
+                                "  {{input}} as counter;" +
+                                "{% endfor %}"
+                )
+                .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
-        ));
+        RunContext runContext = TestsUtils.mockRunContext(
+                runContextFactory, task, ImmutableMap.of(
+                        "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
+                )
+        );
 
         Query.Output run = task.run(runContext);
         assertThat(run.getJobId(), is(notNullValue()));
@@ -219,13 +229,13 @@ class QueryTest {
 
         for (int i = 0; i < 50; i++) {
             Query task = Query.builder()
-                .id(QueryTest.class.getSimpleName())
-                .type(Query.class.getName())
-                .sql("SELECT \"" + i + "\" as value")
-                .destinationTable(table)
-                .createDisposition(JobInfo.CreateDisposition.CREATE_IF_NEEDED)
-                .writeDisposition(JobInfo.WriteDisposition.WRITE_TRUNCATE)
-                .build();
+                    .id(QueryTest.class.getSimpleName())
+                    .type(Query.class.getName())
+                    .sql("SELECT \"" + i + "\" as value")
+                    .destinationTable(table)
+                    .createDisposition(JobInfo.CreateDisposition.CREATE_IF_NEEDED)
+                    .writeDisposition(JobInfo.WriteDisposition.WRITE_TRUNCATE)
+                    .build();
 
             RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
@@ -236,17 +246,17 @@ class QueryTest {
         executorService.shutdown();
 
         List<Query.Output> results = futures
-            .stream()
-            .map(outputFuture -> {
-                try {
-                    return outputFuture.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    log.error("Failed on ", e);
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+                .stream()
+                .map(outputFuture -> {
+                    try {
+                        return outputFuture.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        log.error("Failed on ", e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         assertThat(results.size(), is(tasks.size()));
     }
@@ -254,17 +264,20 @@ class QueryTest {
     @Test
     void scriptError() {
         Query task = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("{% for input in  inputs.loop %}" +
-                "SELECT * from `{{execution.id}}`;" +
-                "{% endfor %}"
-            )
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql(
+                        "{% for input in  inputs.loop %}" +
+                                "SELECT * from `{{execution.id}}`;" +
+                                "{% endfor %}"
+                )
+                .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
-        ));
+        RunContext runContext = TestsUtils.mockRunContext(
+                runContextFactory, task, ImmutableMap.of(
+                        "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
+                )
+        );
 
         FailsafeException e = assertThrows(FailsafeException.class, () -> {
             task.run(runContext);
@@ -276,12 +289,13 @@ class QueryTest {
     @Test
     void scriptMultipleNoOutput() throws Exception {
         Query task = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".not`;" +
-                "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".exist`;"
-            )
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql(
+                        "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".not`;" +
+                                "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".exist`;"
+                )
+                .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         Query.Output run = task.run(runContext);
@@ -296,10 +310,10 @@ class QueryTest {
         String table = this.dataset + "." + FriendlyId.createFriendlyId();
 
         Query create = Query.builder()
-            .id(QueryTest.class.getSimpleName())
-            .type(Query.class.getName())
-            .sql("CREATE TABLE " + table + " AS SELECT 1 AS number")
-            .build();
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql("CREATE TABLE " + table + " AS SELECT 1 AS number")
+                .build();
 
         create.run(TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of()));
 
@@ -310,11 +324,11 @@ class QueryTest {
         CountDownLatch countDownLatch = new CountDownLatch(COUNT);
 
         Query task = Query.builder()
-            .id("test")
-            .type(Query.class.getName())
-            .sql("SELECT * FROM " + table + ";")
-            .fetchOne(true)
-            .build();
+                .id("test")
+                .type(Query.class.getName())
+                .sql("SELECT * FROM " + table + ";")
+                .fetchOne(true)
+                .build();
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         for (int i = 0; i < COUNT; i++) {

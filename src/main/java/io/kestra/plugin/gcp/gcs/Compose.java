@@ -24,36 +24,36 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Plugin(
-    examples = {
-        @Example(
-            title = "Concat files in a bucket",
-            code = {
-                "list: ",
-                "  from: \"gs://my_bucket/dir/\"",
-                "to: \"gs://my_bucket/destination/my-compose-file.txt\""
-            }
-        )
-    }
+        examples = {
+                @Example(
+                        title = "Concat files in a bucket",
+                        code = {
+                                "list: ",
+                                "  from: \"gs://my_bucket/dir/\"",
+                                "to: \"gs://my_bucket/destination/my-compose-file.txt\""
+                        }
+                )
+        }
 )
 @Schema(
-    title = "List file on a GCS bucket."
+        title = "List file on a GCS bucket."
 )
 public class Compose extends AbstractGcs implements RunnableTask<Compose.Output> {
     @Schema(
-        title = "The directory to list"
+            title = "The directory to list"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private List list;
 
     @Schema(
-        title = "The destination path"
+            title = "The destination path"
     )
     @PluginProperty(dynamic = true)
     private String to;
 
     @Schema(
-        title = "if `true`, don't failed if no result"
+            title = "if `true`, don't failed if no result"
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
@@ -68,23 +68,28 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
 
         // target
         BlobInfo destination = BlobInfo
-            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1))))
-            .build();
+                .newBuilder(
+                        BlobId.of(
+                                to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(),
+                                blobPath(to.getPath().substring(1))
+                        )
+                )
+                .build();
 
         Storage.ComposeRequest.Builder builder = Storage.ComposeRequest.newBuilder()
-            .setTarget(destination);
+                .setTarget(destination);
 
         io.kestra.plugin.gcp.gcs.List listActions = io.kestra.plugin.gcp.gcs.List.builder()
-            .id(this.id)
-            .type(io.kestra.plugin.gcp.gcs.List.class.getName())
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .scopes(this.scopes)
-            .from(this.list.getFrom())
-            .filter(ListInterface.Filter.FILES)
-            .listingType(this.list.getListingType())
-            .regExp(this.list.getRegExp())
-            .build();
+                .id(this.id)
+                .type(io.kestra.plugin.gcp.gcs.List.class.getName())
+                .projectId(this.projectId)
+                .serviceAccount(this.serviceAccount)
+                .scopes(this.scopes)
+                .from(this.list.getFrom())
+                .filter(ListInterface.Filter.FILES)
+                .listingType(this.list.getListingType())
+                .regExp(this.list.getRegExp())
+                .build();
 
         io.kestra.plugin.gcp.gcs.List.Output run = listActions.run(runContext);
 
@@ -93,7 +98,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
         }
 
         run.getBlobs()
-            .forEach(blob -> builder.addSource(blob.getUri().getPath().substring(1)));
+                .forEach(blob -> builder.addSource(blob.getUri().getPath().substring(1)));
 
         Storage.ComposeRequest composeRequest = builder.build();
 
@@ -105,9 +110,9 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
         runContext.metric(Counter.of("size", compose.getSize()));
 
         return Output
-            .builder()
-            .uri(new URI("gs://" + compose.getBucket() + "/" + encode(destination.getName())))
-            .build();
+                .builder()
+                .uri(new URI("gs://" + compose.getBucket() + "/" + encode(destination.getName())))
+                .build();
     }
 
     @Builder
