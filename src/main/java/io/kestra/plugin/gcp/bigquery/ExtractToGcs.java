@@ -19,7 +19,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -43,7 +42,7 @@ import java.util.Map;
 @Schema(
     title = "Extract data from BigQuery table to GCS (Google Cloud Storage)"
 )
-public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
+public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output> {
 
     @Schema(
         title = "The table to export."
@@ -82,7 +81,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         description = "[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
             "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
             "types (timestamp-micros), instead of only using their raw types (avro-long). \n" +
-            "Parameters:\n"+
+            "Parameters:\n" +
             "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "
     )
     private Boolean useAvroLogicalTypes;
@@ -104,7 +103,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
             "    labels - labels or null for none "
     )
     @PluginProperty(dynamic = true)
-    private Map<String,String> labels;
+    private Map<String, String> labels;
 
     @Schema(
         title = "Whether to print out a header row in the results. By default an header is printed."
@@ -125,7 +124,8 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         return this.execute(runContext, logger, configuration, extractJob);
     }
 
-    protected ExtractToGcs.Output execute(RunContext runContext, Logger logger, ExtractJobConfiguration configuration, Job job) throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
+    protected ExtractToGcs.Output execute(RunContext runContext, Logger logger, ExtractJobConfiguration configuration, Job job)
+        throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
         BigQueryService.handleErrors(job, logger);
         job = job.waitFor();
         BigQueryService.handleErrors(job, logger);
@@ -163,7 +163,8 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         private final List<Long> fileCounts;
     }
 
-    private void metrics(RunContext runContext, JobStatistics.ExtractStatistics stats, Job job) throws IllegalVariableEvaluationException {
+    private void metrics(RunContext runContext, JobStatistics.ExtractStatistics stats, Job job)
+        throws IllegalVariableEvaluationException {
         String[] tags = {
             "source_table", runContext.render(this.sourceTable),
             "project_id", job.getJobId().getProject(),
@@ -186,11 +187,11 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
                 runContext.render(this.destinationUris)
             );
 
-        if (runContext.render(this.sourceTable) != null){
+        if (runContext.render(this.sourceTable) != null) {
             builder.setSourceTable(BigQueryService.tableId(runContext.render(this.sourceTable)));
         }
 
-        if (runContext.render(this.destinationUris) != null){
+        if (runContext.render(this.destinationUris) != null) {
             builder.setDestinationUris(runContext.render(this.destinationUris));
         }
 
@@ -225,4 +226,3 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         return builder.build();
     }
 }
-

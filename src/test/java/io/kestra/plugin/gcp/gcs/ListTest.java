@@ -102,12 +102,19 @@ class ListTest {
             .type(List.class.getName());
     }
 
-    static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
+    static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir)
+        throws Exception {
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(ListTest.class.getClassLoader()
-                .getResource("application.yml"))
-                .toURI()))
+            new FileInputStream(
+                new File(
+                    Objects.requireNonNull(
+                        ListTest.class.getClassLoader()
+                            .getResource("application.yml")
+                    )
+                        .toURI()
+                )
+            )
         );
 
         String out = FriendlyId.createFriendlyId();
@@ -116,7 +123,7 @@ class ListTest {
             .id(ListTest.class.getSimpleName())
             .type(Upload.class.getName())
             .from(source.toString())
-            .to("gs://" + bucket +  dir + "/" + out + " (1).yml")
+            .to("gs://" + bucket + dir + "/" + out + " (1).yml")
             .build();
 
         task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));

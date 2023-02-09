@@ -165,7 +165,8 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                         .endDate(TimestampService.of(result.getEndTime()))
                         .state(result.getState());
 
-                    logger.info("Job {} ended with in {} with status {}",
+                    logger.info(
+                        "Job {} ended with in {} with status {}",
                         result.getName(),
                         Duration.between(TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime())),
                         result.getState()
@@ -207,7 +208,6 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
             title = "Time when the CustomJob was created."
         )
         private final Instant createDate;
-
 
         @NotNull
         @Schema(

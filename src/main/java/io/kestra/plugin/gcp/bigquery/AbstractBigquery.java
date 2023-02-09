@@ -79,7 +79,8 @@ abstract public class AbstractBigquery extends AbstractTask {
         );
     }
 
-    static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
+    static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location)
+        throws IllegalVariableEvaluationException {
         VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
 
         return BigQueryOptions
@@ -98,28 +99,33 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun) {
         return Failsafe
-            .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
-                    .type("exponential")
-                    .interval(Duration.ofSeconds(5))
-                    .maxInterval(Duration.ofMinutes(60))
-                    .maxDuration(Duration.ofMinutes(15))
-                    .maxAttempt(10)
-                    .build()
+            .with(
+                AbstractRetry.<Job> retryPolicy(
+                    this.getRetryAuto() != null ? this.getRetry()
+                        : Exponential.builder()
+                            .type("exponential")
+                            .interval(Duration.ofSeconds(5))
+                            .maxInterval(Duration.ofMinutes(60))
+                            .maxDuration(Duration.ofMinutes(15))
+                            .maxAttempt(10)
+                            .build()
                 )
-                .handleIf(throwable -> this.shouldRetry(throwable, logger))
-                .onFailure(event -> logger.error(
-                    "Stop retry, attempts {} elapsed {} seconds",
-                    event.getAttemptCount(),
-                    event.getElapsedTime().getSeconds(),
-                    event.getFailure()
-                ))
-                .onRetry(event -> {
-                    logger.warn(
-                        "Retrying, attempts {} elapsed {} seconds",
-                        event.getAttemptCount(),
-                        event.getElapsedTime().getSeconds()
-                    );
-                })
+                    .handleIf(throwable -> this.shouldRetry(throwable, logger))
+                    .onFailure(
+                        event -> logger.error(
+                            "Stop retry, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds(),
+                            event.getFailure()
+                        )
+                    )
+                    .onRetry(event -> {
+                        logger.warn(
+                            "Retrying, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds()
+                        );
+                    })
             )
             .get(() -> {
                 Job job = null;
@@ -144,7 +150,9 @@ abstract public class AbstractBigquery extends AbstractTask {
                         logger.warn(
                             "Error query on {} with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
+                            String.join(
+                                "\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new)
+                            )
                         );
 
                         throw new BigQueryException(bqException.getErrors());
@@ -154,7 +162,9 @@ abstract public class AbstractBigquery extends AbstractTask {
                         logger.warn(
                             "Error query on job '{}' with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
+                            String.join(
+                                "\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new)
+                            )
                         );
 
                         throw new BigQueryException(bqException.getErrors());
@@ -177,7 +187,7 @@ abstract public class AbstractBigquery extends AbstractTask {
             }
 
             if (this.retryMessages != null) {
-                for (String message: this.retryMessages) {
+                for (String message : this.retryMessages) {
                     if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
                         return true;
                     }

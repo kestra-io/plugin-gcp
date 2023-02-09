@@ -15,7 +15,7 @@ public class RangePartitioning {
     @Schema(name = "the range partitioning field.")
     @PluginProperty(dynamic = true)
     private final String field;
-    
+
     @Schema(name = "the range of range partitioning.")
     private final Range range;
 
@@ -63,7 +63,8 @@ public class RangePartitioning {
                 .build();
         }
 
-        public com.google.cloud.bigquery.RangePartitioning.Range to(RunContext runContext) throws IllegalVariableEvaluationException {
+        public com.google.cloud.bigquery.RangePartitioning.Range to(RunContext runContext)
+            throws IllegalVariableEvaluationException {
             return com.google.cloud.bigquery.RangePartitioning.Range.newBuilder()
                 .setStart(this.start)
                 .setEnd(this.end)

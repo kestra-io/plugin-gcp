@@ -26,7 +26,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -72,7 +71,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
         )
     }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface, ListInterface, ActionInterface{
+public class Trigger extends AbstractTrigger
+    implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface, ListInterface, ActionInterface {
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 

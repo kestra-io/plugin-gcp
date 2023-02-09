@@ -9,7 +9,6 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import jakarta.inject.Inject;
@@ -38,11 +37,14 @@ class DeleteTableTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
-                "PARTITION BY DATE(transaction_date)\n" +
-                "AS (SELECT 1, DATETIME '" + today.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n" +
-                "UNION ALL\n" +
-                "(SELECT 2, DATETIME '" + previous.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n")
+            .sql(
+                "CREATE TABLE `" + project + "." + dataset + "." + table
+                    + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+                    "PARTITION BY DATE(transaction_date)\n" +
+                    "AS (SELECT 1, DATETIME '" + today.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n" +
+                    "UNION ALL\n" +
+                    "(SELECT 2, DATETIME '" + previous.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n"
+            )
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());

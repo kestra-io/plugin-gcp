@@ -62,9 +62,8 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     public Output run(RunContext runContext) throws Exception {
         try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
-            var documentReference = this.childPath == null ?
-                collectionRef.document() :
-                collectionRef.document(runContext.render(this.childPath));
+            var documentReference = this.childPath == null ? collectionRef.document()
+                : collectionRef.document(runContext.render(this.childPath));
             var future = documentReference.set(fields(runContext, this.document));
 
             // wait for the write to happen
@@ -75,7 +74,8 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> fields(RunContext runContext, Object value) throws IllegalVariableEvaluationException, JsonProcessingException {
+    private Map<String, Object> fields(RunContext runContext, Object value)
+        throws IllegalVariableEvaluationException, JsonProcessingException {
         if (value instanceof String) {
             return JacksonMapper.toMap(runContext.render((String) value));
         } else if (value instanceof Map) {

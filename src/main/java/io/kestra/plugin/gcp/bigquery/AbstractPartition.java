@@ -63,12 +63,13 @@ abstract public class AbstractPartition extends AbstractTable {
     protected String to;
 
     protected TableId tableId(RunContext runContext, String partition) throws IllegalVariableEvaluationException {
-        return this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table) + "$" + partition) :
-            TableId.of(runContext.render(this.dataset), runContext.render(this.table) + "$" + partition);
+        return this.projectId != null ? TableId.of(
+            runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table) + "$" + partition
+        ) : TableId.of(runContext.render(this.dataset), runContext.render(this.table) + "$" + partition);
     }
 
-    protected List<String> listPartitions(RunContext runContext, BigQuery connection, TableId tableId) throws IllegalVariableEvaluationException {
+    protected List<String> listPartitions(RunContext runContext, BigQuery connection, TableId tableId)
+        throws IllegalVariableEvaluationException {
         List<String> partitions = connection.listPartitions(tableId);
 
         if (partitionType == RANGE) {
@@ -85,8 +86,10 @@ abstract public class AbstractPartition extends AbstractTable {
                 })
                 .collect(Collectors.toList());
         } else {
-            LocalDateTime from = LocalDateTime.parse(runContext.render(this.from), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
-            LocalDateTime to = LocalDateTime.parse(runContext.render(this.to), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
+            LocalDateTime from = LocalDateTime
+                .parse(runContext.render(this.from), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
+            LocalDateTime to = LocalDateTime
+                .parse(runContext.render(this.to), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm[:ss][.SSSSSS][XXX]"));
             return partitions
                 .stream()
                 .filter(s -> !s.equals("__NULL__"))

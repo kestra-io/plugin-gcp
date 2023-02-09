@@ -1,14 +1,9 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import io.kestra.core.models.validations.ModelValidator;
-import io.kestra.core.utils.IdUtils;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import jakarta.inject.Inject;
 import javax.validation.ConstraintViolationException;

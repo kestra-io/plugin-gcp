@@ -136,10 +136,12 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         if (this.labels != null) {
             builder.setLabels(
                 this.labels.entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
-                    ))
+                    .collect(
+                        Collectors.toMap(
+                            Map.Entry::getKey,
+                            Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                        )
+                    )
             );
         }
 
@@ -166,13 +168,18 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
 
         switch (accessControl.getEntity().getType()) {
             case USER:
-                return Acl.of(new Acl.User(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+                return Acl
+                    .of(new Acl.User(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
             case GROUP:
-                return Acl.of(new Acl.Group(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+                return Acl
+                    .of(new Acl.Group(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
             case DOMAIN:
-                return Acl.of(new Acl.Domain(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+                return Acl
+                    .of(new Acl.Domain(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
             case IAM_MEMBER:
-                return Acl.of(new Acl.IamMember(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
+                return Acl.of(
+                    new Acl.IamMember(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name())
+                );
             default:
                 return null;
         }

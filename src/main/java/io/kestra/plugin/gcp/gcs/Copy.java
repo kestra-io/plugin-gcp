@@ -11,9 +11,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
 import org.slf4j.Logger;
 
 import java.net.URI;
@@ -65,7 +63,8 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         URI from = encode(runContext, this.from);
         URI to = encode(runContext, this.to);
 
-        BlobId source = BlobId.of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(), blobPath(from.getPath().substring(1)));
+        BlobId source = BlobId
+            .of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(), blobPath(from.getPath().substring(1)));
 
         if (from.toString().equals(to.toString())) {
             throw new IllegalArgumentException("Invalid copy to same path '" + to.toString());
@@ -74,10 +73,11 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         logger.debug("Moving from '{}' to '{}'", from, to);
 
         Blob result = connection
-            .copy(Storage.CopyRequest.newBuilder()
-                .setSource(source)
-                .setTarget(BlobId.of(to.getAuthority(), blobPath(to.getPath().substring(1))))
-                .build()
+            .copy(
+                Storage.CopyRequest.newBuilder()
+                    .setSource(source)
+                    .setTarget(BlobId.of(to.getAuthority(), blobPath(to.getPath().substring(1))))
+                    .build()
             )
             .getResult();
 

@@ -77,7 +77,6 @@ class PublishThenConsumeTest {
         var publishOutput = publish.run(runContext);
         assertThat(publishOutput.getMessagesCount(), is(2));
 
-
         var consume = Consume.builder()
             .projectId(project)
             .topic("test-topic")
@@ -93,10 +92,14 @@ class PublishThenConsumeTest {
         File tempFile = runContext.tempFile(".ion").toFile();
         OutputStream output = new FileOutputStream(tempFile);
 
-        FileSerde.write(output,
-            Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build());
-        FileSerde.write(output,
-            Message.builder().attributes(Map.of("key", "value")).build());
+        FileSerde.write(
+            output,
+            Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build()
+        );
+        FileSerde.write(
+            output,
+            Message.builder().attributes(Map.of("key", "value")).build()
+        );
         return storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
     }
 }

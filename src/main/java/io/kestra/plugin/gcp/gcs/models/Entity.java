@@ -2,10 +2,8 @@ package io.kestra.plugin.gcp.gcs.models;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 
 import javax.validation.constraints.NotNull;

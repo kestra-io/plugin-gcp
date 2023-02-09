@@ -41,10 +41,12 @@ class DatasetTest {
     }
 
     private RunContext runContext(String datasetId) {
-        return runContextFactory.of(ImmutableMap.of(
-            "project", this.project,
-            "dataset", datasetId
-        ));
+        return runContextFactory.of(
+            ImmutableMap.of(
+                "project", this.project,
+                "dataset", datasetId
+            )
+        );
     }
 
     private CreateDataset.CreateDatasetBuilder<?, ?> createBuilder() {
@@ -125,14 +127,18 @@ class DatasetTest {
         CreateDataset task = createBuilder()
             .description(RANDOM_ID_2)
             .ifExists(CreateDataset.IfExists.UPDATE)
-            .acl(Collections.singletonList(
-                AccessControl.builder()
-                    .entity(Entity.builder()
-                        .type(Entity.Type.USER)
-                        .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build())
-                    .role(AccessControl.Role.OWNER)
-                    .build()
-            ))
+            .acl(
+                Collections.singletonList(
+                    AccessControl.builder()
+                        .entity(
+                            Entity.builder()
+                                .type(Entity.Type.USER)
+                                .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build()
+                        )
+                        .role(AccessControl.Role.OWNER)
+                        .build()
+                )
+            )
             .build();
 
         RunContext rc = runContext(RANDOM_ID_2);
@@ -147,9 +153,11 @@ class DatasetTest {
         Dataset dataset = connection.getDataset(run.getDataset());
 
         assertThat(null, not(dataset.getAcl()));
-        assertThat(dataset.getAcl(), hasItems(
-            Acl.of(new Acl.User("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"), Acl.Role.OWNER)
-        ));
+        assertThat(
+            dataset.getAcl(), hasItems(
+                Acl.of(new Acl.User("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"), Acl.Role.OWNER)
+            )
+        );
     }
 
     @Test

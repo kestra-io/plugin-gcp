@@ -47,7 +47,8 @@ public class WorkerPoolSpec {
     private PythonPackageSpec pythonPackageSpec;
 
     public com.google.cloud.aiplatform.v1.WorkerPoolSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.aiplatform.v1.WorkerPoolSpec.Builder builder = com.google.cloud.aiplatform.v1.WorkerPoolSpec.newBuilder()
+        com.google.cloud.aiplatform.v1.WorkerPoolSpec.Builder builder = com.google.cloud.aiplatform.v1.WorkerPoolSpec
+            .newBuilder()
             .setContainerSpec(this.getContainerSpec().to(runContext))
             .setMachineSpec(this.machineSpec.to(runContext));
 

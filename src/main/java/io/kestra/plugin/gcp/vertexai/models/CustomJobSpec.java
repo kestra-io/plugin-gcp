@@ -27,7 +27,6 @@ public class CustomJobSpec {
     @NotEmpty
     private List<WorkerPoolSpec> workerPoolSpecs;
 
-
     @Schema(
         title = "Specifies the service account for workload run-as account.",
         description = "       Users submitting jobs must have act-as permission on this run-as account.\n" +
@@ -43,7 +42,8 @@ public class CustomJobSpec {
         description = "For example, `projects/12345/global/networks/myVPC`.\n" +
             "Format is of the form `projects/{project}/global/networks/{network}`. " +
             "Where {project} is a project number, as in `12345`, and {network} is a network name.\n" +
-            "To specify this field, you must have already [configured VPC Network Peering for Vertex AI](https://cloud.google.com/vertex-ai/docs/general/vpc-peering).\n" +
+            "To specify this field, you must have already [configured VPC Network Peering for Vertex AI](https://cloud.google.com/vertex-ai/docs/general/vpc-peering).\n"
+            +
             "If this field is left unspecified, the job is not peered with any network."
     )
     @PluginProperty(dynamic = true)
@@ -74,8 +74,9 @@ public class CustomJobSpec {
     @PluginProperty(dynamic = false)
     private GcsDestination baseOutputDirectory;
 
-    public  com.google.cloud.aiplatform.v1.CustomJobSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.aiplatform.v1.CustomJobSpec.Builder builder = com.google.cloud.aiplatform.v1.CustomJobSpec.newBuilder();
+    public com.google.cloud.aiplatform.v1.CustomJobSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
+        com.google.cloud.aiplatform.v1.CustomJobSpec.Builder builder = com.google.cloud.aiplatform.v1.CustomJobSpec
+            .newBuilder();
 
         this.workerPoolSpecs
             .stream()

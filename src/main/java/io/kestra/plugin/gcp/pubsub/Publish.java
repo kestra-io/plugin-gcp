@@ -66,7 +66,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
         if (this.from instanceof String) {
             URI from = new URI(runContext.render((String) this.from));
-            if(!from.getScheme().equals("kestra")) {
+            if (!from.getScheme().equals("kestra")) {
                 throw new Exception("Invalid from parameter, must be a Kestra internal storage URI");
             }
 
@@ -97,7 +97,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
         return Output.builder()
             .messagesCount(count)
-        .build();
+            .build();
     }
 
     private Flowable<Integer> buildFlowable(Flowable<Message> flowable, Publisher publisher) {

@@ -36,9 +36,9 @@ abstract public class AbstractTable extends AbstractBigquery {
     protected String table;
 
     protected TableId tableId(RunContext runContext) throws IllegalVariableEvaluationException {
-        return this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table)) :
-            TableId.of(runContext.render(this.dataset), runContext.render(this.table));
+        return this.projectId != null
+            ? TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table))
+            : TableId.of(runContext.render(this.dataset), runContext.render(this.table));
     }
 
     @Getter
@@ -148,12 +148,16 @@ abstract public class AbstractTable extends AbstractBigquery {
                 .description(table.getDescription())
                 .creationTime(table.getCreationTime() == null ? null : Instant.ofEpochMilli(table.getCreationTime()))
                 .expirationTime(table.getExpirationTime() == null ? null : Instant.ofEpochMilli(table.getExpirationTime()))
-                .lastModifiedTime(table.getLastModifiedTime() == null ? null : Instant.ofEpochMilli(table.getLastModifiedTime()))
+                .lastModifiedTime(
+                    table.getLastModifiedTime() == null ? null : Instant.ofEpochMilli(table.getLastModifiedTime())
+                )
                 .numBytes(table.getNumBytes())
                 .numLongTermBytes(table.getNumLongTermBytes())
                 .numRows(table.getNumRows())
                 .definition(TableDefinition.of(table.getDefinition()))
-                .encryptionConfiguration(io.kestra.plugin.gcp.bigquery.models.EncryptionConfiguration.of(table.getEncryptionConfiguration()))
+                .encryptionConfiguration(
+                    io.kestra.plugin.gcp.bigquery.models.EncryptionConfiguration.of(table.getEncryptionConfiguration())
+                )
                 .labels(table.getLabels())
                 .requirePartitionFilter(table.getRequirePartitionFilter())
                 .build();

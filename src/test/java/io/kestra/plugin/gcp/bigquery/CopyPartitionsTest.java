@@ -32,7 +32,9 @@ class CopyPartitionsTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+            .sql(
+                "CREATE TABLE `" + project + "." + dataset + "." + table
+                    + "` (transaction_id INT64, transaction_date DATETIME)\n" +
                     "PARTITION BY DATE(transaction_date)\n" +
                     "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')\n" +
                     "UNION ALL\n" +
@@ -43,7 +45,7 @@ class CopyPartitionsTest {
                     "(SELECT 4, DATETIME '2020-04-04 12:30:00.45')\n" +
                     "UNION ALL\n" +
                     "(SELECT 5, DATETIME '2020-04-05 12:30:00.45')"
-                )
+            )
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());

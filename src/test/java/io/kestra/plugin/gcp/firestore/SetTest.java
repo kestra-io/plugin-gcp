@@ -28,9 +28,12 @@ class SetTest {
             .projectId(project)
             .collection("persons")
             .childPath("1")
-            .document(Map.of("firstname", "John",
-                "lastname", "Doe"
-            ))
+            .document(
+                Map.of(
+                    "firstname", "John",
+                    "lastname", "Doe"
+                )
+            )
             .build();
 
         var output = set.run(runContext);

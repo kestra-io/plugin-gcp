@@ -24,13 +24,15 @@ class ClusterMetadataTest {
 
     @Test
     void run() throws Exception {
-        ClusterMetadata task = spy(ClusterMetadata.builder()
-            .id(ClusterMetadataTest.class.getSimpleName())
-            .type(Load.class.getName())
-            .clusterZone("my-zone")
-            .clusterId("my-cluster")
-            .clusterProjectId("my-project")
-            .build());
+        ClusterMetadata task = spy(
+            ClusterMetadata.builder()
+                .id(ClusterMetadataTest.class.getSimpleName())
+                .type(Load.class.getName())
+                .clusterZone("my-zone")
+                .clusterId("my-cluster")
+                .clusterProjectId("my-project")
+                .build()
+        );
 
         doReturn(Cluster.newBuilder().setName("my-cluster").build())
             .when(task)

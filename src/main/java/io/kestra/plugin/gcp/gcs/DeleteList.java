@@ -63,7 +63,6 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         URI from = encode(runContext, this.from);
         String regExp = runContext.render(this.regExp);
 
-
         Flowable<com.google.cloud.storage.Blob> flowable = Flowable
             .create(emitter -> {
                 this.iterator(connection, from)
@@ -112,7 +111,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
 
     private static Function<Blob, Long> delete(Logger logger, Storage connection) {
         return o -> {
-            logger.debug("Deleting '{}'" , io.kestra.plugin.gcp.gcs.models.Blob.uri(o));
+            logger.debug("Deleting '{}'", io.kestra.plugin.gcp.gcs.models.Blob.uri(o));
             if (connection.delete(BlobId.of(o.getBucket(), o.getName()))) {
                 return o.getSize();
             } else {

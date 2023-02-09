@@ -33,7 +33,6 @@ public abstract class AbstractTask extends Task implements GcpInterface {
     protected GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         GoogleCredentials credentials;
 
-
         if (serviceAccount != null) {
             String serviceAccount = runContext.render(this.serviceAccount);
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccount.getBytes());
@@ -42,9 +41,10 @@ public abstract class AbstractTask extends Task implements GcpInterface {
 
             if (logger.isTraceEnabled()) {
                 byteArrayInputStream.reset();
-                Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {});
+                Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {
+                });
                 if (jsonKey.containsKey("client_email")) {
-                    logger.trace(" • Using service account: {}", jsonKey.get("client_email") );
+                    logger.trace(" • Using service account: {}", jsonKey.get("client_email"));
                 }
             }
         } else {

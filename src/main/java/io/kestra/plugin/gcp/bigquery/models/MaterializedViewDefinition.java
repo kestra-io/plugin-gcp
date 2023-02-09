@@ -30,17 +30,26 @@ public class MaterializedViewDefinition {
     @PluginProperty(dynamic = false)
     private final Duration refreshInterval;
 
-    public static MaterializedViewDefinition of(com.google.cloud.bigquery.MaterializedViewDefinition materializedViewDefinition) {
+    public static MaterializedViewDefinition of(
+        com.google.cloud.bigquery.MaterializedViewDefinition materializedViewDefinition) {
         return MaterializedViewDefinition.builder()
-            .lastRefreshDate(materializedViewDefinition.getLastRefreshTime() == null ? null : Instant.ofEpochMilli(materializedViewDefinition.getLastRefreshTime()))
+            .lastRefreshDate(
+                materializedViewDefinition.getLastRefreshTime() == null ? null
+                    : Instant.ofEpochMilli(materializedViewDefinition.getLastRefreshTime())
+            )
             .query(materializedViewDefinition.getQuery())
             .enableRefresh(materializedViewDefinition.getEnableRefresh())
-            .refreshInterval(materializedViewDefinition.getRefreshIntervalMs() == null ? null : Duration.ofMillis(materializedViewDefinition.getRefreshIntervalMs()))
+            .refreshInterval(
+                materializedViewDefinition.getRefreshIntervalMs() == null ? null
+                    : Duration.ofMillis(materializedViewDefinition.getRefreshIntervalMs())
+            )
             .build();
     }
 
-    public com.google.cloud.bigquery.MaterializedViewDefinition to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.bigquery.MaterializedViewDefinition.Builder builder = com.google.cloud.bigquery.MaterializedViewDefinition.newBuilder(runContext.render(this.query));
+    public com.google.cloud.bigquery.MaterializedViewDefinition to(RunContext runContext)
+        throws IllegalVariableEvaluationException {
+        com.google.cloud.bigquery.MaterializedViewDefinition.Builder builder = com.google.cloud.bigquery.MaterializedViewDefinition
+            .newBuilder(runContext.render(this.query));
 
         if (this.enableRefresh != null) {
             builder.setEnableRefresh(this.enableRefresh);

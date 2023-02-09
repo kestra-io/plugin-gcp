@@ -73,12 +73,14 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (AbstractScheduler scheduler = new DefaultScheduler(
-            this.applicationContext,
-            this.flowListenersService,
-            this.executionState,
-            this.triggerState
-        )) {
+        try (
+            AbstractScheduler scheduler = new DefaultScheduler(
+                this.applicationContext,
+                this.flowListenersService,
+                this.executionState,
+                this.triggerState
+            )
+        ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
@@ -88,7 +90,6 @@ class TriggerTest {
                 queueCount.countDown();
                 assertThat(execution.getFlowId(), is("gcs-listen"));
             });
-
 
             String out1 = FriendlyId.createFriendlyId();
             testUtils.upload(random + "/" + out1);
@@ -138,7 +139,6 @@ class TriggerTest {
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         });
-
 
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())

@@ -54,7 +54,8 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
         return AbstractDataset.Output.of(dataset);
     }
 
-    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo) throws IllegalVariableEvaluationException {
+    private Dataset create(BigQuery connection, RunContext runContext, DatasetInfo datasetInfo)
+        throws IllegalVariableEvaluationException {
         Dataset dataset;
         try {
             dataset = connection.create(datasetInfo);

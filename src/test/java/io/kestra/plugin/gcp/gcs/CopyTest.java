@@ -39,9 +39,15 @@ class CopyTest {
 
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
-                .getResource("application.yml"))
-                .toURI()))
+            new FileInputStream(
+                new File(
+                    Objects.requireNonNull(
+                        UploadTest.class.getClassLoader()
+                            .getResource("application.yml")
+                    )
+                        .toURI()
+                )
+            )
         );
 
         Upload upload = Upload.builder()

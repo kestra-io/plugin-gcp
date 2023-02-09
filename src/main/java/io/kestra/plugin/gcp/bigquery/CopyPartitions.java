@@ -71,21 +71,22 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         runContext.metric(Counter.of("size", partitionToCopy.size()));
 
         Copy task = Copy.builder()
-            .sourceTables(partitionToCopy
-                .stream()
-                .map(throwFunction(s -> {
-                    TableId current = this.tableId(runContext, s);
-                    List<String> source = new ArrayList<>();
-                    if (current.getProject() != null) {
-                        source.add(current.getProject());
-                    }
+            .sourceTables(
+                partitionToCopy
+                    .stream()
+                    .map(throwFunction(s -> {
+                        TableId current = this.tableId(runContext, s);
+                        List<String> source = new ArrayList<>();
+                        if (current.getProject() != null) {
+                            source.add(current.getProject());
+                        }
 
-                    source.add(current.getDataset());
-                    source.add(current.getTable());
+                        source.add(current.getDataset());
+                        source.add(current.getTable());
 
-                    return String.join(".", source);
-                }))
-                .collect(Collectors.toList())
+                        return String.join(".", source);
+                    }))
+                    .collect(Collectors.toList())
             )
             .destinationTable(this.destinationTable)
             .writeDisposition(this.writeDisposition)

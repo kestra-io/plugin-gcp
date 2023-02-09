@@ -1,14 +1,11 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Storage;
-import com.google.common.collect.Iterables;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -16,10 +13,8 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 import org.slf4j.Logger;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import javax.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -71,8 +66,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
     }
 
     protected boolean filter(com.google.cloud.storage.Blob blob, String regExp) {
-        boolean b = filter == Filter.DIRECTORY ? blob.isDirectory() :
-            (filter != Filter.FILES || !blob.isDirectory());
+        boolean b = filter == Filter.DIRECTORY ? blob.isDirectory() : (filter != Filter.FILES || !blob.isDirectory());
 
         if (!b) {
             return false;

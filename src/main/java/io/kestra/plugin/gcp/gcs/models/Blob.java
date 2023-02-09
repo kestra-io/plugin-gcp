@@ -18,8 +18,8 @@ public class Blob {
     private final String generatedId;
     private final String selfLink;
     private final String cacheControl;
-//    private final List<Acl> acl;
-//    private final Acl.Entity owner;
+    //    private final List<Acl> acl;
+    //    private final Acl.Entity owner;
     private final Long size;
     private final String etag;
     private final String md5;
@@ -35,11 +35,11 @@ public class Blob {
     private final String contentEncoding;
     private final String contentDisposition;
     private final String contentLanguage;
-//    private final StorageClass storageClass;
+    //    private final StorageClass storageClass;
     private final Instant timeStorageClassUpdated;
     private final Integer componentCount;
     private final boolean isDirectory;
-//    private final BlobInfo.CustomerEncryption customerEncryption;
+    //    private final BlobInfo.CustomerEncryption customerEncryption;
     private final String kmsKeyName;
     private final Boolean eventBasedHold;
     private final Boolean temporaryHold;
@@ -57,8 +57,8 @@ public class Blob {
             .generatedId(blob.getGeneratedId())
             .selfLink(blob.getSelfLink())
             .cacheControl(blob.getCacheControl())
-//            .acl(blob.getAcl())
-//            .owner(blob.getOwner())
+            //            .acl(blob.getAcl())
+            //            .owner(blob.getOwner())
             .size(blob.getSize())
             .etag(blob.getEtag())
             .md5(blob.getMd5())
@@ -74,11 +74,13 @@ public class Blob {
             .contentEncoding(blob.getContentEncoding())
             .contentDisposition(blob.getContentDisposition())
             .contentLanguage(blob.getContentLanguage())
-//            .storageClass(StorageClass.valueOf(blob.getStorageClass().name()))
-            .timeStorageClassUpdated(blob.getTimeStorageClassUpdated() == null ? null : Instant.ofEpochMilli(blob.getTimeStorageClassUpdated()))
+            //            .storageClass(StorageClass.valueOf(blob.getStorageClass().name()))
+            .timeStorageClassUpdated(
+                blob.getTimeStorageClassUpdated() == null ? null : Instant.ofEpochMilli(blob.getTimeStorageClassUpdated())
+            )
             .componentCount(blob.getComponentCount())
             .isDirectory(blob.isDirectory())
-//            .customerEncryption(blob.getCustomerEncryption())
+            //            .customerEncryption(blob.getCustomerEncryption())
             .kmsKeyName(blob.getKmsKeyName())
             .eventBasedHold(blob.getEventBasedHold())
             .temporaryHold(blob.getTemporaryHold())

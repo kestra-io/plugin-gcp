@@ -22,8 +22,6 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.kestra.core.utils.Rethrow.throwRunnable;
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -67,7 +65,6 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
     private Duration maxDuration;
 
-
     @Override
     public Output run(RunContext runContext) throws Exception {
         if (this.maxDuration == null && this.maxRecords == null) {
@@ -86,8 +83,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                     FileSerde.write(outputFile, Message.of(message));
                     total.getAndIncrement();
                     consumer.ack();
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     threadException.set(e);
                     consumer.nack();
                 }

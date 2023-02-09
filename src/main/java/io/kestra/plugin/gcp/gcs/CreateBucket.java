@@ -72,7 +72,9 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
                 .bucket(Bucket.of(connection.update(bucketInfo)))
                 .build();
         } else {
-            throw new RuntimeException("Bucket " + bucketInfo.getName() + " already exists and ifExists policy is set to ERROR !");
+            throw new RuntimeException(
+                "Bucket " + bucketInfo.getName() + " already exists and ifExists policy is set to ERROR !"
+            );
         }
     }
 

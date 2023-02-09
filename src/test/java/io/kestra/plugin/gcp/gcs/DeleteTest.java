@@ -33,9 +33,13 @@ class DeleteTest {
 
     @Test
     void fromStorage() throws Exception {
-        File file = new File(Objects.requireNonNull(DeleteTest.class.getClassLoader()
-            .getResource("application.yml"))
-            .toURI());
+        File file = new File(
+            Objects.requireNonNull(
+                DeleteTest.class.getClassLoader()
+                    .getResource("application.yml")
+            )
+                .toURI()
+        );
 
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
@@ -59,7 +63,6 @@ class DeleteTest {
             .uri(uploadOutput.getUri().toString())
             .build();
 
-
         Delete.Output run = task.run(runContext(task));
 
         assertThat(run.getDeleted(), is(true));
@@ -68,7 +71,6 @@ class DeleteTest {
 
         assertThat(run.getDeleted(), is(false));
     }
-
 
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(

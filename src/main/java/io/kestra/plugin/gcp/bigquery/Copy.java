@@ -59,8 +59,7 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
 
     @Schema(
         title = "Sets the supported operation types in table copy job. ",
-        description =
-            "* `COPY`: The source and destination table have the same table type.\n" +
+        description = "* `COPY`: The source and destination table have the same table type.\n" +
             "* `SNAPSHOT`: The source table type is TABLE and the destination table type is SNAPSHOT.\n" +
             "* `RESTORE`: The source table type is SNAPSHOT and the destination table type is TABLE.\n" +
             "* `CLONE`: The source and destination table have the same table type, but only bill for unique data."
@@ -81,9 +80,10 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
         Job copyJob = this.waitForJob(
             logger,
             () -> connection
-                .create(JobInfo.newBuilder(jobConfiguration)
-                    .setJobId(BigQueryService.jobId(runContext, this))
-                    .build()
+                .create(
+                    JobInfo.newBuilder(jobConfiguration)
+                        .setJobId(BigQueryService.jobId(runContext, this))
+                        .build()
                 ),
             this.dryRun
         );
@@ -137,7 +137,7 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     }
 
     private String[] tags(JobStatistics.CopyStatistics stats, Job queryJob) {
-        return new String[]{
+        return new String[] {
             "project_id", queryJob.getJobId().getProject(),
             "location", queryJob.getJobId().getLocation(),
         };

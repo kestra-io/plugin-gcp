@@ -68,7 +68,9 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
 
         // target
         BlobInfo destination = BlobInfo
-            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1))))
+            .newBuilder(
+                BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1)))
+            )
             .build();
 
         Storage.ComposeRequest.Builder builder = Storage.ComposeRequest.newBuilder()

@@ -28,7 +28,8 @@ public class EncryptionConfiguration {
             .build();
     }
 
-    public com.google.cloud.bigquery.EncryptionConfiguration to(RunContext runContext) throws IllegalVariableEvaluationException {
+    public com.google.cloud.bigquery.EncryptionConfiguration to(RunContext runContext)
+        throws IllegalVariableEvaluationException {
         return com.google.cloud.bigquery.EncryptionConfiguration.newBuilder()
             .setKmsKeyName(runContext.render(this.kmsKeyName))
             .build();

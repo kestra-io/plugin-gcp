@@ -28,7 +28,7 @@ public class DiscSpec {
     @Builder.Default
     private Integer bootDiskSizeGb = 100;
 
-    public  com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
+    public com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
         return com.google.cloud.aiplatform.v1.DiskSpec.newBuilder()
             .setBootDiskType(this.getBootDiskType().value())
             .setBootDiskSizeGb(this.getBootDiskSizeGb())

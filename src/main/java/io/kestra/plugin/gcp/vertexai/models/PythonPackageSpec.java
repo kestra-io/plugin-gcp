@@ -44,8 +44,10 @@ public class PythonPackageSpec {
     @NotNull
     private Map<String, String> envs;
 
-    public com.google.cloud.aiplatform.v1.PythonPackageSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.aiplatform.v1.PythonPackageSpec.Builder builder = com.google.cloud.aiplatform.v1.PythonPackageSpec.newBuilder();
+    public com.google.cloud.aiplatform.v1.PythonPackageSpec to(RunContext runContext)
+        throws IllegalVariableEvaluationException {
+        com.google.cloud.aiplatform.v1.PythonPackageSpec.Builder builder = com.google.cloud.aiplatform.v1.PythonPackageSpec
+            .newBuilder();
 
         if (this.packageUris != null) {
             builder.addAllPackageUris(runContext.render(this.packageUris));
@@ -56,15 +58,19 @@ public class PythonPackageSpec {
         }
 
         if (this.packageUris != null) {
-            builder.addAllEnv(this.envs
-                .entrySet()
-                .stream()
-                .map(throwFunction(e -> EnvVar.newBuilder()
-                    .setName(runContext.render(e.getKey()))
-                    .setValue(runContext.render(e.getValue()))
-                    .build()
-                ))
-                .collect(Collectors.toList())
+            builder.addAllEnv(
+                this.envs
+                    .entrySet()
+                    .stream()
+                    .map(
+                        throwFunction(
+                            e -> EnvVar.newBuilder()
+                                .setName(runContext.render(e.getKey()))
+                                .setValue(runContext.render(e.getValue()))
+                                .build()
+                        )
+                    )
+                    .collect(Collectors.toList())
             );
         }
 

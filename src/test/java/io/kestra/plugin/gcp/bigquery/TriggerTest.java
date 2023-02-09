@@ -67,12 +67,14 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (AbstractScheduler scheduler = new DefaultScheduler(
-            this.applicationContext,
-            this.flowListenersService,
-            this.executionState,
-            this.triggerState
-        )) {
+        try (
+            AbstractScheduler scheduler = new DefaultScheduler(
+                this.applicationContext,
+                this.flowListenersService,
+                this.executionState,
+                this.triggerState
+            )
+        ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
@@ -83,11 +85,13 @@ class TriggerTest {
                 assertThat(execution.getFlowId(), is("bigquery-listen"));
             });
 
-
             Query task = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
-                .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)")
+                .sql(
+                    "CREATE TABLE `" + project + "." + dataset + "." + table
+                        + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"
+                )
                 .build();
 
             scheduler.run();

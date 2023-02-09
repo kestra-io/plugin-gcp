@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import jakarta.inject.Inject;
 
@@ -42,9 +41,15 @@ class LoadTest {
     void fromCsv() throws Exception {
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
-                .getResource("bigquery/insurance_sample.csv"))
-                .toURI()))
+            new FileInputStream(
+                new File(
+                    Objects.requireNonNull(
+                        LoadTest.class.getClassLoader()
+                            .getResource("bigquery/insurance_sample.csv")
+                    )
+                        .toURI()
+                )
+            )
         );
 
         Load task = Load.builder()
@@ -54,10 +59,11 @@ class LoadTest {
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.CSV)
             .autodetect(true)
-            .csvOptions(AbstractLoad.CsvOptions.builder()
-                .fieldDelimiter("|")
-                .allowJaggedRows(true)
-                .build()
+            .csvOptions(
+                AbstractLoad.CsvOptions.builder()
+                    .fieldDelimiter("|")
+                    .allowJaggedRows(true)
+                    .build()
             )
             .build();
 
@@ -72,9 +78,15 @@ class LoadTest {
     void fromAvro() throws Exception {
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
-                .getResource("bigquery/insurance_sample.avro"))
-                .toURI()))
+            new FileInputStream(
+                new File(
+                    Objects.requireNonNull(
+                        LoadTest.class.getClassLoader()
+                            .getResource("bigquery/insurance_sample.avro")
+                    )
+                        .toURI()
+                )
+            )
         );
 
         Load task = Load.builder()
@@ -83,9 +95,10 @@ class LoadTest {
             .from(source.toString())
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.AVRO)
-            .avroOptions(AbstractLoad.AvroOptions.builder()
-                .useAvroLogicalTypes(true)
-                .build()
+            .avroOptions(
+                AbstractLoad.AvroOptions.builder()
+                    .useAvroLogicalTypes(true)
+                    .build()
             )
             .build();
 
@@ -94,7 +107,6 @@ class LoadTest {
         AbstractLoad.Output run = task.run(runContext);
         assertThat(run.getRows(), is(5L));
     }
-
 
     @Test
     void fromEmpty() throws Exception {
@@ -110,10 +122,11 @@ class LoadTest {
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.CSV)
             .autodetect(true)
-            .csvOptions(AbstractLoad.CsvOptions.builder()
-                .fieldDelimiter("|")
-                .allowJaggedRows(true)
-                .build()
+            .csvOptions(
+                AbstractLoad.CsvOptions.builder()
+                    .fieldDelimiter("|")
+                    .allowJaggedRows(true)
+                    .build()
             );
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task.build(), ImmutableMap.of());

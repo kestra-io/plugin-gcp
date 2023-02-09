@@ -47,14 +47,14 @@ class DeletePartitionsTest {
             ),
             Arguments.of(
                 "(SELECT 1, DATETIME '2020-04-01 12:30:00.45')\n" +
-                "UNION ALL\n" +
-                "(SELECT 2, DATETIME '2020-04-02 12:30:00.45')\n" +
-                "UNION ALL\n" +
-                "(SELECT 3, DATETIME '2020-04-03 12:30:00.45')\n" +
-                "UNION ALL\n" +
-                "(SELECT 4, DATETIME '2020-04-04 12:30:00.45')\n" +
-                "UNION ALL\n" +
-                "(SELECT 5, DATETIME '2020-04-05 12:30:00.45')",
+                    "UNION ALL\n" +
+                    "(SELECT 2, DATETIME '2020-04-02 12:30:00.45')\n" +
+                    "UNION ALL\n" +
+                    "(SELECT 3, DATETIME '2020-04-03 12:30:00.45')\n" +
+                    "UNION ALL\n" +
+                    "(SELECT 4, DATETIME '2020-04-04 12:30:00.45')\n" +
+                    "UNION ALL\n" +
+                    "(SELECT 5, DATETIME '2020-04-05 12:30:00.45')",
                 "DATE(transaction_date)",
                 AbstractPartition.PartitionType.DAY,
                 "2020-04-02T00:00:00",
@@ -115,16 +115,17 @@ class DeletePartitionsTest {
         String partition,
         AbstractPartition.PartitionType partitionType,
         String from,
-        String to
-    ) throws Exception {
+        String to) throws Exception {
         String table = "tbl_delete_" + FriendlyId.createFriendlyId();
 
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
-                "PARTITION BY " + partition + "\n" +
-                "AS " + insert
+            .sql(
+                "CREATE TABLE `" + project + "." + dataset + "." + table
+                    + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+                    "PARTITION BY " + partition + "\n" +
+                    "AS " + insert
             )
             .build();
 

@@ -24,6 +24,6 @@ class UploadTest {
         String out = FriendlyId.createFriendlyId();
         Upload.Output run = testUtils.upload(out);
 
-        assertThat(run.getUri(), is(new URI("gs://" +  bucket + "/tasks/gcp/upload/" + out + ".yml")));
+        assertThat(run.getUri(), is(new URI("gs://" + bucket + "/tasks/gcp/upload/" + out + ".yml")));
     }
 }

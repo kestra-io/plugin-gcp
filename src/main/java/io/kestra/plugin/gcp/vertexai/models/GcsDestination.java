@@ -23,7 +23,8 @@ public class GcsDestination {
     private String outputUriPrefix;
 
     public com.google.cloud.aiplatform.v1.GcsDestination to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.aiplatform.v1.GcsDestination.Builder builder = com.google.cloud.aiplatform.v1.GcsDestination.newBuilder();
+        com.google.cloud.aiplatform.v1.GcsDestination.Builder builder = com.google.cloud.aiplatform.v1.GcsDestination
+            .newBuilder();
 
         if (this.getOutputUriPrefix() != null) {
             builder.setOutputUriPrefix(runContext.render(this.getOutputUriPrefix()));

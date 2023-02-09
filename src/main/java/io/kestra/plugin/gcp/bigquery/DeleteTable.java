@@ -11,7 +11,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode

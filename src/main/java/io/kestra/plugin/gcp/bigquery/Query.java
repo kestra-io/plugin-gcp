@@ -8,7 +8,6 @@ import io.reactivex.Single;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.ArrayUtils;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -250,9 +249,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         Job queryJob = this.waitForJob(
             logger,
             () -> connection
-                .create(JobInfo.newBuilder(jobConfiguration)
-                    .setJobId(BigQueryService.jobId(runContext, this))
-                    .build()
+                .create(
+                    JobInfo.newBuilder(jobConfiguration)
+                        .setJobId(BigQueryService.jobId(runContext, this))
+                        .build()
                 ),
             this.dryRun
         );
@@ -288,7 +288,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 List<Map<String, Object>> fetch = this.fetchResult(result);
 
                 if (result.getTotalRows() > fetch.size()) {
-                    throw new IllegalStateException("Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows());
+                    throw new IllegalStateException(
+                        "Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows()
+                    );
                 }
 
                 runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
@@ -303,7 +305,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (tableIdentity != null) {
-            DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable());
+            DestinationTable destinationTable = new DestinationTable(
+                tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable()
+            );
             output.destinationTable(destinationTable);
         }
 
@@ -329,22 +333,25 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(this.timePartitioningType)
-                .setField(runContext.render(this.timePartitioningField))
-                .build()
+            builder.setTimePartitioning(
+                TimePartitioning.newBuilder(this.timePartitioningType)
+                    .setField(runContext.render(this.timePartitioningField))
+                    .build()
             );
         }
 
         if (this.rangePartitioningField != null) {
-            builder.setRangePartitioning(RangePartitioning.newBuilder()
-                .setField(runContext.render(this.rangePartitioningField))
-                .setRange(RangePartitioning.Range.newBuilder()
-                    .setStart(this.rangePartitioningStart)
-                    .setEnd(this.rangePartitioningEnd)
-                    .setInterval(this.rangePartitioningInterval)
+            builder.setRangePartitioning(
+                RangePartitioning.newBuilder()
+                    .setField(runContext.render(this.rangePartitioningField))
+                    .setRange(
+                        RangePartitioning.Range.newBuilder()
+                            .setStart(this.rangePartitioningStart)
+                            .setEnd(this.rangePartitioningEnd)
+                            .setInterval(this.rangePartitioningInterval)
+                            .build()
+                    )
                     .build()
-                )
-                .build()
             );
         }
 
@@ -445,7 +452,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     }
 
     private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
-        return new String[]{
+        return new String[] {
             "statement_type", stats.getStatementType().name(),
             "fetch", this.fetch || this.fetchOne ? "true" : "false",
             "store", this.store ? "true" : "false",
@@ -456,20 +463,20 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     public class DestinationTable {
         @Schema(
-                title = "The project of the table"
+            title = "The project of the table"
         )
         private String project;
         @Schema(
-                title = "The dataset of the table"
+            title = "The dataset of the table"
         )
         private String dataset;
 
         @Schema(
-                title = "The table name"
+            title = "The table name"
         )
         private String table;
 
-        public DestinationTable(String project, String dataset, String table){
+        public DestinationTable(String project, String dataset, String table) {
             this.project = project;
             this.dataset = dataset;
             this.table = table;
@@ -488,7 +495,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob)
+        throws IllegalVariableEvaluationException {
         String[] tags = this.tags(stats, queryJob);
 
         if (stats.getEstimatedBytesProcessed() != null) {
@@ -514,7 +522,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         if (stats.getReferencedTables() != null) {
             runContext.metric(Counter.of("referenced.tables", stats.getReferencedTables().size(), tags));
         }
-
 
         if (stats.getTotalSlotMs() != null) {
             runContext.metric(Counter.of("total.slot.ms", stats.getTotalSlotMs(), tags));
@@ -646,10 +653,12 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             return field
                 .getSubFields()
                 .stream()
-                .map(sub -> new AbstractMap.SimpleEntry<>(
-                    sub.getName(),
-                    this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
-                ))
+                .map(
+                    sub -> new AbstractMap.SimpleEntry<>(
+                        sub.getName(),
+                        this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
+                    )
+                )
                 .peek(u -> counter.getAndIncrement())
                 // https://bugs.openjdk.java.net/browse/JDK-8148463
                 .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);

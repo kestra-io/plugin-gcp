@@ -2,16 +2,11 @@ package io.kestra.plugin.gcp.gcs.models;
 
 import com.google.cloud.storage.BucketInfo;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.plugin.gcp.gcs.models.StorageClass;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -96,7 +91,8 @@ public class BucketLifecycleRule {
         @Override
         public BucketInfo.LifecycleRule convert(Condition condition) {
             return new BucketInfo.LifecycleRule(
-                BucketInfo.LifecycleRule.LifecycleAction.newSetStorageClassAction(com.google.cloud.storage.StorageClass.valueOf(this.storageClass.name())),
+                BucketInfo.LifecycleRule.LifecycleAction
+                    .newSetStorageClassAction(com.google.cloud.storage.StorageClass.valueOf(this.storageClass.name())),
                 BucketInfo.LifecycleRule.LifecycleCondition.newBuilder().setAge(condition.getAge()).build()
             );
         }

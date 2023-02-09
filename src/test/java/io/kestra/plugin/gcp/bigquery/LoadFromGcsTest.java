@@ -41,9 +41,12 @@ class LoadFromGcsTest {
 
     @Test
     void fromJson() throws Exception {
-        File applicationFile = new File(Objects.requireNonNull(LoadFromGcsTest.class.getClassLoader()
-            .getResource("data/us-states.json"))
-            .toURI()
+        File applicationFile = new File(
+            Objects.requireNonNull(
+                LoadFromGcsTest.class.getClassLoader()
+                    .getResource("data/us-states.json")
+            )
+                .toURI()
         );
 
         URI put = storageInterface.put(
@@ -63,17 +66,21 @@ class LoadFromGcsTest {
         LoadFromGcs task = LoadFromGcs.builder()
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(LoadFromGcs.class.getName())
-            .from(Collections.singletonList(
-                upload.getTo()
-            ))
+            .from(
+                Collections.singletonList(
+                    upload.getTo()
+                )
+            )
             .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
             .format(AbstractLoad.Format.JSON)
-            .schema(ImmutableMap.of(
-                "fields", Arrays.asList(
-                    ImmutableMap.of("name", "name", "type", "STRING"),
-                    ImmutableMap.of("name", "post_abbr", "type", "STRING")
+            .schema(
+                ImmutableMap.of(
+                    "fields", Arrays.asList(
+                        ImmutableMap.of("name", "name", "type", "STRING"),
+                        ImmutableMap.of("name", "post_abbr", "type", "STRING")
+                    )
                 )
-            ))
+            )
             .build();
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 

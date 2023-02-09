@@ -168,10 +168,12 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
                     if (!commitResponse.hasCommitTime()) {
                         // If the response does not have a commit time, it means the commit operation failed.
-                        throw new Exception("Error on commit with error: " + commitResponse.getStreamErrorsList()
-                            .stream()
-                            .map(StorageError::getErrorMessage)
-                            .collect(Collectors.joining("\n- ")));
+                        throw new Exception(
+                            "Error on commit with error: " + commitResponse.getStreamErrorsList()
+                                .stream()
+                                .map(StorageError::getErrorMessage)
+                                .collect(Collectors.joining("\n- "))
+                        );
                     } else {
                         builder.commitTime(Instant.ofEpochSecond(commitResponse.getCommitTime().getSeconds()));
                     }
@@ -213,20 +215,23 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             HashMap<Object, Object> map = value
                 .entrySet()
                 .stream()
-                .map(e -> new AbstractMap.SimpleEntry<>(
-                    e.getKey(),
-                    transform(e.getValue())
-                ))
+                .map(
+                    e -> new AbstractMap.SimpleEntry<>(
+                        e.getKey(),
+                        transform(e.getValue())
+                    )
+                )
                 // https://bugs.openjdk.java.net/browse/JDK-8148463
                 .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
 
             return new JSONObject(map);
         } else if (object instanceof Collection) {
             Collection<?> value = (Collection<?>) object;
-            return new JSONArray(value
-                .stream()
-                .map(this::transform)
-                .collect(Collectors.toList())
+            return new JSONArray(
+                value
+                    .stream()
+                    .map(this::transform)
+                    .collect(Collectors.toList())
             );
         } else if (object instanceof ZonedDateTime) {
             ZonedDateTime value = (ZonedDateTime) object;
@@ -239,13 +244,17 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             return (int) value.toEpochDay();
         } else if (object instanceof LocalDateTime) {
             LocalDateTime value = (LocalDateTime) object;
-            return CivilTimeEncoder.encodePacked64DatetimeMicros(org.threeten.bp.LocalDateTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+            return CivilTimeEncoder.encodePacked64DatetimeMicros(
+                org.threeten.bp.LocalDateTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+            );
         } else if (object instanceof LocalTime) {
             LocalTime value = (LocalTime) object;
-            return CivilTimeEncoder.encodePacked64TimeMicros(org.threeten.bp.LocalTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
+            return CivilTimeEncoder
+                .encodePacked64TimeMicros(org.threeten.bp.LocalTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
         } else if (object instanceof OffsetTime) {
             OffsetTime value = (OffsetTime) object;
-            return CivilTimeEncoder.encodePacked64TimeMicros(org.threeten.bp.LocalTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
+            return CivilTimeEncoder
+                .encodePacked64TimeMicros(org.threeten.bp.LocalTime.parse(value.format(DateTimeFormatter.ISO_LOCAL_TIME)));
         } else if (object == null) {
             return null;
         } else if (object instanceof String) {
@@ -270,14 +279,15 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     }
 
     private String[] tags(TableId tableId) {
-        return new String[]{
+        return new String[] {
             "write_stream_type", this.writeStreamType.name(),
             "project_id", tableId.getProject(),
             "dataset", tableId.getDataset(),
         };
     }
 
-    private JsonStreamWriter.Builder jsonStreamWriter(RunContext runContext, TableName parentTable, BigQueryWriteClient client) throws IllegalVariableEvaluationException, IOException {
+    private JsonStreamWriter.Builder jsonStreamWriter(RunContext runContext, TableName parentTable, BigQueryWriteClient client)
+        throws IllegalVariableEvaluationException, IOException {
         if (this.writeStreamType == WriteStreamType.DEFAULT) {
             // Write to the default stream: https://cloud.google.com/bigquery/docs/write-api#write_to_the_default_stream
             BigQuery bigQuery = AbstractBigquery.connection(
@@ -304,7 +314,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             TableSchema tableSchema = BigQueryToBigQueryStorageSchemaConverter.convertTableSchema(schema);
 
             return JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema);
-        } else  {
+        } else {
             // Write to a stream in pending mode: https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_pending_mode
             // Write to a stream in committed mode : https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode
 

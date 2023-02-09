@@ -27,42 +27,42 @@ import java.util.List;
 @NoArgsConstructor
 @Plugin(
     examples = {
-            @Example(
-                    title = "Load an avro file from a gcs bucket",
-                    code = {
-                            "from:",
-                            "  - \"{{ outputs['avro-to-gcs'] }}\"",
-                            "destinationTable: \"my_project.my_dataset.my_table\"",
-                            "format: AVRO",
-                            "avroOptions:",
-                            "  useAvroLogicalTypes: true"
-                    }
-            ),
-            @Example(
-                    full = true,
-                    title = "Load a csv file with a defined schema",
-                    code = {
-                            "- id: load_files_test",
-                            "  type: io.kestra.plugin.gcp.bigquery.LoadFromGcs",
-                            "  destinationTable: \"myDataset.myTable\"",
-                            "  ignoreUnknownValues: true",
-                            "  schema:",
-                            "    fields:",
-                            "      - name: colA",
-                            "        type: STRING",
-                            "      - name: colB",
-                            "        type: NUMERIC",
-                            "      - name: colC",
-                            "        type: STRING",
-                            "  format: CSV",
-                            "  csvOptions:",
-                            "    allowJaggedRows: true",
-                            "    encoding: UTF-8",
-                            "    fieldDelimiter: \",\"",
-                            "  from:",
-                            "  - gs://myBucket/myFile.csv",
-                    }
-            )
+        @Example(
+            title = "Load an avro file from a gcs bucket",
+            code = {
+                "from:",
+                "  - \"{{ outputs['avro-to-gcs'] }}\"",
+                "destinationTable: \"my_project.my_dataset.my_table\"",
+                "format: AVRO",
+                "avroOptions:",
+                "  useAvroLogicalTypes: true"
+            }
+        ),
+        @Example(
+            full = true,
+            title = "Load a csv file with a defined schema",
+            code = {
+                "- id: load_files_test",
+                "  type: io.kestra.plugin.gcp.bigquery.LoadFromGcs",
+                "  destinationTable: \"myDataset.myTable\"",
+                "  ignoreUnknownValues: true",
+                "  schema:",
+                "    fields:",
+                "      - name: colA",
+                "        type: STRING",
+                "      - name: colB",
+                "        type: NUMERIC",
+                "      - name: colC",
+                "        type: STRING",
+                "  format: CSV",
+                "  csvOptions:",
+                "    allowJaggedRows: true",
+                "    encoding: UTF-8",
+                "    fieldDelimiter: \",\"",
+                "  from:",
+                "  - gs://myBucket/myFile.csv",
+            }
+        )
     }
 )
 @Schema(
@@ -93,10 +93,13 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
         LoadJobConfiguration configuration = builder.build();
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
-        Job loadJob = this.waitForJob(logger, () -> connection.create(JobInfo.newBuilder(configuration)
-            .setJobId(BigQueryService.jobId(runContext, this))
-            .build()
-        ));
+        Job loadJob = this.waitForJob(
+            logger, () -> connection.create(
+                JobInfo.newBuilder(configuration)
+                    .setJobId(BigQueryService.jobId(runContext, this))
+                    .build()
+            )
+        );
 
         return this.outputs(runContext, configuration, loadJob);
     }

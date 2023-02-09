@@ -10,9 +10,10 @@ public class BigQueryException extends Exception {
     private final List<BigQueryError> errors;
 
     BigQueryException(List<BigQueryError> errors) {
-        super("Bigquery Errors\n[ - " +
-            String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new)) +
-            "\n]"
+        super(
+            "Bigquery Errors\n[ - " +
+                String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new)) +
+                "\n]"
         );
 
         this.errors = errors;

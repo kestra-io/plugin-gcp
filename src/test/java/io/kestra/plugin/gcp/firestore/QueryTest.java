@@ -28,8 +28,10 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field("lastname").value("Doe").build()
+                )
             )
             .fetchType(FetchType.FETCH)
             .build();
@@ -61,9 +63,11 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build(),
-                Query.Filter.builder().field("firstname").value("Jane").build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field("lastname").value("Doe").build(),
+                    Query.Filter.builder().field("firstname").value("Jane").build()
+                )
             )
             .fetchType(FetchType.FETCH)
             .build();
@@ -125,8 +129,10 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO).build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO).build()
+                )
             )
             .orderBy("firstname")
             .fetchType(FetchType.FETCH)
@@ -159,8 +165,10 @@ class QueryTest {
         var query = Query.builder()
             .projectId(project)
             .collection("persons")
-            .filters(List.of(
-                Query.Filter.builder().field("lastname").value("Doe").build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field("lastname").value("Doe").build()
+                )
             )
             .fetchType(FetchType.STORE)
             .build();

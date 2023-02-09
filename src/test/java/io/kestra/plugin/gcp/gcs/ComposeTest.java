@@ -43,12 +43,13 @@ class ComposeTest {
         Compose task = Compose.builder()
             .id(ComposeTest.class.getSimpleName())
             .type(Compose.class.getName())
-            .list(Compose.List.builder()
-                .from("gs://" +  bucket + "/tasks/gcp/upload/compose-" + dir + "/")
-                .listingType(ListInterface.ListingType.RECURSIVE)
-                .build()
+            .list(
+                Compose.List.builder()
+                    .from("gs://" + bucket + "/tasks/gcp/upload/compose-" + dir + "/")
+                    .listingType(ListInterface.ListingType.RECURSIVE)
+                    .build()
             )
-            .to("gs://" +  bucket + "/tasks/gcp/compose-result/compose.txt")
+            .to("gs://" + bucket + "/tasks/gcp/compose-result/compose.txt")
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());

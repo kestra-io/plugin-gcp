@@ -59,15 +59,18 @@ class TriggerTest {
     @Value("${kestra.variables.globals.project}")
     private String project;
 
-
     @Test
     void flow() throws Exception {
         // mock flow listeners
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (AbstractScheduler scheduler = new DefaultScheduler(this.applicationContext, this.flowListenersService,
-            this.executionState, this.triggerState)) {
+        try (
+            AbstractScheduler scheduler = new DefaultScheduler(
+                this.applicationContext, this.flowListenersService,
+                this.executionState, this.triggerState
+            )
+        ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
@@ -77,7 +80,6 @@ class TriggerTest {
                 queueCount.countDown();
                 assertThat(execution.getFlowId(), is("pubsub-listen"));
             });
-
 
             scheduler.run();
 

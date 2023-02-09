@@ -60,7 +60,6 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     @Builder.Default
     private TimePartitioning.Type timePartitioningType = TimePartitioning.Type.DAY;
 
-
     @Schema(
         title = "The action that should occur if the destination table already exists"
     )
@@ -106,8 +105,8 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
             "  fields:\n" +
             "    - name: colA\n" +
             "      type: STRING\n" +
-            "    - name: colB\n" + 
-            "      type: NUMERIC\n"+
+            "    - name: colB\n" +
+            "      type: NUMERIC\n" +
             "```\n" +
             "See type from [StandardSQLTypeName](https://javadoc.io/static/com.google.cloud/google-cloud-bigquery/1.88.0/com/google/cloud/bigquery/StandardSQLTypeName.html)"
     )
@@ -131,7 +130,8 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     private AvroOptions avroOptions;
 
     @SuppressWarnings("DuplicatedCode")
-    protected void setOptions(LoadConfiguration.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException, JsonProcessingException {
+    protected void setOptions(LoadConfiguration.Builder builder, RunContext runContext)
+        throws IllegalVariableEvaluationException, JsonProcessingException {
         if (this.clusteringFields != null) {
             builder.setClustering(Clustering.newBuilder().setFields(runContext.render(this.clusteringFields)).build());
         }
@@ -141,9 +141,10 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(this.timePartitioningType)
-                .setField(runContext.render(this.timePartitioningField))
-                .build()
+            builder.setTimePartitioning(
+                TimePartitioning.newBuilder(this.timePartitioningType)
+                    .setField(runContext.render(this.timePartitioningField))
+                    .build()
             );
         }
 
@@ -195,7 +196,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     }
 
     @SuppressWarnings("unchecked")
-    private com.google.cloud.bigquery.Schema schema(Map<String, Object> schema)  {
+    private com.google.cloud.bigquery.Schema schema(Map<String, Object> schema) {
 
         if (!schema.containsKey("fields")) {
             throw new IllegalArgumentException("Unable to deserialize schema, no 'fields' with data '" + schema + "'");
@@ -205,32 +206,36 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     }
 
     @SuppressWarnings("unchecked")
-    private List<Field> fields(List<Map<String, Object>> fields)  {
+    private List<Field> fields(List<Map<String, Object>> fields) {
         return fields
             .stream()
-            .map(r -> Field
-                .newBuilder(
-                    (String) r.get("name"),
-                    StandardSQLTypeName.valueOf((String) r.get("type")),
-                    r.containsKey("fields") ? FieldList.of(fields((List<Map<String, Object>>) r.get("fields"))) : null
-                )
-                .setDescription(r.containsKey("description") ? (String) r.get("description") : null)
-                .setMode(r.containsKey("mode") ? Field.Mode.valueOf((String) r.get("mode")) : null)
-                .build()
+            .map(
+                r -> Field
+                    .newBuilder(
+                        (String) r.get("name"),
+                        StandardSQLTypeName.valueOf((String) r.get("type")),
+                        r.containsKey("fields") ? FieldList.of(fields((List<Map<String, Object>>) r.get("fields"))) : null
+                    )
+                    .setDescription(r.containsKey("description") ? (String) r.get("description") : null)
+                    .setMode(r.containsKey("mode") ? Field.Mode.valueOf((String) r.get("mode")) : null)
+                    .build()
             )
             .collect(Collectors.toList());
     }
 
-    protected Output outputs(RunContext runContext, LoadConfiguration configuration, Job job) throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
+    protected Output outputs(RunContext runContext, LoadConfiguration configuration, Job job)
+        throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
         JobStatistics.LoadStatistics stats = job.getStatistics();
         this.metrics(runContext, stats, job);
 
         return Output.builder()
             .jobId(job.getJobId().getJob())
             .rows(stats.getOutputRows())
-            .destinationTable(configuration.getDestinationTable().getProject() + "." +
-                configuration.getDestinationTable().getDataset() + "." +
-                configuration.getDestinationTable().getTable())
+            .destinationTable(
+                configuration.getDestinationTable().getProject() + "." +
+                    configuration.getDestinationTable().getDataset() + "." +
+                    configuration.getDestinationTable().getTable()
+            )
             .build();
     }
 
@@ -253,7 +258,8 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private final Long rows;
     }
 
-    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) throws IllegalVariableEvaluationException {
+    private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job)
+        throws IllegalVariableEvaluationException {
         String[] tags = {
             "destination_table", runContext.render(this.destinationTable),
             "project_id", job.getJobId().getProject(),

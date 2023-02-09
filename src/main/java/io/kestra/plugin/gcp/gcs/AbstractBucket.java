@@ -10,8 +10,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -193,10 +191,12 @@ abstract public class AbstractBucket extends AbstractGcs implements RunnableTask
         if (this.labels != null) {
             builder.setLabels(
                 this.labels.entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
-                    ))
+                    .collect(
+                        Collectors.toMap(
+                            Map.Entry::getKey,
+                            Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                        )
+                    )
             );
         }
 

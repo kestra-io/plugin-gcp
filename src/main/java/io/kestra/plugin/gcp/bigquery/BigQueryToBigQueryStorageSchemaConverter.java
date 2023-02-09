@@ -11,28 +11,26 @@ import com.google.common.collect.ImmutableMap;
  * https://github.com/googleapis/java-bigquerystorage/blob/main/samples/snippets/src/main/java/com/example/bigquerystorage/BqToBqStorageSchemaConverter.java
  */
 public class BigQueryToBigQueryStorageSchemaConverter {
-    private static final ImmutableMap<Field.Mode, TableFieldSchema.Mode> BQ_TABLE_SCHEMA_MODE_MAP =
-        ImmutableMap.of(
-            Field.Mode.NULLABLE, TableFieldSchema.Mode.NULLABLE,
-            Field.Mode.REPEATED, TableFieldSchema.Mode.REPEATED,
-            Field.Mode.REQUIRED, TableFieldSchema.Mode.REQUIRED
-        );
+    private static final ImmutableMap<Field.Mode, TableFieldSchema.Mode> BQ_TABLE_SCHEMA_MODE_MAP = ImmutableMap.of(
+        Field.Mode.NULLABLE, TableFieldSchema.Mode.NULLABLE,
+        Field.Mode.REPEATED, TableFieldSchema.Mode.REPEATED,
+        Field.Mode.REQUIRED, TableFieldSchema.Mode.REQUIRED
+    );
 
-    private static ImmutableMap<StandardSQLTypeName, TableFieldSchema.Type> BQ_TABLE_SCHEMA_TYPE_MAP =
-        new ImmutableMap.Builder<StandardSQLTypeName, TableFieldSchema.Type>()
-            .put(StandardSQLTypeName.BOOL, TableFieldSchema.Type.BOOL)
-            .put(StandardSQLTypeName.BYTES, TableFieldSchema.Type.BYTES)
-            .put(StandardSQLTypeName.DATE, TableFieldSchema.Type.DATE)
-            .put(StandardSQLTypeName.DATETIME, TableFieldSchema.Type.DATETIME)
-            .put(StandardSQLTypeName.FLOAT64, TableFieldSchema.Type.DOUBLE)
-            .put(StandardSQLTypeName.GEOGRAPHY, TableFieldSchema.Type.GEOGRAPHY)
-            .put(StandardSQLTypeName.INT64, TableFieldSchema.Type.INT64)
-            .put(StandardSQLTypeName.NUMERIC, TableFieldSchema.Type.NUMERIC)
-            .put(StandardSQLTypeName.STRING, TableFieldSchema.Type.STRING)
-            .put(StandardSQLTypeName.STRUCT, TableFieldSchema.Type.STRUCT)
-            .put(StandardSQLTypeName.TIME, TableFieldSchema.Type.TIME)
-            .put(StandardSQLTypeName.TIMESTAMP, TableFieldSchema.Type.TIMESTAMP)
-            .build();
+    private static ImmutableMap<StandardSQLTypeName, TableFieldSchema.Type> BQ_TABLE_SCHEMA_TYPE_MAP = new ImmutableMap.Builder<StandardSQLTypeName, TableFieldSchema.Type>()
+        .put(StandardSQLTypeName.BOOL, TableFieldSchema.Type.BOOL)
+        .put(StandardSQLTypeName.BYTES, TableFieldSchema.Type.BYTES)
+        .put(StandardSQLTypeName.DATE, TableFieldSchema.Type.DATE)
+        .put(StandardSQLTypeName.DATETIME, TableFieldSchema.Type.DATETIME)
+        .put(StandardSQLTypeName.FLOAT64, TableFieldSchema.Type.DOUBLE)
+        .put(StandardSQLTypeName.GEOGRAPHY, TableFieldSchema.Type.GEOGRAPHY)
+        .put(StandardSQLTypeName.INT64, TableFieldSchema.Type.INT64)
+        .put(StandardSQLTypeName.NUMERIC, TableFieldSchema.Type.NUMERIC)
+        .put(StandardSQLTypeName.STRING, TableFieldSchema.Type.STRING)
+        .put(StandardSQLTypeName.STRUCT, TableFieldSchema.Type.STRUCT)
+        .put(StandardSQLTypeName.TIME, TableFieldSchema.Type.TIME)
+        .put(StandardSQLTypeName.TIMESTAMP, TableFieldSchema.Type.TIMESTAMP)
+        .build();
 
     /**
      * Converts from BigQuery client Table Schema to bigquery storage API Table Schema.

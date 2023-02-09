@@ -62,15 +62,17 @@ public class ExternalTableDefinition {
         if (externalTableDefinition.getFormatOptions() != null) {
             builder.formatType(FormatType.valueOf(externalTableDefinition.getFormatOptions().getType()));
         }
-            return builder.build();
+        return builder.build();
     }
 
-    public com.google.cloud.bigquery.ExternalTableDefinition to(RunContext runContext, io.kestra.plugin.gcp.bigquery.models.Schema schema) throws IllegalVariableEvaluationException {
-        com.google.cloud.bigquery.ExternalTableDefinition.Builder builder = com.google.cloud.bigquery.ExternalTableDefinition.newBuilder(
-            runContext.render(this.sourceUris),
-            schema.to(runContext),
-            FormatOptions.of(this.formatType.name())
-        );
+    public com.google.cloud.bigquery.ExternalTableDefinition to(RunContext runContext,
+        io.kestra.plugin.gcp.bigquery.models.Schema schema) throws IllegalVariableEvaluationException {
+        com.google.cloud.bigquery.ExternalTableDefinition.Builder builder = com.google.cloud.bigquery.ExternalTableDefinition
+            .newBuilder(
+                runContext.render(this.sourceUris),
+                schema.to(runContext),
+                FormatOptions.of(this.formatType.name())
+            );
 
         if (this.compression != null) {
             builder.setCompression(runContext.render(this.compression));

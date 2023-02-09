@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import jakarta.inject.Inject;
 
@@ -34,10 +32,11 @@ class TableMetadataTest {
 
     private Job query(BigQuery bigQuery, String query) throws InterruptedException {
         return bigQuery
-            .create(JobInfo
-                .newBuilder(QueryJobConfiguration.newBuilder(query).build())
-                .setJobId(JobId.of(UUID.randomUUID().toString()))
-                .build()
+            .create(
+                JobInfo
+                    .newBuilder(QueryJobConfiguration.newBuilder(query).build())
+                    .setJobId(JobId.of(UUID.randomUUID().toString()))
+                    .build()
             )
             .waitFor();
     }
@@ -104,7 +103,6 @@ class TableMetadataTest {
                 "AS SELECT 'name' as name, 'state' as state, 1.23 as float, 1 as int"
         );
 
-
         TableMetadata.Output run = task.run(runContext);
 
         assertThat(run.getTable(), is(friendlyId));
@@ -113,7 +111,6 @@ class TableMetadataTest {
 
         assertThat(run.getDefinition().getSchema().getFields().get(2).getType(), is(StandardSQLTypeName.FLOAT64));
     }
-
 
     @Test
     void dontExistsError() throws Exception {

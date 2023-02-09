@@ -123,7 +123,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
                     outputBuilder
                         .rows(fetch.getLeft())
                         .size(fetch.getRight());
-                break;
+                    break;
 
                 case FETCH_ONE:
                     var o = this.fetchOne(queryDocumentSnapshots);
@@ -131,28 +131,31 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
                     outputBuilder
                         .row(o)
                         .size(o != null ? 1L : 0L);
-                break;
+                    break;
 
                 case STORE:
                     Pair<URI, Long> store = this.store(runContext, queryDocumentSnapshots);
                     outputBuilder
                         .uri(store.getLeft())
                         .size(store.getRight());
-                break;
+                    break;
             }
 
             var output = outputBuilder.build();
 
-            runContext.metric(Counter.of(
-                "records", output.getSize(),
-                "collection", collectionRef.getId()
-            ));
+            runContext.metric(
+                Counter.of(
+                    "records", output.getSize(),
+                    "collection", collectionRef.getId()
+                )
+            );
 
             return output;
         }
     }
 
-    private com.google.cloud.firestore.Query getQuery(RunContext runContext, CollectionReference collectionRef, List<Filter> filters)
+    private com.google.cloud.firestore.Query getQuery(RunContext runContext, CollectionReference collectionRef,
+        List<Filter> filters)
         throws IllegalVariableEvaluationException {
         // this is a no-op but allow to create an empty query
         var query = collectionRef.offset(0);
@@ -160,14 +163,14 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             return query;
         }
 
-        for(Filter option : filters)  {
-           query = appendQueryPart(runContext, query, option);
+        for (Filter option : filters) {
+            query = appendQueryPart(runContext, query, option);
         }
         return query;
     }
 
     private com.google.cloud.firestore.Query appendQueryPart(RunContext runContext, com.google.cloud.firestore.Query query,
-                                                             Filter filter)
+        Filter filter)
         throws IllegalVariableEvaluationException {
         switch (filter.getOperator()) {
             case EQUAL_TO: {
@@ -222,7 +225,6 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
 
         return Pair.of(result, count.get());
     }
-
 
     private Map<String, Object> fetchOne(List<QueryDocumentSnapshot> documents) {
         if (documents.isEmpty()) {

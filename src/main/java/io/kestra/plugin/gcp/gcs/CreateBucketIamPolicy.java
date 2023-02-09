@@ -4,7 +4,6 @@ import com.google.cloud.Identity;
 import com.google.cloud.Policy;
 import com.google.cloud.Role;
 import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageRoles;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -80,11 +79,12 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
         boolean exists = currentPolicy
             .getBindingsList()
             .stream()
-            .anyMatch(binding -> binding.getRole().equals(role.getValue()) &&
-                binding
-                    .getMembers()
-                    .stream()
-                    .anyMatch(s -> s.equals(identity.strValue()))
+            .anyMatch(
+                binding -> binding.getRole().equals(role.getValue()) &&
+                    binding
+                        .getMembers()
+                        .stream()
+                        .anyMatch(s -> s.equals(identity.strValue()))
             );
 
         Output.OutputBuilder output = Output.builder()

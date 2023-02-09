@@ -50,10 +50,11 @@ public class ExtractToGcsTest extends AbstractBigquery {
 
     private Job query(BigQuery bigQuery, String query) throws InterruptedException {
         return bigQuery
-            .create(JobInfo
-                .newBuilder(QueryJobConfiguration.newBuilder(query).build())
-                .setJobId(JobId.of(UUID.randomUUID().toString()))
-                .build()
+            .create(
+                JobInfo
+                    .newBuilder(QueryJobConfiguration.newBuilder(query).build())
+                    .setJobId(JobId.of(UUID.randomUUID().toString()))
+                    .build()
             )
             .waitFor();
     }
@@ -66,9 +67,11 @@ public class ExtractToGcsTest extends AbstractBigquery {
         ExtractToGcs task = ExtractToGcs.builder()
             .id(ExtractToGcsTest.class.getSimpleName())
             .type(ExtractToGcs.class.getName())
-            .destinationUris(Collections.singletonList(
-                "gs://" + this.bucket + "/" + this.filename
-            ))
+            .destinationUris(
+                Collections.singletonList(
+                    "gs://" + this.bucket + "/" + this.filename
+                )
+            )
             .sourceTable(this.project + "." + this.dataset + "." + this.table)
             .printHeader(printHeader)
             .build();
@@ -77,12 +80,12 @@ public class ExtractToGcsTest extends AbstractBigquery {
 
         query(
             task.connection(runContext),
-            "CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
-            "(product STRING, quantity INT64)" +
-            ";" +
-            "INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
-            "VALUES('top load washer', 10)" +
-            ";"
+            "CREATE OR REPLACE TABLE  `" + this.dataset + "." + this.table + "`" +
+                "(product STRING, quantity INT64)" +
+                ";" +
+                "INSERT `" + this.dataset + "." + this.table + "` (product, quantity)" +
+                "VALUES('top load washer', 10)" +
+                ";"
         );
 
         ExtractToGcs.Output extractOutput = task.run(runContext);
@@ -108,7 +111,7 @@ public class ExtractToGcsTest extends AbstractBigquery {
         );
 
         // Clean sample table
-        query(task.connection(runContext), "DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
+        query(task.connection(runContext), "DROP TABLE  `" + this.dataset + "." + this.table + "` ;");
 
     }
 
@@ -122,4 +125,3 @@ public class ExtractToGcsTest extends AbstractBigquery {
         );
     }
 }
-

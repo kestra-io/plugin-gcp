@@ -7,12 +7,10 @@ import com.google.cloud.storage.Storage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.io.FilenameUtils;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
@@ -49,7 +47,9 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
     static File download(RunContext runContext, Storage connection, BlobId source) throws IOException {
         Blob blob = connection.get(source);
         if (blob == null) {
-            throw new IllegalArgumentException("Unable to find blob on bucket '" +  source.getBucket() +"' with path '" +  source.getName() +"'");
+            throw new IllegalArgumentException(
+                "Unable to find blob on bucket '" + source.getBucket() + "' with path '" + source.getName() + "'"
+            );
         }
         ReadChannel readChannel = blob.reader();
 

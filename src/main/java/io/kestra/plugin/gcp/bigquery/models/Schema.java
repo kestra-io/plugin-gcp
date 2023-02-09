@@ -22,10 +22,11 @@ public class Schema {
 
     public static Schema of(com.google.cloud.bigquery.Schema schema) {
         return Schema.builder()
-            .fields(schema.getFields()
-                .stream()
-                .map(Field::of)
-                .collect(Collectors.toList())
+            .fields(
+                schema.getFields()
+                    .stream()
+                    .map(Field::of)
+                    .collect(Collectors.toList())
             )
             .build();
     }

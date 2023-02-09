@@ -36,9 +36,13 @@ class DownloadTest {
 
     @Test
     void fromStorage() throws Exception {
-        File file = new File(Objects.requireNonNull(DownloadTest.class.getClassLoader()
-            .getResource("application.yml"))
-            .toURI());
+        File file = new File(
+            Objects.requireNonNull(
+                DownloadTest.class.getClassLoader()
+                    .getResource("application.yml")
+            )
+                .toURI()
+        );
 
         URI source = storageInterface.put(
             new URI("/" + FriendlyId.createFriendlyId()),
@@ -62,7 +66,6 @@ class DownloadTest {
             .from(uploadOutput.getUri().toString())
             .build();
 
-
         Download.Output run = task.run(runContext(task));
 
         InputStream get = storageInterface.get(run.getUri());
@@ -72,7 +75,6 @@ class DownloadTest {
             is(CharStreams.toString(new InputStreamReader(new FileInputStream(file))))
         );
     }
-
 
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(

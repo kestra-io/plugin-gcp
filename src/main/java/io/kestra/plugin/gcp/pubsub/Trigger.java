@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -42,7 +41,8 @@ import java.util.Optional;
         )
     }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
+public class Trigger extends AbstractTrigger
+    implements PollingTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
 
     private String projectId;
 

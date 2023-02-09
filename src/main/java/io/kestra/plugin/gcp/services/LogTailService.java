@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.kestra.core.utils.Rethrow.throwRunnable;
 
 public class LogTailService {
-    public static Thread tail(Logger logger, String projectId, Credentials credential, String filter, AtomicBoolean stopSignal) throws Exception {
+    public static Thread tail(Logger logger, String projectId, Credentials credential, String filter, AtomicBoolean stopSignal)
+        throws Exception {
         LoggingOptions options = LoggingOptions.newBuilder()
             .setCredentials(credential)
             .setProjectId(projectId)

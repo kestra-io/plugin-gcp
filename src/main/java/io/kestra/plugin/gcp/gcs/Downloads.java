@@ -16,7 +16,6 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import java.io.File;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -65,8 +64,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         RunContext runContext,
         String projectId,
         String serviceAccount,
-        java.util.List<String> scopes
-    ) throws Exception {
+        java.util.List<String> scopes) throws Exception {
         if (action == ActionInterface.Action.DELETE) {
             for (Blob blob : blobList) {
                 Delete delete = Delete.builder()
@@ -85,8 +83,9 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                     .id("archive")
                     .type(Copy.class.getName())
                     .from(blob.getUri().toString())
-                    .to(StringUtils.stripEnd(runContext.render(moveDirectory) + "/", "/")
-                        + "/" + FilenameUtils.getName(blob.getName())
+                    .to(
+                        StringUtils.stripEnd(runContext.render(moveDirectory) + "/", "/")
+                            + "/" + FilenameUtils.getName(blob.getName())
                     )
                     .delete(true)
                     .serviceAccount(serviceAccount)
@@ -153,6 +152,6 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             title = "The bucket of the downloaded file"
         )
         @PluginProperty(additionalProperties = Blob.class)
-        private final java.util.List<Blob>  blobs;
+        private final java.util.List<Blob> blobs;
     }
 }

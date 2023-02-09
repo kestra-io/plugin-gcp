@@ -34,7 +34,10 @@ public class Scheduling {
         com.google.cloud.aiplatform.v1.Scheduling.Builder builder = com.google.cloud.aiplatform.v1.Scheduling.newBuilder();
 
         if (this.getTimeOut() != null) {
-            builder.setTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(this.getTimeOut().getSeconds()).setNanos(this.getTimeOut().getNano()).build());
+            builder.setTimeout(
+                com.google.protobuf.Duration.newBuilder().setSeconds(this.getTimeOut().getSeconds())
+                    .setNanos(this.getTimeOut().getNano()).build()
+            );
         }
 
         if (this.getRestartJobOnWorkerRestart() != null) {

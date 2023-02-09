@@ -44,7 +44,7 @@ class StorageWriteTest {
 
     @Test
     void run() throws Exception {
-        String table = this.project  + "." + this.dataset + "." + FriendlyId.createFriendlyId();
+        String table = this.project + "." + this.dataset + "." + FriendlyId.createFriendlyId();
 
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
@@ -87,8 +87,7 @@ class StorageWriteTest {
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         StorageWrite.Output run = task.run(runContext);
 
-
-//        assertThat(run.getRowsCount(), is(1));
+        //        assertThat(run.getRowsCount(), is(1));
         assertThat(run.getRows(), is(1));
     }
 }

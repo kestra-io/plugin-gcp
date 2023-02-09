@@ -53,7 +53,6 @@ class CopyTest {
         Copy.Output copyOutput = copy.run(runContext);
         assertThat(copyOutput.getJobId(), is(notNullValue()));
 
-
         Query fetch = Query.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Query.class.getName())

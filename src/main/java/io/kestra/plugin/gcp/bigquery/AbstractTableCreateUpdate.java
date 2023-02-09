@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.TableInfo;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Rethrow;
@@ -81,10 +80,12 @@ abstract public class AbstractTableCreateUpdate extends AbstractTable {
         if (this.labels != null) {
             builder.setLabels(
                 this.labels.entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
-                    ))
+                    .collect(
+                        Collectors.toMap(
+                            Map.Entry::getKey,
+                            Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                        )
+                    )
             );
         }
 

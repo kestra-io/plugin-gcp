@@ -34,8 +34,8 @@ public class UserDefinedFunction {
     }
 
     public com.google.cloud.bigquery.UserDefinedFunction to(RunContext runContext) throws IllegalVariableEvaluationException {
-        return this.getType() == com.google.cloud.bigquery.UserDefinedFunction.Type.FROM_URI ?
-            com.google.cloud.bigquery.UserDefinedFunction.fromUri(runContext.render(content)) :
-            com.google.cloud.bigquery.UserDefinedFunction.inline(runContext.render(content));
+        return this.getType() == com.google.cloud.bigquery.UserDefinedFunction.Type.FROM_URI
+            ? com.google.cloud.bigquery.UserDefinedFunction.fromUri(runContext.render(content))
+            : com.google.cloud.bigquery.UserDefinedFunction.inline(runContext.render(content));
     }
 }
