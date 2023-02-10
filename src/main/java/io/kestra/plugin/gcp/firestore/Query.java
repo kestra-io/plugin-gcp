@@ -67,32 +67,32 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     @Schema(
         title = "List of query filters that will be added as a where clause."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private List<Filter> filters;
 
     @Schema(
         title = "Field name for the order by clause."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private String orderBy;
 
     @Schema(
         title = "Field name for the order by clause."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     @Builder.Default
     private Direction orderDirection = Direction.ASCENDING;
 
     @Schema(
         title = "Start offset for pagination of the query results."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Integer offset;
 
     @Schema(
         title = "Maximum numbers of returned results."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Integer limit;
 
     @Override

@@ -20,6 +20,7 @@ public interface ListInterface {
             "Default value is DIRECTORY\n" +
             "When using RECURSIVE value, be carefull to move your files to a location not in the `from` scope"
     )
+    @PluginProperty
     List.ListingType getListingType();
 
     @Schema(

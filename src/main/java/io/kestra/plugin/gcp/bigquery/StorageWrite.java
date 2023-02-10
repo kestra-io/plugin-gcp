@@ -72,8 +72,9 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @NotEmpty
     @Schema(
         title = "The table where to load data",
-        description = "The table must be created beefore."
+        description = "The table must be created before."
     )
+    @PluginProperty(dynamic = true)
     private String destinationTable;
 
     @NotNull
@@ -82,6 +83,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Schema(
         title = "The type of write stream to use"
     )
+    @PluginProperty
     private final WriteStreamType writeStreamType = WriteStreamType.DEFAULT;
 
     @NotNull
@@ -89,7 +91,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Schema(
         title = "The number of records to send on each query"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     protected final Integer bufferSize = 1000;
 
     @Schema(

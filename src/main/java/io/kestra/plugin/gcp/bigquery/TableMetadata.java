@@ -5,6 +5,7 @@ import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -37,8 +38,9 @@ public class TableMetadata extends AbstractTable implements RunnableTask<Abstrac
     @Builder.Default
     @Schema(
         title = "Policy to apply if a table don't exists.",
-        description = "If the policy is `SKIP`, the output will contain only null value, otherwize an error is raised."
+        description = "If the policy is `SKIP`, the output will contain only null value, otherwise an error is raised."
     )
+    @PluginProperty
     private final IfNotExists ifNotExists = IfNotExists.ERROR;
 
     @Override

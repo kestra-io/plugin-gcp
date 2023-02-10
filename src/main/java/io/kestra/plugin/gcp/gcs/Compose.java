@@ -55,7 +55,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     @Schema(
         title = "if `true`, don't failed if no result"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     @Builder.Default
     private Boolean allowEmpty = false;
 

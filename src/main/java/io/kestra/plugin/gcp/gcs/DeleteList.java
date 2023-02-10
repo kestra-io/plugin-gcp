@@ -50,9 +50,9 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
 
     @Min(2)
     @Schema(
-        title = "Number of concurrent parrallels deletion"
+        title = "Number of concurrent parallel deletions"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Integer concurrent;
 
     @Override

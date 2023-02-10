@@ -81,16 +81,16 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         title = "[Optional] Flag if format is set to \"AVRO\".",
         description = "[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
             "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
-            "types (timestamp-micros), instead of only using their raw types (avro-long). \n" +
-            "Parameters:\n"+
-            "    useAvroLogicalTypes - useAvroLogicalTypes or null for none "
+            "types (timestamp-micros), instead of only using their raw types (avro-long)."
     )
+    @PluginProperty
     private Boolean useAvroLogicalTypes;
 
     @Schema(
         title = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
             "BigQuery may attempt to terminate the job."
     )
+    @PluginProperty
     private Long jobTimeoutMs;
 
     @Schema(
@@ -109,6 +109,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
     @Schema(
         title = "Whether to print out a header row in the results. By default an header is printed."
     )
+    @PluginProperty
     private Boolean printHeader;
 
     @Override

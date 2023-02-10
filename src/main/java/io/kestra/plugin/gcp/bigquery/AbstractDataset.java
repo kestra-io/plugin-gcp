@@ -34,6 +34,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     @Schema(
         title = "The dataset's access control configuration"
     )
+    @PluginProperty
     protected List<AccessControl> acl;
 
     @Schema(
@@ -48,6 +49,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
             " expiration time indicated by this property. This property is experimental and might be" +
             " subject to change or removed."
     )
+    @PluginProperty
     protected Long defaultTableLifetime;
 
     @Schema(
@@ -80,6 +82,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
             " newly-created partitioned tables in the dataset will have encryption key set to this value," +
             " unless table creation request (or query) overrides the key."
     )
+    @PluginProperty
     protected EncryptionConfiguration defaultEncryptionConfiguration;
 
     @Schema(
@@ -94,6 +97,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
             " updating a partitioned table, that value takes precedence over the default partition" +
             " expiration time indicated by this property. The value may be null."
     )
+    @PluginProperty
     protected Long defaultPartitionExpirationMs;
 
     @Schema(

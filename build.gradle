@@ -25,7 +25,7 @@ sourceCompatibility = 11
 targetCompatibility = 11
 
 group "io.kestra.plugin"
-description 'Google Cloud Platform plugin for Kestra'
+description 'Google Cloud Platform (GCP) plugins for Kestra.'
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"

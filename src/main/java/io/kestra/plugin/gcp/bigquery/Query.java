@@ -124,7 +124,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             "\n" +
             " For normal tables, WRITE_TRUNCATE will always overwrite the schema."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
     @Schema(
@@ -174,7 +174,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     @Schema(
         title = "Sets a priority for the query."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     @Builder.Default
     private QueryJobConfiguration.Priority priority = QueryJobConfiguration.Priority.INTERACTIVE;
 
@@ -183,7 +183,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "If `true` the query is allowed to create large results at a slight cost in performance. " +
             "`destinationTable` must be provide"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Boolean allowLargeResults;
 
     @Schema(
@@ -191,14 +191,14 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "The query cache is a best-effort cache that will be flushed whenever tables in the query are " +
             "modified. Moreover, the query cache is only available when `destinationTable` is not set "
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Boolean useQueryCache;
 
     @Schema(
         title = "Sets whether nested and repeated fields should be flattened.",
         description = "If set to `false`, allowLargeResults must be `true`"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     @Builder.Default
     private Boolean flattenResults = true;
 
@@ -207,7 +207,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = " A valid query will return a mostly empty response with some processing statistics, " +
             "while an invalid query will return the same error it would if it wasn't a dry run."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     @Builder.Default
     private Boolean useLegacySql = false;
 
@@ -216,7 +216,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "Queries that have resource usage beyond this tier will fail (without incurring a charge). " +
             "If unspecified, this will be set to your project default."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Integer maximumBillingTier;
 
     @Schema(
@@ -224,7 +224,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "Queries that will have bytes billed beyond this limit will fail (without incurring a charge). " +
             "If unspecified, this will be set to your project default."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Long maximumBytesBilled;
 
     @Schema(
@@ -235,7 +235,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             "addition to this limit, responses are also limited to 10 MB. By default, there is no maximum " +
             "row count, and only the byte limit applies."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     private Long maxResults;
 
     @Override

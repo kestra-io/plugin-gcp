@@ -70,7 +70,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     @Schema(
         title = "The job specification"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     @NotNull
     private CustomJobSpec spec;
 
