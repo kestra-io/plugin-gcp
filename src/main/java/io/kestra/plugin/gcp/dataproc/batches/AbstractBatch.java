@@ -45,21 +45,18 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
         title = "Execution configuration for a workload."
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     private AbstractBatch.ExecutionConfiguration execution;
 
     @Schema(
-        title = "Execution configuration for a workload."
+        title = "Peripherals configuration for a workload."
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     private AbstractBatch.PeripheralsConfiguration peripherals;
 
     @Schema(
-        title = "Execution configuration for a workload."
+        title = "Runtime configuration for a workload."
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     private AbstractBatch.RuntimeConfiguration runtime;
 
     abstract protected void buildBatch(Batch.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException;
@@ -84,26 +81,28 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
 
             ExecutionConfig.Builder executionConfig = ExecutionConfig.newBuilder();
 
-            if (this.execution.networkUri != null) {
-                executionConfig.setNetworkUri(runContext.render(this.execution.networkUri));
-            }
-
-            if (this.execution.subnetworkUri != null) {
-                executionConfig.setSubnetworkUri(runContext.render(this.execution.subnetworkUri));
-            }
-
-            if (this.execution.networkTags != null) {
-                for (int i = 0; i < this.execution.networkTags.size(); i++) {
-                    executionConfig.setNetworkTags(i, runContext.render(this.execution.networkTags.get(i)));
+            if (this.execution != null) {
+                if (this.execution.networkUri != null) {
+                    executionConfig.setNetworkUri(runContext.render(this.execution.networkUri));
                 }
-            }
 
-            if (this.execution.serviceAccountEmail != null) {
-                executionConfig.setServiceAccount(runContext.render(this.execution.serviceAccountEmail));
-            }
+                if (this.execution.subnetworkUri != null) {
+                    executionConfig.setSubnetworkUri(runContext.render(this.execution.subnetworkUri));
+                }
 
-            if (this.execution.kmsKey != null) {
-                executionConfig.setKmsKey(runContext.render(this.execution.kmsKey));
+                if (this.execution.networkTags != null) {
+                    for (int i = 0; i < this.execution.networkTags.size(); i++) {
+                        executionConfig.setNetworkTags(i, runContext.render(this.execution.networkTags.get(i)));
+                    }
+                }
+
+                if (this.execution.serviceAccountEmail != null) {
+                    executionConfig.setServiceAccount(runContext.render(this.execution.serviceAccountEmail));
+                }
+
+                if (this.execution.kmsKey != null) {
+                    executionConfig.setKmsKey(runContext.render(this.execution.kmsKey));
+                }
             }
 
             EnvironmentConfig.Builder environmentConfig = EnvironmentConfig.newBuilder()
@@ -194,7 +193,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
         private List<String> networkTags;
 
         @Schema(
-            title = "Service account that used to execute workload."
+            title = "Service account used to execute workload."
         )
         @PluginProperty(dynamic = true)
         private String serviceAccountEmail;
@@ -252,7 +251,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
         private String version;
 
         @Schema(
-            title = " mapping of property names to values, which are used to configure workload execution."
+            title = "properties used to configure the workload execution (map of key/value pairs)."
         )
         @PluginProperty(dynamic = true)
         private Map<String, String> properties;

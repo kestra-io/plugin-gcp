@@ -1,12 +1,6 @@
 package io.kestra.plugin.gcp.dataproc.batches;
 
-import com.google.cloud.dataproc.v1.Batch;
-import com.google.cloud.dataproc.v1.SparkBatch;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -24,22 +18,24 @@ import javax.validation.constraints.NotNull;
 @NoArgsConstructor
 public abstract class AbstractSparkSubmit extends AbstractBatch {
     @Schema(
-        title = "URIs of files to be placed in the working directory of each executor."
+        title = "HCFS URIs of files to be placed in the working directory of each executor.",
+        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     protected List<String> fileUris;
 
     @Schema(
-        title = "URIs of archives to be extracted into the working director of each executor.",
-        description = "Supported file types: `.jar`, `.tar`, `.tar.gz`, `.tgz`, and `.zip`."
+        title = "HCFS URIs of archives to be extracted into the working director of each executor. Supported file types: `.jar`, `.tar`, `.tar.gz`, `.tgz`, and `.zip`.",
+        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     protected List<String> archiveUris;
 
     @Schema(
-        title = "URIs of jar files to add to the classpath of the Spark driver and tasks."
+        title = "HCFS URIs of jar files to add to the classpath of the Spark driver and tasks.",
+        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
     @PluginProperty(dynamic = true)
     @NotNull

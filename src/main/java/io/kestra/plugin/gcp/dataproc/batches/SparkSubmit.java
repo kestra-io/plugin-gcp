@@ -3,6 +3,8 @@ package io.kestra.plugin.gcp.dataproc.batches;
 import com.google.cloud.dataproc.v1.Batch;
 import com.google.cloud.dataproc.v1.SparkBatch;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,6 +23,18 @@ import javax.validation.constraints.NotNull;
 @NoArgsConstructor
 @Schema(
     title = "Submit an [Apache Spark](https://spark.apache.org/) batch workload."
+)
+@Plugin(
+    examples = @Example(
+        code = {
+            "jarFileUris: ",
+            "  - 'gs://spark-jobs-kestra/spark-examples.jar'",
+            "mainClass: org.apache.spark.examples.SparkPi",
+            "args:",
+            "  - 1000",
+            "name: test-spark"
+        }
+    )
 )
 public class SparkSubmit extends AbstractSparkSubmit {
     @Schema(

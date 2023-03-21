@@ -2,7 +2,10 @@ package io.kestra.plugin.gcp.dataproc.batches;
 
 import com.google.cloud.dataproc.v1.Batch;
 import com.google.cloud.dataproc.v1.PySparkBatch;
+import com.google.protobuf.ByteString;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,10 +25,19 @@ import javax.validation.constraints.NotNull;
 @Schema(
     title = "Submit an [Apache PySpark](https://spark.apache.org/docs/latest/api/python/getting_started/quickstart.html) batch workload."
 )
+@Plugin(
+    examples = @Example(
+        code = {
+            "mainPythonFileUri: 'gs://spark-jobs-kestra/pi.py'",
+            "name: test-pyspark"
+        }
+    )
+)
 public class PySparkSubmit extends AbstractSparkSubmit {
+    //Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix
     @Schema(
-        title = "The URI of the main Python file to use as the Spark driver.",
-        description = "Must be a .py file."
+        title = "The HCFS URI of the main Python file to use as the Spark driver. Must be a .py file.",
+        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
     @PluginProperty(dynamic = true)
     @NotNull

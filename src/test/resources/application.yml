@@ -20,6 +20,8 @@ kestra:
       project: "kestra-unit-test"
     pubsub:
       project: "kestra-unit-test"
+    dataproc:
+      project: "kestra-unit-test"
   variables:
     globals:
       bucket: kestra-unit-test
