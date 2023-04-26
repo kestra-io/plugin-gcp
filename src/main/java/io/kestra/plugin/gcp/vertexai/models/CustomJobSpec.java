@@ -39,7 +39,7 @@ public class CustomJobSpec {
     private String serviceAccount;
 
     @Schema(
-        title = "The full name of the Compute Engine [network](/compute/docs/networks-and-firewalls#networks) to which the Job should be peered.",
+        title = "The full name of the Compute Engine [network](https://cloud.google.com/compute/docs/networks-and-firewalls#networks) to which the Job should be peered.",
         description = "For example, `projects/12345/global/networks/myVPC`.\n" +
             "Format is of the form `projects/{project}/global/networks/{network}`. " +
             "Where {project} is a project number, as in `12345`, and {network} is a network name.\n" +
