@@ -1,15 +1,22 @@
 package io.kestra.plugin.gcp.vertexai.models;
 
+import com.google.cloud.aiplatform.v1.EnvVar;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
+import java.util.AbstractMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+
+import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @Getter
 @Builder
@@ -36,11 +43,32 @@ public class ContainerSpec {
     @PluginProperty(dynamic = true)
     private List<String> args;
 
+    @Schema(
+        title = "Environment variables to be passed to the container.",
+        description = "Maximum limit is 100."
+    )
+    @PluginProperty(dynamic = true)
+    private Map<String, String> env;
+
     public com.google.cloud.aiplatform.v1.ContainerSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
-        return com.google.cloud.aiplatform.v1.ContainerSpec.newBuilder()
+        var builder = com.google.cloud.aiplatform.v1.ContainerSpec.newBuilder()
             .setImageUri(runContext.render(this.getImageUri()))
             .addAllCommand(this.getCommands() != null ? runContext.render(this.getCommands()) : List.of())
-            .addAllArgs(this.getArgs() != null ? runContext.render(this.getArgs()) : List.of())
-            .build();
+            .addAllArgs(this.getArgs() != null ? runContext.render(this.getArgs()) : List.of());
+
+        if (this.getEnv() != null) {
+            builder.addAllEnv(this.getEnv()
+                .entrySet()
+                .stream()
+                .map(throwFunction(e -> EnvVar.newBuilder()
+                    .setName(runContext.render(e.getKey()))
+                    .setValue(runContext.render(e.getValue()))
+                    .build()
+                ))
+                .toList()
+            );
+        }
+
+        return builder.build();
     }
 }
