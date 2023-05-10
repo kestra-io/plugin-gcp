@@ -40,10 +40,10 @@ public abstract class AbstractGcs extends AbstractTask {
     }
 
     static String encode(String blob) {
-        return blob.replace(" ", "+");
+        return blob.replace(" ", "%20");
     }
 
-    static String blobPath(String path) throws IllegalVariableEvaluationException, URISyntaxException {
+    static String blobPath(String path) {
         return path.replace("+", " ");
     }
 }
