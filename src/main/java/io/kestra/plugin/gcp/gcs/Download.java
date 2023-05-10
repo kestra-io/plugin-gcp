@@ -7,12 +7,10 @@ import com.google.cloud.storage.Storage;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.io.FilenameUtils;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
@@ -56,8 +54,8 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
         File tempFile = runContext.tempFile().toFile();
 
         try (
-            FileOutputStream fileOuputStream = new FileOutputStream(tempFile);
-            FileChannel channel = fileOuputStream.getChannel()
+            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+            FileChannel channel = fileOutputStream.getChannel()
         ) {
             channel.transferFrom(readChannel, 0, Long.MAX_VALUE);
         }

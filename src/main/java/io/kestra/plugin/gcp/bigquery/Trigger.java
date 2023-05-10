@@ -51,13 +51,13 @@ import java.util.Optional;
                 "  - id: watch",
                 "    type: io.kestra.plugin.gcp.bigquery.Trigger",
                 "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\""
+                "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\"",
+                "    store: true"
             }
         )
     }
 )
 @StoreFetchValidation
-@StoreFetchDestinationValidation
 public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Query.Output>, QueryInterface {
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
