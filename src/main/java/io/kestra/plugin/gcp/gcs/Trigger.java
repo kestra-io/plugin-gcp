@@ -114,8 +114,6 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             return Optional.empty();
         }
 
-        String executionId = IdUtils.create();
-
         Storage connection = task.connection(runContext);
 
         java.util.List<Blob> list = run
@@ -124,7 +122,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .map(throwFunction(blob -> {
                 URI uri = runContext.putTempFile(
                     Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName())),
-                    executionId,
+                    runContext.getTriggerExecutionId(),
                     this
                 );
 
@@ -148,7 +146,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         );
 
         Execution execution = Execution.builder()
-            .id(executionId)
+            .id(runContext.getTriggerExecutionId())
             .namespace(context.getNamespace())
             .flowId(context.getFlowId())
             .flowRevision(context.getFlowRevision())
