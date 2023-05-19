@@ -152,7 +152,6 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         @Schema(
             title = "The bucket of the downloaded file"
         )
-        @PluginProperty(additionalProperties = Blob.class)
         private final java.util.List<Blob>  blobs;
     }
 }
