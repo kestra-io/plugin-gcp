@@ -73,7 +73,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
             try (BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.uriToInputStream(from)))) {
                 flowable = Flowable.create(FileSerde.reader(inputStream, Message.class), BackpressureStrategy.BUFFER);
-                resultFlowable = this.buildFlowable(flowable, publisher);
+                resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 
                 count = resultFlowable.reduce(Integer::sum).blockingGet();
             }
@@ -83,12 +83,12 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
                 .fromArray(((List<Object>) this.from).toArray())
                 .map(o -> JacksonMapper.toMap(o, Message.class));
 
-            resultFlowable = this.buildFlowable(flowable, publisher);
+            resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 
             count = resultFlowable.reduce(Integer::sum).blockingGet();
         } else {
             var msg = JacksonMapper.toMap(this.from, Message.class);
-            publisher.publish(msg.to());
+            publisher.publish(msg.to(runContext));
         }
 
         publisher.shutdown();
@@ -101,10 +101,10 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
         .build();
     }
 
-    private Flowable<Integer> buildFlowable(Flowable<Message> flowable, Publisher publisher) {
+    private Flowable<Integer> buildFlowable(Flowable<Message> flowable, Publisher publisher, RunContext runContext) {
         return flowable
             .map(message -> {
-                publisher.publish(message.to());
+                publisher.publish(message.to(runContext));
                 return 1;
             });
     }
