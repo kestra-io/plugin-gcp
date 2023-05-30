@@ -22,7 +22,6 @@ public abstract class AbstractSparkSubmit extends AbstractBatch {
         description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     protected List<String> fileUris;
 
     @Schema(
@@ -30,7 +29,6 @@ public abstract class AbstractSparkSubmit extends AbstractBatch {
         description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     protected List<String> archiveUris;
 
     @Schema(
@@ -38,7 +36,6 @@ public abstract class AbstractSparkSubmit extends AbstractBatch {
         description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     protected List<String> jarFileUris;
 
     @Schema(
@@ -47,6 +44,5 @@ public abstract class AbstractSparkSubmit extends AbstractBatch {
             "can occur that causes an incorrect batch submission."
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     protected List<String> args;
 }
