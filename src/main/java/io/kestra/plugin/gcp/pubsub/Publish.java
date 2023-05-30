@@ -36,12 +36,12 @@ import javax.validation.constraints.NotNull;
             code = {
                 "topic: topic-test",
                 "from:",
-                "-  data: {{ 'base64-encoded-string-1' | base64encode }}",
+                "-  data: \"{{ 'base64-encoded-string-1' | base64encode }}\"",
                 "   attributes:",
                 "       testAttribute: KestraTest",
                 "   messageId: '1234'",
                 "   orderingKey: 'foo'",
-                "-  data: {{ 'base64-encoded-string-2' | base64encode }}",
+                "-  data: \"{{ 'base64-encoded-string-2' | base64encode }}\"",
                 "-  attributes:",
                 "       testAttribute: KestraTest"
             }
