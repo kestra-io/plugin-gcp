@@ -404,6 +404,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             builder.setFlattenResults(this.flattenResults);
         }
 
+        builder.setLabels(BigQueryService.labels(runContext));
+
         return builder.build();
     }
 

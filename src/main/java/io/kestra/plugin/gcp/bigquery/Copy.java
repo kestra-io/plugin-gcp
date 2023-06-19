@@ -124,6 +124,8 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
             builder.setJobTimeoutMs(this.jobTimeout.toMillis());
         }
 
+        builder.setLabels(BigQueryService.labels(runContext));
+
         return builder.build();
     }
 

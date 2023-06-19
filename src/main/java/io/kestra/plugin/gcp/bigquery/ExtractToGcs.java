@@ -16,6 +16,7 @@ import io.kestra.core.serializers.JacksonMapper;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -219,9 +220,11 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
             builder.setUseAvroLogicalTypes(this.useAvroLogicalTypes);
         }
 
+        Map<String, String> finalLabels = new HashMap<>(BigQueryService.labels(runContext));
         if (this.labels != null) {
-            builder.setLabels(this.labels);
+            finalLabels.putAll(this.labels);
         }
+        builder.setLabels(finalLabels);
 
         return builder.build();
     }
