@@ -16,18 +16,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @MicronautTest
-public class CommandsTest {
+public class CliTest {
     @Inject
     private RunContextFactory runContextFactory;
 
     @Test
     void run() throws Exception {
-        Commands execute = Commands.builder()
+        String serviceAccount = "someServiceAccount";
+        String projectId = "someProjectId";
+        Cli execute = Cli.builder()
                 .id(IdUtils.create())
-                .type(Commands.class.getName())
-                .serviceAccount("someServiceAccount")
+                .type(Cli.class.getName())
+                .projectId(projectId)
+                .serviceAccount(serviceAccount)
                 .commands(List.of(
-                        "echo \"::{\\\"outputs\\\":{\\\"appCredentials\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\",\\\"cliCredentials\\\":\\\"$(cat $CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE)\\\"}}::\"",
+                        "echo \"::{\\\"outputs\\\":{" +
+                                "\\\"appCredentials\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\"," +
+                                "\\\"cliCredentials\\\":\\\"$(cat $CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE)\\\"," +
+                                "\\\"projectId\\\":\\\"$CLOUDSDK_CORE_PROJECT\\\"" +
+                                "}}::\"",
                         "gcloud version"
                 ))
                 .build();
@@ -37,7 +44,8 @@ public class CommandsTest {
         ScriptOutput runOutput = execute.run(runContext);
 
         assertThat(runOutput.getExitCode(), is(0));
-        assertThat(runOutput.getVars().get("appCredentials"), is("someServiceAccount"));
-        assertThat(runOutput.getVars().get("cliCredentials"), is("someServiceAccount"));
+        assertThat(runOutput.getVars().get("appCredentials"), is(serviceAccount));
+        assertThat(runOutput.getVars().get("cliCredentials"), is(serviceAccount));
+        assertThat(runOutput.getVars().get("projectId"), is(projectId));
     }
 }
