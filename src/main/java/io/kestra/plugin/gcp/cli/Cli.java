@@ -21,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -80,21 +81,39 @@ public class Cli extends AbstractTask implements RunnableTask<ScriptOutput> {
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
+        DockerOptions.DockerOptionsBuilder<?, ?> dockerOptionsBuilder = DockerOptions.builder()
+                .image("google/cloud-sdk");
+        List<String> beforeCommands = null;
+
+        String gcloudConfigLocation = getGcloudConfigLocation();
+        if (gcloudConfigLocation != null) {
+            dockerOptionsBuilder.volumes(List.of(gcloudConfigLocation + ":/root/.gcloudConf:ro"));
+            beforeCommands = List.of("cp -r /root/.gcloudConf/* /root/.config/gcloud/");
+        }
+
         CommandsWrapper commands = new CommandsWrapper(runContext).withDockerOptions(
-                DockerOptions.builder()
-                        .image("google/cloud-sdk")
-                        .volumes(List.of(System.getProperty("user.home") + "/.config/gcloud:/root/.gcloudConf:ro"))
-                        .build()
+                dockerOptionsBuilder.build()
         ).withRunnerType(RunnerType.DOCKER).withCommands(
                 ScriptService.scriptCommands(
                         List.of("/bin/sh", "-c"),
-                        List.of("cp -r /root/.gcloudConf/* /root/.config/gcloud/"),
+                        beforeCommands,
                         this.commands)
         ).withWarningOnStdErr(true);
 
         commands = commands.withEnv(this.getEnv(runContext));
 
         return commands.run();
+    }
+
+    private String getGcloudConfigLocation() {
+        String expectedGcloudConfigLocation;
+        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+            expectedGcloudConfigLocation = System.getProperty("user.home") + "/AppData/Roaming/gcloud";
+        } else {
+            expectedGcloudConfigLocation = System.getProperty("user.home") + "/.config/gcloud";
+        }
+
+        return new File(expectedGcloudConfigLocation).exists() ? expectedGcloudConfigLocation : null;
     }
 
     private Map<String, String> getEnv(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
