@@ -5,6 +5,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
@@ -18,11 +19,11 @@ import lombok.experimental.SuperBuilder;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -45,7 +46,9 @@ import java.util.stream.Stream;
                 ),
         }
 )
-public class Cli extends AbstractTask implements RunnableTask<ScriptOutput> {
+public class Cli extends Task implements RunnableTask<ScriptOutput> {
+    @NotNull
+    @NotEmpty
     @Schema(
             title = "The full service account json key to use to authenticate to gcloud"
     )
@@ -86,42 +89,21 @@ public class Cli extends AbstractTask implements RunnableTask<ScriptOutput> {
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-        DockerOptions.DockerOptionsBuilder<?, ?> dockerOptionsBuilder = this.docker.toBuilder();
-        List<String> beforeCommands = null;
 
-        String gcloudConfigLocation = getGcloudConfigLocation();
-        if (gcloudConfigLocation != null) {
-            dockerOptionsBuilder.volumes(Stream.concat(
-                    Optional.ofNullable(this.docker.getVolumes()).stream().flatMap(
-                            Collection::stream),
-                    Stream.of(gcloudConfigLocation + ":/root/.gcloudConf:ro")
-            ).toList());
-            beforeCommands = List.of("cp -r /root/.gcloudConf/* /root/.config/gcloud/");
-        }
-
-        CommandsWrapper commands = new CommandsWrapper(runContext).withDockerOptions(
-                dockerOptionsBuilder.build()
-        ).withRunnerType(RunnerType.DOCKER).withCommands(
-                ScriptService.scriptCommands(
-                        List.of("/bin/sh", "-c"),
-                        beforeCommands,
-                        this.commands)
-        ).withWarningOnStdErr(true);
+        CommandsWrapper commands = new CommandsWrapper(runContext)
+                .withWarningOnStdErr(true)
+                .withRunnerType(RunnerType.DOCKER)
+                .withDockerOptions(this.docker)
+                .withCommands(
+                        ScriptService.scriptCommands(
+                                List.of("/bin/sh", "-c"),
+                                null,
+                                this.commands)
+                );
 
         commands = commands.withEnv(this.getEnv(runContext));
 
         return commands.run();
-    }
-
-    private String getGcloudConfigLocation() {
-        String expectedGcloudConfigLocation;
-        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
-            expectedGcloudConfigLocation = System.getProperty("user.home") + "/AppData/Roaming/gcloud";
-        } else {
-            expectedGcloudConfigLocation = System.getProperty("user.home") + "/.config/gcloud";
-        }
-
-        return new File(expectedGcloudConfigLocation).exists() ? expectedGcloudConfigLocation : null;
     }
 
     private Map<String, String> getEnv(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
