@@ -13,10 +13,7 @@ import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.kestra.plugin.scripts.exec.scripts.services.ScriptService;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import javax.validation.constraints.NotEmpty;
@@ -24,9 +21,8 @@ import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
 @SuperBuilder
 @ToString
@@ -79,15 +75,27 @@ public class Cli extends AbstractTask implements RunnableTask<ScriptOutput> {
     )
     protected Map<String, String> env;
 
+    @Schema(
+            title = "Docker options to use"
+    )
+    @PluginProperty
+    @Builder.Default
+    protected DockerOptions docker = DockerOptions.builder()
+            .image("google/cloud-sdk")
+            .build();
+
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-        DockerOptions.DockerOptionsBuilder<?, ?> dockerOptionsBuilder = DockerOptions.builder()
-                .image("google/cloud-sdk");
+        DockerOptions.DockerOptionsBuilder<?, ?> dockerOptionsBuilder = this.docker.toBuilder();
         List<String> beforeCommands = null;
 
         String gcloudConfigLocation = getGcloudConfigLocation();
         if (gcloudConfigLocation != null) {
-            dockerOptionsBuilder.volumes(List.of(gcloudConfigLocation + ":/root/.gcloudConf:ro"));
+            dockerOptionsBuilder.volumes(Stream.concat(
+                    Optional.ofNullable(this.docker.getVolumes()).stream().flatMap(
+                            Collection::stream),
+                    Stream.of(gcloudConfigLocation + ":/root/.gcloudConf:ro")
+            ).toList());
             beforeCommands = List.of("cp -r /root/.gcloudConf/* /root/.config/gcloud/");
         }
 
