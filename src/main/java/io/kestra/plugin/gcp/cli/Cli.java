@@ -7,7 +7,6 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.exec.scripts.models.RunnerType;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
@@ -50,15 +49,15 @@ public class Cli extends Task implements RunnableTask<ScriptOutput> {
     @NotNull
     @NotEmpty
     @Schema(
-            title = "The full service account json key to use to authenticate to gcloud"
+            title = "The full service account JSON key to use to authenticate to gcloud"
     )
-    @PluginProperty
+    @PluginProperty(dynamic = true)
     protected String serviceAccount;
 
     @Schema(
             title = "The project id to scope the commands to"
     )
-    @PluginProperty
+    @PluginProperty(dynamic = true)
     protected String projectId;
 
     @Schema(
@@ -79,7 +78,7 @@ public class Cli extends Task implements RunnableTask<ScriptOutput> {
     protected Map<String, String> env;
 
     @Schema(
-            title = "Docker options to use"
+            title = "Docker options when for the `DOCKER` runner"
     )
     @PluginProperty
     @Builder.Default
@@ -117,6 +116,10 @@ public class Cli extends Task implements RunnableTask<ScriptOutput> {
         }
         if (projectId != null) {
             envs.put("CLOUDSDK_CORE_PROJECT", runContext.render(this.projectId));
+        }
+
+        if (this.env != null) {
+            envs.putAll(this.env);
         }
 
         return envs;

@@ -24,22 +24,26 @@ public class CliTest {
     void run() throws Exception {
         String serviceAccount = "someServiceAccount";
         String projectId = "someProjectId";
+        String envKey = "MY_KEY";
+        String envValue = "MY_VALUE";
         Cli execute = Cli.builder()
                 .id(IdUtils.create())
                 .type(Cli.class.getName())
                 .projectId(projectId)
                 .serviceAccount(serviceAccount)
+                .env(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}"))
                 .commands(List.of(
                         "echo \"::{\\\"outputs\\\":{" +
                                 "\\\"appCredentials\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\"," +
                                 "\\\"cliCredentials\\\":\\\"$(cat $CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE)\\\"," +
-                                "\\\"projectId\\\":\\\"$CLOUDSDK_CORE_PROJECT\\\"" +
+                                "\\\"projectId\\\":\\\"$CLOUDSDK_CORE_PROJECT\\\"," +
+                                "\\\"customEnv\\\":\\\"$"+envKey+"\\\"" +
                                 "}}::\"",
                         "gcloud version"
                 ))
                 .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of());
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of("envKey", envKey, "envValue", envValue));
 
         ScriptOutput runOutput = execute.run(runContext);
 
@@ -47,5 +51,6 @@ public class CliTest {
         assertThat(runOutput.getVars().get("appCredentials"), is(serviceAccount));
         assertThat(runOutput.getVars().get("cliCredentials"), is(serviceAccount));
         assertThat(runOutput.getVars().get("projectId"), is(projectId));
+        assertThat(runOutput.getVars().get("customEnv"), is(envValue));
     }
 }
