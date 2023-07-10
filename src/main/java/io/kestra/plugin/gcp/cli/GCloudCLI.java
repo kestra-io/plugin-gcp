@@ -43,9 +43,17 @@ import java.util.Map;
                                 "  - gcloud container clusters list"
                         }
                 ),
+                @Example(
+                        title = "Create a GCS bucket",
+                        code = {
+                                "serviceAccount: \"{{ secret('gcp-sa') }}\"",
+                                "commands:",
+                                "  - gsutil mb gs://my-bucket"
+                        }
+                )
         }
 )
-public class Cli extends Task implements RunnableTask<ScriptOutput> {
+public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
     @NotNull
     @NotEmpty
     @Schema(

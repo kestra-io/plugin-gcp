@@ -16,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @MicronautTest
-public class CliTest {
+public class GCloudCLITest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -26,9 +26,9 @@ public class CliTest {
         String projectId = "someProjectId";
         String envKey = "MY_KEY";
         String envValue = "MY_VALUE";
-        Cli execute = Cli.builder()
+        GCloudCLI execute = GCloudCLI.builder()
                 .id(IdUtils.create())
-                .type(Cli.class.getName())
+                .type(GCloudCLI.class.getName())
                 .projectId(projectId)
                 .serviceAccount(serviceAccount)
                 .env(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}"))
