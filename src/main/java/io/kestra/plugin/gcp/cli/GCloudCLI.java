@@ -50,6 +50,18 @@ import java.util.Map;
                                 "commands:",
                                 "  - gsutil mb gs://my-bucket"
                         }
+                ),
+                @Example(
+                        title = "Output the result of a command",
+                        code = {
+                                "serviceAccount: \"{{ secret('gcp-sa') }}\"",
+                                "commands:",
+                                "  # Outputs as a flow output for UI display",
+                                "  - gcloud pubsub topics list --format=json | tr -d '\\n ' | xargs -0 -I {} echo '::{\"outputs\":{\"gcloud\":{}}}::'",
+                                "",
+                                "  # Outputs as a file, preferred way for large payloads",
+                                "  - gcloud storage ls --json > storage.json"
+                        }
                 )
         }
 )
