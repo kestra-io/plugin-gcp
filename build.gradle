@@ -57,6 +57,7 @@ dependencies {
 
     // kestra
     compileOnly group: "io.kestra", name: "core", version: kestraVersion
+    implementation group: "io.kestra.plugin", name: "plugin-script", version: kestraVersion
 
     // libs
     api 'androidx.annotation:annotation:1.6.0'
