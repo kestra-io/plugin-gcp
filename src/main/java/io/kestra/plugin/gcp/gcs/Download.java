@@ -12,6 +12,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -51,7 +52,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
         }
         ReadChannel readChannel = blob.reader();
 
-        File tempFile = runContext.tempFile().toFile();
+        File tempFile = runContext.tempFile(runContext.fileExtension(source.getName())).toFile();
 
         try (
             FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
