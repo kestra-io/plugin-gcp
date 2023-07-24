@@ -21,6 +21,7 @@ import java.util.Objects;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 
 @MicronautTest
@@ -64,6 +65,7 @@ class DownloadTest {
 
 
         Download.Output run = task.run(runContext(task));
+        assertThat(run.getUri().toString(), endsWith(".yml"));
 
         InputStream get = storageInterface.get(run.getUri());
 
