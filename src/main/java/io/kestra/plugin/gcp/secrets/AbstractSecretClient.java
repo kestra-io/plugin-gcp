@@ -30,6 +30,7 @@ abstract class AbstractSecretClient extends AbstractTask {
         SecretManagerServiceSettings secretManagerServiceSettings = SecretManagerServiceSettings
                 .newBuilder()
                 .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
+                .setQuotaProjectId(this.projectId)
                 .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
                 .build();
         return SecretManagerServiceClient.create(secretManagerServiceSettings);

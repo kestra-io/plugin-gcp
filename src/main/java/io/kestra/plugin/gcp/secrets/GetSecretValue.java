@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.secrets;
 
-import com.google.cloud.secretmanager.v1.CreateSecretRequest;
+import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
+import com.google.cloud.secretmanager.v1.SecretVersionName;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -11,7 +12,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import javax.validation.UnexpectedTypeException;
 import javax.validation.constraints.NotNull;
+import java.util.zip.CRC32C;
+import java.util.zip.Checksum;
 
 @SuperBuilder
 @ToString
@@ -32,7 +36,7 @@ import javax.validation.constraints.NotNull;
                 )
         }
 )
-public class Get extends AbstractSecretClient implements RunnableTask<Get.Output> {
+public class GetSecretValue extends AbstractSecretClient implements RunnableTask<Get.Output> {
     @Schema(
             title = "The secret name"
     )
@@ -50,9 +54,23 @@ public class Get extends AbstractSecretClient implements RunnableTask<Get.Output
     @Override
     public Get.Output run(RunContext runContext) throws Exception {
         try (var secretClient = this.connection(runContext)) {
-            var data = secretClient.getSecret(this.name).toString();
+            SecretVersionName secretVersionName = SecretVersionName.of(this.projectId, this.name, this.version);
+            AccessSecretVersionResponse response = secretClient.accessSecretVersion(secretVersionName);
+            String payload = response.getPayload().getData().toStringUtf8();
+
+            // Checking data is correct
+            byte[] data = response.getPayload().getData().toByteArray();
+            Checksum checksum = new CRC32C();
+            checksum.update(data, 0, data.length);
+            if (response.getPayload().getDataCrc32C() != checksum.getValue()) {
+                throw UnexpectedTypeException;
+                System.out.printf("Data corruption detected.");
+                return;
+            }
+
+
             return io.kestra.plugin.gcp.secrets.Get.Output.builder()
-                    .secretValue(data)
+                    .secretValue(payload)
                     .build();
         }
     }
