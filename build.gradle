@@ -73,6 +73,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-firestore'
     api 'com.google.cloud:google-cloud-pubsub'
     api 'com.google.cloud:google-cloud-dataproc'
+    api 'com.google.cloud:google-cloud-secretmanager'
 }
 
 
