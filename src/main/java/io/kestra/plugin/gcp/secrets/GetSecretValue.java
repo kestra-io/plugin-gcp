@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.secrets;
 import com.google.cloud.secretmanager.v1.AccessSecretVersionResponse;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -13,6 +14,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
@@ -53,21 +55,26 @@ public class GetSecretValue extends AbstractSecretClient implements RunnableTask
 
     @Override
     public GetSecretValue.Output run(RunContext runContext) throws Exception {
-        try (var secretClient = this.connection(runContext)) {
-            SecretVersionName secretVersionName = SecretVersionName.of(this.projectId, this.name, this.version);
-            AccessSecretVersionResponse response = secretClient.accessSecretVersion(secretVersionName);
-            String secret = response.getPayload().getData().toStringUtf8();
+        AccessSecretVersionResponse response = fetch(runContext);
 
-            // Checking data is correct
-            byte[] data = response.getPayload().getData().toByteArray();
-            Checksum checksum = new CRC32C();
-            checksum.update(data, 0, data.length);
-            if (response.getPayload().getDataCrc32C() != checksum.getValue()) {
-                throw new StreamCorruptedException("Data corruption detected when reading secret : " + this.name);
-            }
-            return GetSecretValue.Output.builder()
-                    .secretValue(secret)
-                    .build();
+        String secret = response.getPayload().getData().toStringUtf8();
+
+        // Checking data is correct
+        byte[] data = response.getPayload().getData().toByteArray();
+        Checksum checksum = new CRC32C();
+        checksum.update(data, 0, data.length);
+        if (response.getPayload().getDataCrc32C() != checksum.getValue()) {
+            throw new StreamCorruptedException("Data corruption detected when reading secret : " + this.name);
+        }
+        return GetSecretValue.Output.builder()
+                .secretValue(secret)
+                .build();
+    }
+
+    AccessSecretVersionResponse fetch(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        SecretVersionName secretVersionName = SecretVersionName.of(this.projectId, this.name, this.version);
+        try (var secretClient = this.connection(runContext)) {
+            return secretClient.accessSecretVersion(secretVersionName);
         }
     }
 
