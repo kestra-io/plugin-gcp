@@ -32,19 +32,20 @@ class GetSecretValueTest {
                 .projectId("kestra-392920")
                 .build());
 
-        AccessSecretVersionResponse responseMocked;
-
         try (InputStream inputStream = new FileInputStream("response.bin")) {
-            responseMocked = AccessSecretVersionResponse.parseFrom(inputStream);
+            AccessSecretVersionResponse responseMocked = AccessSecretVersionResponse.parseFrom(inputStream);
+
+            // Assert mocked value is a correct instance of AccessSecretVersionResponse
+            assertThat(responseMocked.getPayload().getData().toStringUtf8(), is("cookie"));
+
+            doReturn(responseMocked)
+                    .when(task)
+                    .fetch(any());
+
+            RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+            GetSecretValue.Output run = task.run(runContext);
+
+            assertThat(run.getSecretValue(), is("cookie"));
         }
-
-        doReturn(responseMocked)
-                .when(task)
-                .fetch(any());
-
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
-        GetSecretValue.Output run = task.run(runContext);
-
-        assertThat(run.getSecretValue(), is("cookie"));
     }
 }
