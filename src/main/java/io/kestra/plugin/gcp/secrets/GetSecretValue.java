@@ -12,8 +12,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import javax.validation.UnexpectedTypeException;
 import javax.validation.constraints.NotNull;
+import java.io.StreamCorruptedException;
 import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
 
@@ -36,9 +36,9 @@ import java.util.zip.Checksum;
                 )
         }
 )
-public class GetSecretValue extends AbstractSecretClient implements RunnableTask<Get.Output> {
+public class GetSecretValue extends AbstractSecretClient implements RunnableTask<GetSecretValue.Output> {
     @Schema(
-            title = "The secret name"
+            title = "The Secret name"
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -52,25 +52,21 @@ public class GetSecretValue extends AbstractSecretClient implements RunnableTask
     private String version;
 
     @Override
-    public Get.Output run(RunContext runContext) throws Exception {
+    public GetSecretValue.Output run(RunContext runContext) throws Exception {
         try (var secretClient = this.connection(runContext)) {
             SecretVersionName secretVersionName = SecretVersionName.of(this.projectId, this.name, this.version);
             AccessSecretVersionResponse response = secretClient.accessSecretVersion(secretVersionName);
-            String payload = response.getPayload().getData().toStringUtf8();
+            String secret = response.getPayload().getData().toStringUtf8();
 
             // Checking data is correct
             byte[] data = response.getPayload().getData().toByteArray();
             Checksum checksum = new CRC32C();
             checksum.update(data, 0, data.length);
             if (response.getPayload().getDataCrc32C() != checksum.getValue()) {
-                throw UnexpectedTypeException;
-                System.out.printf("Data corruption detected.");
-                return;
+                throw new StreamCorruptedException("Data corruption detected when reading secret : " + this.name);
             }
-
-
-            return io.kestra.plugin.gcp.secrets.Get.Output.builder()
-                    .secretValue(payload)
+            return GetSecretValue.Output.builder()
+                    .secretValue(secret)
                     .build();
         }
     }
