@@ -22,6 +22,9 @@ kestra:
       project: "kestra-unit-test"
     dataproc:
       project: "kestra-unit-test"
+    vertexai:
+      project: "kestra-unit-test"
+      region: "us-central1"
   variables:
     globals:
       bucket: kestra-unit-test
