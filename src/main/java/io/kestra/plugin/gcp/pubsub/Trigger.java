@@ -13,6 +13,7 @@ import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.models.triggers.TriggerOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,6 +23,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
 
 
 @SuperBuilder
@@ -78,6 +80,12 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
     private Duration maxDuration;
 
+    @Builder.Default
+    @PluginProperty
+    @NotNull
+    @Schema(title = "The serializer/deserializer to use.")
+    private SerdeType serdeType = SerdeType.STRING;
+
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();
@@ -92,6 +100,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .scopes(this.scopes)
             .maxRecords(this.maxRecords)
             .maxDuration(this.maxDuration)
+            .serdeType(this.serdeType)
             .build();
 
         Consume.Output run = task.run(runContext);

@@ -10,6 +10,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.gcp.pubsub.model.Message;
+import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -58,6 +59,12 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     )
     private Object from;
 
+    @Builder.Default
+    @PluginProperty
+    @NotNull
+    @Schema(title = "The serializer/deserializer to use.")
+    private SerdeType serdeType = SerdeType.STRING;
+
     @Override
     public Publish.Output run(RunContext runContext) throws Exception {
         var publisher = this.createPublisher(runContext);
@@ -88,7 +95,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
             count = resultFlowable.reduce(Integer::sum).blockingGet();
         } else {
             var msg = JacksonMapper.toMap(this.from, Message.class);
-            publisher.publish(msg.to(runContext));
+            publisher.publish(msg.to(runContext, this.serdeType));
         }
 
         publisher.shutdown();
@@ -104,7 +111,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     private Flowable<Integer> buildFlowable(Flowable<Message> flowable, Publisher publisher, RunContext runContext) {
         return flowable
             .map(message -> {
-                publisher.publish(message.to(runContext));
+                publisher.publish(message.to(runContext, this.serdeType));
                 return 1;
             });
     }

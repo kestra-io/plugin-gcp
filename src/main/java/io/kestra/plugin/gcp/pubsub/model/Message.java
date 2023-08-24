@@ -10,6 +10,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.Map;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
@@ -19,11 +21,14 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @Jacksonized
 public class Message {
 
-    @Schema(title = "The message data, must be base64 encoded")
+    @Schema(
+        title = "The message data, must be a string if serde type is 'STRING', otherwise a JSON object",
+        description = "If it's a string, it can be a dynamic property otherwise not."
+    )
     @PluginProperty(dynamic = true)
-    private String data;
+    private Object data;
 
-    @Schema(title = "The message attribute map")
+    @Schema(title = "The message attributes map")
     @PluginProperty(dynamic = true)
     private Map<String, String> attributes;
 
@@ -35,10 +40,17 @@ public class Message {
     @PluginProperty(dynamic = true)
     private String orderingKey;
 
-    public PubsubMessage to(RunContext runContext) throws IllegalVariableEvaluationException {
+    public PubsubMessage to(RunContext runContext, SerdeType serdeType) throws IllegalVariableEvaluationException, IOException {
         var builder =  PubsubMessage.newBuilder();
         if(data != null) {
-            builder.setData(ByteString.copyFrom(runContext.render(data).getBytes()));
+            byte[] serializedData;
+            if (data instanceof String dataStr) {
+                var rendered = runContext.render(dataStr);
+                serializedData = rendered.getBytes();
+            } else {
+                serializedData = serdeType.serialize(data);
+            }
+            builder.setData(ByteString.copyFrom(Base64.getEncoder().encode(serializedData)));
         }
         if(attributes != null && !attributes.isEmpty()) {
             attributes.forEach(throwBiConsumer((key, value) -> builder.putAttributes(runContext.render(key), runContext.render(value))));
@@ -52,12 +64,17 @@ public class Message {
         return builder.build();
     }
 
-    public static Message of(PubsubMessage message) {
-        return Message.builder()
+    public static Message of(PubsubMessage message, SerdeType serdeType) throws IOException {
+        var builder = Message.builder()
             .messageId(message.getMessageId())
-            .data(message.getData().toString())
             .attributes(message.getAttributesMap())
-            .orderingKey(message.getOrderingKey())
-            .build();
+            .orderingKey(message.getOrderingKey());
+
+        if (message.getData() != null) {
+            var decodedData = Base64.getDecoder().decode(message.getData().toByteArray());
+            builder.data(serdeType.deserialize(decodedData));
+        }
+
+        return builder.build();
     }
 }

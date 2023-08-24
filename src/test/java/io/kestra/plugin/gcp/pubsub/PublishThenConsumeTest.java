@@ -6,6 +6,7 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.gcp.pubsub.model.Message;
+import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
@@ -16,7 +17,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +43,7 @@ class PublishThenConsumeTest {
             .topic("test-topic")
             .from(
                 List.of(
-                    Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build(),
+                    Message.builder().data("Hello World").build(),
                     Message.builder().attributes(Map.of("key", "value")).build()
                 )
             )
@@ -61,6 +61,37 @@ class PublishThenConsumeTest {
 
         var consumeOutput = consume.run(runContextFactory.of());
         assertThat(consumeOutput.getCount(), is(2));
+    }
+
+    @Test
+    void runWithJson() throws Exception {
+        var runContext = runContextFactory.of();
+
+        var publish = Publish.builder()
+            .projectId(project)
+            .topic("test-topic")
+            .serdeType(SerdeType.JSON)
+            .from(
+                List.of(
+                    Message.builder().data("""
+                        {"hello": "world"}""").build()
+                )
+            )
+            .build();
+
+        var publishOutput = publish.run(runContext);
+        assertThat(publishOutput.getMessagesCount(), is(1));
+
+        var consume = Consume.builder()
+            .projectId(project)
+            .topic("test-topic")
+            .serdeType(SerdeType.JSON)
+            .subscription("test-subscription")
+            .maxRecords(1)
+            .build();
+
+        var consumeOutput = consume.run(runContextFactory.of());
+        assertThat(consumeOutput.getCount(), is(1));
     }
 
     @Test
@@ -94,7 +125,7 @@ class PublishThenConsumeTest {
         OutputStream output = new FileOutputStream(tempFile);
 
         FileSerde.write(output,
-            Message.builder().data(Base64.getEncoder().encodeToString("Hello World".getBytes())).build());
+            Message.builder().data("Hello World".getBytes()).build());
         FileSerde.write(output,
             Message.builder().attributes(Map.of("key", "value")).build());
         return storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));

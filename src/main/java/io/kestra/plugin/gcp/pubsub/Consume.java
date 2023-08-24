@@ -10,6 +10,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.gcp.pubsub.model.Message;
+import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,6 +23,8 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.validation.constraints.NotNull;
+
 import static io.kestra.core.utils.Rethrow.throwRunnable;
 
 @SuperBuilder
@@ -31,7 +34,7 @@ import static io.kestra.core.utils.Rethrow.throwRunnable;
 @NoArgsConstructor
 @Schema(
     title = "Consume messages from a Pub/Sub topic.",
-    description = "Required a maxDuration or a maxRecords."
+    description = "Requires a maxDuration or a maxRecords."
 )
 @Plugin(
     examples = {
@@ -46,14 +49,14 @@ import static io.kestra.core.utils.Rethrow.throwRunnable;
 public class Consume extends AbstractPubSub implements RunnableTask<Consume.Output> {
 
     @Schema(
-        title = "The Pub/Sub subscription",
+        title = "The Pub/Sub subscription.",
         description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
     )
     @PluginProperty(dynamic = true)
     private String subscription;
 
     @Schema(
-        title = "Whether the Pub/Sub subscription should be created if not exist"
+        title = "Whether the Pub/Sub subscription should be created if not exists."
     )
     @PluginProperty
     @Builder.Default
@@ -67,6 +70,11 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
     private Duration maxDuration;
 
+    @Builder.Default
+    @PluginProperty
+    @NotNull
+    @Schema(title = "The serializer/deserializer to use.")
+    private SerdeType serdeType = SerdeType.STRING;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -83,7 +91,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             AtomicReference<Exception> threadException = new AtomicReference<>();
             MessageReceiver receiver = (message, consumer) -> {
                 try {
-                    FileSerde.write(outputFile, Message.of(message));
+                    FileSerde.write(outputFile, Message.of(message, serdeType));
                     total.getAndIncrement();
                     consumer.ack();
                 }
