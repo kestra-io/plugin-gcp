@@ -66,22 +66,24 @@ import java.util.Map;
         }
 )
 public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
+    private static final String DEFAULT_IMAGE = "google/cloud-sdk";
+
     @NotNull
     @NotEmpty
     @Schema(
-            title = "The full service account JSON key to use to authenticate to gcloud"
+        title = "The full service account JSON key to use to authenticate to gcloud"
     )
     @PluginProperty(dynamic = true)
     protected String serviceAccount;
 
     @Schema(
-            title = "The project id to scope the commands to"
+        title = "The project id to scope the commands to"
     )
     @PluginProperty(dynamic = true)
     protected String projectId;
 
     @Schema(
-            title = "The commands to run"
+        title = "The commands to run"
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -89,7 +91,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
     protected List<String> commands;
 
     @Schema(
-            title = "Additional environment variables for the current process."
+        title = "Additional environment variables for the current process."
     )
     @PluginProperty(
             additionalProperties = String.class,
@@ -98,13 +100,12 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
     protected Map<String, String> env;
 
     @Schema(
-            title = "Docker options when for the `DOCKER` runner"
+        title = "Docker options when for the `DOCKER` runner",
+        defaultValue = "{image=" + DEFAULT_IMAGE + ", pullPolicy=ALWAYS}"
     )
     @PluginProperty
     @Builder.Default
-    protected DockerOptions docker = DockerOptions.builder()
-            .image("google/cloud-sdk")
-            .build();
+    protected DockerOptions docker = DockerOptions.builder().build();
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
@@ -112,7 +113,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
         CommandsWrapper commands = new CommandsWrapper(runContext)
                 .withWarningOnStdErr(true)
                 .withRunnerType(RunnerType.DOCKER)
-                .withDockerOptions(this.docker)
+                .withDockerOptions(injectDefaults(getDocker()))
                 .withCommands(
                         ScriptService.scriptCommands(
                                 List.of("/bin/sh", "-c"),
@@ -123,6 +124,15 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
         commands = commands.withEnv(this.getEnv(runContext));
 
         return commands.run();
+    }
+
+    private DockerOptions injectDefaults(DockerOptions original) {
+        var builder = original.toBuilder();
+        if (original.getImage() == null) {
+            builder.image(DEFAULT_IMAGE);
+        }
+
+        return builder.build();
     }
 
     private Map<String, String> getEnv(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
