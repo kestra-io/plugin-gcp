@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
 import io.kestra.core.models.annotations.Example;
@@ -100,7 +101,9 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                     consumer.nack();
                 }
             };
-            var subscriber = Subscriber.newBuilder(subscriptionName, receiver).build();
+            var subscriber = Subscriber.newBuilder(subscriptionName, receiver)
+                .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
+                .build();
             subscriber.startAsync().awaitRunning();
 
             while (!this.ended(total, started)) {
