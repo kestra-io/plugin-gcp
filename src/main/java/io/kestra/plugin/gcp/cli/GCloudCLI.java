@@ -68,8 +68,6 @@ import java.util.Map;
 public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
     private static final String DEFAULT_IMAGE = "google/cloud-sdk";
 
-    @NotNull
-    @NotEmpty
     @Schema(
         title = "The full service account JSON key to use to authenticate to gcloud"
     )
@@ -137,6 +135,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
 
     private Map<String, String> getEnv(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
         Map<String, String> envs = new HashMap<>();
+
         if (serviceAccount != null) {
             Path serviceAccountPath = runContext.tempFile(runContext.render(this.serviceAccount).getBytes());
             envs.putAll(Map.of(
@@ -144,6 +143,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput> {
                     "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", serviceAccountPath.toString()
             ));
         }
+
         if (projectId != null) {
             envs.put("CLOUDSDK_CORE_PROJECT", runContext.render(this.projectId));
         }
