@@ -666,7 +666,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (LegacySQLTypeName.TIMESTAMP.equals(field.getType())) {
-            return Instant.ofEpochMilli(value.getTimestampValue() / 1000);
+            return value.getTimestampInstant();
         }
 
         throw new IllegalArgumentException("Invalid type '" + field.getType() + "'");

@@ -95,7 +95,7 @@ class QueryTest {
         assertThat(rows.get(0).get("float"), is(1.25D));
         assertThat(rows.get(0).get("date"), is(LocalDate.parse("2008-12-25")));
         assertThat(rows.get(0).get("time"), is(LocalTime.parse("15:30:00.123456")));
-        assertThat(rows.get(0).get("timestamp"), is(Instant.parse("2008-12-25T15:30:00.123Z")));
+        assertThat(rows.get(0).get("timestamp"), is(Instant.parse("2008-12-25T15:30:00.123456Z")));
         assertThat((List<Double>) rows.get(0).get("geopoint"), containsInAnyOrder(50.6833, 2.9));
         assertThat((List<Long>) rows.get(0).get("array"), containsInAnyOrder(1L, 2L, 3L));
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("v"), is(nullValue()));
