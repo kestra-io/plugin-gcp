@@ -128,6 +128,6 @@ class PublishThenConsumeTest {
             Message.builder().data("Hello World".getBytes()).build());
         FileSerde.write(output,
             Message.builder().attributes(Map.of("key", "value")).build());
-        return storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        return storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
     }
 }

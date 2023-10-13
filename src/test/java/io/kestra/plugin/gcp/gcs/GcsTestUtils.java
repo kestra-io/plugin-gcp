@@ -34,6 +34,7 @@ class GcsTestUtils {
 
     Upload.Output upload(String out, String resource) throws Exception {
         URI source = storageInterface.put(
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
                 .getResource(resource))
