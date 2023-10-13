@@ -42,6 +42,7 @@ class DownloadTest {
             .toURI());
 
         URI source = storageInterface.put(
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(file)
         );
@@ -67,7 +68,7 @@ class DownloadTest {
         Download.Output run = task.run(runContext(task));
         assertThat(run.getUri().toString(), endsWith(".yml"));
 
-        InputStream get = storageInterface.get(run.getUri());
+        InputStream get = storageInterface.get(null, run.getUri());
 
         assertThat(
             CharStreams.toString(new InputStreamReader(get)),

@@ -72,6 +72,7 @@ class StorageWriteTest {
         }
 
         URI put = storageInterface.put(
+            null,
             new URI("/" + IdUtils.create() + ".ion"),
             new FileInputStream(tempFile)
         );

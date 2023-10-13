@@ -41,6 +41,7 @@ class LoadTest {
     @Test
     void fromCsv() throws Exception {
         URI source = storageInterface.put(
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
                 .getResource("bigquery/insurance_sample.csv"))
@@ -71,6 +72,7 @@ class LoadTest {
     @Test
     void fromAvro() throws Exception {
         URI source = storageInterface.put(
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
                 .getResource("bigquery/insurance_sample.avro"))
@@ -99,6 +101,7 @@ class LoadTest {
     @Test
     void fromEmpty() throws Exception {
         URI source = storageInterface.put(
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             IOUtils.toInputStream("", StandardCharsets.UTF_8)
         );
