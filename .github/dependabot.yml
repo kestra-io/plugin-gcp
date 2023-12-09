@@ -7,11 +7,11 @@ updates:
     directory: "/"
     schedule:
       # Check for updates to GitHub Actions every weekday
-      interval: "daily"
+      interval: "weekly"
 
   # Maintain dependencies for Gradle modules
   - package-ecosystem: "gradle"
     directory: "/"
     schedule:
-      # Check for updates to Go modules every weekday
-      interval: "daily"
+      # Check for updates to Gradle modules every week
+      interval: "weekly"
