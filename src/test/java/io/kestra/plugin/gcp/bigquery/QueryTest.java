@@ -1,12 +1,8 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
-import com.google.cloud.bigquery.JobException;
 import com.google.cloud.bigquery.JobInfo;
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Range;
 import com.google.common.io.CharStreams;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
@@ -20,7 +16,6 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
 
-import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -28,6 +23,8 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import jakarta.inject.Inject;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -161,7 +158,7 @@ class QueryTest {
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", ContiguousSet.create(Range.closed(1, 25), DiscreteDomain.integers())
+            "loop", IntStream.range(1, 26).boxed().toList()
         ));
 
         Query.Output run = task.run(runContext);
@@ -203,7 +200,7 @@ class QueryTest {
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
+            "loop", IntStream.range(1, 3).boxed().toList()
         ));
 
         Query.Output run = task.run(runContext);
@@ -263,7 +260,7 @@ class QueryTest {
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", ContiguousSet.create(Range.closed(1, 2), DiscreteDomain.integers())
+            "loop", IntStream.range(1, 3).boxed().toList()
         ));
 
         FailsafeException e = assertThrows(FailsafeException.class, () -> {
