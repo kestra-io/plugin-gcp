@@ -60,7 +60,7 @@ dependencies {
     implementation group: "io.kestra.plugin", name: "plugin-script", version: kestraVersion
 
     // libs
-    api 'androidx.annotation:annotation:1.6.0'
+    api 'androidx.annotation:annotation:1.7.1'
     api 'net.jodah:failsafe:2.4.4'
 
     api platform('com.google.cloud:libraries-bom:26.29.0')
