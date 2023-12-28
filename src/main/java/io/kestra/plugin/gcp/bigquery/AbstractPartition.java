@@ -44,8 +44,8 @@ abstract public class AbstractPartition extends AbstractTable {
 
     @NotNull
     @Schema(
-        title = "The inclusive starting date or integer",
-        description = "If the partition :" +
+        title = "The inclusive starting date or integer.",
+        description = "If the partition :\n" +
             "- is a numeric range, must be a valid integer\n" +
             "- is a date, must a valid datetime like `{{ now() }}`"
     )
@@ -54,8 +54,8 @@ abstract public class AbstractPartition extends AbstractTable {
 
     @NotNull
     @Schema(
-        title = "The inclusive ending date or integer",
-        description = "If the partition :" +
+        title = "The inclusive ending date or integer.",
+        description = "If the partition :\n" +
             "- is a numeric range, must be a valid integer\n" +
             "- is a date, must a valid datetime like `{{ now() }}`"
     )

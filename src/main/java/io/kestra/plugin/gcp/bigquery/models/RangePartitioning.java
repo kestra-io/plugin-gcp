@@ -12,11 +12,11 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 public class RangePartitioning {
-    @Schema(name = "the range partitioning field.")
+    @Schema(name = "The range partitioning field.")
     @PluginProperty(dynamic = true)
     private final String field;
     
-    @Schema(name = "the range of range partitioning.")
+    @Schema(name = "The range of range partitioning.")
     private final Range range;
 
     public static RangePartitioning of(com.google.cloud.bigquery.RangePartitioning rangePartitioning) {
@@ -38,19 +38,19 @@ public class RangePartitioning {
     @Jacksonized
     public static class Range {
         @Schema(
-            name = "the start of range partitioning."
+            name = "The start of range partitioning."
         )
         @PluginProperty(dynamic = false)
         private final Long start;
 
         @Schema(
-            name = "the end of range partitioning."
+            name = "The end of range partitioning."
         )
         @PluginProperty(dynamic = false)
         private final Long end;
 
         @Schema(
-            name = "the width of each interval."
+            name = "The width of each interval."
         )
         @PluginProperty(dynamic = false)
         private final Long interval;

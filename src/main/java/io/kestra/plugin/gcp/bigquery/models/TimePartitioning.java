@@ -14,15 +14,15 @@ import java.time.Duration;
 @Builder
 @Jacksonized
 public class TimePartitioning {
-    @Schema(title = "the time partitioning type.")
+    @Schema(title = "The time partitioning type.")
     @PluginProperty(dynamic = false)
     private final com.google.cloud.bigquery.TimePartitioning.Type type;
 
-    @Schema(title = "the number of milliseconds for which to keep the storage for a partition. When expired, the storage for the partition is reclaimed. If null, the partion does not expire.")
+    @Schema(title = "The number of milliseconds for which to keep the storage for a partition. When expired, the storage for the partition is reclaimed. If null, the partition does not expire.")
     @PluginProperty(dynamic = false)
     private final Duration expiration;
 
-    @Schema(title = "if not set, the table is partitioned by pseudo column '_PARTITIONTIME'; if set, the table is partitioned by this field.")
+    @Schema(title = "If not set, the table is partitioned by pseudo column '_PARTITIONTIME'; if set, the table is partitioned by this field.")
     @PluginProperty(dynamic = true)
     private final String field;
 

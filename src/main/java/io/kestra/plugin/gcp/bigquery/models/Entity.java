@@ -16,14 +16,15 @@ import javax.validation.constraints.NotNull;
 public class Entity {
     @NotNull
     @Schema(
-        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
+        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)."
     )
     @PluginProperty(dynamic = true)
     private final Type type;
 
     @NotNull
     @Schema(
-        title = "The value for the entity (ex : user email if the type is USER ...)"
+        title = "The value for the entity.",
+        description = "For example, user email if the type is USER."
     )
     @PluginProperty(dynamic = true)
     private final String value;

@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
 @NoArgsConstructor
 abstract public class AbstractBigquery extends AbstractTask {
     @Schema(
-        title = "The geographic location where the dataset should reside",
+        title = "The geographic location where the dataset should reside.",
         description = "This property is experimental" +
             " and might be subject to change or removed.\n" +
             " \n" +
@@ -39,7 +39,7 @@ abstract public class AbstractBigquery extends AbstractTask {
     protected String location;
 
     @Schema(
-        title = "Automatic retry for retryable BigQuery exceptions",
+        title = "Automatic retry for retryable BigQuery exceptions.",
         description = "Some exceptions (especially rate limit) are not retried by default by BigQuery client, we use by " +
             "default a transparent retry (not the kestra one) to handle this case.\n" +
             "The default values are exponential of 5 seconds for a maximum of 15 minutes and ten attempts"
@@ -49,7 +49,7 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     @Builder.Default
     @Schema(
-        title = "The reason that are valid for a automatic retry."
+        title = "The reasons which would trigger an automatic retry."
     )
     @PluginProperty(dynamic = true)
     protected List<String> retryReasons = Arrays.asList(
@@ -61,8 +61,8 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     @Builder.Default
     @Schema(
-        title = "The message that are valid for a automatic retry.",
-        description = "Message is tested as a substring of the full message and case insensitive"
+        title = "The messages which would trigger an automatic retry.",
+        description = "Message is tested as a substring of the full message, and is case insensitive."
     )
     @PluginProperty(dynamic = true)
     protected List<String> retryMessages = Arrays.asList(

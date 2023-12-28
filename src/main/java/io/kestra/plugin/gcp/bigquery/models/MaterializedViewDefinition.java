@@ -15,18 +15,18 @@ import java.time.Instant;
 @Builder
 @Jacksonized
 public class MaterializedViewDefinition {
-    @Schema(title = "Date when this materialized view was last modified")
+    @Schema(title = "Date when this materialized view was last modified.")
     private final Instant lastRefreshDate;
 
-    @Schema(title = "the query whose result is persisted")
+    @Schema(title = "The query whose result is persisted.")
     @PluginProperty(dynamic = true)
     public final String query;
 
-    @Schema(title = "is enable automatic refresh of the materialized view when the base table is updated")
+    @Schema(title = "Whether automatic refresh is enabled for the materialized view when the base table is updated.")
     @PluginProperty(dynamic = false)
     private final Boolean enableRefresh;
 
-    @Schema(title = "the maximum frequency at which this materialized view will be refreshed")
+    @Schema(title = "The maximum frequency at which this materialized view will be refreshed.")
     @PluginProperty(dynamic = false)
     private final Duration refreshInterval;
 

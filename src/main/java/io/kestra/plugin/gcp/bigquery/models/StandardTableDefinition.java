@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 @Jacksonized
 public class StandardTableDefinition {
-    @Schema(title = "Returns information on the table's streaming buffer if any exists. Returns {@code null} if no streaming buffer exists.")
+    @Schema(title = "Returns information on the table's streaming buffer, if exists. Returns {@code null} if no streaming buffer exists.")
     private final StreamingBuffer streamingBuffer;
 
     @Schema(title = "Returns the clustering configuration for this table. If {@code null}, the table is not clustered.")

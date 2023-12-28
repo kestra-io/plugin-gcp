@@ -25,20 +25,20 @@ import java.util.stream.Collectors;
 @LoadCsvValidation
 abstract public class AbstractLoad extends AbstractBigquery implements RunnableTask<AbstractLoad.Output> {
     @Schema(
-        title = "The table where to put query results",
-        description = "If not provided a new table is created."
+        title = "The table where to put query results.",
+        description = "If not provided, a new table is created."
     )
     @PluginProperty(dynamic = true)
     protected String destinationTable;
 
     @Schema(
-        title = "The clustering specification for the destination table"
+        title = "The clustering specification for the destination table."
     )
     @PluginProperty(dynamic = true)
     private List<String> clusteringFields;
 
     @Schema(
-        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
+        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job.",
         description = "Schema update options are supported in two cases: when" +
             " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination" +
             " table is a partition of a table, specified by partition decorators. For normal tables," +
@@ -48,13 +48,13 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
 
     @Schema(
-        title = "The time partitioning field for the destination table"
+        title = "The time partitioning field for the destination table."
     )
     @PluginProperty(dynamic = true)
     private String timePartitioningField;
 
     @Schema(
-        title = "The time partitioning type specification for the destination table"
+        title = "The time partitioning type specification for the destination table."
     )
     @PluginProperty(dynamic = true)
     @Builder.Default
@@ -62,25 +62,25 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
 
     @Schema(
-        title = "The action that should occur if the destination table already exists"
+        title = "The action that should occur if the destination table already exists."
     )
     @PluginProperty(dynamic = false)
     private JobInfo.WriteDisposition writeDisposition;
 
     @Schema(
-        title = "[Experimental] Automatic inference of the options and schema for CSV and JSON sources"
+        title = "[Experimental] Automatic inference of the options and schema for CSV and JSON sources."
     )
     @PluginProperty(dynamic = false)
     private Boolean autodetect;
 
     @Schema(
-        title = "Whether the job is allowed to create tables"
+        title = "Whether the job is allowed to create tables."
     )
     @PluginProperty(dynamic = false)
     private JobInfo.CreateDisposition createDisposition;
 
     @Schema(
-        title = "Whether BigQuery should allow extra values that are not represented in the table schema",
+        title = "Whether BigQuery should allow extra values that are not represented in the table schema.",
         description = " If true, the extra values are ignored. If false, records with extra columns" +
             " are treated as bad records, and if there are too many bad records, an invalid error is" +
             " returned in the job result. By default unknown values are not allowed."
@@ -89,15 +89,15 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     private Boolean ignoreUnknownValues;
 
     @Schema(
-        title = "The maximum number of bad records that BigQuery can ignore when running the job",
+        title = "The maximum number of bad records that BigQuery can ignore when running the job.",
         description = " If the number of bad records exceeds this value, an invalid error is returned in the job result." +
-            " By default no bad record is ignored."
+            " By default, no bad record is ignored."
     )
     @PluginProperty(dynamic = false)
     private Integer maxBadRecords;
 
     @Schema(
-        title = "The schema for the destination table",
+        title = "The schema for the destination table.",
         description = "The schema can be omitted if the destination table" +
             " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. " +
             " DATASTORE_BACKUP format option).\n" +
@@ -115,18 +115,18 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     private Map<String, Object> schema;
 
     @Schema(
-        title = "The source format, and possibly some parsing options, of the external data"
+        title = "The source format, and possibly some parsing options, of the external data."
     )
     @PluginProperty(dynamic = false)
     private Format format;
 
     @Schema(
-        title = "Csv parsing options"
+        title = "Csv parsing options."
     )
     private CsvOptions csvOptions;
 
     @Schema(
-        title = "Avro parsing options"
+        title = "Avro parsing options."
     )
     private AvroOptions avroOptions;
 
@@ -302,7 +302,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     @AllArgsConstructor
     public static class CsvOptions {
         @Schema(
-            title = "Whether BigQuery should accept rows that are missing trailing optional columns",
+            title = "Whether BigQuery should accept rows that are missing trailing optional columns.",
             description = "If true, BigQuery treats missing trailing columns as null values. If {@code false}, records" +
                 " with missing trailing columns are treated as bad records, and if there are too many bad" +
                 " records, an invalid error is returned in the job result. By default, rows with missing" +
@@ -312,14 +312,14 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private Boolean allowJaggedRows;
 
         @Schema(
-            title = "Whether BigQuery should allow quoted data sections that contain newline characters in a CSV file",
+            title = "Whether BigQuery should allow quoted data sections that contain newline characters in a CSV file.",
             description = "By default quoted newline are not allowed."
         )
         @PluginProperty(dynamic = true)
         private Boolean allowQuotedNewLines;
 
         @Schema(
-            title = "The character encoding of the data",
+            title = "The character encoding of the data.",
             description = "The supported values are UTF-8 or ISO-8859-1. The" +
                 " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split" +
                 " using the values set in {@link #setQuote(String)} and {@link #setFieldDelimiter(String)}."
@@ -328,7 +328,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private String encoding;
 
         @Schema(
-            title = "The separator for fields in a CSV file",
+            title = "The separator for fields in a CSV file.",
             description = "BigQuery converts the string to ISO-8859-1" +
                 " encoding, and then uses the first byte of the encoded string to split the data in its raw," +
                 " binary state. BigQuery also supports the escape sequence \"\\t\" to specify a tab separator. The" +
@@ -338,7 +338,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private String fieldDelimiter;
 
         @Schema(
-            title = "The value that is used to quote data sections in a CSV file",
+            title = "The value that is used to quote data sections in a CSV file.",
             description = "BigQuery converts the" +
                 " string to ISO-8859-1 encoding, and then uses the first byte of the encoded string to split" +
                 " the data in its raw, binary state. The default value is a double-quote ('\"'). If your data" +
@@ -396,7 +396,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     @AllArgsConstructor
     public static class AvroOptions {
         @Schema(
-            title = "If Format option is set to AVRO, you can interpret logical types into their corresponding" +
+            title = "If format is set to AVRO, you can interpret logical types into their corresponding" +
                 " types (such as TIMESTAMP) instead of only using their raw types (such as INTEGER)",
             description = "The value may be null."
         )

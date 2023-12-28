@@ -23,14 +23,14 @@ import javax.validation.constraints.NotNull;
 abstract public class AbstractTable extends AbstractBigquery {
     @NotNull
     @Schema(
-        title = "The dataset's user-defined id"
+        title = "The dataset's user-defined ID."
     )
     @PluginProperty(dynamic = true)
     protected String dataset;
 
     @NotNull
     @Schema(
-        title = "The table user-defined id"
+        title = "The table's user-defined ID."
     )
     @PluginProperty(dynamic = true)
     protected String table;
@@ -45,27 +45,27 @@ abstract public class AbstractTable extends AbstractBigquery {
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The project's id"
+            title = "The project's ID."
         )
         private final String projectId;
 
         @Schema(
-            title = "The dataset's id"
+            title = "The dataset's ID."
         )
         private final String datasetId;
 
         @Schema(
-            title = "The table name"
+            title = "The table name."
         )
         private final String table;
 
         @Schema(
-            title = "The hash of the table resource"
+            title = "The hash of the table resource."
         )
         private final String etag;
 
         @Schema(
-            title = "The service-generated id for the table"
+            title = "The service-generated id for the table."
         )
         private final String generatedId;
 
@@ -75,33 +75,33 @@ abstract public class AbstractTable extends AbstractBigquery {
         private final String selfLink;
 
         @Schema(
-            title = "The user-friendly name for the table"
+            title = "The user-friendly name for the table."
         )
         private final String friendlyName;
 
         @Schema(
-            title = "The user-friendly description for the table"
+            title = "The user-friendly description for the table."
         )
         private final String description;
 
         @Schema(
-            title = "The time when this table was created"
+            title = "The time when this table was created."
         )
         private final Instant creationTime;
 
         @Schema(
-            title = "Returns the time when this table expires",
+            title = "Returns the time when this table expires.",
             description = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
         )
         private final Instant expirationTime;
 
         @Schema(
-            title = "The time when this table was last modified"
+            title = "The time when this table was last modified."
         )
         private final Instant lastModifiedTime;
 
         @Schema(
-            title = "The size of this table in bytes"
+            title = "The size of this table in bytes."
         )
         private final Long numBytes;
 
@@ -111,22 +111,22 @@ abstract public class AbstractTable extends AbstractBigquery {
         private final Long numLongTermBytes;
 
         @Schema(
-            title = "The number of rows of data in this table"
+            title = "The number of rows of data in this table."
         )
         private final BigInteger numRows;
 
         @Schema(
-            title = "The table definition"
+            title = "The table definition."
         )
         private final io.kestra.plugin.gcp.bigquery.models.TableDefinition definition;
 
         @Schema(
-            title = "The encryption configuration"
+            title = "The encryption configuration."
         )
         private final io.kestra.plugin.gcp.bigquery.models.EncryptionConfiguration encryptionConfiguration;
 
         @Schema(
-            title = "Return a map for labels applied to the table"
+            title = "Return a map for labels applied to the table."
         )
         private final Map<String, String> labels;
 
