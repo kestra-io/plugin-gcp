@@ -10,22 +10,22 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 public class TableDefinition {
-    @Schema(title = "the table's type.")
+    @Schema(title = "The table's type.")
     private final Type type;
 
-    @Schema(title = "the table's schema.")
+    @Schema(title = "The table's schema.")
     private final io.kestra.plugin.gcp.bigquery.models.Schema schema;
 
-    @Schema(title = "the table definition if the type is `TABLE`")
+    @Schema(title = "The table definition if the type is `TABLE`.")
     private final StandardTableDefinition standardTableDefinition;
 
-    @Schema(title = "the materialized view definition if the type is `MATERIALIZED_VIEW`")
+    @Schema(title = "The materialized view definition if the type is `MATERIALIZED_VIEW`.")
     private final MaterializedViewDefinition materializedViewDefinition;
 
-    @Schema(title = "the view definition if the type is `VIEW`")
+    @Schema(title = "The view definition if the type is `VIEW`.")
     private final ViewDefinition viewDefinition;
 
-    @Schema(title = "the external table definition if the type is `EXTERNAL`")
+    @Schema(title = "The external table definition if the type is `EXTERNAL`.")
     private final ExternalTableDefinition externalTableDefinition;
 
     public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(T tableDefinition) {

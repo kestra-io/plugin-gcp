@@ -16,14 +16,14 @@ import javax.validation.constraints.NotNull;
 public class AccessControl {
     @NotNull
     @Schema(
-        title = "The entity"
+        title = "The GCP entity."
     )
     @PluginProperty(dynamic = true)
     private final Entity entity;
 
     @NotNull
     @Schema(
-        title = "The role to assign to the entity"
+        title = "The role to assign to the entity."
     )
     @PluginProperty(dynamic = true)
     private final Role role;

@@ -26,24 +26,24 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 abstract public class AbstractTableCreateUpdate extends AbstractTable {
     @Schema(
-        title = "The table definition"
+        title = "The table definition."
     )
     protected TableDefinition tableDefinition;
 
     @Schema(
-        title = "The user-friendly name for the table"
+        title = "The user-friendly name for the table."
     )
     @PluginProperty(dynamic = true)
     protected String friendlyName;
 
     @Schema(
-        title = "The user-friendly description for the table"
+        title = "The user-friendly description for the table."
     )
     @PluginProperty(dynamic = true)
     protected String description;
 
     @Schema(
-        title = "Return a map for labels applied to the table"
+        title = "Return a map for labels applied to the table."
     )
     @PluginProperty(dynamic = true)
     protected Map<String, String> labels;
@@ -55,12 +55,12 @@ abstract public class AbstractTableCreateUpdate extends AbstractTable {
     protected Boolean requirePartitionFilter;
 
     @Schema(
-        title = "The encryption configuration"
+        title = "The encryption configuration."
     )
     protected EncryptionConfiguration encryptionConfiguration;
 
     @Schema(
-        title = "Sets the duration since now when this table expires.",
+        title = "Sets the duration, since now, when this table expires.",
         description = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
     )
     protected Duration expirationDuration;

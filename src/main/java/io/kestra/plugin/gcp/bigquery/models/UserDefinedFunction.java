@@ -13,15 +13,15 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class UserDefinedFunction {
     @Schema(
-        name = "the type of user defined function."
+        name = "The type of user defined function."
     )
     @PluginProperty(dynamic = false)
     private final com.google.cloud.bigquery.UserDefinedFunction.Type type;
 
     @Schema(
         name = "Type of UserDefinedFunction",
-        description = "If `type` is UserDefinedFunction.Type.INLINE this method returns a code blob.\n" +
-            "If `type` is UserDefinedFunction.Type.FROM_URI the method returns a Google Cloud Storage URI (e.g. gs://bucket/path)"
+        description = "If `type` is UserDefinedFunction.Type.INLINE, this method returns a code blob.\n" +
+            "If `type` is UserDefinedFunction.Type.FROM_URI, the method returns a Google Cloud Storage URI (e.g. gs://bucket/path)."
     )
     @PluginProperty(dynamic = true)
     private final String content;

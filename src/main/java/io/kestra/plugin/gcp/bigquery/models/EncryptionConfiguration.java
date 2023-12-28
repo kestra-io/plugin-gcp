@@ -13,7 +13,7 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class EncryptionConfiguration {
     @Schema(
-        name = "the Kms key name"
+        name = "The KMS key name."
     )
     @PluginProperty(dynamic = true)
     private final String kmsKeyName;

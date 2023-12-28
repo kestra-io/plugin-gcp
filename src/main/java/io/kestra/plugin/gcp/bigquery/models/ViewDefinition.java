@@ -17,11 +17,11 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Builder
 @Jacksonized
 public class ViewDefinition {
-    @Schema(title = "The query whose result is persisted")
+    @Schema(title = "The query whose result is persisted.")
     @PluginProperty(dynamic = true)
     public final String query;
 
-    @Schema(title = "User defined functions that can be used by query. Returns null if not set.")
+    @Schema(title = "User defined functions that can be used by query. Returns {@code null} if not set.")
     private final List<UserDefinedFunction> viewUserDefinedFunctions;
 
     public static ViewDefinition of(com.google.cloud.bigquery.ViewDefinition viewDefinition) {

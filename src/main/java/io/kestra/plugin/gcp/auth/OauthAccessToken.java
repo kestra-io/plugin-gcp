@@ -36,7 +36,7 @@ public class OauthAccessToken extends AbstractTask implements RunnableTask<Oauth
     public static class Output implements io.kestra.core.models.tasks.Output {
         @NotNull
         @Schema(
-            title = "A oauth access token for the current user"
+            title = "An OAuth access token for the current user."
         )
         private final AccessToken accessToken;
     }

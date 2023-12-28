@@ -20,38 +20,38 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Jacksonized
 public class Field {
     @Schema(
-        title = "the field name."
+        title = "The field name."
     )
     @PluginProperty(dynamic = true)
     private final String name;
 
     @Schema(
-        title = "the field name."
+        title = "The field type."
     )
     @PluginProperty(dynamic = false)
     private final StandardSQLTypeName type;
 
     @Schema(
-        title = "the list of sub-fields if `type` is a `LegacySQLType.RECORD`. Returns null otherwise."
+        title = "The list of sub-fields if `type` is a `LegacySQLType.RECORD`. Returns null otherwise."
     )
     @PluginProperty(dynamic = true)
     private final List<Field> subFields;
 
     @Schema(
-        title = "the field mode.",
-        description = "By default `Field.Mode.NULLABLE` is used."
+        title = "The field mode.",
+        description = "By default, `Field.Mode.NULLABLE` is used."
     )
     @PluginProperty(dynamic = true)
     private final com.google.cloud.bigquery.Field.Mode mode;
 
     @Schema(
-        title = "the field description."
+        title = "The field description."
     )
     @PluginProperty(dynamic = true)
     private final String description;
 
     @Schema(
-        title = "the policy tags for the field."
+        title = "The policy tags for the field."
     )
     @PluginProperty(dynamic = true)
     private final PolicyTags policyTags;

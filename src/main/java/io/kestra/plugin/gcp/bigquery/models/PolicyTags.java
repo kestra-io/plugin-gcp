@@ -15,7 +15,7 @@ import java.util.List;
 @Jacksonized
 public class PolicyTags {
     @Schema(
-        name = "the policy tags names."
+        name = "The policy tags' names."
     )
     @PluginProperty(dynamic = true)
     private final List<String> names;

@@ -26,19 +26,19 @@ import java.util.stream.Collectors;
 abstract public class AbstractDataset extends AbstractBigquery implements RunnableTask<AbstractDataset.Output> {
     @NotNull
     @Schema(
-        title = "The dataset's user-defined id"
+        title = "The dataset's user-defined ID."
     )
     @PluginProperty(dynamic = true)
     protected String name;
 
     @Schema(
-        title = "The dataset's access control configuration"
+        title = "The dataset's access control configuration."
     )
     @PluginProperty
     protected List<AccessControl> acl;
 
     @Schema(
-        title = "The default lifetime of all tables in the dataset, in milliseconds",
+        title = "The default lifetime of all tables in the dataset, in milliseconds.",
         description = "The minimum value is" +
             " 3600000 milliseconds (one hour). Once this property is set, all newly-created tables in the" +
             " dataset will have an expirationTime property set to the creation time plus the value in this" +
@@ -53,20 +53,20 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     protected Long defaultTableLifetime;
 
     @Schema(
-        title = "Description",
+        title = "The dataset description.",
         description = "A user-friendly description for the dataset."
     )
     @PluginProperty(dynamic = true)
     protected String description;
 
     @Schema(
-        title = "A user-friendly name for the dataset"
+        title = "A user-friendly name for the dataset."
     )
     @PluginProperty(dynamic = true)
     protected String friendlyName;
 
     @Schema(
-        title = "The geographic location where the dataset should reside",
+        title = "The geographic location where the dataset should reside.",
         description = "This property is experimental" +
             " and might be subject to change or removed." +
             " \n" +
@@ -77,7 +77,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     protected String location;
 
     @Schema(
-        title = "The default encryption key for all tables in the dataset",
+        title = "The default encryption key for all tables in the dataset.",
         description = "Once this property is set, all" +
             " newly-created partitioned tables in the dataset will have encryption key set to this value," +
             " unless table creation request (or query) overrides the key."
@@ -86,7 +86,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     protected EncryptionConfiguration defaultEncryptionConfiguration;
 
     @Schema(
-        title = "[Optional] The default partition expiration time for all partitioned tables in the dataset, in milliseconds",
+        title = "[Optional] The default partition expiration time for all partitioned tables in the dataset, in milliseconds.",
         description = " Once this property is set, all newly-created partitioned tables in the " +
             " dataset will has an expirationMs property in the timePartitioning settings set to this value." +
             " Changing the value only affect new tables, not existing ones. The storage in a partition will" +
@@ -101,7 +101,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     protected Long defaultPartitionExpirationMs;
 
     @Schema(
-        title = "The dataset's labels"
+        title = "The dataset's labels."
     )
     @PluginProperty(dynamic = true)
     protected Map<String, String> labels;
@@ -188,31 +188,31 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
 
         @NotNull
         @Schema(
-            title = "The dataset's user-defined id"
+            title = "The dataset's user-defined ID."
         )
         private String dataset;
 
         @NotNull
         @Schema(
-            title = "The GCP project id"
+            title = "The GCP project ID."
         )
         private String project;
 
         @NotNull
         @Schema(
-            title = "A user-friendly name for the dataset"
+            title = "A user-friendly name for the dataset."
         )
         private String friendlyName;
 
         @NotNull
         @Schema(
-            title = "A user-friendly description for the dataset"
+            title = "A user-friendly description for the dataset."
         )
         private String description;
 
         @NotNull
         @Schema(
-            title = "The geographic location where the dataset should reside",
+            title = "The geographic location where the dataset should reside.",
             description = "This property is experimental" +
                 " and might be subject to change or removed." +
                 " \n" +
