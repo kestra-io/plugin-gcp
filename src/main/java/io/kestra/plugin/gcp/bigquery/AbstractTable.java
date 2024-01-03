@@ -13,7 +13,7 @@ import io.kestra.plugin.gcp.bigquery.models.TableDefinition;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString

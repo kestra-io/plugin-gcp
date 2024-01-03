@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
 import java.time.Duration;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @Getter
 @Builder

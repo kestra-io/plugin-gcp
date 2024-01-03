@@ -16,6 +16,7 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import java.io.File;
 import java.util.stream.Collectors;
+import jakarta.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 

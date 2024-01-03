@@ -2,7 +2,6 @@ package io.kestra.plugin.gcp.dataproc.batches;
 
 import com.google.cloud.dataproc.v1.Batch;
 import com.google.cloud.dataproc.v1.PySparkBatch;
-import com.google.protobuf.ByteString;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -15,7 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
