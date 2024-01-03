@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 
 import java.net.URI;
 import java.util.NoSuchElementException;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 
 @SuperBuilder
 @ToString
