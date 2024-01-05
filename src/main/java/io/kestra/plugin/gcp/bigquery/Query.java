@@ -2,9 +2,6 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.Single;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -18,6 +15,9 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,6 +34,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import static io.kestra.core.utils.Rethrow.throwConsumer;
+import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @SuperBuilder
 @ToString
@@ -546,24 +549,24 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         try (
             OutputStream output = new FileOutputStream(tempFile);
         ) {
-            Flowable<Object> flowable = Flowable
+            Flux<Object> flowable = Flux
                 .create(
                     s -> {
                         StreamSupport
                             .stream(result.iterateAll().spliterator(), false)
                             .forEach(fieldValues -> {
-                                s.onNext(this.convertRows(result, fieldValues));
+                                s.next(this.convertRows(result, fieldValues));
                             });
 
-                        s.onComplete();
+                        s.complete();
                     },
-                    BackpressureStrategy.BUFFER
+                    FluxSink.OverflowStrategy.BUFFER
                 )
-                .doOnNext(row -> FileSerde.write(output, row));
+                .doOnNext(throwConsumer(row -> FileSerde.write(output, row)));
 
             // metrics & finalize
-            Single<Long> count = flowable.count();
-            Long lineCount = count.blockingGet();
+            Mono<Long> count = flowable.count();
+            Long lineCount = count.block();
 
             output.flush();
 

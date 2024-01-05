@@ -7,6 +7,7 @@ import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.storage.v1.*;
 import com.google.common.primitives.Primitives;
+import com.google.protobuf.Descriptors;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -17,8 +18,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.gcp.AbstractTask;
 import io.micronaut.core.annotation.Introspected;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -40,6 +39,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+
+import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @SuperBuilder
 @ToString
@@ -123,8 +126,8 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)));
         ) {
             try (JsonStreamWriter writer = this.jsonStreamWriter(runContext, parentTable, connection).build()) {
-                Integer count = Flowable
-                    .create(FileSerde.reader(inputStream), BackpressureStrategy.BUFFER)
+                Integer count = Flux
+                    .create(FileSerde.reader(inputStream), FluxSink.OverflowStrategy.BUFFER)
                     .map(this::map)
                     .buffer(this.bufferSize)
                     .map(list -> {
@@ -133,7 +136,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
                         return result;
                     })
-                    .map(o -> {
+                    .map(throwFunction(o -> {
                         try {
                             ApiFuture<AppendRowsResponse> future = writer.append(o);
                             AppendRowsResponse response = future.get();
@@ -145,9 +148,9 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
                             // https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
                             throw new Exception("Failed to append records with error: " + e.getMessage(), e);
                         }
-                    })
+                    }))
                     .reduce(Integer::sum)
-                    .blockingGet();
+                    .block();
 
                 Output.OutputBuilder builder = Output.builder()
                     .rows(count);

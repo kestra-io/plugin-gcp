@@ -9,10 +9,6 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -21,7 +17,12 @@ import org.slf4j.Logger;
 
 import java.net.URI;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
+
 import jakarta.validation.constraints.Min;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Schedulers;
 
 @SuperBuilder
 @ToString
@@ -64,19 +65,19 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         String regExp = runContext.render(this.regExp);
 
 
-        Flowable<com.google.cloud.storage.Blob> flowable = Flowable
+        Flux<Blob> flowable = Flux
             .create(emitter -> {
                 this.iterator(connection, from)
-                    .forEachRemaining(emitter::onNext);
-                emitter.onComplete();
-            }, BackpressureStrategy.BUFFER);
+                    .forEachRemaining(emitter::next);
+                emitter.complete();
+            }, FluxSink.OverflowStrategy.BUFFER);
 
-        Flowable<Long> result;
+        Flux<Long> result;
 
         if (this.concurrent != null) {
             result = flowable
                 .parallel(this.concurrent)
-                .runOn(Schedulers.io())
+                .runOn(Schedulers.boundedElastic())
                 .filter(blob -> this.filter(blob, regExp))
                 .map(delete(logger, connection))
                 .sequential();
@@ -88,7 +89,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
 
         Pair<Long, Long> finalResult = result
             .reduce(Pair.of(0L, 0L), (pair, size) -> Pair.of(pair.getLeft() + 1, pair.getRight() + size))
-            .blockingGet();
+            .block();
 
         runContext.metric(Counter.of("count", finalResult.getLeft()));
         runContext.metric(Counter.of("size", finalResult.getRight()));

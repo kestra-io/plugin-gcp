@@ -11,8 +11,6 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.kestra.plugin.gcp.pubsub.model.SerdeType;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,6 +20,10 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.List;
 import jakarta.validation.constraints.NotNull;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+
+import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @SuperBuilder
 @ToString
@@ -69,8 +71,8 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     public Publish.Output run(RunContext runContext) throws Exception {
         var publisher = this.createPublisher(runContext);
         Integer count = 1;
-        Flowable<Message> flowable;
-        Flowable<Integer> resultFlowable;
+        Flux<Message> flowable;
+        Flux<Integer> resultFlowable;
 
         if (this.from instanceof String) {
             URI from = new URI(runContext.render((String) this.from));
@@ -79,20 +81,20 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
             }
 
             try (BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)))) {
-                flowable = Flowable.create(FileSerde.reader(inputStream, Message.class), BackpressureStrategy.BUFFER);
+                flowable = Flux.create(FileSerde.reader(inputStream, Message.class), FluxSink.OverflowStrategy.BUFFER);
                 resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 
-                count = resultFlowable.reduce(Integer::sum).blockingGet();
+                count = resultFlowable.reduce(Integer::sum).block();
             }
 
         } else if (this.from instanceof List) {
-            flowable = Flowable
+            flowable = Flux
                 .fromArray(((List<Object>) this.from).toArray())
                 .map(o -> JacksonMapper.toMap(o, Message.class));
 
             resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 
-            count = resultFlowable.reduce(Integer::sum).blockingGet();
+            count = resultFlowable.reduce(Integer::sum).block();
         } else {
             var msg = JacksonMapper.toMap(this.from, Message.class);
             publisher.publish(msg.to(runContext, this.serdeType));
@@ -108,12 +110,12 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
         .build();
     }
 
-    private Flowable<Integer> buildFlowable(Flowable<Message> flowable, Publisher publisher, RunContext runContext) {
+    private Flux<Integer> buildFlowable(Flux<Message> flowable, Publisher publisher, RunContext runContext) throws Exception {
         return flowable
-            .map(message -> {
+            .map(throwFunction(message -> {
                 publisher.publish(message.to(runContext, this.serdeType));
                 return 1;
-            });
+            }));
     }
 
     @Builder
