@@ -30,9 +30,8 @@ class BigQueryServiceTest {
         var labels = BigQueryService.labels(runContext);
 
         assertThat(labels.get("kestra_namespace"), is("io_kestra_plugin_gcp_bigquery_bigqueryservicetest"));
-        assertThat(labels.get("kestra_flow_id"), is("io_kestra_plugin_gcp_bigquery_bigqueryservicetest"));
+        assertThat(labels.get("kestra_flow_id"), is("labels"));
         assertThat(labels.get("kestra_execution_id"), notNullValue());
         assertThat(labels.get("kestra_task_id"), is("query"));
-        System.out.println(labels);
     }
 }
