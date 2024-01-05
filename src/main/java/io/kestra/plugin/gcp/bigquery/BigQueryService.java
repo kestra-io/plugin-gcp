@@ -64,7 +64,7 @@ public class BigQueryService {
 
         Map<String, String> labels = new HashMap<>();
         labels.put("kestra_namespace", sanitizeLabel((String) flowProperties.get("namespace")));
-        labels.put("kestra_flow_id", sanitizeLabel((String) flowProperties.get("namespace")));
+        labels.put("kestra_flow_id", sanitizeLabel((String) flowProperties.get("id")));
         if (executionProperties != null && executionProperties.containsKey("id")) {
             labels.put("kestra_execution_id", sanitizeLabel((String) executionProperties.get("id")));
         }
