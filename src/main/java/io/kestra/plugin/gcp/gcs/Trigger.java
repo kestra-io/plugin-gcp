@@ -17,7 +17,6 @@ import io.kestra.core.models.triggers.PollingTriggerInterface;
 import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.models.triggers.TriggerOutput;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.gcp.GcpInterface;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
@@ -26,7 +25,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -130,7 +128,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             }))
             .collect(Collectors.toList());
 
-        Downloads.archive(
+        Downloads.performAction(
             run.getBlobs(),
             this.action,
             this.moveDirectory,

@@ -16,7 +16,6 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import java.io.File;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -58,7 +57,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
     private String moveDirectory;
 
-    static void archive(
+    static void performAction(
         java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
         ActionInterface.Action action,
         String moveDirectory,
@@ -130,7 +129,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             }))
             .collect(Collectors.toList());
 
-        Downloads.archive(
+        Downloads.performAction(
             run.getBlobs(),
             this.action,
             this.moveDirectory,

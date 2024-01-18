@@ -21,6 +21,7 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -65,7 +66,7 @@ class TriggerTest {
     private String random;
 
     @Test
-    void flow() throws Exception {
+    void moveFromFlow() throws Exception {
         // mock flow listeners
         CountDownLatch queueCount = new CountDownLatch(1);
 
@@ -148,5 +149,35 @@ class TriggerTest {
 
         Download.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBucket(), is(bucket));
+    }
+
+    @Test
+    void none() throws Exception {
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName())
+            .type(Trigger.class.getName())
+            .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
+            .action(ActionInterface.Action.NONE)
+            .build();
+
+        String out = FriendlyId.createFriendlyId();
+        Upload.Output upload = testUtils.upload(random + "/" + out);
+
+        Map.Entry<ConditionContext, TriggerContext> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+
+        assertThat(execution.isPresent(), is(true));
+
+        @SuppressWarnings("unchecked")
+        java.util.List<Blob> urls = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
+        assertThat(urls.size(), is(1));
+
+        Download task = Download.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .from(upload.getUri().toString())
+            .build();
+
+        Assertions.assertDoesNotThrow(() -> task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of())));
     }
 }
