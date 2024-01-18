@@ -9,7 +9,6 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
@@ -41,7 +40,7 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     private String uri;
 
     @Schema(
-        title = "raise an error if the file is not found"
+        title = "Raise an error if the file is not found"
     )
     @PluginProperty
     @Builder.Default

@@ -82,11 +82,12 @@ class TriggerTest {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
-            executionQueue.receive(TriggerTest.class, execution -> {
-                last.set(execution.getLeft());
-
-                queueCount.countDown();
-                assertThat(execution.getLeft().getFlowId(), is("gcs-listen"));
+            executionQueue.receive(TriggerTest.class, executionWithError -> {
+                Execution execution = executionWithError.getLeft();
+                if (execution.getFlowId().equals("gcs-listen")) {
+                    last.set(execution);
+                    queueCount.countDown();
+                }
             });
 
 
@@ -99,7 +100,12 @@ class TriggerTest {
             scheduler.run();
             repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
 
-            queueCount.await(1, TimeUnit.MINUTES);
+            boolean await = queueCount.await(10, TimeUnit.SECONDS);
+            try {
+                assertThat(await, is(true));
+            } finally {
+                worker.shutdown();
+            }
 
             @SuppressWarnings("unchecked")
             java.util.List<Blob> trigger = (java.util.List<Blob>) last.get().getTrigger().getVariables().get("blobs");

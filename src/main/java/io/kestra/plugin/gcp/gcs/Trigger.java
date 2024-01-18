@@ -67,6 +67,33 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "    action: MOVE",
                 "    moveDirectory: gs://my-bucket/kestra/archive/",
             }
+        ),
+        @Example(
+            title = "Wait for a list of files on a GCS bucket and iterate through the files. Delete files manually after processing to prevent infinite triggering.",
+            full = true,
+            code = {
+                "id: s3-listen",
+                "namespace: io.kestra.tests",
+                "",
+                "tasks:",
+                "  - id: each",
+                "    type: io.kestra.core.tasks.flows.EachSequential",
+                "    tasks:",
+                "      - id: return",
+                "        type: io.kestra.core.tasks.debugs.Return",
+                "        format: \"{{ taskrun.value }}\"",
+                "      - id: delete",
+                "        type: io.kestra.plugin.gcp.gcs.Delete",
+                "        uri: \"{{ taskrun.value }}\"",
+                "    value: \"{{ trigger.blobs | jq('.[].uri') }}\"",
+                "",
+                "triggers:",
+                "  - id: watch",
+                "    type: io.kestra.plugin.gcp.gcs.Trigger",
+                "    interval: \"PT5M\"",
+                "    from: gs://my-bucket/kestra/listen/",
+                "    action: NONE",
+            }
         )
     }
 )
@@ -108,7 +135,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .build();
         List.Output run = task.run(runContext);
 
-        if (run.getBlobs().size() == 0) {
+        if (run.getBlobs().isEmpty()) {
             return Optional.empty();
         }
 
