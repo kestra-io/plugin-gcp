@@ -17,7 +17,6 @@ import io.kestra.core.models.triggers.PollingTriggerInterface;
 import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.models.triggers.TriggerOutput;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.gcp.GcpInterface;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
@@ -26,7 +25,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -69,6 +67,33 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "    action: MOVE",
                 "    moveDirectory: gs://my-bucket/kestra/archive/",
             }
+        ),
+        @Example(
+            title = "Wait for a list of files on a GCS bucket and iterate through the files. Delete files manually after processing to prevent infinite triggering.",
+            full = true,
+            code = {
+                "id: s3-listen",
+                "namespace: io.kestra.tests",
+                "",
+                "tasks:",
+                "  - id: each",
+                "    type: io.kestra.core.tasks.flows.EachSequential",
+                "    tasks:",
+                "      - id: return",
+                "        type: io.kestra.core.tasks.debugs.Return",
+                "        format: \"{{ taskrun.value }}\"",
+                "      - id: delete",
+                "        type: io.kestra.plugin.gcp.gcs.Delete",
+                "        uri: \"{{ taskrun.value }}\"",
+                "    value: \"{{ trigger.blobs | jq('.[].uri') }}\"",
+                "",
+                "triggers:",
+                "  - id: watch",
+                "    type: io.kestra.plugin.gcp.gcs.Trigger",
+                "    interval: \"PT5M\"",
+                "    from: gs://my-bucket/kestra/listen/",
+                "    action: NONE",
+            }
         )
     }
 )
@@ -110,7 +135,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .build();
         List.Output run = task.run(runContext);
 
-        if (run.getBlobs().size() == 0) {
+        if (run.getBlobs().isEmpty()) {
             return Optional.empty();
         }
 
@@ -130,7 +155,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             }))
             .collect(Collectors.toList());
 
-        Downloads.archive(
+        Downloads.performAction(
             run.getBlobs(),
             this.action,
             this.moveDirectory,
