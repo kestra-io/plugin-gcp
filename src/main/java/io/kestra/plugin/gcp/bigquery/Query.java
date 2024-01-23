@@ -490,7 +490,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException, InterruptedException {
         String[] tags = this.tags(stats, queryJob);
 
         if (stats.getEstimatedBytesProcessed() != null) {
@@ -528,6 +528,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         if (stats.getCacheHit() != null) {
             runContext.metric(Counter.of("cache.hit", stats.getCacheHit() ? 1 : 0, tags));
+        }
+
+        if (queryJob.getQueryResults() != null) {
+            runContext.metric(Counter.of("total.return.rows", queryJob.getQueryResults().getTotalRows(), tags));
         }
 
         runContext.metric(Timer.of("duration", Duration.ofMillis(stats.getEndTime() - stats.getStartTime()), tags));
