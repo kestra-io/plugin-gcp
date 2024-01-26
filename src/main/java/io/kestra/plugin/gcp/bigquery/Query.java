@@ -8,7 +8,6 @@ import io.reactivex.Single;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.ArrayUtils;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -569,7 +568,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             output.flush();
 
             return new AbstractMap.SimpleEntry<>(
-                runContext.putTempFile(tempFile),
+                runContext.storage().putFile(tempFile),
                 lineCount
             );
         }

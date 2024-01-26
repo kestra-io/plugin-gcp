@@ -78,7 +78,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
                 throw new Exception("Invalid from parameter, must be a Kestra internal storage URI");
             }
 
-            try (BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.uriToInputStream(from)))) {
+            try (BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)))) {
                 flowable = Flowable.create(FileSerde.reader(inputStream, Message.class), BackpressureStrategy.BUFFER);
                 resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 

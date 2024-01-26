@@ -120,7 +120,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
         try (
             BigQueryWriteClient connection = this.connection(runContext);
-            BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.uriToInputStream(from)));
+            BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)));
         ) {
             try (JsonStreamWriter writer = this.jsonStreamWriter(runContext, parentTable, connection).build()) {
                 Integer count = Flowable

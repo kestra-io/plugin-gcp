@@ -12,7 +12,6 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -83,7 +82,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
             .builder()
             .bucket(source.getBucket())
             .path(source.getName())
-            .uri(runContext.putTempFile(tempFile))
+            .uri(runContext.storage().putFile(tempFile))
             .build();
     }
 

@@ -206,7 +206,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         }
 
         return Pair.of(
-            runContext.putTempFile(tempFile),
+            runContext.storage().putFile(tempFile),
             count.get()
         );
     }

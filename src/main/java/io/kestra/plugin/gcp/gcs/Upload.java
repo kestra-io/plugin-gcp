@@ -12,14 +12,12 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 
 @SuperBuilder
 @ToString
@@ -66,7 +64,7 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
 
         logger.debug("Upload from '{}' to '{}'", from, to);
 
-        try (InputStream data = runContext.uriToInputStream(from)) {
+        try (InputStream data = runContext.storage().getFile(from)) {
             long size = 0;
             try (WriteChannel writer = connection.writer(destination)) {
                 byte[] buffer = new byte[10_240];
