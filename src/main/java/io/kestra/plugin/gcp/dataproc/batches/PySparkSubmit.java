@@ -23,7 +23,7 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Submit an [Apache PySpark](https://spark.apache.org/docs/latest/api/python/getting_started/quickstart.html) batch workload."
+    title = "Submit an [Apache PySpark](https://spark.apache.org/docs/latest/api/python/getting_started/) batch workload."
 )
 @Plugin(
     examples = @Example(
