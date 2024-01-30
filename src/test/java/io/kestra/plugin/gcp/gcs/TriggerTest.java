@@ -62,9 +62,6 @@ class TriggerTest {
     @Value("${kestra.tasks.gcs.bucket}")
     private String bucket;
 
-    @Value("${kestra.variables.globals.random}")
-    private String random;
-
     @Test
     void moveFromFlow() throws Exception {
         // mock flow listeners
@@ -92,9 +89,9 @@ class TriggerTest {
 
 
             String out1 = FriendlyId.createFriendlyId();
-            testUtils.upload(random + "/" + out1);
+            testUtils.upload("trigger/" + out1);
             String out2 = FriendlyId.createFriendlyId();
-            testUtils.upload(random + "/" + out2);
+            testUtils.upload("trigger/" + out2);
 
             worker.run();
             scheduler.run();
@@ -119,13 +116,13 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
+            .from("gs://" + bucket + "/tasks/gcp/upload/trigger/")
             .action(ActionInterface.Action.MOVE)
             .moveDirectory("gs://" + bucket + "/test/move")
             .build();
 
         String out = FriendlyId.createFriendlyId();
-        Upload.Output upload = testUtils.upload(random + "/" + out);
+        Upload.Output upload = testUtils.upload( "trigger/" + out);
 
         Map.Entry<ConditionContext, TriggerContext> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
@@ -162,12 +159,12 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
+            .from("gs://" + bucket + "/tasks/gcp/upload/trigger/")
             .action(ActionInterface.Action.NONE)
             .build();
 
         String out = FriendlyId.createFriendlyId();
-        Upload.Output upload = testUtils.upload(random + "/" + out);
+        Upload.Output upload = testUtils.upload("trigger/" + out);
 
         Map.Entry<ConditionContext, TriggerContext> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
@@ -185,5 +182,12 @@ class TriggerTest {
             .build();
 
         Assertions.assertDoesNotThrow(() -> task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of())));
+
+        Delete delete = Delete.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .uri(upload.getUri().toString())
+            .build();
+        delete.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
     }
 }

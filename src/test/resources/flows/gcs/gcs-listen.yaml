@@ -4,7 +4,7 @@ namespace: io.kestra.tests
 triggers:
   - id: watch
     type: io.kestra.plugin.gcp.gcs.Trigger
-    from: "gs://{{ globals.bucket }}/tasks/gcp/upload/{{ globals.random }}/"
+    from: "gs://{{ globals.bucket }}/tasks/gcp/upload/trigger/"
     interval: PT10S
     action: MOVE
     moveDirectory: "gs://{{ globals.bucket }}/tasks/gcp/move/"
