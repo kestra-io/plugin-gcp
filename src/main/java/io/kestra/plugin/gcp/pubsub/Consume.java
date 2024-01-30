@@ -26,8 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.validation.constraints.NotNull;
 
-import static io.kestra.core.utils.Rethrow.throwRunnable;
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -119,7 +117,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             outputFile.flush();
         }
         return Output.builder()
-            .uri(runContext.putTempFile(tempFile))
+            .uri(runContext.storage().putFile(tempFile))
             .count(total.get())
             .build();
     }

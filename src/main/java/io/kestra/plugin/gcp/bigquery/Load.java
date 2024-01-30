@@ -71,7 +71,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         logger.debug("Starting load\n{}", JacksonMapper.log(configuration));
 
         URI from = new URI(runContext.render(this.from));
-        try (InputStream data = runContext.uriToInputStream(from)) {
+        try (InputStream data = runContext.storage().getFile(from)) {
             long byteWritten = 0L;
 
             TableDataWriteChannel writer = connection.writer(configuration);

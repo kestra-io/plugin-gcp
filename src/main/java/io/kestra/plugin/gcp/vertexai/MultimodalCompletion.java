@@ -125,7 +125,7 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     }
 
     private Part createPart(RunContext runContext, Content content) {
-        try (InputStream is = runContext.uriToInputStream(URI.create(runContext.render(content.getContent())))) {
+        try (InputStream is = runContext.storage().getFile(URI.create(runContext.render(content.getContent())))) {
             byte[] partBytes = is.readAllBytes();
             return PartMaker.fromMimeTypeAndData(content.mimeType, partBytes);
         } catch (IllegalVariableEvaluationException | IOException e) {

@@ -125,7 +125,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 );
                 File tempFile = Download.download(runContext, connection, source);
 
-                return blob.withUri(runContext.putTempFile(tempFile));
+                return blob.withUri(runContext.storage().putFile(tempFile));
             }))
             .collect(Collectors.toList());
 
