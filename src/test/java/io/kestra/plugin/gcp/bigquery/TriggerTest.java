@@ -83,7 +83,7 @@ class TriggerTest {
             });
 
 
-            Query task = Query.builder()
+            Query createTable = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
                 .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)")
@@ -94,7 +94,7 @@ class TriggerTest {
 
             repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
 
-            task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+            createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
 
             queueCount.await(1, TimeUnit.MINUTES);
 
@@ -102,6 +102,13 @@ class TriggerTest {
             java.util.List<Blob> trigger = (java.util.List<Blob>) last.get().getTrigger().getVariables().get("rows");
 
             assertThat(trigger.size(), is(2));
+
+            Query deleteTable = Query.builder()
+                .id(QueryTest.class.getSimpleName())
+                .type(Query.class.getName())
+                .sql("DROP TABLE `" + project + "." + dataset + "." + table + "`")
+                .build();
+            deleteTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
         }
     }
 }
