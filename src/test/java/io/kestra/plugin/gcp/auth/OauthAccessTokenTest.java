@@ -1,6 +1,5 @@
 package io.kestra.plugin.gcp.auth;
 
-import com.google.auth.oauth2.AccessToken;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ class OauthAccessTokenTest {
 
         OauthAccessToken.Output run = task.run(runContext);
 
-        AccessToken accessToken = run.getAccessToken();
+        OauthAccessToken.AccessTokenOutput accessToken = run.getAccessToken();
         assertThat(accessToken, notNullValue());
     }
 }
