@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.auth;
 
 import com.google.auth.oauth2.AccessToken;
+import io.kestra.core.models.tasks.common.EncryptedString;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -9,6 +10,9 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 
 import jakarta.validation.constraints.NotNull;
+
+import java.util.Date;
+import java.util.List;
 
 @SuperBuilder
 @ToString
@@ -25,9 +29,14 @@ public class OauthAccessToken extends AbstractTask implements RunnableTask<Oauth
             .createScoped(runContext.render(this.scopes))
             .refreshAccessToken();
 
+        var output = AccessTokenOutput.builder()
+            .expirationTime(accessToken.getExpirationTime())
+            .scopes(accessToken.getScopes())
+            .tokenValue(EncryptedString.from(accessToken.getTokenValue(), runContext));
+
         return Output
             .builder()
-            .accessToken(accessToken)
+            .accessToken(output.build())
             .build();
     }
 
@@ -35,9 +44,21 @@ public class OauthAccessToken extends AbstractTask implements RunnableTask<Oauth
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @NotNull
+        @Schema(title = "An OAuth access token for the current user.")
+        private final AccessTokenOutput accessToken;
+    }
+
+    @Builder
+    @Getter
+    public static class AccessTokenOutput {
+        List<String> scopes;
+
         @Schema(
-            title = "An OAuth access token for the current user."
+            title = "OAuth access token value",
+            description = "Will be automatically encrypted and decrypted in the outputs if encryption is configured"
         )
-        private final AccessToken accessToken;
+        EncryptedString tokenValue;
+
+        Date expirationTime;
     }
 }
