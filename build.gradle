@@ -36,8 +36,8 @@ tasks.withType(JavaCompile) {
 configurations.all {
     resolutionStrategy {
         // micronaut bom import version not compatible with google one
-        force("com.google.protobuf:protobuf-java:3.25.1")
-        force("com.google.protobuf:protobuf-java-util:3.25.1")
+        force("com.google.protobuf:protobuf-java:3.25.2")
+        force("com.google.protobuf:protobuf-java-util:3.25.2")
     }
 }
 
@@ -64,7 +64,7 @@ dependencies {
     // libs
     api 'net.jodah:failsafe:2.4.4'
 
-    api platform('com.google.cloud:libraries-bom:26.29.0')
+    api platform('com.google.cloud:libraries-bom:26.31.0')
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
