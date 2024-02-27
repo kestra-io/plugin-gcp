@@ -64,7 +64,7 @@ dependencies {
     // libs
     api 'net.jodah:failsafe:2.4.4'
 
-    api platform('com.google.cloud:libraries-bom:26.31.0')
+    api platform('com.google.cloud:libraries-bom:26.33.0')
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
