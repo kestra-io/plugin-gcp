@@ -50,6 +50,30 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
     @PluginProperty(dynamic = true)
     private String to;
 
+    @Schema(
+        title = "The blob's data content type."
+    )
+    @PluginProperty(dynamic = true)
+    private String contentType;
+
+    @Schema(
+        title = "The blob's data content encoding."
+    )
+    @PluginProperty(dynamic = true)
+    private String contentEncoding;
+
+    @Schema(
+        title = "The blob's data content disposition."
+    )
+    @PluginProperty(dynamic = true)
+    private String contentDisposition;
+
+    @Schema(
+        title = "The blob's data cache control."
+    )
+    @PluginProperty(dynamic = true)
+    private String cacheControl;
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
@@ -58,9 +82,29 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
         URI from = encode(runContext, this.from);
         URI to = encode(runContext, this.to);
 
-        BlobInfo destination = BlobInfo
-            .newBuilder(BlobId.of(to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(), blobPath(to.getPath().substring(1))))
-            .build();
+        BlobInfo.Builder builder = BlobInfo
+            .newBuilder(BlobId.of(
+                to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(),
+                blobPath(to.getPath().substring(1))
+            ));
+
+        if (this.contentType != null) {
+            builder.setContentType(runContext.render(this.contentType));
+        }
+
+        if (this.contentEncoding != null) {
+            builder.setContentEncoding(runContext.render(this.contentEncoding));
+        }
+
+        if (this.contentDisposition != null) {
+            builder.setContentDisposition(runContext.render(this.contentDisposition));
+        }
+
+        if (this.cacheControl != null) {
+            builder.setCacheControl(runContext.render(this.cacheControl));
+        }
+
+        BlobInfo destination = builder.build();
 
         logger.debug("Upload from '{}' to '{}'", from, to);
 
