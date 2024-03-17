@@ -34,25 +34,28 @@ import java.util.Map;
 @Plugin(
         examples = {
                 @Example(
-                        title = "Create a cluster then list them using a service account",
+                        title = "Create a cluster then list them using a service account.",
                         code = {
+                                "projectId: my-gcp-project",
                                 "serviceAccount: \"{{ secret('gcp-sa') }}\"",
                                 "commands:",
-                                "  - gcloud container clusters create simple-cluster",
+                                "  - gcloud container clusters create simple-cluster --region=europe-west3",
                                 "  - gcloud container clusters list"
                         }
                 ),
                 @Example(
-                        title = "Create a GCS bucket",
+                        title = "Create a GCS bucket.",
                         code = {
+                                "projectId: my-gcp-project",
                                 "serviceAccount: \"{{ secret('gcp-sa') }}\"",
                                 "commands:",
-                                "  - gsutil mb gs://my-bucket"
+                                "  - gcloud storage buckets create gs://my-bucket"
                         }
                 ),
                 @Example(
-                        title = "Output the result of a command",
+                        title = "Output the result of a command.",
                         code = {
+                                "projectId: my-gcp-project",
                                 "serviceAccount: \"{{ secret('gcp-sa') }}\"",
                                 "commands:",
                                 "  # Outputs as a flow output for UI display",
@@ -68,19 +71,19 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     private static final String DEFAULT_IMAGE = "google/cloud-sdk";
 
     @Schema(
-        title = "The full service account JSON key to use to authenticate to gcloud"
+        title = "The full service account JSON key to use to authenticate to gcloud."
     )
     @PluginProperty(dynamic = true)
     protected String serviceAccount;
 
     @Schema(
-        title = "The project id to scope the commands to"
+        title = "The GCP project ID to scope the commands to."
     )
     @PluginProperty(dynamic = true)
     protected String projectId;
 
     @Schema(
-        title = "The commands to run"
+        title = "The commands to run."
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -97,7 +100,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     protected Map<String, String> env;
 
     @Schema(
-        title = "Docker options when for the `DOCKER` runner",
+        title = "Docker options when for the `DOCKER` runner.",
         defaultValue = "{image=" + DEFAULT_IMAGE + ", pullPolicy=ALWAYS}"
     )
     @PluginProperty
