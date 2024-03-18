@@ -1,11 +1,13 @@
 package io.kestra.plugin.gcp.vertexai;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.JacksonMapper;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.MutableHttpRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,6 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Collections;
 import java.util.List;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -84,11 +87,16 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
 
     @Override
     protected MutableHttpRequest<?> getPredictionRequest(RunContext runContext) throws IllegalVariableEvaluationException {
-        List<ChatExample> chatExamples = examples == null ? null :
+        List<ChatExample> chatExamples = examples == null ? Collections.emptyList() :
             examples.stream().map(throwFunction(ex -> new ChatExample(new ChatContent(runContext.render(ex.input)), new ChatContent(runContext.render(ex.output))))).toList();
         List<Message> chatMessages = messages.stream().map(throwFunction(msg -> new Message(runContext.render(msg.author), runContext.render(msg.content)))).toList();
 
         var request = new ChatPromptRequest(List.of(new ChatPromptInstance(runContext.render(context), chatExamples, chatMessages)), getParameters());
+        try {
+            System.out.println(JacksonMapper.ofJson().writeValueAsString(request));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         return HttpRequest.POST(getPredictionURI(runContext, MODEL_ID), request);
     }
 
