@@ -28,35 +28,34 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            title = "Fetch a gke cluster metadata",
+            title = "Fetch a GKE cluster's metadata.",
             code = {
-                "name: \"gke-metas\"",
-                "projectId: my-project-id",
-                "zone: eu-west-1c",
+                "clusterProjectId: my-project-id",
+                "clusterZone: europe-west1-c",
                 "clusterId: my-cluster-id",
             }
         )
     }
 )
 @Schema(
-    title = "Get cluster metadata."
+    title = "Get GKE cluster's metadata."
 )
 public class ClusterMetadata extends AbstractTask implements RunnableTask<ClusterMetadata.Output> {
     @NotNull
     @Schema(
-        title = "Cluster id where meta data are fetch"
+        title = "Cluster ID whose metadata needs to be fetched."
     )
     @PluginProperty(dynamic = true)
     private String clusterId;
 
     @Schema(
-        title = "Cluster zone in GCP"
+        title = "GCP zone in which the GKE cluster is present."
     )
     @PluginProperty(dynamic = true)
     private String clusterZone;
 
     @Schema(
-        title = "Project ID in GCP were is located cluster"
+        title = "GCP project ID where the GKE cluster is present."
     )
     @PluginProperty(dynamic = true)
     private String clusterProjectId;
