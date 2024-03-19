@@ -24,13 +24,13 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Text completion using the Vertex AI PaLM API for Google's PaLM 2 large language models (LLM)",
+    title = "Text completion using the Vertex AI PaLM API for Google's PaLM 2 large language models (LLM).",
     description = "See [Generative AI quickstart using the Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) for more information."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Text completion using the Vertex AI PaLM API",
+            title = "Text completion using the Vertex AI PaLM API.",
             code = {
                 """
                     region: us-central1
@@ -45,7 +45,7 @@ public class TextCompletion extends AbstractGenerativeAi implements RunnableTask
 
     @PluginProperty(dynamic = true)
     @Schema(
-        title = "Text input to generate model response",
+        title = "Text input to generate model response.",
         description = "Prompts can include preamble, questions, suggestions, instructions, or examples."
     )
     private String prompt;
@@ -77,7 +77,7 @@ public class TextCompletion extends AbstractGenerativeAi implements RunnableTask
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "List of text predictions made by the model")
+        @Schema(title = "List of text predictions made by the model.")
         private List<Prediction> predictions;
     }
 }

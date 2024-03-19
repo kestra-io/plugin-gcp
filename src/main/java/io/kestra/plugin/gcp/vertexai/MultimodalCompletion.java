@@ -36,7 +36,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Multimodal completion using the Vertex AI Gemini large language models (LLM)",
+    title = "Multimodal completion using the Vertex AI Gemini large language models (LLM).",
     description = "See [Overview of multimodal models](https://cloud.google.com/vertex-ai/docs/generative-ai/multimodal/overview) for more information."
 )
 @Plugin(
@@ -59,7 +59,8 @@ import java.util.Optional;
                     contents:
                       - content: Can you describe this image?
                       - mimeType: image/jpeg
-                        content: "{{ inputs.image }"""
+                        content: "{{ inputs.image }}"
+                """
             })
     }
 )
@@ -68,7 +69,7 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
 
 
     @Schema(
-        title = "The contents"
+        title = "The contents."
     )
     @PluginProperty(dynamic = true)
     @NotEmpty
@@ -142,22 +143,22 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Value
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The generated response text"
+            title = "The generated response text."
         )
         String text;
 
         @Schema(
-            title = "The response safety ratings"
+            title = "The response safety ratings."
         )
         List<SafetyRating> safetyRatings;
 
         @Schema(
-            title = "Whether the response has been blocked for safety reasons"
+            title = "Whether the response has been blocked for safety reasons."
         )
         boolean blocked;
 
         @Schema(
-            title = "The reason the generation has finished"
+            title = "The reason the generation has finished."
         )
         String finishReason;
 
@@ -170,13 +171,13 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Value
     public static class Content {
         @Schema(
-            title = "Mime type of the content, use it only when the content is not text"
+            title = "Mime type of the content, use it only when the content is not text."
         )
         @PluginProperty(dynamic = true)
         String mimeType;
 
         @Schema(
-            title = "The content itself, should be a string for text content or a Kestra internal storage URL for other content types.",
+            title = "The content itself, should be a string for text content or a Kestra internal storage URI for other content types.",
             description = "If the content is not text, the `mimeType` property must be set."
         )
         @PluginProperty
@@ -187,17 +188,17 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Value
     public static class SafetyRating {
         @Schema(
-            title = "Safety category"
+            title = "Safety category."
         )
         String category;
 
         @Schema(
-            title = "Safety rating probability"
+            title = "Safety rating probability."
         )
         String probability;
 
         @Schema(
-            title = "Whether the response has been blocked for this safety reason"
+            title = "Whether the response has been blocked for safety reasons."
         )
         boolean blocked;
     }

@@ -54,21 +54,21 @@ import jakarta.validation.constraints.NotNull;
 )
 public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Output> {
     @Schema(
-        title = "The region"
+        title = "The GCP region."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String region;
 
     @Schema(
-        title = "The job display name"
+        title = "The job display name."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String displayName;
 
     @Schema(
-        title = "The job specification"
+        title = "The job specification."
     )
     @PluginProperty
     @NotNull
@@ -76,7 +76,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
 
     @Schema(
         title = "Wait for the end of the job.",
-        description = "Allowing to capture job status & logs"
+        description = "Allowing to capture job status & logs."
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -211,7 +211,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
 
         @NotNull
         @Schema(
-            title = "Time when the CustomJob was created."
+            title = "Time when the CustomJob was updated."
         )
         private final Instant updateDate;
 
@@ -223,7 +223,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
 
         @NotNull
         @Schema(
-            title = "The detailed state of the job."
+            title = "The detailed state of the CustomJob."
         )
         private final JobState state;
     }
