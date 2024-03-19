@@ -22,6 +22,7 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import jakarta.inject.Inject;
 
@@ -49,7 +50,20 @@ class StorageWriteTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("CREATE TABLE " + table + " AS " + QueryTest.sql())
+            .sql("CREATE TABLE " + table + " AS " + "SELECT \n" +
+                "  \"hello\" as string,\n" +
+                "  CAST(NULL AS INT) AS `nullable`,\n" +
+                "  TRUE AS `bool`,\n" +
+                "  1 as int,\n" +
+                "  1.25 AS float,\n" +
+                "  DATE(\"2008-12-25\") AS date,\n" +
+                "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
+                "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
+                "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
+                "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
+                "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
+                "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
+            )
             .build();
         create.run(TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of()));
 

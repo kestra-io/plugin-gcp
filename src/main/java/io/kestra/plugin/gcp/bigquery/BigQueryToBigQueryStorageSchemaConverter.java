@@ -32,6 +32,9 @@ public class BigQueryToBigQueryStorageSchemaConverter {
             .put(StandardSQLTypeName.STRUCT, TableFieldSchema.Type.STRUCT)
             .put(StandardSQLTypeName.TIME, TableFieldSchema.Type.TIME)
             .put(StandardSQLTypeName.TIMESTAMP, TableFieldSchema.Type.TIMESTAMP)
+            .put(StandardSQLTypeName.BIGNUMERIC, TableFieldSchema.Type.BIGNUMERIC)
+            .put(StandardSQLTypeName.JSON, TableFieldSchema.Type.JSON)
+            .put(StandardSQLTypeName.INTERVAL, TableFieldSchema.Type.INTERVAL)
             .build();
 
     /**
