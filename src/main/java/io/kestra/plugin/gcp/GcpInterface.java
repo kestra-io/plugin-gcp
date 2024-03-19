@@ -19,7 +19,7 @@ public interface GcpInterface {
     String getServiceAccount();
 
     @Schema(
-        title = "The GCP scopes to used."
+        title = "The GCP scopes to be used."
     )
     @PluginProperty(dynamic = true)
     List<String> getScopes();

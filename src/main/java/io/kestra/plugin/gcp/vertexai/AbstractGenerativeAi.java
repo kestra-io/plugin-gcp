@@ -40,7 +40,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     private static final String URI_PATTERN = "https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:predict";
 
     @Schema(
-        title = "The region"
+        title = "The GCP region."
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -48,7 +48,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
 
     @Builder.Default
     @Schema(
-        title = "The model parameters"
+        title = "The model parameters."
     )
     @PluginProperty
     private ModelParameter parameters = ModelParameter.builder().build();
@@ -125,7 +125,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         @Min(1)
         @Max(1024)
         @Schema(
-            title = "Maximum number of tokens that can be generated in the response",
+            title = "Maximum number of tokens that can be generated in the response.",
             description = """
                 Specify a lower value for shorter responses and a higher value for longer responses.
                 A token may be smaller than a word. A token is approximately four characters. 100 tokens correspond to roughly 60-80 words."""
@@ -137,7 +137,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         @Min(1)
         @Max(40)
         @Schema(
-            title = "Top-k changes how the model selects tokens for output",
+            title = "Top-k changes how the model selects tokens for output.",
             description = """
                 A top-k of 1 means the selected token is the most probable among all tokens in the model's vocabulary (also called greedy decoding), while a top-k of 3 means that the next token is selected from among the 3 most probable tokens (using temperature).
                 For each token selection step, the top K tokens with the highest probabilities are sampled. Then tokens are further filtered based on topP with the final token selected using temperature sampling.
@@ -150,7 +150,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         @Positive
         @Max(1)
         @Schema(
-            title = "Top-p changes how the model selects tokens for output",
+            title = "Top-p changes how the model selects tokens for output.",
             description = """
                 Tokens are selected from most K (see topK parameter) probable to least until the sum of their probabilities equals the top-p value. For example, if tokens A, B, and C have a probability of 0.3, 0.2, and 0.1 and the top-p value is 0.5, then the model will select either A or B as the next token (using temperature) and doesn't consider C. The default top-p value is 0.95.
                 Specify a lower value for less random responses and a higher value for more random responses."""
