@@ -17,6 +17,7 @@ import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
 
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -56,13 +57,18 @@ class QueryTest {
             "  TRUE AS `bool`,\n" +
             "  1 as int,\n" +
             "  1.25 AS float,\n" +
+            "  CAST(1.25 AS BIGNUMERIC) AS bignumeric,\n" +
             "  DATE(\"2008-12-25\") AS date,\n" +
             "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
             "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
             "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
             "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
             "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
-            "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`";
+            "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`," +
+            "  RANGE(DATE '2022-12-01', DATE '2022-12-31') AS `range`," +
+            "  INTERVAL 1 YEAR AS `interval`," +
+            "  JSON '{\"name\": \"Alice\", \"age\": 30}' AS `json`";
+
     }
 
     @Test
@@ -90,6 +96,7 @@ class QueryTest {
         assertThat(rows.get(0).get("nullable"), is(nullValue()));
         assertThat(rows.get(0).get("int"), is(1L));
         assertThat(rows.get(0).get("float"), is(1.25D));
+        assertThat(rows.get(0).get("bignumeric"), is(new BigDecimal("1.25")));
         assertThat(rows.get(0).get("date"), is(LocalDate.parse("2008-12-25")));
         assertThat(rows.get(0).get("time"), is(LocalTime.parse("15:30:00.123456")));
         assertThat(rows.get(0).get("timestamp"), is(Instant.parse("2008-12-25T15:30:00.123456Z")));
@@ -99,6 +106,10 @@ class QueryTest {
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("x"), is(4L));
         assertThat(((Map<String, Object>) rows.get(0).get("struct")).get("y"), is(0L));
         assertThat((List<Long>) ((Map<String, Object>) rows.get(0).get("struct")).get("z"), containsInAnyOrder(1L, 2L, 3L));
+        assertThat(rows.get(0).get("range"), is("[2022-12-01, 2022-12-31)"));
+        assertThat(rows.get(0).get("interval"), is("1-0 0 0:0:0"));
+        assertThat(((Map<String, Object>) rows.get(0).get("json")).get("name"), is("Alice"));
+        assertThat(((Map<String, Object>) rows.get(0).get("json")).get("age"), is(30));
     }
 
     @Test
@@ -115,7 +126,7 @@ class QueryTest {
         assertThat(
             CharStreams.toString(new InputStreamReader(storageInterface.get(null, run.getUri()))),
             is(StringUtils.repeat(
-                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{v:null,x:4,y:0,z:[1,2,3]}}\n",
+                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,bignumeric:1.25,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{v:null,x:4,y:0,z:[1,2,3]},range:\"[2022-12-01, 2022-12-31)\",interval:\"1-0 0 0:0:0\",json:{age:30,name:\"Alice\"}}\n",
                 2
             ))
         );

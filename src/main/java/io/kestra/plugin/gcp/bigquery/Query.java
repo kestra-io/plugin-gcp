@@ -1,7 +1,9 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.serializers.JacksonMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -644,6 +646,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             return value.getDoubleValue();
         }
 
+        if (LegacySQLTypeName.BIGNUMERIC.equals(field.getType())) {
+            return value.getNumericValue();
+        }
+
         if (LegacySQLTypeName.RECORD.equals(field.getType())) {
             AtomicInteger counter = new AtomicInteger(0);
 
@@ -669,6 +675,22 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         if (LegacySQLTypeName.TIMESTAMP.equals(field.getType())) {
             return value.getTimestampInstant();
+        }
+
+        if (LegacySQLTypeName.JSON.equals(field.getType())) {
+            try {
+                return JacksonMapper.toMap(value.getStringValue());
+            } catch (JsonProcessingException e) {
+                throw new IllegalArgumentException("Invalid data type [" + type + "] with value [" + value.getStringValue() + "]");
+            }
+        }
+
+        if (LegacySQLTypeName.INTERVAL.equals(field.getType())) {
+            return value.getStringValue();
+        }
+
+        if (LegacySQLTypeName.RANGE.equals(field.getType())) {
+            return value.getStringValue();
         }
 
         throw new IllegalArgumentException("Invalid type '" + field.getType() + "'");
