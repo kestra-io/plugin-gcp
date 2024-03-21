@@ -4,19 +4,24 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.script.ScriptRunner;
+import io.kestra.core.models.script.ScriptService;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.exec.scripts.models.RunnerType;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
-import io.kestra.plugin.scripts.exec.scripts.services.ScriptService;
+import io.kestra.plugin.scripts.runner.docker.DockerScriptRunner;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import lombok.extern.jackson.Jacksonized;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -67,6 +72,7 @@ import java.util.Map;
                 )
         }
 )
+@Jacksonized
 public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
     private static final String DEFAULT_IMAGE = "google/cloud-sdk";
 
@@ -100,12 +106,23 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     protected Map<String, String> env;
 
     @Schema(
-        title = "Docker options when for the `DOCKER` runner.",
-        defaultValue = "{image=" + DEFAULT_IMAGE + ", pullPolicy=ALWAYS}"
+        title = "Docker options when for the `DOCKER` runner."
     )
     @PluginProperty
+    @Deprecated
+    protected DockerOptions docker;
+
+    @Schema(
+        title = "Docker image to use."
+    )
+    @PluginProperty(dynamic = true)
+    @NotEmpty
     @Builder.Default
-    protected DockerOptions docker = DockerOptions.builder().build();
+    protected String containerImage = DEFAULT_IMAGE;
+
+    @PluginProperty
+    @Builder.Default
+    private ScriptRunner scriptRunner = DockerScriptRunner.builder().type("io.kestra.plugin.scripts.runner.docker.DockerScriptRunner").build();
 
     private NamespaceFiles namespaceFiles;
 
@@ -115,22 +132,28 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-
         CommandsWrapper commands = new CommandsWrapper(runContext)
-                .withWarningOnStdErr(true)
-                .withRunnerType(RunnerType.DOCKER)
-                .withDockerOptions(injectDefaults(getDocker()))
-                .withCommands(
-                        ScriptService.scriptCommands(
-                                List.of("/bin/sh", "-c"),
-                                null,
-                                this.commands)
-                );
-
-        commands = commands.withEnv(this.getEnv(runContext))
+            .withWarningOnStdErr(true)
+            .withContainerImage(containerImage)
+            .withCommands(
+                    ScriptService.scriptCommands(
+                            List.of("/bin/sh", "-c"),
+                            null,
+                            this.commands)
+            )
+            .withEnv(this.getEnv(runContext))
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
             .withOutputFiles(outputFiles);
+
+        // FIXME due to serialization inclusion not_default at deserialization there is always docker options because of the pullPolicy
+        //  this would only work when we fix that :(.
+        if (docker != null) {
+            commands = commands.withRunnerType(RunnerType.DOCKER)
+                .withDockerOptions(injectDefaults(getDocker()));
+        } else {
+            commands = commands.withScriptRunner(this.scriptRunner);
+        }
 
         return commands.run();
     }
