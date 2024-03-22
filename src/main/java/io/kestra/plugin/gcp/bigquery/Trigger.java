@@ -1,20 +1,14 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
+import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.triggers.*;
+import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.executions.Execution;
-import io.kestra.core.models.executions.ExecutionTrigger;
-import io.kestra.core.models.flows.State;
-import io.kestra.core.models.triggers.AbstractTrigger;
-import io.kestra.core.models.triggers.PollingTriggerInterface;
-import io.kestra.core.models.triggers.TriggerContext;
-import io.kestra.core.models.triggers.TriggerOutput;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.IdUtils;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -106,19 +100,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             return Optional.empty();
         }
 
-        ExecutionTrigger executionTrigger = ExecutionTrigger.of(
-            this,
-            run
-        );
-
-        Execution execution = Execution.builder()
-            .id(runContext.getTriggerExecutionId())
-            .namespace(context.getNamespace())
-            .flowId(context.getFlowId())
-            .flowRevision(context.getFlowRevision())
-            .state(new State())
-            .trigger(executionTrigger)
-            .build();
+        Execution execution = TriggerService.generateExecution(this, conditionContext, context, run);
 
         return Optional.of(execution);
     }

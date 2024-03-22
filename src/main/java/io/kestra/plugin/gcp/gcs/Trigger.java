@@ -2,30 +2,24 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
-import io.kestra.core.models.conditions.ConditionContext;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
-import io.kestra.core.models.executions.ExecutionTrigger;
-import io.kestra.core.models.flows.State;
-import io.kestra.core.models.triggers.AbstractTrigger;
-import io.kestra.core.models.triggers.PollingTriggerInterface;
-import io.kestra.core.models.triggers.TriggerContext;
-import io.kestra.core.models.triggers.TriggerOutput;
+import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.GcpInterface;
 import io.kestra.plugin.gcp.gcs.models.Blob;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import jakarta.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -164,19 +158,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             this.scopes
         );
 
-        ExecutionTrigger executionTrigger = ExecutionTrigger.of(
-            this,
-            Downloads.Output.builder().blobs(list).build()
-        );
-
-        Execution execution = Execution.builder()
-            .id(runContext.getTriggerExecutionId())
-            .namespace(context.getNamespace())
-            .flowId(context.getFlowId())
-            .flowRevision(context.getFlowRevision())
-            .state(new State())
-            .trigger(executionTrigger)
-            .build();
+        Execution execution = TriggerService.generateExecution(this, conditionContext, context, Downloads.Output.builder().blobs(list).build());
 
         return Optional.of(execution);
     }
