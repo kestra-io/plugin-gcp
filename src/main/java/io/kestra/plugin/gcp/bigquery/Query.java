@@ -48,7 +48,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Plugin(
     examples = {
         @Example(
-            title = "Create a table with a custom query",
+            title = "Create a table with a custom query.",
             code = {
                 "destinationTable: \"my_project.my_dataset.my_table\"",
                 "writeDisposition: WRITE_APPEND",
@@ -69,7 +69,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
         ),
         @Example(
             full = true,
-            title = "Execute a query and fetch results sets on another task",
+            title = "Execute a query and fetch results sets on another task.",
             code = {
                 "tasks:",
                 "- id: fetch",
@@ -82,15 +82,15 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "- id: use-fetched-data",
                 "  type: io.kestra.core.tasks.debugs.Return",
                 "  format: |",
-                "    {{#each outputs.fetch.rows}}",
-                "    id : {{ this.id }}, name: {{ this.name }}",
-                "    {{/each}}"
+                "    {% for row in outputs.fetch.rows %}",
+                "    id : {{ row.id }}, name: {{ row.name }}",
+                "    {% endfor %}"
             }
         )
     }
 )
 @Schema(
-    title = "Execute BigQuery SQL query in a specific BigQuery database"
+    title = "Execute BigQuery SQL query in a specific BigQuery database."
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
@@ -114,13 +114,13 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     // private Map<String, String> namedParameters;
 
     @Schema(
-        title = "The clustering specification for the destination table"
+        title = "The clustering specification for the destination table."
     )
     @PluginProperty(dynamic = true)
     private List<String> clusteringFields;
 
     @Schema(
-        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
+        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job.",
         description = " Schema update options are supported in two cases: " +
             "* when writeDisposition is WRITE_APPEND; \n" +
             "* when writeDisposition is WRITE_TRUNCATE and the destination" +
@@ -185,7 +185,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     @Schema(
         title = "Sets whether the job is enabled to create arbitrarily large results.",
         description = "If `true` the query is allowed to create large results at a slight cost in performance. " +
-            "`destinationTable` must be provide"
+            "`destinationTable` must be provided."
     )
     @PluginProperty
     private Boolean allowLargeResults;
@@ -200,7 +200,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     @Schema(
         title = "Sets whether nested and repeated fields should be flattened.",
-        description = "If set to `false`, allowLargeResults must be `true`"
+        description = "If set to `false`, allowLargeResults must be `true`."
     )
     @PluginProperty
     @Builder.Default

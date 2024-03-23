@@ -28,6 +28,7 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             code = {
+                "operationType: COPY",
                 "sourceTables:",
                 "- \"my_project.my_dataset.my_table$20130908\"",
                 "destinationTable: \"my_project.my_dataset.my_table\"",
@@ -36,13 +37,13 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Copy a BigQuery table or partition to other one"
+    title = "Copy a BigQuery table or partition to other one."
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
 public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Schema(
-        title = "The source tables",
+        title = "The source tables.",
         description = "Can be table or partitions."
     )
     @PluginProperty(dynamic = true)
@@ -50,7 +51,7 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     private List<String> sourceTables;
 
     @Schema(
-        title = "The destination table",
+        title = "The destination table.",
         description = "If not provided a new table is created."
     )
     @PluginProperty(dynamic = true)
@@ -58,7 +59,7 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     private String destinationTable;
 
     @Schema(
-        title = "Sets the supported operation types in table copy job. ",
+        title = "Sets the supported operation types in table copy job.",
         description =
             "* `COPY`: The source and destination table have the same table type.\n" +
             "* `SNAPSHOT`: The source table type is TABLE and the destination table type is SNAPSHOT.\n" +
