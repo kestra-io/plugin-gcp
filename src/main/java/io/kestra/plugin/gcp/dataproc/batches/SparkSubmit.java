@@ -32,7 +32,8 @@ import jakarta.validation.constraints.NotNull;
             "mainClass: org.apache.spark.examples.SparkPi",
             "args:",
             "  - 1000",
-            "name: test-spark"
+            "name: test-spark",
+            "region: europe-west3"
         }
     )
 )

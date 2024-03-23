@@ -28,7 +28,8 @@ import jakarta.validation.constraints.NotNull;
     examples = @Example(
         code = {
             "mainPythonFileUri: 'gs://spark-jobs-kestra/pi.py'",
-            "name: test-pyspark"
+            "name: test-pyspark",
+            "region: europe-west3"
         }
     )
 )

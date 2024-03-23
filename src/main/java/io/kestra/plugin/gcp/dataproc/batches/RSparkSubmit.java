@@ -28,7 +28,8 @@ import jakarta.validation.constraints.NotNull;
     examples = @Example(
         code = {
             "mainRFileUri: 'gs://spark-jobs-kestra/dataframe.r'",
-            "name: test-rspark"
+            "name: test-rspark",
+            "region: europe-west3"
         }
     )
 )
