@@ -30,7 +30,7 @@ import java.util.Objects;
                 "projectId: my-project",
                 "dataset: my-dataset",
                 "table: my-table",
-                "expirationDuration: PT2D"
+                "expirationDuration: PT48H"
             }
         )
     }

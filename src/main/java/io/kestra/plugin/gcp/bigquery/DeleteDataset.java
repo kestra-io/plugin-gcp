@@ -22,9 +22,9 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            title = "Delete a dataset",
+            title = "Delete a dataset.",
             code = {
-                "name: \"my-bucket\"",
+                "name: \"my-dataset\"",
                 "deleteContents: true"
             }
         )
@@ -36,13 +36,13 @@ import jakarta.validation.constraints.NotNull;
 public class DeleteDataset extends AbstractBigquery implements RunnableTask<DeleteDataset.Output> {
     @NotNull
     @Schema(
-        title = "The dataset's user-defined id"
+        title = "The dataset's user-defined id."
     )
     @PluginProperty(dynamic = true)
     private String name;
 
     @Schema(
-        title = "Whether to delete a dataset even if non-empty",
+        title = "Whether to delete a dataset even if non-empty.",
         description = "If not provided, attempting to" +
             " delete a non-empty dataset will result in a exception being thrown."
     )
