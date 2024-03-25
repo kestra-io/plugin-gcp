@@ -27,8 +27,9 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = @Example(
         code = {
-            "mainRFileUri: 'gs://spark-jobs-kestra/foobar.sq'",
-            "name: test-sparksql"
+            "queryFileUri: 'gs://spark-jobs-kestra/foobar.py'",
+            "name: test-sparksql",
+            "region: europe-west3"
         }
     )
 )
