@@ -75,6 +75,8 @@ dependencies {
     api 'com.google.cloud:google-cloud-pubsub'
     api 'com.google.cloud:google-cloud-dataproc'
     api 'com.google.cloud:google-cloud-vertexai'
+    api 'com.google.cloud:google-cloud-batch'
+    api 'com.google.cloud:google-cloud-logging'
 }
 
 
@@ -109,6 +111,7 @@ dependencies {
     testImplementation "io.micronaut.validation:micronaut-validation"
 
     testImplementation group: "io.kestra", name: "core", version: kestraVersion
+    testImplementation group: "io.kestra", name: "core", version: kestraVersion, classifier: 'tests'
     testImplementation group: "io.kestra", name: "repository-memory", version: kestraVersion
     testImplementation group: "io.kestra", name: "runner-memory", version: kestraVersion
     testImplementation group: "io.kestra", name: "storage-local", version: kestraVersion
