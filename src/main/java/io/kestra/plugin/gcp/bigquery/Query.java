@@ -9,6 +9,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
@@ -87,6 +88,18 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "    {% endfor %}"
             }
         )
+    },
+    metrics = {
+        @Metric(name = "cache.hit", type = Counter.TYPE, description= "Whether the query result was fetched from the query cache."),
+        @Metric(name = "duration", type = Timer.TYPE, description = "The time it took for the query to run."),
+        @Metric(name = "estimated.bytes.processed", type = Counter.TYPE, unit = "bytes", description = "The original estimate of bytes processed for the query."),
+        @Metric(name = "total.bytes.billed", type = Counter.TYPE, unit = "bytes", description = "The total number of bytes billed for the query."),
+        @Metric(name = "total.bytes.processed", type = Counter.TYPE, unit = "bytes", description = "The total number of bytes processed by the query."),
+        @Metric(name = "total.partitions.processed", type = Counter.TYPE, unit = "partitions", description = "The totla number of partitions processed from all partitioned tables referenced in the job."),
+        @Metric(name = "total.slot.ms", type = Counter.TYPE, description = "The slot-milliseconds consumed by the query."),
+        @Metric(name = "num.dml.affected.rows", type = Counter.TYPE, unit = "records", description="The number of rows affected by a DML statement. Present only for DML statements INSERT, UPDATE or DELETE."),
+        @Metric(name = "referenced.tables", type = Counter.TYPE, description="The number of tables referenced by the query."),
+        @Metric(name = "num.child.jobs", type = Counter.TYPE, description="The number of child jobs executed by the query."),
     }
 )
 @Schema(
