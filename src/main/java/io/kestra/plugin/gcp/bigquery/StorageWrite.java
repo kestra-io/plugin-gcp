@@ -189,7 +189,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
                 runContext.metric(Counter.of("rows", output.getRows(), tags));
                 if (output.getRowsCount() != null) {
-                    runContext.metric(Counter.of("rows_count", output.getRows(), tags));
+                    runContext.metric(Counter.of("rows_count", output.getRowsCount(), tags));
                 }
 
                 return output;
