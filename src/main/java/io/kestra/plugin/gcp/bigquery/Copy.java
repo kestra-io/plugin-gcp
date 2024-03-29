@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.google.cloud.bigquery.*;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
@@ -34,6 +35,10 @@ import jakarta.validation.constraints.NotNull;
                 "destinationTable: \"my_project.my_dataset.my_table\"",
             }
         )
+    },
+    metrics = {
+        @Metric(name = "num.child.jobs", type = Counter.TYPE, description = "The number of child jobs executed."),
+        @Metric(name = "duration", type = Timer.TYPE, description= "The time it took for the job to run.")
     }
 )
 @Schema(

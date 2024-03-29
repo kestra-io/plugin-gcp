@@ -21,7 +21,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get table metadata"
+    title = "Get table metadata."
 )
 @Plugin(
     examples = {

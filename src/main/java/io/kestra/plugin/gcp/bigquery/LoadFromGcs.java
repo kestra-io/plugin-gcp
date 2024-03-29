@@ -11,8 +11,11 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
@@ -27,42 +30,50 @@ import java.util.List;
 @NoArgsConstructor
 @Plugin(
     examples = {
-            @Example(
-                    title = "Load an avro file from a gcs bucket",
-                    code = {
-                            "from:",
-                            "  - \"{{ outputs['avro-to-gcs'] }}\"",
-                            "destinationTable: \"my_project.my_dataset.my_table\"",
-                            "format: AVRO",
-                            "avroOptions:",
-                            "  useAvroLogicalTypes: true"
-                    }
-            ),
-            @Example(
-                    full = true,
-                    title = "Load a csv file with a defined schema",
-                    code = {
-                            "- id: load_files_test",
-                            "  type: io.kestra.plugin.gcp.bigquery.LoadFromGcs",
-                            "  destinationTable: \"myDataset.myTable\"",
-                            "  ignoreUnknownValues: true",
-                            "  schema:",
-                            "    fields:",
-                            "      - name: colA",
-                            "        type: STRING",
-                            "      - name: colB",
-                            "        type: NUMERIC",
-                            "      - name: colC",
-                            "        type: STRING",
-                            "  format: CSV",
-                            "  csvOptions:",
-                            "    allowJaggedRows: true",
-                            "    encoding: UTF-8",
-                            "    fieldDelimiter: \",\"",
-                            "  from:",
-                            "  - gs://myBucket/myFile.csv",
-                    }
-            )
+        @Example(
+            title = "Load an avro file from a gcs bucket",
+            code = {
+                "from:",
+                "  - \"{{ outputs['avro-to-gcs'] }}\"",
+                "destinationTable: \"my_project.my_dataset.my_table\"",
+                "format: AVRO",
+                "avroOptions:",
+                "  useAvroLogicalTypes: true"
+            }
+        ),
+        @Example(
+            full = true,
+            title = "Load a csv file with a defined schema",
+            code = {
+                "- id: load_files_test",
+                "  type: io.kestra.plugin.gcp.bigquery.LoadFromGcs",
+                "  destinationTable: \"myDataset.myTable\"",
+                "  ignoreUnknownValues: true",
+                "  schema:",
+                "    fields:",
+                "      - name: colA",
+                "        type: STRING",
+                "      - name: colB",
+                "        type: NUMERIC",
+                "      - name: colC",
+                "        type: STRING",
+                "  format: CSV",
+                "  csvOptions:",
+                "    allowJaggedRows: true",
+                "    encoding: UTF-8",
+                "    fieldDelimiter: \",\"",
+                "  from:",
+                "  - gs://myBucket/myFile.csv",
+            }
+        )
+    },
+    metrics = {
+        @Metric(name = "bad.records", type = Counter.TYPE, unit = "records", description= "the number of bad records reported in a job."),
+        @Metric(name = "duration", type = Timer.TYPE, description = "The time it took for the task to run."),
+        @Metric(name = "input.bytes", type = Counter.TYPE, unit = "bytes", description = "The number of bytes of source data in a load job."),
+        @Metric(name = "input.files", type = Counter.TYPE, unit = "files", description = "The number of source files in a load job."),
+        @Metric(name = "output.bytes", type = Counter.TYPE, unit = "bytes", description = "The size of the data loaded by a load job so far, in bytes."),
+        @Metric(name = "output.rows", type = Counter.TYPE, unit = "records", description = "The number of rows loaded by a load job so far.")
     }
 )
 @Schema(

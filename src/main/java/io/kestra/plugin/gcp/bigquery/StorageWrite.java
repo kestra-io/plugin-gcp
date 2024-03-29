@@ -10,6 +10,7 @@ import com.google.common.primitives.Primitives;
 import com.google.protobuf.Descriptors;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
@@ -58,6 +59,10 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "writeStreamType: DEFAULT"
             }
         )
+    },
+    metrics = {
+        @Metric(name = "rows", type = Counter.TYPE, description = "Rows count."),
+        @Metric(name = "rows_count", type = Counter.TYPE, description = "Rows count reported by BigQuery, only on `PENDING` writeStreamType.")
     }
 )
 @Schema(

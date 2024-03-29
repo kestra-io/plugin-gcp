@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.TableId;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -42,6 +43,9 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""
             }
         )
+    },
+    metrics = {
+        @Metric(name = "size", type = Counter.TYPE, description = "The number of partitions copied.")
     }
 )
 public class CopyPartitions extends AbstractPartition implements RunnableTask<CopyPartitions.Output>, AbstractJobInterface {

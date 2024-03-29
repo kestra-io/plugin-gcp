@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
@@ -29,7 +30,7 @@ import java.util.Map;
 @Plugin(
     examples = {
         @Example(
-            title = "Extract a BigQuery table to a gcs bucket",
+            title = "Extract a BigQuery table to a GCS bucket.",
             code = {
                 "destinationUris: ",
                 "  - \"gs://bucket_name/filename.csv\"",
@@ -39,10 +40,14 @@ import java.util.Map;
                 "printHeader: true"
             }
         )
+    },
+    metrics= {
+        @Metric(name = "output.file_counts", type = Counter.TYPE, description= "The number of files extracted to GCS."),
+        @Metric(name = "duration", type = Timer.TYPE, description= "The time it took for the job to run.")
     }
 )
 @Schema(
-    title = "Extract data from BigQuery table to GCS (Google Cloud Storage)"
+    title = "Extract data from BigQuery table to GCS (Google Cloud Storage)."
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
 
