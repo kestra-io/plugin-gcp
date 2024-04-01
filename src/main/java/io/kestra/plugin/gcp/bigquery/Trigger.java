@@ -21,12 +21,12 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on BigQuery"
+    title = "Wait for query on BigQuery."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a sql query to return results and iterate through rows",
+            title = "Wait for a sql query to return results and iterate through rows.",
             full = true,
             code = {
                 "id: bigquery-listen",
@@ -38,7 +38,7 @@ import java.util.Optional;
                 "    tasks:",
                 "      - id: return",
                 "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json taskrun.value}}\"",
+                "        format: \"{{ taskrun.value }}\"",
                 "    value: \"{{ trigger.rows }}\"",
                 "",
                 "triggers:",
@@ -46,7 +46,7 @@ import java.util.Optional;
                 "    type: io.kestra.plugin.gcp.bigquery.Trigger",
                 "    interval: \"PT5M\"",
                 "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\"",
-                "    store: true"
+                "    fetch: true"
             }
         )
     }
