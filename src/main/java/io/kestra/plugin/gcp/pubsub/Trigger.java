@@ -26,13 +26,13 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for messages in a Pub/Sub topic"
+    title = "Wait for messages in a Pub/Sub topic."
 )
 @Plugin(
     examples = {
         @Example(
             code = {
-                "topic: tes-topic",
+                "topic: test-topic",
                 "maxRecords: 10"
             }
         )
