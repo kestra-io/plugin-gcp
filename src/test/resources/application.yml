@@ -33,3 +33,5 @@ kestra:
       project: "${kestra.tasks.bigquery.project}"
       dataset: "${kestra.tasks.bigquery.dataset}"
       table: "trigger"
+      network: "projects/kestra-host/global/networks/mnw"
+      subnetwork: "projects/kestra-host/regions/us-central1/subnetworks/mnw-us-central1-snw"
