@@ -3,11 +3,9 @@ package io.kestra.plugin.gcp.runner;
 import io.kestra.core.models.tasks.runners.AbstractTaskRunnerTest;
 import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.micronaut.context.annotation.Value;
-import org.junit.jupiter.api.Disabled;
 
 import java.util.List;
 
-@Disabled("Need complex CI setup still needed to be done")
 class GcpBatchTaskRunnerTest extends AbstractTaskRunnerTest {
 
     @Value("${kestra.variables.globals.project}")
