@@ -1,14 +1,14 @@
 package io.kestra.plugin.gcp.runner;
 
-import io.kestra.core.models.script.AbstractScriptRunnerTest;
-import io.kestra.core.models.script.ScriptRunner;
+import io.kestra.core.models.tasks.runners.AbstractTaskRunnerTest;
+import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.micronaut.context.annotation.Value;
 import org.junit.jupiter.api.Disabled;
 
 import java.util.List;
 
 @Disabled("Need complex CI setup still needed to be done")
-class GcpBatchScriptRunnerTest extends AbstractScriptRunnerTest {
+class GcpBatchTaskRunnerTest extends AbstractTaskRunnerTest {
 
     @Value("${kestra.variables.globals.project}")
     private String project;
@@ -23,12 +23,12 @@ class GcpBatchScriptRunnerTest extends AbstractScriptRunnerTest {
     private String subnetwork;
 
     @Override
-    protected ScriptRunner scriptRunner() {
-        return GcpBatchScriptRunner.builder()
+    protected TaskRunner taskRunner() {
+        return GcpBatchTaskRunner.builder()
             .projectId(project)
             .region("us-central1")
             .bucket(bucket)
-            .networkInterfaces(List.of(GcpBatchScriptRunner.NetworkInterface.builder().network(network).subnetwork(subnetwork).build()))
+            .networkInterfaces(List.of(GcpBatchTaskRunner.NetworkInterface.builder().network(network).subnetwork(subnetwork).build()))
             .delete(false)
             .build();
     }

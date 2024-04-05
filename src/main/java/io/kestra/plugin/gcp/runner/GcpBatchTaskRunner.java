@@ -11,7 +11,7 @@ import com.google.cloud.storage.*;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.script.*;
+import io.kestra.core.models.tasks.runners.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.*;
 import io.kestra.plugin.gcp.CredentialService;
@@ -38,12 +38,12 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(title = "Google Cloud Platform Batch script runner",
+@Schema(title = "Google Cloud Platform Batch task runner",
     description = """
         This job runner didn't resume the job if a Worker is restarted before the job finish.
         You need to have roles 'Batch Job Editor' and 'Logs Viewer' to be able to use it.""")
 @Plugin(examples = {}, beta = true)
-public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, RemoteRunnerInterface {
+public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
     private static final int BUFFER_SIZE = 8 * 1024;
     public static final String MOUNT_PATH = "/mnt/disks/share";
 
@@ -107,7 +107,7 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
     private final Boolean delete = true;
 
     @Override
-    public RunnerResult run(RunContext runContext, ScriptCommands scriptCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
+    public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
         String renderedBucket = runContext.render(this.bucket);
 
         GoogleCredentials credentials = CredentialService.credentials(runContext, this);
@@ -121,7 +121,7 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
             throw new IllegalArgumentException("You must provide a Cloud Storage Bucket to use `outputFiles`");
         }
 
-        Map<String, Object> additionalVars = this.additionalVars(runContext, scriptCommands);
+        Map<String, Object> additionalVars = this.additionalVars(runContext, taskCommands);
         Path batchWorkingDirectory = (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR);
         String workingDirectoryToBlobPath = batchWorkingDirectory.toString().substring(1);
         boolean hasBucket = this.bucket != null;
@@ -168,9 +168,9 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
             // main container
             Runnable runnable =
                 Runnable.newBuilder()
-                    .setContainer(mainContainer(scriptCommands, scriptCommands.getCommands(), hasFilesToDownload || hasFilesToUpload, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
+                    .setContainer(mainContainer(taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
                     .setEnvironment(Environment.newBuilder()
-                        .putAllVariables(this.env(runContext, scriptCommands))
+                        .putAllVariables(this.env(runContext, taskCommands))
                         .build()
                     )
                     .build();
@@ -219,7 +219,7 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
             runContext.logger().info("Job created: " + result.getName());
             // Check for the job successful creation
             if (isFailed(result.getStatus().getState())) {
-                throw new ScriptException(result.getStatus().getState().getNumber(), scriptCommands.getLogConsumer().getStdOutCount(), scriptCommands.getLogConsumer().getStdErrCount());
+                throw new TaskException(result.getStatus().getState().getNumber(), taskCommands.getLogConsumer().getStdOutCount(), taskCommands.getLogConsumer().getStdErrCount());
             }
 
             // if needed, batch infrastructure logs can be retrieved by using logName="projects/%s/logs/batch_task_logs" OR "%s/logs/batch_agent_logs"
@@ -229,14 +229,14 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
                 result.getUid()
             );
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
-            try (LogTail ignored = new LogTail(stream, scriptCommands.getLogConsumer())) {
+            try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer())) {
                 // Wait for the job termination
                 result = waitFormTerminated(batchServiceClient, result);
                 if (result == null) {
                     throw new TimeoutException();
                 }
                 if (isFailed(result.getStatus().getState())) {
-                    throw new ScriptException(result.getStatus().getState().getNumber(), scriptCommands.getLogConsumer().getStdOutCount(), scriptCommands.getLogConsumer().getStdErrCount());
+                    throw new TaskException(result.getStatus().getState().getNumber(), taskCommands.getLogConsumer().getStdOutCount(), taskCommands.getLogConsumer().getStdErrCount());
                 }
 
                 if (delete) {
@@ -267,13 +267,13 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
                             Path relativeBlobPathFromOutputDir = Path.of(batchOutputDirectory.toString().substring(1)).relativize(Path.of(blob.getBlobId().getName()));
                             storage.downloadTo(
                                 blob.getBlobId(),
-                                scriptCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir)
+                                taskCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir)
                             );
                         });
                     }
                 }
 
-                return new RunnerResult(0, scriptCommands.getLogConsumer());
+                return new RunnerResult(0, taskCommands.getLogConsumer());
             }
         } finally {
             if (hasBucket && delete) {
@@ -286,10 +286,10 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
         }
     }
 
-    private Runnable.Container mainContainer(ScriptCommands scriptCommands, List<String> command, boolean mountVolume, Path batchWorkingDirectory) {
+    private Runnable.Container mainContainer(TaskCommands taskCommands, List<String> command, boolean mountVolume, Path batchWorkingDirectory) {
         // TODO working directory
         var builder =  Runnable.Container.newBuilder()
-            .setImageUri(scriptCommands.getContainerImage())
+            .setImageUri(taskCommands.getContainerImage())
             .addAllCommands(command);
 
         if (mountVolume) {
@@ -338,7 +338,7 @@ public class GcpBatchScriptRunner extends ScriptRunner implements GcpInterface, 
     }
 
     @Override
-    protected Map<String, Object> runnerAdditionalVars(RunContext runContext, ScriptCommands scriptCommands) throws IllegalVariableEvaluationException {
+    protected Map<String, Object> runnerAdditionalVars(RunContext runContext, TaskCommands taskCommands) throws IllegalVariableEvaluationException {
         Map<String, Object> additionalVars = new HashMap<>();
         Path batchWorkingDirectory = Path.of("/" + IdUtils.create());
         additionalVars.put(ScriptService.VAR_WORKING_DIR, batchWorkingDirectory);
