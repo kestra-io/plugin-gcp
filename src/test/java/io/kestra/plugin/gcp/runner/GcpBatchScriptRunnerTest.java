@@ -3,9 +3,11 @@ package io.kestra.plugin.gcp.runner;
 import io.kestra.core.models.script.AbstractScriptRunnerTest;
 import io.kestra.core.models.script.ScriptRunner;
 import io.micronaut.context.annotation.Value;
+import org.junit.jupiter.api.Disabled;
 
 import java.util.List;
 
+@Disabled("Need complex CI setup still needed to be done")
 class GcpBatchScriptRunnerTest extends AbstractScriptRunnerTest {
 
     @Value("${kestra.variables.globals.project}")
