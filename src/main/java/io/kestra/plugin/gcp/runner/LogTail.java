@@ -4,7 +4,7 @@ import com.google.cloud.logging.LogEntry;
 import com.google.cloud.logging.LogEntryServerStream;
 import com.google.cloud.logging.Payload;
 import com.google.cloud.logging.Severity;
-import io.kestra.core.models.script.AbstractLogConsumer;
+import io.kestra.core.models.tasks.runners.AbstractLogConsumer;
 
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
