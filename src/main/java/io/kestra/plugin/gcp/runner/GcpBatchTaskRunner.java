@@ -9,6 +9,7 @@ import com.google.cloud.logging.Logging;
 import com.google.cloud.logging.LoggingOptions;
 import com.google.cloud.storage.*;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.runners.*;
@@ -38,11 +39,70 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(title = "Google Cloud Platform Batch task runner",
+@Schema(title = "Task runner that executes a task inside a job in Google Cloud Batch.",
     description = """
-        This job runner didn't resume the job if a Worker is restarted before the job finish.
-        You need to have roles 'Batch Job Editor' and 'Logs Viewer' to be able to use it.""")
-@Plugin(examples = {}, beta = true)
+        This task runner is container-based so the `containerImage` property must be set.
+        You need to have roles 'Batch Job Editor' and 'Logs Viewer' to be able to use it.
+        
+        To access the task's working directory, use the `{{workingDir}}` Pebble expression or the `WORKING_DIR` environment variable. Input files and namespace files will be available in this directory.
+
+        To generate output files you can either use the `outputFiles` task's property and create a file with the same name in the task's working directory, or create any file in the output directory which can be accessed by the `{{outputDir}}` Pebble expression or the `OUTPUT_DIR` environment variables.
+        
+        To use `inputFiles`, `outputFiles` or `namespaceFiles` properties, make sure to set the `bucket` property. The bucket serves as an intermediary storage layer for the task runner. Input and namespace files will be uploaded to the cloud storage bucket before the task run. Similarly, the task runner will store outputFiles in this bucket during the task run. In the end, the task runner will make those files available for download and preview from the UI by sending them to internal storage.
+        To make it easier to track where all files are stored, the task runner will generate a folder for each task run. You can access that folder using the `{{bucketPath}}` Pebble expression or the `BUCKET_PATH` environment variable.
+        
+        Note that when the Kestra Worker running this task is terminated, the batch job will still run until completion."""
+)
+@Plugin(
+    examples = {
+        @Example(
+            title = "Execute a Shell command.",
+            code = """
+                id: new-shell
+                namespace: myteam
+                                
+                tasks:
+                  - id: shell
+                    type: io.kestra.plugin.scripts.shell.Commands
+                    containerImage: centos
+                    taskRunner:
+                      type: io.kestra.plugin.gcp.runner.GcpBatchTaskRunner
+                      projectId: "{{vars.projectId}}"
+                      region: "{{vars.region}}"
+                    commands:
+                    - echo "Hello World\"""",
+            full = true
+        ),
+        @Example(
+            title = "Pass input files to the task, execute a Shell command, then retrieve output files.",
+            code = """
+                id: new-shell-with-file
+                namespace: myteam
+                                
+                inputs:
+                  - id: file
+                    type: FILE
+                                
+                tasks:
+                  - id: shell
+                    type: io.kestra.plugin.scripts.shell.Commands
+                    inputFiles:
+                      data.txt: "{{inputs.file}}"
+                    outputFiles:
+                      - out.txt
+                    containerImage: centos
+                    taskRunner:
+                      type: io.kestra.plugin.gcp.runner.GcpBatchTaskRunner
+                      projectId: "{{vars.projectId}}"
+                      region: "{{vars.region}}"
+                      bucket: "{{vars.bucker}}"
+                    commands:
+                    - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
+            full = true
+        )
+    },
+    beta = true
+)
 public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
     private static final int BUFFER_SIZE = 8 * 1024;
     public static final String MOUNT_PATH = "/mnt/disks/share";
