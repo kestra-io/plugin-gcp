@@ -80,7 +80,7 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
         String projectId = runContext.render(this.getProjectId());
         String region = runContext.render(this.getRegion());
 
-        try (VertexAI vertexAI = new VertexAI(projectId, region, this.credentials(runContext))) {
+        try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
             var parts = contents.stream().map( content -> content.getMimeType() == null ? content.getContent() : createPart(runContext, content)).toList();
 
             GenerativeModel model = new GenerativeModel(MODEL_ID, vertexAI);
@@ -90,7 +90,7 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
                 config.setMaxOutputTokens(this.getParameters().getMaxOutputTokens());
                 config.setTopK(this.getParameters().getTopK());
                 config.setTopP(this.getParameters().getTopP());
-                model.setGenerationConfig(config.build());
+                model.withGenerationConfig(config.build());
             }
 
             GenerateContentResponse response = model.generateContent(ContentMaker.fromMultiModalData(parts.toArray()));
