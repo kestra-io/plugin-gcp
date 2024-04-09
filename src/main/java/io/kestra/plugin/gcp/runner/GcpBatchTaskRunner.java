@@ -177,18 +177,21 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
             throw new IllegalArgumentException("You must provide a Cloud Storage Bucket to use `inputFiles` or `namespaceFiles`");
         }
         boolean hasFilesToDownload = !ListUtils.isEmpty(filesToDownload);
-        if (hasFilesToDownload && bucket == null) {
-            throw new IllegalArgumentException("You must provide a Cloud Storage Bucket to use `outputFiles`");
+        boolean outputDirectoryEnabled = taskCommands.outputDirectoryEnabled();
+        if ((hasFilesToDownload || outputDirectoryEnabled) && bucket == null) {
+            throw new IllegalArgumentException("You must provide a Cloud Storage Bucket to use `outputFiles` or `{{ outputDir }}`");
         }
 
         Map<String, Object> additionalVars = this.additionalVars(runContext, taskCommands);
         Path batchWorkingDirectory = (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR);
         String workingDirectoryToBlobPath = batchWorkingDirectory.toString().substring(1);
         boolean hasBucket = this.bucket != null;
-        if (hasBucket) {
+        if (hasFilesToUpload || outputDirectoryEnabled) {
             List<String> filesToUploadWithOutputDir = new ArrayList<>(filesToUpload);
-            String outputDirName = (batchWorkingDirectory.relativize((Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR)) + "/").substring(1);
-            filesToUploadWithOutputDir.add(outputDirName);
+            if (outputDirectoryEnabled) {
+                String outputDirName = (batchWorkingDirectory.relativize((Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR)) + "/").substring(1);
+                filesToUploadWithOutputDir.add(outputDirName);
+            }
             try (Storage storage = storage(runContext, credentials)) {
                 for (String relativePath: filesToUploadWithOutputDir) {
                     BlobInfo destination = BlobInfo.newBuilder(BlobId.of(
@@ -217,7 +220,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
              Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
             var taskBuilder = TaskSpec.newBuilder();
 
-            if (hasFilesToDownload || hasFilesToUpload) {
+            if (hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled) {
                 taskBuilder.addVolumes(Volume.newBuilder()
                     .setGcs(GCS.newBuilder().setRemotePath(renderedBucket + batchWorkingDirectory).build())
                     .setMountPath(MOUNT_PATH)
@@ -228,7 +231,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
             // main container
             Runnable runnable =
                 Runnable.newBuilder()
-                    .setContainer(mainContainer(taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
+                    .setContainer(mainContainer(taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
                     .setEnvironment(Environment.newBuilder()
                         .putAllVariables(this.env(runContext, taskCommands))
                         .build()
@@ -304,7 +307,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
                     runContext.logger().info("Job deleted");
                 }
 
-                if (hasBucket) {
+                if (hasFilesToDownload || outputDirectoryEnabled) {
                     try (Storage storage = storage(runContext, credentials)) {
                         for (String relativePath: filesToDownload) {
                             BlobInfo source = BlobInfo.newBuilder(BlobId.of(
@@ -321,15 +324,17 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
                             }
                         }
 
-                        Path batchOutputDirectory = (Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR);
-                        Page<Blob> outputDirEntries = storage.list(renderedBucket, Storage.BlobListOption.prefix(batchOutputDirectory.toString().substring(1)));
-                        outputDirEntries.iterateAll().forEach(blob -> {
-                            Path relativeBlobPathFromOutputDir = Path.of(batchOutputDirectory.toString().substring(1)).relativize(Path.of(blob.getBlobId().getName()));
-                            storage.downloadTo(
-                                blob.getBlobId(),
-                                taskCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir)
-                            );
-                        });
+                        if (outputDirectoryEnabled) {
+                            Path batchOutputDirectory = (Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR);
+                            Page<Blob> outputDirEntries = storage.list(renderedBucket, Storage.BlobListOption.prefix(batchOutputDirectory.toString().substring(1)));
+                            outputDirEntries.iterateAll().forEach(blob -> {
+                                Path relativeBlobPathFromOutputDir = Path.of(batchOutputDirectory.toString().substring(1)).relativize(Path.of(blob.getBlobId().getName()));
+                                storage.downloadTo(
+                                    blob.getBlobId(),
+                                    taskCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir)
+                                );
+                            });
+                        }
                     }
                 }
 
@@ -405,8 +410,11 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
 
         if (bucket != null) {
             Path batchOutputDirectory = batchWorkingDirectory.resolve(IdUtils.create());
-            additionalVars.put(ScriptService.VAR_OUTPUT_DIR, batchOutputDirectory);
             additionalVars.put(ScriptService.VAR_BUCKET_PATH, "gs://" + runContext.render(this.bucket) + batchWorkingDirectory);
+
+            if (taskCommands.outputDirectoryEnabled()) {
+                additionalVars.put(ScriptService.VAR_OUTPUT_DIR, batchOutputDirectory);
+            }
         }
 
         return additionalVars;
