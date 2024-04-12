@@ -62,7 +62,7 @@ dependencies {
     implementation group: "io.kestra.plugin", name: "plugin-script", version: kestraVersion
 
     // libs
-    api 'net.jodah:failsafe:2.4.4'
+    implementation group: 'dev.failsafe', name: 'failsafe', version: '3.3.2'
 
     api platform('com.google.cloud:libraries-bom:26.37.0')
     api 'com.google.cloud:google-cloud-storage'

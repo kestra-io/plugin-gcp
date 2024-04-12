@@ -1,12 +1,20 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQueryError;
+import com.google.cloud.bigquery.BigQueryOptions;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobException;
+import dev.failsafe.Failsafe;
 import io.kestra.core.utils.VersionProvider;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import net.jodah.failsafe.Failsafe;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.retrys.AbstractRetry;
@@ -111,7 +119,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                     "Stop retry, attempts {} elapsed {} seconds",
                     event.getAttemptCount(),
                     event.getElapsedTime().getSeconds(),
-                    event.getFailure()
+                    event.getException()
                 ))
                 .onRetry(event -> {
                     logger.warn(
@@ -119,7 +127,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                         event.getAttemptCount(),
                         event.getElapsedTime().getSeconds()
                     );
-                })
+                }).build()
             )
             .get(() -> {
                 Job job = null;
