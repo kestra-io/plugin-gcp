@@ -4,10 +4,10 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
+import dev.failsafe.FailsafeException;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -254,7 +254,7 @@ class QueryTest {
                 }
             })
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
 
         assertThat(results.size(), is(tasks.size()));
     }
