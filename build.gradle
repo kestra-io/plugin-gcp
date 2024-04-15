@@ -76,6 +76,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-vertexai'
     api 'com.google.cloud:google-cloud-batch'
     api 'com.google.cloud:google-cloud-logging'
+    api 'com.google.cloud:google-cloud-run'
 }
 
 
@@ -160,6 +161,7 @@ pom {
 }
 
 shadowJar {
+    zip64 true
     archiveClassifier.set(null)
     mergeServiceFiles()
 }
