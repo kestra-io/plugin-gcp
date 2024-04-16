@@ -1,13 +1,12 @@
 package io.kestra.plugin.gcp.vertexai;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import com.google.cloud.vertexai.VertexAI;
+import com.google.cloud.vertexai.generativeai.ContentMaker;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import io.micronaut.http.HttpRequest;
-import io.micronaut.http.MutableHttpRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,13 +23,13 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Text completion using the Vertex AI PaLM API for Google's PaLM 2 large language models (LLM).",
+    title = "Text completion using the Vertex AI API for Google's Gemini large language models (LLM).",
     description = "See [Generative AI quickstart using the Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) for more information."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Text completion using the Vertex AI PaLM API.",
+            title = "Text completion using the Vertex AI Gemini API.",
             code = {
                 """
                     region: us-central1
@@ -41,7 +40,7 @@ import java.util.List;
     }
 )
 public class TextCompletion extends AbstractGenerativeAi implements RunnableTask<TextCompletion.Output> {
-    private static final String MODEL_ID = "text-bison";
+    private static final String MODEL_ID = "gemini-pro";
 
     @PluginProperty(dynamic = true)
     @Schema(
@@ -52,27 +51,23 @@ public class TextCompletion extends AbstractGenerativeAi implements RunnableTask
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        var response = call(runContext, PredictionResponse.class);
-        sendMetrics(runContext, response.metadata);
+        String projectId = runContext.render(this.getProjectId());
+        String region = runContext.render(this.getRegion());
 
-        return Output.builder()
-            .predictions(response.predictions)
-            .build();
+        try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
+            var model = buildModel(MODEL_ID, vertexAI);
+            var content = ContentMaker.fromString(runContext.render(this.prompt));
+
+            var response = model.generateContent(content);
+            runContext.logger().debug(response.toString());
+
+            sendMetrics(runContext, response.getUsageMetadata());
+
+            return Output.builder()
+                .predictions(response.getCandidatesList().stream().map(candidate -> Prediction.of(candidate)).toList())
+                .build();
+        }
     }
-
-    @Override
-    protected MutableHttpRequest<TextPromptRequest> getPredictionRequest(RunContext runContext) throws IllegalVariableEvaluationException {
-        var request = new TextPromptRequest(List.of(new TextPromptInstance(runContext.render(prompt))), getParameters());
-        return HttpRequest.POST(getPredictionURI(runContext, MODEL_ID), request);
-    }
-
-    // request objects
-    public record TextPromptRequest(List<TextPromptInstance> instances, ModelParameter parameters) {}
-    public record TextPromptInstance(String prompt) {}
-
-    // response objects
-    public record PredictionResponse(List<Prediction> predictions, Metadata metadata) {}
-    public record Prediction(SafetyAttributes safetyAttributes, CitationMetadata citationMetadata, String content) {}
 
     @Builder
     @Getter
