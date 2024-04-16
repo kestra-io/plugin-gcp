@@ -2,22 +2,17 @@ package io.kestra.plugin.gcp.vertexai;
 
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.Candidate;
-import com.google.cloud.vertexai.api.GenerateContentResponse;
-import com.google.cloud.vertexai.api.GenerationConfig;
 import com.google.cloud.vertexai.api.Part;
 import com.google.cloud.vertexai.generativeai.ContentMaker;
-import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import com.google.cloud.vertexai.generativeai.PartMaker;
 import com.google.cloud.vertexai.generativeai.ResponseHandler;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import io.micronaut.http.MutableHttpRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -81,25 +76,13 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
         String region = runContext.render(this.getRegion());
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
+            var model = buildModel(MODEL_ID, vertexAI);
             var parts = contents.stream().map( content -> content.getMimeType() == null ? content.getContent() : createPart(runContext, content)).toList();
 
-            GenerativeModel model = new GenerativeModel(MODEL_ID, vertexAI);
-            if (this.getParameters() != null) {
-                var config = GenerationConfig.newBuilder();
-                config.setTemperature(this.getParameters().getTemperature());
-                config.setMaxOutputTokens(this.getParameters().getMaxOutputTokens());
-                config.setTopK(this.getParameters().getTopK());
-                config.setTopP(this.getParameters().getTopP());
-                model.withGenerationConfig(config.build());
-            }
-
-            GenerateContentResponse response = model.generateContent(ContentMaker.fromMultiModalData(parts.toArray()));
+            var response = model.generateContent(ContentMaker.fromMultiModalData(parts.toArray()));
             runContext.logger().debug(response.toString());
 
-            runContext.metric(Counter.of("candidate.token.count", response.getUsageMetadata().getCandidatesTokenCount()));
-            runContext.metric(Counter.of("prompt.token.count", response.getUsageMetadata().getPromptTokenCount()));
-            runContext.metric(Counter.of("total.token.count", response.getUsageMetadata().getTotalTokenCount()));
-            runContext.metric(Counter.of("serialized.size", response.getUsageMetadata().getSerializedSize()));
+            sendMetrics(runContext, response.getUsageMetadata());
 
             var finishReason = ResponseHandler.getFinishReason(response);
             var safetyRatings = response.getCandidates(0).getSafetyRatingsList().stream()
@@ -132,11 +115,6 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
         } catch (IllegalVariableEvaluationException | IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    protected MutableHttpRequest<?> getPredictionRequest(RunContext runContext) {
-        throw new UnsupportedOperationException("Generative AI task didn't use the request facility");
     }
 
     @SuperBuilder

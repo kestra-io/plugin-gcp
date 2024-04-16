@@ -1,18 +1,12 @@
 package io.kestra.plugin.gcp.vertexai;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import com.google.cloud.vertexai.VertexAI;
+import com.google.cloud.vertexai.api.*;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
-import io.micronaut.http.MediaType;
-import io.micronaut.http.MutableHttpRequest;
-import io.micronaut.http.client.DefaultHttpClientConfiguration;
-import io.micronaut.http.client.HttpClient;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
-import io.micronaut.http.client.netty.DefaultHttpClient;
-import io.micronaut.http.client.netty.NettyHttpClientFactory;
-import io.micronaut.http.codec.MediaTypeCodecRegistry;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -21,9 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.util.List;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -36,7 +27,6 @@ import jakarta.validation.constraints.Positive;
 @Getter
 @NoArgsConstructor
 abstract class AbstractGenerativeAi extends AbstractTask {
-    private static final NettyHttpClientFactory FACTORY = new NettyHttpClientFactory();
     private static final String URI_PATTERN = "https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:predict";
 
     @Schema(
@@ -53,58 +43,31 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     @PluginProperty
     private ModelParameter parameters = ModelParameter.builder().build();
 
-    <T> T call(RunContext runContext, Class<T> responseClass) {
-        try {
-            var auth = credentials(runContext);
-            auth.refreshIfExpired();
-
-            var request = getPredictionRequest(runContext)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bearerAuth(auth.getAccessToken().getTokenValue());
-
-            try (HttpClient client = this.client(runContext)) {
-                var response = client.toBlocking().exchange(request, responseClass);
-                var predictionResponse = response.body();
-                if (predictionResponse == null) {
-                    throw new RuntimeException("Received an empty response from the Vertex.ai prediction API");
-                }
-
-                return predictionResponse;
-            }
-        } catch (HttpClientResponseException e) {
-            throw new HttpClientResponseException(
-                "Request failed '" + e.getStatus().getCode() + "' and body '" + e.getResponse().getBody(String.class).orElse("null") + "'",
-                e,
-                e.getResponse()
-            );
-        } catch (IllegalVariableEvaluationException | IOException e) {
-            throw new RuntimeException(e);
+    protected GenerativeModel buildModel(String modelName, VertexAI vertexAI) {
+        GenerativeModel model = new GenerativeModel(modelName, vertexAI);
+        if (this.getParameters() != null) {
+            var config = GenerationConfig.newBuilder();
+            config.setTemperature(this.getParameters().getTemperature());
+            config.setMaxOutputTokens(this.getParameters().getMaxOutputTokens());
+            config.setTopK(this.getParameters().getTopK());
+            config.setTopP(this.getParameters().getTopP());
+            model.withGenerationConfig(config.build());
         }
+        return model;
     }
 
-    protected abstract MutableHttpRequest<?> getPredictionRequest(RunContext runContext) throws IllegalVariableEvaluationException;
-
-    protected void sendMetrics(RunContext runContext, Metadata metadata) {
-        runContext.metric(Counter.of("input.token.total.tokens", metadata.tokenMetadata.inputTokenCount.totalTokens));
-        runContext.metric(Counter.of("input.token.total.billable.characters", metadata.tokenMetadata.inputTokenCount.totalBillableCharacters));
-        runContext.metric(Counter.of("output.token.total.tokens", metadata.tokenMetadata.outputTokenCount.totalTokens));
-        runContext.metric(Counter.of("output.token.total.billable.characters", metadata.tokenMetadata.outputTokenCount.totalBillableCharacters));
+    protected void sendMetrics(RunContext runContext, GenerateContentResponse.UsageMetadata metadata) {
+        runContext.metric(Counter.of("candidate.token.count", metadata.getCandidatesTokenCount()));
+        runContext.metric(Counter.of("prompt.token.count", metadata.getPromptTokenCount()));
+        runContext.metric(Counter.of("total.token.count", metadata.getTotalTokenCount()));
+        runContext.metric(Counter.of("serialized.size", metadata.getSerializedSize()));
     }
 
-    protected URI getPredictionURI(RunContext runContext, String modelId) throws IllegalVariableEvaluationException {
-        var formatted = URI_PATTERN.formatted(runContext.render(getRegion()), runContext.render(getProjectId()), runContext.render(getRegion()), modelId);
-        runContext.logger().debug("Calling Vertex.AI prediction API {}", formatted);
-        return URI.create(formatted);
-    }
-
-    private HttpClient client(RunContext runContext) throws MalformedURLException {
-        MediaTypeCodecRegistry mediaTypeCodecRegistry = runContext.getApplicationContext().getBean(MediaTypeCodecRegistry.class);
-        var httpConfig = new DefaultHttpClientConfiguration();
-        httpConfig.setMaxContentLength(Integer.MAX_VALUE);
-
-        DefaultHttpClient client = (DefaultHttpClient) FACTORY.createClient(null, httpConfig);
-        client.setMediaTypeCodecRegistry(mediaTypeCodecRegistry);
-        return client;
+    protected void sendMetrics(RunContext runContext, List<GenerateContentResponse.UsageMetadata> metadatas) {
+        runContext.metric(Counter.of("candidate.token.count", metadatas.stream().mapToInt(metadata -> metadata.getCandidatesTokenCount()).sum()));
+        runContext.metric(Counter.of("prompt.token.count", metadatas.stream().mapToInt(metadata -> metadata.getPromptTokenCount()).sum()));
+        runContext.metric(Counter.of("total.token.count", metadatas.stream().mapToInt(metadata -> metadata.getTotalTokenCount()).sum()));
+        runContext.metric(Counter.of("serialized.size", metadatas.stream().mapToInt(metadata -> metadata.getSerializedSize()).sum()));
     }
 
     @Builder
@@ -159,10 +122,29 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     }
 
     // common response objects
-    public record CitationMetadata(List<Citation> citations) {}
+    public record Prediction(SafetyAttributes safetyAttributes, CitationMetadata citationMetadata, String content) {
+        public static Prediction of(Candidate candidate) {
+            return new Prediction(SafetyAttributes.of(candidate.getSafetyRatingsList()),
+                CitationMetadata.of(candidate.getCitationMetadata()),
+                candidate.getContent().getParts(0).getText()
+            );
+        }
+    }
+    public record CitationMetadata(List<Citation> citations) {
+        public static CitationMetadata of(com.google.cloud.vertexai.api.CitationMetadata citationMetadata) {
+            return new CitationMetadata(
+                citationMetadata.getCitationsList().stream().map(citation -> new Citation(List.of(citation.getTitle()))).toList()
+            );
+        }
+    }
     public record Citation(List<String> citations) {}
-    public record SafetyAttributes(List<Float> scores, List<String> categories, Boolean blocked) {}
-    public record Metadata(TokenMetadata tokenMetadata) {}
-    public record TokenMetadata(TokenCount outputTokenCount, TokenCount inputTokenCount) {}
-    public record TokenCount(Integer totalTokens, Integer totalBillableCharacters) {}
+    public record SafetyAttributes(List<Float> scores, List<String> categories, Boolean blocked) {
+        public static SafetyAttributes of(List<SafetyRating> safetyRatingsList) {
+            return new SafetyAttributes(
+                safetyRatingsList.stream().map(safetyRating -> safetyRating.getSeverityScore()).toList(),
+                safetyRatingsList.stream().map(safetyRating -> safetyRating.getCategory().name()).toList(),
+                safetyRatingsList.stream().anyMatch(safetyRating -> safetyRating.getBlocked())
+            );
+        }
+    }
 }
