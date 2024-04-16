@@ -155,7 +155,8 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
     private String bucket;
 
     @Schema(
-        title = "The maximum duration to wait for the job completion. Google Cloud Batch will automatically timeout the job upon reaching such duration and the task will be failed."
+        title = "The maximum duration to wait for the job completion unless the task `timeout` property is set which will take precedence over this property.",
+        description = "Google Cloud Batch will automatically timeout the job upon reaching such duration and the task will be failed."
     )
     @Builder.Default
     private final Duration waitUntilCompletion = Duration.ofHours(1);
@@ -220,6 +221,8 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         try (BatchServiceClient batchServiceClient = BatchServiceClient.create(BatchServiceSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
              Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
             var taskBuilder = TaskSpec.newBuilder();
+            Duration waitDuration = Optional.ofNullable(taskCommands.getTimeout()).orElse(this.waitUntilCompletion);
+            taskBuilder.setMaxRunDuration(com.google.protobuf.Duration.newBuilder().setSeconds(waitDuration.getSeconds()));
 
             if (hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled) {
                 taskBuilder.addVolumes(Volume.newBuilder()
@@ -295,7 +298,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer())) {
                 // Wait for the job termination
-                result = waitFormTerminated(batchServiceClient, result);
+                result = waitFormTerminated(batchServiceClient, result, waitDuration);
                 if (result == null) {
                     throw new TimeoutException();
                 }
@@ -369,7 +372,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         return builder.build();
     }
 
-    private Job waitFormTerminated(BatchServiceClient batchServiceClient, Job result) throws TimeoutException {
+    private Job waitFormTerminated(BatchServiceClient batchServiceClient, Job result, Duration waitDuration) throws TimeoutException {
         return Await.until(
             () -> {
                 Job terminated = batchServiceClient.getJob(result.getName());
@@ -379,7 +382,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
                 return null;
             },
             Duration.ofMillis(500),
-            this.waitUntilCompletion
+            waitDuration
         );
     }
 
