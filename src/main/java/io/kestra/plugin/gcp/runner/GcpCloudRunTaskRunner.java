@@ -70,16 +70,17 @@ import java.util.concurrent.TimeoutException;
 @Schema(title = "Task runner that executes a task inside a job in Google Cloud Run.",
     description = """
         This task runner is container-based so the `containerImage` property must be set.
-                
+        You need to have roles 'Cloud Run Developer' and 'Logs Viewer' to be able to use it.
+
         To access the task's working directory, use the `{{workingDir}}` Pebble expression or the `WORKING_DIR` environment variable. Input files and namespace files will be available in this directory.
 
         To generate output files you can either use the `outputFiles` task's property and create a file with the same name in the task's working directory, or create any file in the output directory which can be accessed by the `{{outputDir}}` Pebble expression or the `OUTPUT_DIR` environment variables.
-                
+
         To use `inputFiles`, `outputFiles` or `namespaceFiles` properties, make sure to set the `bucket` property. The bucket serves as an intermediary storage layer for the task runner. Input and namespace files will be uploaded to the cloud storage bucket before the task run. Similarly, the task runner will store outputFiles in this bucket during the task run. In the end, the task runner will make those files available for download and preview from the UI by sending them to internal storage.
         To make it easier to track where all files are stored, the task runner will generate a folder for each task run. You can access that folder using the `{{bucketPath}}` Pebble expression or the `BUCKET_PATH` environment variable.
-                
+
         Warning, contrarily to other task runners, this task runner didn't run the task in the working directory but in the root directory. You must use the `{{workingDir}}` Pebble expression or the `WORKING_DIR` environment variable to access files.
-                
+
         Note that when the Kestra Worker running this task is terminated, the Cloud Run Job will still run until completion."""
 )
 @Plugin(
@@ -89,7 +90,7 @@ import java.util.concurrent.TimeoutException;
             code = """
                 id: new-shell
                 namespace: myteam
-                                
+
                 tasks:
                   - id: shell
                     type: io.kestra.plugin.scripts.shell.Commands
@@ -106,11 +107,11 @@ import java.util.concurrent.TimeoutException;
             code = """
                 id: new-shell-with-file
                 namespace: myteam
-                                
+
                 inputs:
                   - id: file
                     type: FILE
-                                
+
                 tasks:
                   - id: shell
                     type: io.kestra.plugin.scripts.shell.Commands
@@ -338,7 +339,7 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
                         filesToDownload,
                         renderedBucket,
                         MOUNT_PATH.relativize(workingDir),
-                        MOUNT_PATH.relativize(outputDir),
+                        outputDir != null ? MOUNT_PATH.relativize(outputDir) : null,
                         outputDirectoryEnabled
                     );
                 }
@@ -387,7 +388,7 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
     }
 
     private static Path toAbsoluteBlobPathWithoutMount(final Path containerPath) {
-        return Path.of("/" + MOUNT_PATH.relativize(containerPath));
+        return containerPath != null ? Path.of("/" + MOUNT_PATH.relativize(containerPath)) : null;
     }
 
     private static boolean isCanceled(final Execution execution) {
