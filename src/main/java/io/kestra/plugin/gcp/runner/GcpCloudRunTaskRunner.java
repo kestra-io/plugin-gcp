@@ -159,6 +159,7 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
         description = "Google Cloud Run will automatically timeout the Job upon reaching such duration and the task will be failed."
     )
     @Builder.Default
+    @PluginProperty
     private final Duration waitUntilCompletion = Duration.ofHours(1);
 
     @Schema(
@@ -166,6 +167,7 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
     )
     @NotNull
     @Builder.Default
+    @PluginProperty
     private final Boolean delete = true;
 
     @Override
