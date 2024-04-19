@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -53,7 +54,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
         
         Warning, contrarily to other task runners, this task runner didn't run the task in the working directory but in the root directory. You must use the `{{workingDir}}` Pebble expression or the `WORKING_DIR` environment variable to access files.
         
-        Note that when the Kestra Worker running this task is terminated, the batch job will still run until completion."""
+        Note that when the Kestra Worker running this task is terminated, the batch job will still runs until completion, then after restarting, the Worker will resume processing on the existing job unless `resume` is set to false."""
 )
 @Plugin(
     examples = {
@@ -170,6 +171,14 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
     @PluginProperty
     private final Boolean delete = true;
 
+    @Schema(
+        title = "Whether to reconnect to the current job if it already exists."
+    )
+    @NotNull
+    @Builder.Default
+    @PluginProperty
+    private final Boolean resume = true;
+
     @Override
     public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
         String renderedBucket = runContext.render(this.bucket);
@@ -190,102 +199,123 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         Path batchWorkingDirectory = (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR);
         String workingDirectoryToBlobPath = batchWorkingDirectory.toString().substring(1);
         boolean hasBucket = this.bucket != null;
-        if (hasFilesToUpload || outputDirectoryEnabled) {
-            List<String> filesToUploadWithOutputDir = new ArrayList<>(filesToUpload);
-            if (outputDirectoryEnabled) {
-                String outputDirName = (batchWorkingDirectory.relativize((Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR)) + "/").substring(1);
-                filesToUploadWithOutputDir.add(outputDirName);
-            }
-            try (Storage storage = storage(runContext, credentials)) {
-                for (String relativePath: filesToUploadWithOutputDir) {
-                    BlobInfo destination = BlobInfo.newBuilder(BlobId.of(
-                        renderedBucket,
-                        workingDirectoryToBlobPath + Path.of("/" + relativePath)
-                    )).build();
-                    Path filePath = runContext.resolve(Path.of(relativePath));
-                    if (relativePath.endsWith("/")) {
-                        storage.create(destination);
-                        continue;
-                    }
-
-                    try (var fileInputStream = new FileInputStream(filePath.toFile());
-                         var writer = storage.writer(destination)) {
-                        byte[] buffer = new byte[BUFFER_SIZE];
-                        int limit;
-                        while ((limit = fileInputStream.read(buffer)) >= 0) {
-                            writer.write(ByteBuffer.wrap(buffer, 0, limit));
-                        }
-                    }
-                }
-            }
-        }
 
         try (BatchServiceClient batchServiceClient = BatchServiceClient.create(BatchServiceSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
              Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
-            var taskBuilder = TaskSpec.newBuilder();
             Duration waitDuration = Optional.ofNullable(taskCommands.getTimeout()).orElse(this.waitUntilCompletion);
-            taskBuilder.setMaxRunDuration(com.google.protobuf.Duration.newBuilder().setSeconds(waitDuration.getSeconds()));
+            Map<String, String> labels = ScriptService.labels(runContext, "kestra-", true, true);
 
-            if (hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled) {
-                taskBuilder.addVolumes(Volume.newBuilder()
-                    .setGcs(GCS.newBuilder().setRemotePath(renderedBucket + batchWorkingDirectory).build())
-                    .setMountPath(MOUNT_PATH)
+            Job result = null;
+
+            if (resume) {
+                var existingJob = batchServiceClient.listJobs(ListJobsRequest.newBuilder()
+                    .setParent(String.format("projects/%s/locations/%s", projectId, region))
+                    .setFilter(labelsFilter(labels))
                     .build()
                 );
+                var iterator = existingJob.iterateAll().iterator();
+                if (iterator.hasNext()) {
+                    result = iterator.next();
+                    runContext.logger().info("Job '{}' is resumed from an already running job ", result.getName());
+                }
             }
-
-            // main container
-            Runnable runnable =
-                Runnable.newBuilder()
-                    .setContainer(mainContainer(taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
-                    .setEnvironment(Environment.newBuilder()
-                        .putAllVariables(this.env(runContext, taskCommands))
-                        .build()
-                    )
-                    .build();
-            taskBuilder.addRunnables(runnable);
-
-            TaskGroup taskGroup = TaskGroup.newBuilder().setTaskSpec(taskBuilder.build()).setTaskCount(1).build();
-
-            // https://cloud.google.com/compute/docs/machine-types
-            var instancePolicy = AllocationPolicy.InstancePolicy.newBuilder().setMachineType(runContext.render(machineType));
-            if (reservation != null) {
-                instancePolicy.setReservation(runContext.render(reservation));
-            }
-            var allocationPolicy = AllocationPolicy.newBuilder()
-                    .addInstances(AllocationPolicy.InstancePolicyOrTemplate.newBuilder().setPolicy(instancePolicy).build());
-            if (!ListUtils.isEmpty(networkInterfaces)) {
-                var networkPolicy = AllocationPolicy.NetworkPolicy.newBuilder();
-                networkInterfaces.forEach(throwConsumer(networkInterface -> {
-                    var builder = AllocationPolicy.NetworkInterface.newBuilder()
-                        .setNetwork(runContext.render(networkInterface.getNetwork()));
-                    if (networkInterface.getSubnetwork() != null) {
-                        builder.setSubnetwork(runContext.render(networkInterface.getSubnetwork()));
+            if (result == null) {
+                if (hasFilesToUpload || outputDirectoryEnabled) {
+                    List<String> filesToUploadWithOutputDir = new ArrayList<>(filesToUpload);
+                    if (outputDirectoryEnabled) {
+                        String outputDirName = (batchWorkingDirectory.relativize((Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR)) + "/").substring(1);
+                        filesToUploadWithOutputDir.add(outputDirName);
                     }
-                    networkPolicy.addNetworkInterfaces(builder);
-                }));
-                allocationPolicy.setNetwork(networkPolicy.build());
+                    try (Storage storage = storage(runContext, credentials)) {
+                        for (String relativePath: filesToUploadWithOutputDir) {
+                            BlobInfo destination = BlobInfo.newBuilder(BlobId.of(
+                                renderedBucket,
+                                workingDirectoryToBlobPath + Path.of("/" + relativePath)
+                            )).build();
+                            Path filePath = runContext.resolve(Path.of(relativePath));
+                            if (relativePath.endsWith("/")) {
+                                storage.create(destination);
+                                continue;
+                            }
+
+                            try (var fileInputStream = new FileInputStream(filePath.toFile());
+                                 var writer = storage.writer(destination)) {
+                                byte[] buffer = new byte[BUFFER_SIZE];
+                                int limit;
+                                while ((limit = fileInputStream.read(buffer)) >= 0) {
+                                    writer.write(ByteBuffer.wrap(buffer, 0, limit));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                var taskBuilder = TaskSpec.newBuilder();
+                taskBuilder.setMaxRunDuration(com.google.protobuf.Duration.newBuilder().setSeconds(waitDuration.getSeconds()));
+
+                if (hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled) {
+                    taskBuilder.addVolumes(Volume.newBuilder()
+                        .setGcs(GCS.newBuilder().setRemotePath(renderedBucket + batchWorkingDirectory).build())
+                        .setMountPath(MOUNT_PATH)
+                        .build()
+                    );
+                }
+
+                // main container
+                Runnable runnable =
+                    Runnable.newBuilder()
+                        .setContainer(mainContainer(taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
+                        .setEnvironment(Environment.newBuilder()
+                            .putAllVariables(this.env(runContext, taskCommands))
+                            .build()
+                        )
+                        .build();
+                taskBuilder.addRunnables(runnable);
+
+                TaskGroup taskGroup = TaskGroup.newBuilder().setTaskSpec(taskBuilder.build()).setTaskCount(1).build();
+
+                // https://cloud.google.com/compute/docs/machine-types
+                var instancePolicy = AllocationPolicy.InstancePolicy.newBuilder().setMachineType(runContext.render(machineType));
+                if (reservation != null) {
+                    instancePolicy.setReservation(runContext.render(reservation));
+                }
+                var allocationPolicy = AllocationPolicy.newBuilder()
+                    .addInstances(AllocationPolicy.InstancePolicyOrTemplate.newBuilder().setPolicy(instancePolicy).build());
+                if (!ListUtils.isEmpty(networkInterfaces)) {
+                    var networkPolicy = AllocationPolicy.NetworkPolicy.newBuilder();
+                    networkInterfaces.forEach(throwConsumer(networkInterface -> {
+                        var builder = AllocationPolicy.NetworkInterface.newBuilder()
+                            .setNetwork(runContext.render(networkInterface.getNetwork()));
+                        if (networkInterface.getSubnetwork() != null) {
+                            builder.setSubnetwork(runContext.render(networkInterface.getSubnetwork()));
+                        }
+                        networkPolicy.addNetworkInterfaces(builder);
+                    }));
+                    allocationPolicy.setNetwork(networkPolicy.build());
+                }
+
+                Job job =
+                    Job.newBuilder()
+                        .addTaskGroups(taskGroup)
+                        .setAllocationPolicy(allocationPolicy)
+                        .putAllLabels(labels)
+                        // We use Cloud Logging as it's an out of the box available option.
+                        .setLogsPolicy(LogsPolicy.newBuilder().setDestination(LogsPolicy.Destination.CLOUD_LOGGING).build())
+                        .build();
+
+                CreateJobRequest createJobRequest =
+                    CreateJobRequest.newBuilder()
+                        // The job's parent is the region in which the job will run.
+                        .setParent(String.format("projects/%s/locations/%s", projectId, region))
+                        .setJob(job)
+                        .setJobId(ScriptService.jobName(runContext))
+                        .build();
+
+                result = batchServiceClient.createJob(createJobRequest);
+                runContext.logger().info("Job created: {}", result.getName());
             }
 
-            Job job =
-                Job.newBuilder()
-                    .addTaskGroups(taskGroup)
-                    .setAllocationPolicy(allocationPolicy)
-                    .putAllLabels(ScriptService.labels(runContext, "kestra-", true, true))
-                    // We use Cloud Logging as it's an out of the box available option.
-                    .setLogsPolicy(LogsPolicy.newBuilder().setDestination(LogsPolicy.Destination.CLOUD_LOGGING).build())
-                    .build();
 
-            CreateJobRequest createJobRequest =
-                CreateJobRequest.newBuilder()
-                    // The job's parent is the region in which the job will run.
-                    .setParent(String.format("projects/%s/locations/%s", projectId, region))
-                    .setJob(job)
-                    .setJobId(ScriptService.jobName(runContext))
-                    .build();
-
-            Job result = batchServiceClient.createJob(createJobRequest);
-            runContext.logger().info("Job created: " + result.getName());
             // Check for the job successful creation
             if (isFailed(result.getStatus().getState())) {
                 throw new TaskException(result.getStatus().getState().getNumber(), taskCommands.getLogConsumer().getStdOutCount(), taskCommands.getLogConsumer().getStdErrCount());
@@ -355,6 +385,12 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
                 }
             }
         }
+    }
+
+    private String labelsFilter(Map<String, String> labels) {
+        return labels.entrySet().stream()
+            .map(entry -> "labels." + entry.getKey() + "=\"" + entry.getValue().toLowerCase() + "\"")
+            .collect(Collectors.joining(" AND "));
     }
 
     private Runnable.Container mainContainer(TaskCommands taskCommands, List<String> command, boolean mountVolume, Path batchWorkingDirectory) {
