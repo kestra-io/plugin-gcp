@@ -159,6 +159,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         description = "Google Cloud Batch will automatically timeout the job upon reaching such duration and the task will be failed."
     )
     @Builder.Default
+    @PluginProperty
     private final Duration waitUntilCompletion = Duration.ofHours(1);
 
     @Schema(
@@ -166,6 +167,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
     )
     @NotNull
     @Builder.Default
+    @PluginProperty
     private final Boolean delete = true;
 
     @Override
