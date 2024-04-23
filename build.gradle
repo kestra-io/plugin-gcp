@@ -22,8 +22,8 @@ repositories {
     }
 }
 
-sourceCompatibility = 17
-targetCompatibility = 17
+sourceCompatibility = 21
+targetCompatibility = 21
 
 group "io.kestra.plugin"
 description 'Integrate Google Cloud Platform services with Kestra data workflows.'
@@ -47,21 +47,18 @@ dependencies {
     compileOnly "org.projectlombok:lombok:$lombokVersion"
 
     // micronaut
-    annotationProcessor platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
-    annotationProcessor "io.micronaut:micronaut-inject-java"
-    annotationProcessor "io.micronaut.validation:micronaut-validation-processor"
-
     compileOnly platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
-    compileOnly "io.micronaut:micronaut-inject"
-    compileOnly "io.micronaut.validation:micronaut-validation"
+    compileOnly "io.micronaut:micronaut-context"
     compileOnly "io.micronaut.reactor:micronaut-reactor"
 
     // kestra
+    annotationProcessor group: "io.kestra", name: "processor", version: kestraVersion
     compileOnly group: "io.kestra", name: "core", version: kestraVersion
     implementation group: "io.kestra.plugin", name: "plugin-script", version: kestraVersion
 
     // libs
     implementation group: 'dev.failsafe', name: 'failsafe', version: '3.3.2'
+    implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
 
     api platform('com.google.cloud:libraries-bom:26.37.0')
     api 'com.google.cloud:google-cloud-storage'
@@ -110,6 +107,7 @@ dependencies {
     testImplementation "io.micronaut.test:micronaut-test-junit5"
     testImplementation "io.micronaut.validation:micronaut-validation"
 
+    testAnnotationProcessor group: "io.kestra", name: "processor", version: kestraVersion
     testImplementation group: "io.kestra", name: "core", version: kestraVersion
     testImplementation group: "io.kestra", name: "core", version: kestraVersion, classifier: 'tests'
     testImplementation group: "io.kestra", name: "repository-memory", version: kestraVersion
