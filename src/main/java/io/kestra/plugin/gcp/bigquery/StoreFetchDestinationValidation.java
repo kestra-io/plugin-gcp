@@ -6,10 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 
 import io.kestra.plugin.gcp.StoreFetchDestinationValidator;
 import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = StoreFetchDestinationValidator.class)
 @Inherited
 public @interface StoreFetchDestinationValidation {
     String message() default "Invalid store & fetch or fetchOne properties with destinationTable, you can't fetch data when destinationTable is defined";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
 }

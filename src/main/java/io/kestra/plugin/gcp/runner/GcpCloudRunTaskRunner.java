@@ -42,7 +42,6 @@ import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.ListUtils;
 import io.kestra.plugin.gcp.CredentialService;
 import io.kestra.plugin.gcp.GcpInterface;
-import io.micronaut.core.annotation.Introspected;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -61,7 +60,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
-@Introspected
 @SuperBuilder
 @ToString
 @EqualsAndHashCode

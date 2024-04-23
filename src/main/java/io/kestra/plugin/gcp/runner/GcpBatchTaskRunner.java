@@ -17,7 +17,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.*;
 import io.kestra.plugin.gcp.CredentialService;
 import io.kestra.plugin.gcp.GcpInterface;
-import io.micronaut.core.annotation.Introspected;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -34,7 +33,6 @@ import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
-@Introspected
 @SuperBuilder
 @ToString
 @EqualsAndHashCode

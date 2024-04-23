@@ -13,7 +13,6 @@ import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.micronaut.core.annotation.Introspected;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -235,7 +234,6 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     @SuperBuilder
     @NoArgsConstructor
     @Getter
-    @Introspected
     @Schema(
         title = "A filter for the where clause"
     )

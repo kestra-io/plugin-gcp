@@ -7,7 +7,6 @@ import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.storage.v1.*;
 import com.google.common.primitives.Primitives;
-import com.google.protobuf.Descriptors;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
@@ -18,7 +17,6 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.gcp.AbstractTask;
-import io.micronaut.core.annotation.Introspected;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -334,7 +332,6 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         }
     }
 
-    @Introspected
     public enum WriteStreamType {
         DEFAULT,
         COMMITTED,
