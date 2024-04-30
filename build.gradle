@@ -54,7 +54,7 @@ dependencies {
     // kestra
     annotationProcessor group: "io.kestra", name: "processor", version: kestraVersion
     compileOnly group: "io.kestra", name: "core", version: kestraVersion
-    implementation group: "io.kestra.plugin", name: "plugin-script", version: kestraVersion
+    compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
     // libs
     implementation group: 'dev.failsafe', name: 'failsafe', version: '3.3.2'
@@ -110,6 +110,7 @@ dependencies {
     testAnnotationProcessor group: "io.kestra", name: "processor", version: kestraVersion
     testImplementation group: "io.kestra", name: "core", version: kestraVersion
     testImplementation group: "io.kestra", name: "core", version: kestraVersion, classifier: 'tests'
+    testImplementation group: "io.kestra", name: "script", version: kestraVersion
     testImplementation group: "io.kestra", name: "repository-memory", version: kestraVersion
     testImplementation group: "io.kestra", name: "runner-memory", version: kestraVersion
     testImplementation group: "io.kestra", name: "storage-local", version: kestraVersion
