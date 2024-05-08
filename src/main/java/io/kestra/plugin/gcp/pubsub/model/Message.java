@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.tasks.Output;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -19,7 +20,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @Getter
 @Builder
 @Jacksonized
-public class Message {
+public class Message implements Output {
 
     @Schema(
         title = "The message data, must be a string if serde type is 'STRING', otherwise a JSON object",

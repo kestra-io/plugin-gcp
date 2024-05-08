@@ -1,8 +1,12 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import com.google.api.core.ApiService;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.pubsub.v1.ProjectSubscriptionName;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -21,10 +25,16 @@ import java.io.FileOutputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.validation.constraints.NotNull;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 @SuperBuilder
 @ToString
@@ -120,6 +130,63 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             .uri(runContext.storage().putFile(tempFile))
             .count(total.get())
             .build();
+    }
+
+    public Publisher<Message> stream(RunContext runContext) throws Exception {
+	    ProjectSubscriptionName subscriptionName = this.createSubscription(runContext, subscription, autoCreateSubscription);
+        GoogleCredentials credentials = this.credentials(runContext);
+
+        return Flux.<Message>create(
+                sink -> {
+	                AtomicInteger total = new AtomicInteger();
+	                ZonedDateTime started = ZonedDateTime.now();
+
+                    MessageReceiver receiver = (message, consumer) -> {
+                        try {
+                            sink.next(Message.of(message, serdeType));
+                            total.getAndIncrement();
+                            consumer.ack();
+                        }
+                        catch(Exception exception) {
+                            sink.error(exception);
+                            consumer.nack();
+                        }
+                    };
+
+                    Subscriber subscriber = Subscriber.newBuilder(subscriptionName, receiver)
+                        .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
+                        .build();
+
+                    subscriber.startAsync().awaitRunning();
+
+                    subscriber.addListener(
+                        new ApiService.Listener() {
+                            @Override
+                            public void failed(ApiService.State from, Throwable failure) {
+                                sink.error(failure);
+                            }
+                        }, MoreExecutors.directExecutor()
+                    );
+
+                    while (!this.ended(total, started)) {
+                        if (sink.isCancelled()) {
+                            subscriber.stopAsync().awaitTerminated();
+                            return;
+                        }
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException exception) {
+                            Thread.currentThread().interrupt();
+                            sink.error(exception);
+                        }
+                    }
+
+                    subscriber.stopAsync().awaitTerminated();
+                    sink.complete();
+                },
+                FluxSink.OverflowStrategy.BUFFER
+            )
+            .subscribeOn(Schedulers.boundedElastic());
     }
 
     private boolean ended(AtomicInteger count, ZonedDateTime start) {
