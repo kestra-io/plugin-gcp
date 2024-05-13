@@ -205,6 +205,9 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
 
             Job result = null;
 
+            String projectId = runContext.render(this.projectId);
+            String region = runContext.render(this.region);
+
             if (resume) {
                 var existingJob = batchServiceClient.listJobs(ListJobsRequest.newBuilder()
                     .setParent(String.format("projects/%s/locations/%s", projectId, region))
@@ -262,7 +265,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
                 // main container
                 Runnable runnable =
                     Runnable.newBuilder()
-                        .setContainer(mainContainer(taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
+                        .setContainer(mainContainer(runContext, taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
                         .setEnvironment(Environment.newBuilder()
                             .putAllVariables(this.env(runContext, taskCommands))
                             .build()
@@ -391,10 +394,10 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
             .collect(Collectors.joining(" AND "));
     }
 
-    private Runnable.Container mainContainer(TaskCommands taskCommands, List<String> command, boolean mountVolume, Path batchWorkingDirectory) {
+    private Runnable.Container mainContainer(RunContext runContext, TaskCommands taskCommands, List<String> command, boolean mountVolume, Path batchWorkingDirectory) throws IllegalVariableEvaluationException {
         // TODO working directory
         var builder =  Runnable.Container.newBuilder()
-            .setImageUri(taskCommands.getContainerImage())
+            .setImageUri(runContext.render(taskCommands.getContainerImage()))
             .addAllCommands(command);
 
         if (mountVolume) {
@@ -402,7 +405,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         }
 
         if (this.entryPoint != null) {
-            builder.setEntrypoint(String.join(" ", this.entryPoint));
+            builder.setEntrypoint(String.join(" ", runContext.render(this.entryPoint)));
         }
 
         return builder.build();
