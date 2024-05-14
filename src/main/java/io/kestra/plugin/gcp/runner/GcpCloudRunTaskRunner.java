@@ -51,6 +51,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
@@ -58,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 @SuperBuilder
@@ -212,8 +214,8 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
             }
         }
 
-        try (JobsClient jobsClient = JobsClient.create(JobsSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
-             ExecutionsClient executionsClient = ExecutionsClient.create(ExecutionsSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
+        try (JobsClient jobsClient = newJobsClient(credentials);
+             ExecutionsClient executionsClient = newExecutionsClient(credentials);
              Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
 
             // Create new Job TaskTemplate
@@ -299,18 +301,22 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
 
             OperationFuture<Execution, Execution> future = jobsClient.runJobAsync(runJobRequest);
             Execution execution = future.getMetadata().get();
-
+            
+            final String executionName = execution.getName();
+            
+            onKill(() -> safelyKillJob(runContext, credentials, executionName));
+            
             String logFilter = String.format(
                 "logName=\"projects/%s/logs/run.googleapis.com\" labels.\"run.googleapis.com/execution_name\"=\"%s\"",
                 renderedProjectId,
-                execution.getName()
+                executionName
             );
 
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer())) {
                 if (!isTerminated(execution)) {
-                    runContext.logger().info("Waiting for execution completion: {}.", execution.getName());
-                    execution = awaitJobExecutionTermination(executionsClient, execution.getName(), timeout);
+                    runContext.logger().info("Waiting for execution completion: {}.", executionName);
+                    execution = awaitJobExecutionTermination(executionsClient, executionName, timeout);
                 }
                 // Check for the job successful creation
                 if (isFailed(execution)) {
@@ -323,8 +329,8 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
 
                 if (delete) {
                     // not waiting for Job Execution deletion
-                    executionsClient.deleteExecutionAsync(execution.getName());
-                    runContext.logger().info("Job Execution deleted: {}", execution.getName());
+                    executionsClient.deleteExecutionAsync(executionName);
+                    runContext.logger().info("Job Execution deleted: {}", executionName);
                     // not waiting for Job deletion
                     jobsClient.deleteJobAsync(runJobRequest.getName());
                     runContext.logger().info("Job deleted: {}", runJobRequest.getName());
@@ -349,7 +355,15 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
             }
         }
     }
-
+    
+    private static ExecutionsClient newExecutionsClient(GoogleCredentials credentials) throws IOException {
+        return ExecutionsClient.create(ExecutionsSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
+    }
+    
+    private static JobsClient newJobsClient(GoogleCredentials credentials) throws IOException {
+        return JobsClient.create(JobsSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
+    }
+    
     private Duration getTaskTimeout(final TaskCommands taskCommands) {
         return Optional
             .ofNullable(taskCommands.getTimeout())
@@ -422,5 +436,27 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
         }
 
         return additionalVars;
+    }
+    
+    private void safelyKillJob(final RunContext runContext,
+                               final GoogleCredentials credentials,
+                               final String executionName) {
+        // Use a dedicated ExecutionsClient, as the one used in the run method may be closed in the meantime.
+        try (ExecutionsClient executionsClient = newExecutionsClient(credentials)) {
+            Execution execution = executionsClient.getExecution(executionName);
+            if (isTerminated(execution)) {
+                // Execution is already terminated so we can skip deletion.
+                return;
+            }
+            executionsClient.cancelExecutionAsync(executionName).get();
+            runContext.logger().debug("Job execution canceled: {}", executionName);
+            // we don't need to clean up the storage and execution here as this will be
+            // properly handle by the Task Thread in the run method once the job is terminated (i.e., deleted).
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | IOException e) {
+            Throwable t = e.getCause() != null ? e.getCause() : e;
+            runContext.logger().warn("Failed to cancel Job execution: {}", executionName, t);
+        }
     }
 }
