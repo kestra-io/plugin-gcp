@@ -14,6 +14,7 @@ import io.kestra.core.schedulers.SchedulerTriggerStateInterface;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.pubsub.model.Message;
+import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
@@ -21,6 +22,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,10 +33,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 @MicronautTest
-class TriggerTest {
+class RealtimeTriggerTest {
+
     @Inject
     private ApplicationContext applicationContext;
 
@@ -56,15 +59,14 @@ class TriggerTest {
     @Value("${kestra.variables.globals.project}")
     private String project;
 
-
     @Test
     void flow() throws Exception {
         // mock flow listeners
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        Worker worker = applicationContext.createBean(Worker.class, IdUtils.create(), 8, null);
         try (
+            Worker worker = applicationContext.createBean(Worker.class, IdUtils.create(), 8, null);
             AbstractScheduler scheduler = new DefaultScheduler(
                 this.applicationContext,
                 this.flowListenersService,
@@ -74,20 +76,20 @@ class TriggerTest {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
-            executionQueue.receive(TriggerTest.class, execution -> {
+            executionQueue.receive(RealtimeTriggerTest.class, execution -> {
                 last.set(execution.getLeft());
 
                 queueCount.countDown();
-                assertThat(execution.getLeft().getFlowId(), is("pubsub-listen"));
+                assertThat(execution.getLeft().getFlowId(), is("realtime-listen"));
             });
 
 
             worker.run();
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/pubsub/pubsub-listen.yaml")));
+            repositoryLoader.load(Objects.requireNonNull(RealtimeTriggerTest.class.getClassLoader().getResource("flows/pubsub/realtime.yaml")));
 
-            // publish two messages to trigger the flow
+            // publish message to trigger the flow
             Publish task = Publish.builder()
                 .id(Publish.class.getSimpleName())
                 .type(Publish.class.getName())
@@ -95,8 +97,7 @@ class TriggerTest {
                 .projectId(this.project)
                 .from(
                     List.of(
-                        Message.builder().data("Hello World".getBytes()).build(),
-                        Message.builder().attributes(Map.of("key", "value")).build()
+                        Message.builder().data("Hello World").build()
                     )
                 )
                 .build();
@@ -104,11 +105,8 @@ class TriggerTest {
 
             queueCount.await(1, TimeUnit.MINUTES);
 
-            @SuppressWarnings("unchecked")
-            var count = (Integer) last.get().getTrigger().getVariables().get("count");
-            var uri = (String) last.get().getTrigger().getVariables().get("uri");
-            assertThat(count, is(2));
-            assertThat(uri, is(notNullValue()));
+            Map<String, Object> variables = last.get().getTrigger().getVariables();
+            assertThat(new String(Base64.getDecoder().decode((String) variables.get("data")), StandardCharsets.UTF_8), is("Hello World"));
         }
     }
 }
