@@ -24,10 +24,12 @@ import lombok.experimental.SuperBuilder;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -181,7 +183,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
     public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
         String renderedBucket = runContext.render(this.bucket);
 
-        GoogleCredentials credentials = CredentialService.credentials(runContext, this);
+        final GoogleCredentials credentials = CredentialService.credentials(runContext, this);
 
         boolean hasFilesToUpload = !ListUtils.isEmpty(filesToUpload);
         if (hasFilesToUpload && bucket == null) {
@@ -198,7 +200,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         String workingDirectoryToBlobPath = batchWorkingDirectory.toString().substring(1);
         boolean hasBucket = this.bucket != null;
 
-        try (BatchServiceClient batchServiceClient = BatchServiceClient.create(BatchServiceSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
+        try (BatchServiceClient batchServiceClient = newBatchServiceClient(credentials);
              Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
             Duration waitDuration = Optional.ofNullable(taskCommands.getTimeout()).orElse(this.waitUntilCompletion);
             Map<String, String> labels = ScriptService.labels(runContext, "kestra-", true, true);
@@ -313,7 +315,10 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
                         .build();
 
                 result = batchServiceClient.createJob(createJobRequest);
-                runContext.logger().info("Job created: {}", result.getName());
+                
+                final String jobName = result.getName();
+                onKill(() -> safelyKillJob(runContext, credentials, jobName));
+                runContext.logger().info("Job created: {}", jobName);
             }
 
 
@@ -387,7 +392,11 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
             }
         }
     }
-
+    
+    private static BatchServiceClient newBatchServiceClient(GoogleCredentials credentials) throws IOException {
+        return BatchServiceClient.create(BatchServiceSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
+    }
+    
     private String labelsFilter(Map<String, String> labels) {
         return labels.entrySet().stream()
             .map(entry -> "labels." + entry.getKey() + "=\"" + entry.getValue().toLowerCase() + "\"")
@@ -461,6 +470,34 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         }
 
         return additionalVars;
+    }
+    
+    private void safelyKillJob(final RunContext runContext,
+                               final GoogleCredentials credentials,
+                               final String jobName) {
+        // Use a dedicated BatchServiceClient, as the one used in the run method may be closed in the meantime.
+        try (BatchServiceClient batchServiceClient = newBatchServiceClient(credentials)) {
+            final Job job = batchServiceClient.getJob(jobName);
+            if (isTerminated(job.getStatus().getState())) {
+                // Job execution is already terminated, so we can skip deletion.
+                return;
+            }
+            
+            final DeleteJobRequest request = DeleteJobRequest.newBuilder()
+                .setName(jobName)
+                .setReason("Kestra task was killed.")
+                .build();
+            
+            batchServiceClient.deleteJobAsync(request).get();
+            runContext.logger().debug("Job deleted: {}", jobName);
+            // we don't need to clean up the storage here as this will be
+            // properly handle by the Task Thread in the run method once the job is terminated (i.e., deleted).
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | IOException e) {
+            Throwable t = e.getCause() != null ? e.getCause() : e;
+            runContext.logger().warn("Failed to delete Job: {}", jobName, t);
+        }
     }
 
     @Getter
