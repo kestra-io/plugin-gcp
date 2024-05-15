@@ -171,6 +171,13 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
     @PluginProperty
     private final Boolean delete = true;
 
+    @Schema(
+        title = "The frequency with which the TaskRunner checks whether the job is completed."
+    )
+    @Builder.Default
+    @PluginProperty
+    private final Duration completionCheckInterval = Duration.ofSeconds(1);
+
     @Override
     public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
 
@@ -394,7 +401,7 @@ public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, R
                 }
                 return null;
             },
-            Duration.ofMillis(500),
+            completionCheckInterval,
             timeout
         );
     }
