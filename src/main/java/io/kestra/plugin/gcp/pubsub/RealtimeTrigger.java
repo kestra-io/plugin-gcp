@@ -38,7 +38,8 @@ import java.util.Optional;
                 "maxRecords: 10"
             }
         )
-    }
+    },
+    beta = true
 )
 public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
 
@@ -97,7 +98,6 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
             .build();
 
         return Flux.from(task.stream(conditionContext.getRunContext()))
-            .map(message -> TriggerService.generateRealtimeExecution(this, context, message))
-            .next();
+            .map(message -> TriggerService.generateRealtimeExecution(this, context, message));
     }
 }

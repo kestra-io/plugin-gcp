@@ -25,16 +25,12 @@ import java.io.FileOutputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.validation.constraints.NotNull;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 @SuperBuilder
 @ToString
@@ -136,10 +132,9 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
 	    ProjectSubscriptionName subscriptionName = this.createSubscription(runContext, subscription, autoCreateSubscription);
         GoogleCredentials credentials = this.credentials(runContext);
 
-        return Flux.<Message>create(
+        return Flux.create(
                 sink -> {
 	                AtomicInteger total = new AtomicInteger();
-	                ZonedDateTime started = ZonedDateTime.now();
 
                     MessageReceiver receiver = (message, consumer) -> {
                         try {
@@ -168,7 +163,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                         }, MoreExecutors.directExecutor()
                     );
 
-                    while (!this.ended(total, started)) {
+                    while (true) {
                         if (sink.isCancelled()) {
                             subscriber.stopAsync().awaitTerminated();
                             return;
@@ -177,16 +172,11 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                             Thread.sleep(100);
                         } catch (InterruptedException exception) {
                             Thread.currentThread().interrupt();
+                            subscriber.stopAsync().awaitTerminated();
                             sink.error(exception);
                         }
                     }
-
-                    subscriber.stopAsync().awaitTerminated();
-                    sink.complete();
-                },
-                FluxSink.OverflowStrategy.BUFFER
-            )
-            .subscribeOn(Schedulers.boundedElastic());
+                });
     }
 
     private boolean ended(AtomicInteger count, ZonedDateTime start) {
