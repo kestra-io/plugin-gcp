@@ -6,10 +6,9 @@ import io.micronaut.context.annotation.Value;
 import org.junit.jupiter.api.Disabled;
 
 import java.time.Duration;
-import java.util.List;
 
 @Disabled("Need complex CI setup still needed to be done")
-class GcpBatchTaskRunnerTest extends AbstractTaskRunnerTest {
+class CloudRunTest extends AbstractTaskRunnerTest {
 
     @Value("${kestra.variables.globals.project}")
     private String project;
@@ -17,19 +16,12 @@ class GcpBatchTaskRunnerTest extends AbstractTaskRunnerTest {
     @Value("${kestra.variables.globals.bucket}")
     private String bucket;
 
-    @Value("${kestra.variables.globals.network}")
-    private String network;
-
-    @Value("${kestra.variables.globals.subnetwork}")
-    private String subnetwork;
-
     @Override
     protected TaskRunner taskRunner() {
-        return GcpBatchTaskRunner.builder()
+        return CloudRun.builder()
             .projectId(project)
             .region("us-central1")
             .bucket(bucket)
-            .networkInterfaces(List.of(GcpBatchTaskRunner.NetworkInterface.builder().network(network).subnetwork(subnetwork).build()))
             .delete(false)
             .completionCheckInterval(Duration.ofMillis(100))
             .build();
