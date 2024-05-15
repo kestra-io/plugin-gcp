@@ -134,8 +134,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
 
         return Flux.create(
                 sink -> {
-	                AtomicInteger total = new AtomicInteger();
-
+                    AtomicInteger total = new AtomicInteger();
                     MessageReceiver receiver = (message, consumer) -> {
                         try {
                             sink.next(Message.of(message, serdeType));
@@ -152,29 +151,30 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                         .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
                         .build();
 
-                    subscriber.startAsync().awaitRunning();
+	                try {
+                        subscriber.startAsync().awaitRunning();
 
-                    subscriber.addListener(
-                        new ApiService.Listener() {
-                            @Override
-                            public void failed(ApiService.State from, Throwable failure) {
-                                sink.error(failure);
+                        subscriber.addListener(
+                            new ApiService.Listener() {
+                                @Override
+                                public void failed(ApiService.State from, Throwable failure) {
+                                    sink.error(failure);
+                                }
+                            }, MoreExecutors.directExecutor()
+                        );
+
+                        while (true) {
+                            if (sink.isCancelled()) {
+                                subscriber.stopAsync().awaitTerminated();
+                                return;
                             }
-                        }, MoreExecutors.directExecutor()
-                    );
 
-                    while (true) {
-                        if (sink.isCancelled()) {
-                            subscriber.stopAsync().awaitTerminated();
-                            return;
-                        }
-                        try {
                             Thread.sleep(100);
-                        } catch (InterruptedException exception) {
-                            Thread.currentThread().interrupt();
-                            subscriber.stopAsync().awaitTerminated();
-                            sink.error(exception);
                         }
+                    }
+                    catch (Exception exception) {
+                        subscriber.stopAsync().awaitTerminated();
+                        sink.error(exception);
                     }
                 });
     }
