@@ -179,6 +179,13 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
     @PluginProperty
     private final Boolean resume = true;
 
+    @Schema(
+        title = "The frequency with which the TaskRunner checks whether the job is completed."
+    )
+    @Builder.Default
+    @PluginProperty
+    private final Duration completionCheckInterval = Duration.ofSeconds(1);
+
     @Override
     public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
         String renderedBucket = runContext.render(this.bucket);
@@ -336,7 +343,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer())) {
                 // Wait for the job termination
-                result = waitFormTerminated(batchServiceClient, result, waitDuration);
+                result = waitForTerminated(batchServiceClient, result, waitDuration);
                 if (result == null) {
                     throw new TimeoutException();
                 }
@@ -420,7 +427,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
         return builder.build();
     }
 
-    private Job waitFormTerminated(BatchServiceClient batchServiceClient, Job result, Duration waitDuration) throws TimeoutException {
+    private Job waitForTerminated(BatchServiceClient batchServiceClient, Job result, Duration waitDuration) throws TimeoutException {
         return Await.until(
             () -> {
                 Job terminated = batchServiceClient.getJob(result.getName());
@@ -429,7 +436,7 @@ public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, Remo
                 }
                 return null;
             },
-            Duration.ofMillis(500),
+            completionCheckInterval,
             waitDuration
         );
     }

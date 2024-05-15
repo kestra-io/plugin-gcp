@@ -5,6 +5,7 @@ import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.micronaut.context.annotation.Value;
 import org.junit.jupiter.api.Disabled;
 
+import java.time.Duration;
 import java.util.List;
 
 @Disabled("Need complex CI setup still needed to be done")
@@ -30,6 +31,7 @@ class GcpBatchTaskRunnerTest extends AbstractTaskRunnerTest {
             .bucket(bucket)
             .networkInterfaces(List.of(GcpBatchTaskRunner.NetworkInterface.builder().network(network).subnetwork(subnetwork).build()))
             .delete(false)
+            .completionCheckInterval(Duration.ofMillis(100))
             .build();
     }
 }
