@@ -105,7 +105,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
     },
     beta = true
 )
-public class GcpBatchTaskRunner extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
+public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
     private static final int BUFFER_SIZE = 8 * 1024;
     public static final String MOUNT_PATH = "/mnt/disks/share";
 

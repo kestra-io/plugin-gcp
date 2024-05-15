@@ -132,7 +132,7 @@ import java.util.concurrent.TimeoutException;
     },
     beta = true
 )
-public class GcpCloudRunTaskRunner extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
+public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
     public static final Path MOUNT_PATH = Path.of("/mnt/disks/share");
     public static final String VOLUME_NAME = "kestra-io";
 
