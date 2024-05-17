@@ -178,6 +178,13 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
     @PluginProperty
     private final Duration completionCheckInterval = Duration.ofSeconds(1);
 
+    @Schema(
+        title = "Additional time after the job ends to wait for late logs."
+    )
+    @Builder.Default
+    @PluginProperty
+    private final Duration waitForLogInterval = Duration.ofSeconds(5);
+
     @Override
     public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
 
@@ -320,7 +327,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
             );
 
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
-            try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer())) {
+            try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer(), this.waitForLogInterval)) {
                 if (!isTerminated(execution)) {
                     runContext.logger().info("Waiting for execution completion: {}.", executionName);
                     execution = awaitJobExecutionTermination(executionsClient, executionName, timeout);

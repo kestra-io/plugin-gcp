@@ -186,6 +186,13 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     @PluginProperty
     private final Duration completionCheckInterval = Duration.ofSeconds(1);
 
+    @Schema(
+        title = "Additional time after the job ends to wait for late logs."
+    )
+    @Builder.Default
+    @PluginProperty
+    private final Duration waitForLogInterval = Duration.ofSeconds(5);
+
     @Override
     public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
         String renderedBucket = runContext.render(this.bucket);
@@ -211,7 +218,6 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
              Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
             Duration waitDuration = Optional.ofNullable(taskCommands.getTimeout()).orElse(this.waitUntilCompletion);
             Map<String, String> labels = LabelUtils.labels(runContext);
-            System.out.println(labels);
 
             Job result = null;
 
@@ -342,7 +348,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 result.getUid()
             );
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
-            try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer())) {
+            try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer(), this.waitForLogInterval)) {
                 // Wait for the job termination
                 result = waitForTerminated(batchServiceClient, result, waitDuration);
                 if (result == null) {
