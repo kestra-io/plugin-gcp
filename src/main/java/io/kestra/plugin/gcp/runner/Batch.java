@@ -210,7 +210,8 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
         try (BatchServiceClient batchServiceClient = newBatchServiceClient(credentials);
              Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
             Duration waitDuration = Optional.ofNullable(taskCommands.getTimeout()).orElse(this.waitUntilCompletion);
-            Map<String, String> labels = ScriptService.labels(runContext, "kestra-", true, true);
+            Map<String, String> labels = LabelUtils.labels(runContext);
+            System.out.println(labels);
 
             Job result = null;
 

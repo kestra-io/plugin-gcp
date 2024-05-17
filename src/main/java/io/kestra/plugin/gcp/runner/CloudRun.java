@@ -273,7 +273,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
                     .setTaskCount(1)
                     .build()
                 )
-                .putAllLabels(ScriptService.labels(runContext, "kestra-", true, true))
+                .putAllLabels(LabelUtils.labels(runContext))
                 .build();
 
             final String jobName = ScriptService.jobName(runContext);
