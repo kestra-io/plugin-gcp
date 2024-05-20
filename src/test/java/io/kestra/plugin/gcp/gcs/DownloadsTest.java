@@ -46,6 +46,7 @@ class DownloadsTest {
         Downloads.Output run = task.run(runContext(task));
 
         assertThat(run.getBlobs().size(), is(2));
+        assertThat(run.getOutputFiles().size(), is(2));
     }
 
     private RunContext runContext(Task task) {

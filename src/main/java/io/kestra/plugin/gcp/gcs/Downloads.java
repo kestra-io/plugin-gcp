@@ -15,6 +15,9 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import java.io.File;
+import java.net.URI;
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import jakarta.validation.constraints.NotNull;
 
@@ -130,6 +133,10 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             }))
             .collect(Collectors.toList());
 
+        Map<String, URI> outputFiles = list.stream()
+            .map(blob -> new AbstractMap.SimpleEntry<>(blob.getName(), blob.getUri()))
+            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
+
         Downloads.performAction(
             run.getBlobs(),
             this.action,
@@ -143,6 +150,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         return Output
             .builder()
             .blobs(list)
+            .outputFiles(outputFiles)
             .build();
     }
 
@@ -153,5 +161,10 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             title = "The bucket of the downloaded file"
         )
         private final java.util.List<Blob>  blobs;
+
+        @Schema(
+            title = "The downloaded files as a map of from/to URIs."
+        )
+        private final Map<String, URI> outputFiles;
     }
 }
