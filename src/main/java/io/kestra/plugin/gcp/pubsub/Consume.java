@@ -128,57 +128,6 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             .build();
     }
 
-    public Publisher<Message> stream(RunContext runContext) throws Exception {
-	    ProjectSubscriptionName subscriptionName = this.createSubscription(runContext, subscription, autoCreateSubscription);
-        GoogleCredentials credentials = this.credentials(runContext);
-
-        return Flux.create(
-                sink -> {
-                    AtomicInteger total = new AtomicInteger();
-                    MessageReceiver receiver = (message, consumer) -> {
-                        try {
-                            sink.next(Message.of(message, serdeType));
-                            total.getAndIncrement();
-                            consumer.ack();
-                        }
-                        catch(Exception exception) {
-                            sink.error(exception);
-                            consumer.nack();
-                        }
-                    };
-
-                    Subscriber subscriber = Subscriber.newBuilder(subscriptionName, receiver)
-                        .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
-                        .build();
-
-	                try {
-                        subscriber.startAsync().awaitRunning();
-
-                        subscriber.addListener(
-                            new ApiService.Listener() {
-                                @Override
-                                public void failed(ApiService.State from, Throwable failure) {
-                                    sink.error(failure);
-                                }
-                            }, MoreExecutors.directExecutor()
-                        );
-
-                        while (true) {
-                            if (sink.isCancelled()) {
-                                subscriber.stopAsync().awaitTerminated();
-                                return;
-                            }
-
-                            Thread.sleep(100);
-                        }
-                    }
-                    catch (Exception exception) {
-                        subscriber.stopAsync().awaitTerminated();
-                        sink.error(exception);
-                    }
-                });
-    }
-
     private boolean ended(AtomicInteger count, ZonedDateTime start) {
         if (this.maxRecords != null && count.get() >= this.maxRecords) {
             return true;

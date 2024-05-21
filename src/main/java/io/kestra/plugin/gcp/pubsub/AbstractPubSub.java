@@ -38,7 +38,7 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
             .build();
     }
 
-    ProjectSubscriptionName createSubscription(RunContext runContext, String subscription, boolean autoCreateSubscription) throws IOException, IllegalVariableEvaluationException {
+    public ProjectSubscriptionName createSubscription(RunContext runContext, String subscription, boolean autoCreateSubscription) throws IOException, IllegalVariableEvaluationException {
         VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
 
         TopicName topicName = TopicName.of(runContext.render(projectId), runContext.render(topic));
