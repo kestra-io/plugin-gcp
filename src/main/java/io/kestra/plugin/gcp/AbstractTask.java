@@ -24,7 +24,7 @@ public abstract class AbstractTask extends Task implements GcpInterface {
     @Builder.Default
     protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
-    protected GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return CredentialService.credentials(runContext, this);
     }
 }
