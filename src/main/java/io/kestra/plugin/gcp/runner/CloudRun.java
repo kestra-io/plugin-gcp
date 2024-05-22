@@ -190,6 +190,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
 
         final String renderedProjectId = runContext.render(projectId);
         final String renderedBucket = runContext.render(bucket);
+        final String renderedRegion = runContext.render(region);
         final GoogleCredentials credentials = CredentialService.credentials(runContext, this);
 
         boolean hasFilesToUpload = !ListUtils.isEmpty(filesToUpload);
@@ -287,7 +288,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
             final CreateJobRequest createJobRequest =
                 CreateJobRequest.newBuilder()
                     // The job's parent is the region in which the job will run.
-                    .setParent(LocationName.of(renderedProjectId, region).toString())
+                    .setParent(LocationName.of(renderedProjectId, renderedRegion).toString())
                     .setJob(job)
                     .setJobId(jobName)
                     .build();
@@ -297,7 +298,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
 
             // Run the Job
             Duration timeout = getTaskTimeout(taskCommands);
-            final JobName fullJobName = JobName.of(renderedProjectId, region, jobName);
+            final JobName fullJobName = JobName.of(renderedProjectId, renderedRegion, jobName);
             final RunJobRequest runJobRequest =
                 RunJobRequest.newBuilder()
                     .setName(fullJobName.toString())
