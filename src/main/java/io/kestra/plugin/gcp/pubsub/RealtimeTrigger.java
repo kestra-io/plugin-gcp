@@ -39,15 +39,27 @@ import java.util.concurrent.atomic.AtomicReference;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "React and consume messages in a Pub/Sub topic."
+    title = "React and consume messages from a Pub/Sub topic."
 )
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "topic: test-topic",
-                "maxRecords: 10"
-            }
+            code = """
+                id: realtime-pubsub
+                namespace: company.myteam
+
+                triggers:
+                  - id: trigger
+                    type: io.kestra.plugin.gcp.pubsub.RealtimeTrigger
+                    projectId: test-project-id
+                    topic: test-topic
+                    subscription: test-subscription
+
+                tasks:
+                  - id: log
+                    type: io.kestra.plugin.core.log.Log
+                    message: "Received: {{trigger.data | base64decode}}\"""",
+            full = true
         )
     },
     beta = true
