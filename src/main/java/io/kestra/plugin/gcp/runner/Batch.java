@@ -184,7 +184,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     )
     @Builder.Default
     @PluginProperty
-    private final Duration completionCheckInterval = Duration.ofSeconds(1);
+    private final Duration completionCheckInterval = Duration.ofSeconds(5);
 
     @Schema(
         title = "Additional time after the job ends to wait for late logs."
