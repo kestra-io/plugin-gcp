@@ -81,7 +81,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "    UNION ALL",
                 "    SELECT 2 as id, \"Doe\" as name",
                 "- id: use-fetched-data",
-                "  type: io.kestra.core.tasks.debugs.Return",
+                "  type: io.kestra.plugin.core.debug.Return",
                 "  format: |",
                 "    {% for row in outputs.fetch.rows %}",
                 "    id : {{ row.id }}, name: {{ row.name }}",
