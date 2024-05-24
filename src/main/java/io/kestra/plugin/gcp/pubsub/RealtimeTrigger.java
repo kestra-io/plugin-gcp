@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "React and consume messages from a Pub/Sub topic."
+    title = "Consume a message in real-time from a Pub/Sub topic and create one execution per message ."
 )
 @Plugin(
     examples = {

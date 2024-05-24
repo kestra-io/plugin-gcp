@@ -26,7 +26,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for messages in from Pub/Sub topic."
+    title = "Consume messages periodically from a Pub/Sub topic and create one execution per batch."
 )
 @Plugin(
     examples = {
