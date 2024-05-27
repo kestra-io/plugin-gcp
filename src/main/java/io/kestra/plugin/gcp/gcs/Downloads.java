@@ -134,6 +134,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             .collect(Collectors.toList());
 
         Map<String, URI> outputFiles = list.stream()
+            .filter(blob -> !blob.isDirectory())
             .map(blob -> new AbstractMap.SimpleEntry<>(blob.getName(), blob.getUri()))
             .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
 
