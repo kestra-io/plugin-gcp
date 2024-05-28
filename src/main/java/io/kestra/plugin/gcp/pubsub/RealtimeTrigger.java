@@ -61,8 +61,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     message: "Received: {{trigger.data | base64decode}}\"""",
             full = true
         )
-    },
-    beta = true
+    }
 )
 public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
 
