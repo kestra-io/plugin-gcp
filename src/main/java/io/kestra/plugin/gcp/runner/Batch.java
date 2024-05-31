@@ -214,14 +214,20 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
         String workingDirectoryToBlobPath = batchWorkingDirectory.toString().substring(1);
         boolean hasBucket = this.bucket != null;
 
+        String projectId = runContext.render(this.projectId);
+
+        LoggingOptions.Builder loggingOptionsBuilder = LoggingOptions.newBuilder().setCredentials(credentials);
+        if (projectId != null) {
+            loggingOptionsBuilder.setProjectId(projectId);
+        }
+
         try (BatchServiceClient batchServiceClient = newBatchServiceClient(credentials);
-             Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
+             Logging logging = loggingOptionsBuilder.build().getService()) {
             Duration waitDuration = Optional.ofNullable(taskCommands.getTimeout()).orElse(this.waitUntilCompletion);
             Map<String, String> labels = LabelUtils.labels(runContext);
 
             Job result = null;
 
-            String projectId = runContext.render(this.projectId);
             String region = runContext.render(this.region);
 
             if (resume) {
@@ -244,7 +250,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                         filesToUploadWithOutputDir.add(outputDirName);
                     }
                     try (Storage storage = storage(runContext, credentials)) {
-                        for (String relativePath: filesToUploadWithOutputDir) {
+                        for (String relativePath : filesToUploadWithOutputDir) {
                             BlobInfo destination = BlobInfo.newBuilder(BlobId.of(
                                 renderedBucket,
                                 workingDirectoryToBlobPath + Path.of("/" + relativePath)
@@ -329,7 +335,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                         .build();
 
                 result = batchServiceClient.createJob(createJobRequest);
-                
+
                 final String jobName = result.getName();
                 onKill(() -> safelyKillJob(runContext, credentials, jobName));
                 runContext.logger().info("Job created: {}", jobName);
@@ -365,7 +371,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
                 if (hasFilesToDownload || outputDirectoryEnabled) {
                     try (Storage storage = storage(runContext, credentials)) {
-                        for (String relativePath: filesToDownload) {
+                        for (String relativePath : filesToDownload) {
                             BlobInfo source = BlobInfo.newBuilder(BlobId.of(
                                 renderedBucket,
                                 workingDirectoryToBlobPath + Path.of("/" + relativePath)
@@ -406,11 +412,11 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
             }
         }
     }
-    
+
     private static BatchServiceClient newBatchServiceClient(GoogleCredentials credentials) throws IOException {
         return BatchServiceClient.create(BatchServiceSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
     }
-    
+
     private String labelsFilter(Map<String, String> labels) {
         return labels.entrySet().stream()
             .map(entry -> "labels." + entry.getKey() + "=\"" + entry.getValue().toLowerCase() + "\"")
@@ -419,7 +425,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
     private Runnable.Container mainContainer(RunContext runContext, TaskCommands taskCommands, List<String> command, boolean mountVolume, Path batchWorkingDirectory) throws IllegalVariableEvaluationException {
         // TODO working directory
-        var builder =  Runnable.Container.newBuilder()
+        var builder = Runnable.Container.newBuilder()
             .setImageUri(runContext.render(taskCommands.getContainerImage()))
             .addAllCommands(command);
 
@@ -453,7 +459,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     }
 
     private boolean isTerminated(JobStatus.State state) {
-        return state ==  JobStatus.State.SUCCEEDED || state ==  JobStatus.State.DELETION_IN_PROGRESS || isFailed(state);
+        return state == JobStatus.State.SUCCEEDED || state == JobStatus.State.DELETION_IN_PROGRESS || isFailed(state);
     }
 
     private Storage storage(RunContext runContext, GoogleCredentials credentials) throws IllegalVariableEvaluationException {
@@ -485,7 +491,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
         return additionalVars;
     }
-    
+
     private void safelyKillJob(final RunContext runContext,
                                final GoogleCredentials credentials,
                                final String jobName) {
@@ -496,12 +502,12 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 // Job execution is already terminated, so we can skip deletion.
                 return;
             }
-            
+
             final DeleteJobRequest request = DeleteJobRequest.newBuilder()
                 .setName(jobName)
                 .setReason("Kestra task was killed.")
                 .build();
-            
+
             batchServiceClient.deleteJobAsync(request).get();
             runContext.logger().debug("Job deleted: {}", jobName);
             // we don't need to clean up the storage here as this will be
