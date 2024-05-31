@@ -39,14 +39,21 @@ import java.util.concurrent.atomic.AtomicReference;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Consume a message in real-time from a Pub/Sub topic and create one execution per message ."
+    title = "Consume a message in real-time from a Pub/Sub topic and create one execution per message.",
+    description = "If you would like to consume multiple messages processed within a given time frame and process them in batch, you can use the [io.kestra.plugin.gcp.pubsub.Trigger](https://kestra.io/plugins/plugin-gcp/triggers/io.kestra.plugin.gcp.pubsub.trigger) instead."
 )
 @Plugin(
     examples = {
         @Example(
+            title = "Consume a message from a Pub/Sub topic in real-time.",
             code = """
                 id: realtime-pubsub
-                namespace: company.myteam
+                namespace: dev
+
+                tasks:
+                  - id: log
+                    type: io.kestra.plugin.core.log.Log
+                    message: "Received: {{ trigger.data }}"
 
                 triggers:
                   - id: trigger
@@ -54,11 +61,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     projectId: test-project-id
                     topic: test-topic
                     subscription: test-subscription
-
-                tasks:
-                  - id: log
-                    type: io.kestra.plugin.core.log.Log
-                    message: "Received: {{trigger.data | base64decode}}\"""",
+                """,
             full = true
         )
     }
