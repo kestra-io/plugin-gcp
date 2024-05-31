@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
         )
     }
 )
-public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
+public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerInterface, TriggerOutput<Message>, PubSubConnectionInterface {
 
     private String projectId;
 
