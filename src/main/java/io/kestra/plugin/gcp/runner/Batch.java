@@ -22,10 +22,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.time.*;
 import java.util.*;
@@ -242,35 +239,16 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                     runContext.logger().info("Job '{}' is resumed from an already running job ", result.getName());
                 }
             }
+            Path outputDirectory = (Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR);
             if (result == null) {
                 if (hasFilesToUpload || outputDirectoryEnabled) {
-                    List<String> filesToUploadWithOutputDir = new ArrayList<>(filesToUpload);
-                    if (outputDirectoryEnabled) {
-                        String outputDirName = (batchWorkingDirectory.relativize((Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR)) + "/").substring(1);
-                        filesToUploadWithOutputDir.add(outputDirName);
-                    }
-                    try (Storage storage = storage(runContext, credentials)) {
-                        for (String relativePath : filesToUploadWithOutputDir) {
-                            BlobInfo destination = BlobInfo.newBuilder(BlobId.of(
-                                renderedBucket,
-                                workingDirectoryToBlobPath + Path.of("/" + relativePath)
-                            )).build();
-                            Path filePath = runContext.resolve(Path.of(relativePath));
-                            if (relativePath.endsWith("/")) {
-                                storage.create(destination);
-                                continue;
-                            }
-
-                            try (var fileInputStream = new FileInputStream(filePath.toFile());
-                                 var writer = storage.writer(destination)) {
-                                byte[] buffer = new byte[BUFFER_SIZE];
-                                int limit;
-                                while ((limit = fileInputStream.read(buffer)) >= 0) {
-                                    writer.write(ByteBuffer.wrap(buffer, 0, limit));
-                                }
-                            }
-                        }
-                    }
+                    GcsUtils.of(projectId, credentials).uploadFiles(runContext,
+                        filesToUpload,
+                        renderedBucket,
+                        batchWorkingDirectory,
+                        outputDirectory,
+                        outputDirectoryEnabled
+                    );
                 }
 
                 var taskBuilder = TaskSpec.newBuilder();
@@ -287,7 +265,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 // main container
                 Runnable runnable =
                     Runnable.newBuilder()
-                        .setContainer(mainContainer(runContext, taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled, (Path) additionalVars.get(ScriptService.VAR_WORKING_DIR)))
+                        .setContainer(mainContainer(runContext, taskCommands, taskCommands.getCommands(), hasFilesToDownload || hasFilesToUpload || outputDirectoryEnabled, batchWorkingDirectory))
                         .setEnvironment(Environment.newBuilder()
                             .putAllVariables(this.env(runContext, taskCommands))
                             .build()
@@ -372,41 +350,22 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 }
 
                 if (hasFilesToDownload || outputDirectoryEnabled) {
-                    try (Storage storage = storage(runContext, credentials)) {
-                        for (String relativePath : filesToDownload) {
-                            BlobInfo source = BlobInfo.newBuilder(BlobId.of(
-                                renderedBucket,
-                                workingDirectoryToBlobPath + Path.of("/" + relativePath)
-                            )).build();
-                            try (var fileOutputStream = new FileOutputStream(runContext.resolve(Path.of(relativePath)).toFile());
-                                 var reader = storage.reader(source.getBlobId())) {
-                                byte[] buffer = new byte[BUFFER_SIZE];
-                                int limit;
-                                while ((limit = reader.read(ByteBuffer.wrap(buffer))) >= 0) {
-                                    fileOutputStream.write(buffer, 0, limit);
-                                }
-                            }
-                        }
-
-                        if (outputDirectoryEnabled) {
-                            Path batchOutputDirectory = (Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR);
-                            Page<Blob> outputDirEntries = storage.list(renderedBucket, Storage.BlobListOption.prefix(batchOutputDirectory.toString().substring(1)));
-                            outputDirEntries.iterateAll().forEach(blob -> {
-                                Path relativeBlobPathFromOutputDir = Path.of(batchOutputDirectory.toString().substring(1)).relativize(Path.of(blob.getBlobId().getName()));
-                                storage.downloadTo(
-                                    blob.getBlobId(),
-                                    taskCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir)
-                                );
-                            });
-                        }
-                    }
+                    GcsUtils.of(projectId, credentials).downloadFile(
+                        runContext,
+                        taskCommands,
+                        filesToDownload,
+                        renderedBucket,
+                        batchWorkingDirectory,
+                        outputDirectory,
+                        outputDirectoryEnabled
+                    );
                 }
 
                 return new RunnerResult(0, taskCommands.getLogConsumer());
             }
         } finally {
             if (hasBucket && delete) {
-                try (Storage storage = storage(runContext, credentials)) {
+                try (Storage storage = GcsUtils.of(projectId, credentials).storage(runContext)) {
                     Page<Blob> list = storage.list(renderedBucket, Storage.BlobListOption.prefix(workingDirectoryToBlobPath));
                     list.iterateAll().forEach(blob -> storage.delete(blob.getBlobId()));
                     storage.delete(BlobInfo.newBuilder(BlobId.of(renderedBucket, workingDirectoryToBlobPath)).build().getBlobId());
@@ -462,18 +421,6 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
     private boolean isTerminated(JobStatus.State state) {
         return state == JobStatus.State.SUCCEEDED || state == JobStatus.State.DELETION_IN_PROGRESS || isFailed(state);
-    }
-
-    private Storage storage(RunContext runContext, GoogleCredentials credentials) throws IllegalVariableEvaluationException {
-        VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
-
-        return StorageOptions
-            .newBuilder()
-            .setCredentials(credentials)
-            .setProjectId(runContext.render(projectId))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
-            .build()
-            .getService();
     }
 
     @Override

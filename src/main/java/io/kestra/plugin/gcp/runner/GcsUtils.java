@@ -47,17 +47,19 @@ public final class GcsUtils {
                              Path outputDirectory,
                              boolean outputDirectoryEnabled) throws Exception {
         try (Storage storage = storage(runContext)) {
-            for (String relativePath : filesToDownload) {
-                BlobInfo source = BlobInfo.newBuilder(BlobId.of(
-                    bucket,
-                    removeLeadingSlash(workingDirectory.toString()) + Path.of("/" + relativePath)
-                )).build();
-                try (var fileOutputStream = new FileOutputStream(runContext.resolve(Path.of(relativePath)).toFile());
-                     var reader = storage.reader(source.getBlobId())) {
-                    byte[] buffer = new byte[BUFFER_SIZE];
-                    int limit;
-                    while ((limit = reader.read(ByteBuffer.wrap(buffer))) >= 0) {
-                        fileOutputStream.write(buffer, 0, limit);
+            if (filesToDownload != null) {
+                for (String relativePath : filesToDownload) {
+                    BlobInfo source = BlobInfo.newBuilder(BlobId.of(
+                        bucket,
+                        removeLeadingSlash(workingDirectory.toString()) + Path.of("/" + relativePath)
+                    )).build();
+                    try (var fileOutputStream = new FileOutputStream(runContext.resolve(Path.of(relativePath)).toFile());
+                         var reader = storage.reader(source.getBlobId())) {
+                        byte[] buffer = new byte[BUFFER_SIZE];
+                        int limit;
+                        while ((limit = reader.read(ByteBuffer.wrap(buffer))) >= 0) {
+                            fileOutputStream.write(buffer, 0, limit);
+                        }
                     }
                 }
             }
@@ -70,7 +72,9 @@ public final class GcsUtils {
                     BlobId blobId = blob.getBlobId();
                     if (!blobId.getName().endsWith("/")) {
                         Path relativeBlobPathFromOutputDir = outputDirPath.relativize(Path.of(blobId.getName()));
-                        storage.downloadTo(blobId, taskCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir));
+                        Path outputFile = taskCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir);
+                        outputFile.getParent().toFile().mkdirs();
+                        storage.downloadTo(blobId, outputFile);
                     }
                 });
             }

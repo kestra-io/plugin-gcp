@@ -34,4 +34,9 @@ class BatchTest extends AbstractTaskRunnerTest {
             .completionCheckInterval(Duration.ofMillis(100))
             .build();
     }
+
+    @Override
+    protected boolean needsToSpecifyWorkingDirectory() {
+        return true;
+    }
 }
