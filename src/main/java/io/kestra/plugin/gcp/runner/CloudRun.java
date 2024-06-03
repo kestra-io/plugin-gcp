@@ -324,14 +324,11 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
             final String executionName = execution.getName();
             
             onKill(() -> safelyKillJob(runContext, credentials, executionName));
-            
-            String logFilter = String.format(
-                "logName=\"projects/%s/logs/run.googleapis.com\" labels.\"run.googleapis.com/execution_name\"=\"%s\"",
-                renderedProjectId,
-                executionName
-            );
 
-            LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
+            LogEntryServerStream stream = logging.tailLogEntries(
+                Logging.TailOption.filter("(logName=projects/" + renderedProjectId + "/logs/run.googleapis.com%2Fstdout OR logName=projects/" + renderedProjectId + "/logs/run.googleapis.com%2Fstderr) AND " +
+                    "resource.labels.job_name=\"" + jobName + "\"")
+            );
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer(), this.waitForLogInterval)) {
                 if (!isTerminated(execution)) {
                     runContext.logger().info("Waiting for execution completion: {}.", executionName);

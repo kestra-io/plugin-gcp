@@ -356,6 +356,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
             );
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer(), this.waitForLogInterval)) {
+                runContext.logger().info("Waiting for job completion.");
                 // Wait for the job termination
                 result = waitForTerminated(batchServiceClient, result, waitDuration);
                 if (result == null) {
