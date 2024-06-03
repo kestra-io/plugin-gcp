@@ -229,9 +229,13 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
             }
         }
 
+        LoggingOptions.Builder loggingOptionsBuilder = LoggingOptions.newBuilder().setCredentials(credentials);
+        if (renderedProjectId != null) {
+            loggingOptionsBuilder.setProjectId(renderedProjectId);
+        }
         try (JobsClient jobsClient = newJobsClient(credentials);
              ExecutionsClient executionsClient = newExecutionsClient(credentials);
-             Logging logging = LoggingOptions.getDefaultInstance().toBuilder().setCredentials(credentials).build().getService()) {
+             Logging logging = loggingOptionsBuilder.build().getService()) {
 
             // Create new Job TaskTemplate
             TaskTemplate.Builder taskBuilder = TaskTemplate.newBuilder();
