@@ -337,9 +337,10 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 result = batchServiceClient.createJob(createJobRequest);
 
                 final String jobName = result.getName();
-                onKill(() -> safelyKillJob(runContext, credentials, jobName));
                 runContext.logger().info("Job created: {}", jobName);
             }
+            Job finalResult = result;
+            onKill(() -> safelyKillJob(runContext, credentials, finalResult.getName()));
 
 
             // Check for the job successful creation
