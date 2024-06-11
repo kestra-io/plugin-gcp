@@ -99,8 +99,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                     - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
             full = true
         )
-    },
-    beta = true
+    }
 )
 public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
     private static final int BUFFER_SIZE = 8 * 1024;

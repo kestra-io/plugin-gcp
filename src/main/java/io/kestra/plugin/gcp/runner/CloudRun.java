@@ -129,8 +129,7 @@ import java.util.concurrent.TimeoutException;
                     - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
             full = true
         )
-    },
-    beta = true
+    }
 )
 public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
     public static final Path MOUNT_PATH = Path.of("/mnt/disks/share");
