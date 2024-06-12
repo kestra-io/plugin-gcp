@@ -12,8 +12,7 @@ import io.kestra.core.runners.FlowListeners;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.runners.Worker;
 import io.kestra.core.schedulers.AbstractScheduler;
-import io.kestra.core.schedulers.DefaultScheduler;
-import io.kestra.core.schedulers.SchedulerTriggerStateInterface;
+import io.kestra.jdbc.runner.JdbcScheduler;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.gcs.models.Blob;
@@ -42,9 +41,6 @@ class TriggerTest {
     private ApplicationContext applicationContext;
 
     @Inject
-    private SchedulerTriggerStateInterface triggerState;
-
-    @Inject
     private FlowListeners flowListenersService;
 
     @Inject
@@ -71,16 +67,15 @@ class TriggerTest {
         // scheduler
         Worker worker = applicationContext.createBean(Worker.class, IdUtils.create(), 8, null);
         try (
-            AbstractScheduler scheduler = new DefaultScheduler(
+            AbstractScheduler scheduler = new JdbcScheduler(
                 this.applicationContext,
-                this.flowListenersService,
-                this.triggerState
+                this.flowListenersService
             );
         ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
-            executionQueue.receive(TriggerTest.class, executionWithError -> {
+            executionQueue.receive(executionWithError -> {
                 Execution execution = executionWithError.getLeft();
                 if (execution.getFlowId().equals("gcs-listen")) {
                     last.set(execution);
