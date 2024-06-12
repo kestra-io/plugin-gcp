@@ -2,7 +2,7 @@ package io.kestra.plugin.gcp.gke;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.container.v1.Cluster;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-@MicronautTest
+@KestraTest
 class ClusterMetadataTest {
     @Inject
     private RunContextFactory runContextFactory;

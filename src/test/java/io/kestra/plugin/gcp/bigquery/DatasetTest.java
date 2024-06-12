@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.plugin.gcp.bigquery.models.AccessControl;
 import io.kestra.plugin.gcp.bigquery.models.Entity;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@MicronautTest
+@KestraTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DatasetTest {
     private static final String RANDOM_ID = "tu_" + FriendlyId.createFriendlyId().toLowerCase();

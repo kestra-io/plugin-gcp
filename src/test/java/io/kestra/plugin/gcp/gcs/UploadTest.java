@@ -2,7 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -11,7 +11,7 @@ import jakarta.inject.Inject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@MicronautTest
+@KestraTest
 class UploadTest {
     @Inject
     private GcsTestUtils testUtils;

@@ -4,7 +4,7 @@ import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
@@ -22,7 +22,7 @@ import jakarta.inject.Inject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@MicronautTest
+@KestraTest
 public class ExtractToGcsTest extends AbstractBigquery {
     @Inject
     private RunContextFactory runContextFactory;

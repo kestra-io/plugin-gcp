@@ -1,7 +1,7 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import io.kestra.core.models.validations.ModelValidator;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -11,7 +11,7 @@ import jakarta.validation.ConstraintViolationException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@MicronautTest
+@KestraTest
 class ValidationTest {
     @Inject
     private ModelValidator modelValidator;

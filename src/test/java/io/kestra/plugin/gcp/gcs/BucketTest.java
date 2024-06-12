@@ -12,7 +12,7 @@ import io.kestra.plugin.gcp.gcs.models.AccessControl;
 import io.kestra.plugin.gcp.gcs.models.BucketLifecycleRule;
 import io.kestra.plugin.gcp.gcs.models.Entity;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@MicronautTest
+@KestraTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BucketTest {
     private static final String RANDOM_ID = "tu_" + FriendlyId.createFriendlyId().toLowerCase();

@@ -1,7 +1,7 @@
 package io.kestra.plugin.gcp.auth;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
@@ -13,7 +13,7 @@ import jakarta.inject.Inject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-@MicronautTest
+@KestraTest
 class OauthAccessTokenTest {
     @Inject
     private RunContextFactory runContextFactory;

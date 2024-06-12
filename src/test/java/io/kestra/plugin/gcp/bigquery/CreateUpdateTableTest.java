@@ -10,7 +10,7 @@ import io.kestra.plugin.gcp.bigquery.models.Schema;
 import io.kestra.plugin.gcp.bigquery.models.StandardTableDefinition;
 import io.kestra.plugin.gcp.bigquery.models.TableDefinition;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@MicronautTest
+@KestraTest
 @Slf4j
 class CreateUpdateTableTest {
     @Inject
