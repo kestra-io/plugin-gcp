@@ -4,7 +4,6 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.VersionProvider;
 import io.kestra.plugin.gcp.AbstractTask;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -24,13 +23,11 @@ import java.util.Map;
 @NoArgsConstructor
 public abstract class AbstractGcs extends AbstractTask {
     Storage connection(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
-        VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
-
         return StorageOptions
             .newBuilder()
             .setCredentials(this.credentials(runContext))
             .setProjectId(runContext.render(projectId))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();
     }

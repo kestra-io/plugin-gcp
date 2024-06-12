@@ -6,7 +6,6 @@ import com.google.cloud.firestore.FirestoreOptions;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.VersionProvider;
 import io.kestra.plugin.gcp.AbstractTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -31,12 +30,10 @@ abstract class AbstractFirestore extends AbstractTask {
     protected String collection;
 
     Firestore connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
-
         return FirestoreOptions.newBuilder()
             .setCredentials(this.credentials(runContext))
             .setProjectId(runContext.render(projectId))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();
     }
