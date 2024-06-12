@@ -7,7 +7,6 @@ import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobException;
 import dev.failsafe.Failsafe;
-import io.kestra.core.utils.VersionProvider;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -88,14 +87,12 @@ abstract public class AbstractBigquery extends AbstractTask {
     }
 
     static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
-        VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
-
         return BigQueryOptions
             .newBuilder()
             .setCredentials(googleCredentials)
             .setProjectId(runContext.render(projectId))
             .setLocation(runContext.render(location))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();
     }

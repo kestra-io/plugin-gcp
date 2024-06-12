@@ -7,7 +7,6 @@ import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
 import com.google.pubsub.v1.*;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.VersionProvider;
 import io.kestra.plugin.gcp.AbstractTask;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -29,17 +28,15 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
     private String topic;
 
     Publisher createPublisher(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
-        VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
 
         TopicName topicName = TopicName.of(runContext.render(projectId), runContext.render(topic));
         return Publisher.newBuilder(topicName)
             .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build();
     }
 
     public ProjectSubscriptionName createSubscription(RunContext runContext, String subscription, boolean autoCreateSubscription) throws IOException, IllegalVariableEvaluationException {
-        VersionProvider versionProvider = runContext.getApplicationContext().getBean(VersionProvider.class);
 
         TopicName topicName = TopicName.of(runContext.render(projectId), runContext.render(topic));
         ProjectSubscriptionName subscriptionName = ProjectSubscriptionName.of(runContext.render(projectId), runContext.render(subscription));
@@ -47,7 +44,7 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
         if(autoCreateSubscription) {
             SubscriptionAdminSettings subscriptionAdminSettings = SubscriptionAdminSettings.newBuilder()
                 .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
-                .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + versionProvider.getVersion()))
+                .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
                 .build();
 
             // List all existing subscriptions and create the subscription if needed
