@@ -19,6 +19,7 @@ import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -67,12 +67,8 @@ class RealtimeTriggerTest {
                 this.flowListenersService
             );
         ) {
-            AtomicReference<Execution> last = new AtomicReference<>();
-
             // wait for execution
-            executionQueue.receive(execution -> {
-                last.set(execution.getLeft());
-
+            Flux<Execution> receive = TestsUtils.receive(executionQueue, execution -> {
                 queueCount.countDown();
                 assertThat(execution.getLeft().getFlowId(), is("realtime-listen"));
             });
@@ -97,9 +93,10 @@ class RealtimeTriggerTest {
                 .build();
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
-            queueCount.await(1, TimeUnit.MINUTES);
+            boolean await = queueCount.await(1, TimeUnit.MINUTES);
+            assertThat(await, is(true));
 
-            Map<String, Object> variables = last.get().getTrigger().getVariables();
+            Map<String, Object> variables = receive.blockLast().getTrigger().getVariables();
             assertThat(new String(Base64.getDecoder().decode((String) variables.get("data")), StandardCharsets.UTF_8), is("Hello World"));
         }
     }

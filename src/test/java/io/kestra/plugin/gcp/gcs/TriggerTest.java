@@ -23,6 +23,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 
 import java.util.Map;
 import java.util.Objects;
@@ -75,7 +76,7 @@ class TriggerTest {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
-            executionQueue.receive(executionWithError -> {
+            Flux<Execution> receive = TestsUtils.receive(executionQueue, executionWithError -> {
                 Execution execution = executionWithError.getLeft();
                 if (execution.getFlowId().equals("gcs-listen")) {
                     last.set(execution);
@@ -98,6 +99,7 @@ class TriggerTest {
                 assertThat(await, is(true));
             } finally {
                 worker.shutdown();
+                receive.blockLast();
             }
 
             @SuppressWarnings("unchecked")
