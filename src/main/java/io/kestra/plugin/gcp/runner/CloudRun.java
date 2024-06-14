@@ -126,7 +126,7 @@ import java.util.concurrent.TimeoutException;
                       region: "{{ vars.region }}"
                       bucket: "{{ vars.bucker }}"
                     commands:
-                    - cp {{ workingDir }}/data.txt {{ workingDir }}/out.txt""",
+                      - cp {{ workingDir }}/data.txt {{ workingDir }}/out.txt""",
             full = true
         )
     }
