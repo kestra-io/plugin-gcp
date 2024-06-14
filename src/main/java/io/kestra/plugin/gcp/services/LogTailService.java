@@ -18,7 +18,7 @@ public class LogTailService {
             .setProjectId(projectId)
             .build();
 
-        Thread thread = new Thread(
+        Thread thread = Thread.ofVirtual().name("gcp-log-tail").start(
             throwRunnable(() -> {
                 try (Logging logging = options.getService()) {
                     LogEntryServerStream stream = logging.tailLogEntries(
@@ -38,11 +38,9 @@ public class LogTailService {
                         }
                     }
                 }
-            }),
-            "gcp-log-tail"
+            })
         );
 
-        thread.start();
         thread.setUncaughtExceptionHandler((t, e) -> {
             if (!(e.getCause() instanceof InterruptedException)) {
                 logger.error("Failed to capture log", e);
