@@ -65,7 +65,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                   - id: shell
                     type: io.kestra.plugin.scripts.shell.Commands
                     taskRunner:
-                      type: io.kestra.plugin.gcp.runner.GcpBatchTaskRunner
+                      type: io.kestra.plugin.gcp.runner.Batch
                       projectId: "{{vars.projectId}}"
                       region: "{{vars.region}}"
                     commands:
@@ -91,7 +91,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                       - out.txt
                     containerImage: centos
                     taskRunner:
-                      type: io.kestra.plugin.gcp.runner.GcpBatchTaskRunner
+                      type: io.kestra.plugin.gcp.runner.Batch
                       projectId: "{{vars.projectId}}"
                       region: "{{vars.region}}"
                       bucket: "{{vars.bucker}}"

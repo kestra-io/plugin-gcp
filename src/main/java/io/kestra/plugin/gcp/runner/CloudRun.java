@@ -95,9 +95,9 @@ import java.util.concurrent.TimeoutException;
                   - id: shell
                     type: io.kestra.plugin.scripts.shell.Commands
                     taskRunner:
-                      type: io.kestra.plugin.gcp.runner.GcpCloudRunTaskRunner
-                      projectId: "{{vars.projectId}}"
-                      region: "{{vars.region}}"
+                      type: io.kestra.plugin.gcp.runner.CloudRun
+                      projectId: "{{ vars.projectId }}"
+                      region: "{{ vars.region }}"
                     commands:
                     - echo "Hello World\"""",
             full = true
@@ -116,17 +116,17 @@ import java.util.concurrent.TimeoutException;
                   - id: shell
                     type: io.kestra.plugin.scripts.shell.Commands
                     inputFiles:
-                      data.txt: "{{inputs.file}}"
+                      data.txt: "{{ inputs.file }}"
                     outputFiles:
                       - out.txt
                     containerImage: centos
                     taskRunner:
-                      type: io.kestra.plugin.gcp.runner.GcpCloudRunTaskRunner
-                      projectId: "{{vars.projectId}}"
-                      region: "{{vars.region}}"
-                      bucket: "{{vars.bucker}}"
+                      type: io.kestra.plugin.gcp.runner.CloudRun
+                      projectId: "{{ vars.projectId }}"
+                      region: "{{ vars.region }}"
+                      bucket: "{{ vars.bucker }}"
                     commands:
-                    - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
+                    - cp {{ workingDir }}/data.txt {{ workingDir }}/out.txt""",
             full = true
         )
     }
