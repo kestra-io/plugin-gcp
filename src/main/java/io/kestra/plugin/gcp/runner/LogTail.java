@@ -13,15 +13,14 @@ import java.util.concurrent.Executors;
 
 class LogTail implements AutoCloseable {
     private final LogEntryServerStream stream;
-    private final ExecutorService executorService;
     private final Duration waitForLogInterval;
+    private final Thread logThread;
 
     LogTail(LogEntryServerStream stream, AbstractLogConsumer logConsumer, Duration waitForLogInterval) {
         this.stream = stream;
         this.waitForLogInterval = waitForLogInterval;
-        this.executorService = Executors.newSingleThreadExecutor();
 
-        this.executorService.submit(
+        logThread = Thread.ofVirtual().start(
             () -> {
                 for (LogEntry entry : this.stream) {
                     logConsumer.accept(entry.<Payload.StringPayload>getPayload().getData(), isError(entry.getSeverity()));
@@ -36,9 +35,7 @@ class LogTail implements AutoCloseable {
 
 
     @Override
-    public void close() {
-        this.executorService.shutdown();
-
+    public void close() throws InterruptedException {
         // sleep 1s before cancelling the stream to wait for late logs
         try {
             Thread.sleep(waitForLogInterval.toMillis());
@@ -47,5 +44,6 @@ class LogTail implements AutoCloseable {
         }
 
         this.stream.cancel();
+        this.logThread.join();
     }
 }
