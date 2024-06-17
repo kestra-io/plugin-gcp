@@ -61,7 +61,7 @@ dependencies {
     implementation group: 'dev.failsafe', name: 'failsafe', version: '3.3.2'
     implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
 
-    api platform('com.google.cloud:libraries-bom:26.37.0')
+    api platform('com.google.cloud:libraries-bom:26.41.0')
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
