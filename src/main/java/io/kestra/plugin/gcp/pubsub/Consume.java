@@ -90,7 +90,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         var subscriptionName = this.createSubscription(runContext, subscription, autoCreateSubscription);
         var total = new AtomicInteger();
         var started = ZonedDateTime.now();
-        var tempFile = runContext.tempFile(".ion").toFile();
+        var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
 
         try (var outputFile = new BufferedOutputStream(new FileOutputStream(tempFile))) {
             AtomicReference<Exception> threadException = new AtomicReference<>();

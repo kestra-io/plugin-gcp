@@ -52,7 +52,7 @@ public final class GcsUtils {
                         bucket,
                         removeLeadingSlash(workingDirectory.toString()) + Path.of("/" + relativePath)
                     )).build();
-                    try (var fileOutputStream = new FileOutputStream(runContext.resolve(Path.of(relativePath)).toFile());
+                    try (var fileOutputStream = new FileOutputStream(runContext.workingDir().resolve(Path.of(relativePath)).toFile());
                          var reader = storage.reader(source.getBlobId())) {
                         byte[] buffer = new byte[BUFFER_SIZE];
                         int limit;
@@ -99,7 +99,7 @@ public final class GcsUtils {
             workingDirName = removeLeadingSlash(workingDirName);
             for (String relativePath : filesToUpload) {
                 BlobInfo destination = BlobInfo.newBuilder(BlobId.of(bucket, workingDirName + Path.of("/" + relativePath))).build();
-                Path filePath = runContext.resolve(Path.of(relativePath));
+                Path filePath = runContext.workingDir().resolve(Path.of(relativePath));
 
                 try (var fileInputStream = new FileInputStream(filePath.toFile());
                      var writer = storage.writer(destination)) {

@@ -559,7 +559,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     private Map.Entry<URI, Long> storeResult(TableResult result, RunContext runContext) throws IOException {
         // temp file
-        File tempFile = runContext.tempFile(".ion").toFile();
+        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
 
         try (
             OutputStream output = new FileOutputStream(tempFile);

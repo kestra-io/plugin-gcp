@@ -4,6 +4,7 @@ import com.google.cloud.ReadChannel;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.utils.FileUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -51,7 +52,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
         }
         ReadChannel readChannel = blob.reader();
 
-        File tempFile = runContext.tempFile(runContext.fileExtension(source.getName())).toFile();
+        File tempFile = runContext.workingDir().createTempFile(FileUtils.getExtension(source.getName())).toFile();
 
         try (
             FileOutputStream fileOutputStream = new FileOutputStream(tempFile);

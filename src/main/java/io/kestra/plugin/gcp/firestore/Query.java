@@ -194,7 +194,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     }
 
     private Pair<URI, Long> store(RunContext runContext, List<QueryDocumentSnapshot> documents) throws IOException {
-        File tempFile = runContext.tempFile(".ion").toFile();
+        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         AtomicLong count = new AtomicLong();
 
         try (var output = new FileOutputStream(tempFile)) {

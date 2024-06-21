@@ -148,7 +148,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         Map<String, String> envs = new HashMap<>();
 
         if (serviceAccount != null) {
-            Path serviceAccountPath = runContext.tempFile(runContext.render(this.serviceAccount).getBytes());
+            Path serviceAccountPath = runContext.workingDir().createTempFile(runContext.render(this.serviceAccount).getBytes());
             envs.putAll(Map.of(
                     "GOOGLE_APPLICATION_CREDENTIALS", serviceAccountPath.toString(),
                     "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", serviceAccountPath.toString()

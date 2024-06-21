@@ -121,7 +121,7 @@ class PublishThenConsumeTest {
     }
 
     private URI createTestFile(RunContext runContext) throws Exception {
-        File tempFile = runContext.tempFile(".ion").toFile();
+        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         OutputStream output = new FileOutputStream(tempFile);
 
         FileSerde.write(output,
