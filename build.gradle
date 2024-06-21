@@ -43,12 +43,16 @@ configurations.all {
 }
 
 dependencies {
+    // Platform
+    annotationProcessor enforcedPlatform("io.kestra:platform:$kestraVersion")
+    implementation enforcedPlatform("io.kestra:platform:$kestraVersion")
+    api enforcedPlatform("io.kestra:platform:$kestraVersion")
+
     // lombok
-    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
-    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok"
+    compileOnly "org.projectlombok:lombok"
 
     // micronaut
-    compileOnly platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
     compileOnly "io.micronaut:micronaut-context"
     compileOnly "io.micronaut.reactor:micronaut-reactor"
 
@@ -58,8 +62,8 @@ dependencies {
     compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
     // libs
-    implementation group: 'dev.failsafe', name: 'failsafe', version: '3.3.2'
-    implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
+    implementation group: 'dev.failsafe', name: 'failsafe'
+    implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0' // FIXME platform comes with 2.1.1
 
     api platform('com.google.cloud:libraries-bom:26.37.0')
     api 'com.google.cloud:google-cloud-storage'
@@ -95,16 +99,17 @@ testlogger {
 }
 
 dependencies {
+    // Platform
+    testAnnotationProcessor enforcedPlatform("io.kestra:platform:$kestraVersion")
+    testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
+
     // lombok
-    testAnnotationProcessor "org.projectlombok:lombok:" + lombokVersion
-    testCompileOnly 'org.projectlombok:lombok:' + lombokVersion
+    testAnnotationProcessor "org.projectlombok:lombok"
+    testCompileOnly 'org.projectlombok:lombok'
 
     // micronaut
-    testAnnotationProcessor platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
     testAnnotationProcessor "io.micronaut:micronaut-inject-java"
     testAnnotationProcessor "io.micronaut.validation:micronaut-validation-processor"
-
-    testImplementation platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
     testImplementation "io.micronaut.test:micronaut-test-junit5"
     testImplementation "io.micronaut.validation:micronaut-validation"
 
@@ -118,10 +123,10 @@ dependencies {
 
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.junit.jupiter:junit-jupiter-params"
-    testImplementation "org.hamcrest:hamcrest:2.2"
-    testImplementation "org.hamcrest:hamcrest-library:2.2"
+    testImplementation "org.hamcrest:hamcrest"
+    testImplementation "org.hamcrest:hamcrest-library"
 
-    testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id', version: '1.1.0'
+    testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id'
     testImplementation 'org.mockito:mockito-junit-jupiter'
 }
 
@@ -129,7 +134,7 @@ dependencies {
  * Allure Reports
  **********************************************************************************************************************/
 dependencies {
-    testImplementation platform("io.qameta.allure:allure-bom:2.27.0")
+    testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
     testImplementation "io.qameta.allure:allure-junit5"
 }
 
@@ -171,6 +176,11 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
         }
     }
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+    // Suppression this validation error as we want to enforce the Kestra platform
+    suppressedValidationErrors.add('enforced-platform')
 }
 
 jar {
