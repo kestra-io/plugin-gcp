@@ -73,19 +73,19 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             title = "Execute a query and fetch results sets on another task.",
             code = {
                 "tasks:",
-                "- id: fetch",
-                "  type: io.kestra.plugin.gcp.bigquery.Query",
-                "  fetch: true",
-                "  sql: |",
-                "    SELECT 1 as id, \"John\" as name",
-                "    UNION ALL",
-                "    SELECT 2 as id, \"Doe\" as name",
-                "- id: use-fetched-data",
-                "  type: io.kestra.plugin.core.debug.Return",
-                "  format: |",
-                "    {% for row in outputs.fetch.rows %}",
-                "    id : {{ row.id }}, name: {{ row.name }}",
-                "    {% endfor %}"
+                "  - id: fetch",
+                "    type: io.kestra.plugin.gcp.bigquery.Query",
+                "    fetch: true",
+                "    sql: |",
+                "      SELECT 1 as id, \"John\" as name",
+                "      UNION ALL",
+                "      SELECT 2 as id, \"Doe\" as name",
+                "  - id: use-fetched-data",
+                "    type: io.kestra.plugin.core.debug.Return",
+                "    format: |",
+                "      {% for row in outputs.fetch.rows %}",
+                "      id : {{ row.id }}, name: {{ row.name }}",
+                "      {% endfor %}"
             }
         )
     },

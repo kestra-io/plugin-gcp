@@ -43,7 +43,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = {
                 "id: gcs-listen",
-                "namespace: io.kestra.tests",
+                "namespace: company.team",
                 "",
                 "tasks:",
                 "  - id: each",
@@ -68,7 +68,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = {
                 "id: gcs-listen",
-                "namespace: io.kestra.tests",
+                "namespace: company.team",
                 "",
                 "tasks:",
                 "  - id: each",

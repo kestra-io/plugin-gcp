@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
             title = "Consume a message from a Pub/Sub topic in real-time.",
             code = """
                 id: realtime-pubsub
-                namespace: dev
+                namespace: company.team
 
                 tasks:
                   - id: log

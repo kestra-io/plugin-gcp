@@ -45,8 +45,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
             code = {
                 "collection: \"persons\"",
                 "filters: ",
-                "- field: \"lastname\"",
-                "  value: \"Doe\""
+                "  - field: \"lastname\"",
+                "    value: \"Doe\""
             }
         )
     }
