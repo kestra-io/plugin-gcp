@@ -59,7 +59,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
             title = "Execute a Shell command.",
             code = """
                 id: new-shell
-                namespace: myteam
+                namespace: company.team
                 
                 tasks:
                   - id: shell
@@ -69,14 +69,14 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                       projectId: "{{vars.projectId}}"
                       region: "{{vars.region}}"
                     commands:
-                    - echo "Hello World\"""",
+                      - echo "Hello World\"""",
             full = true
         ),
         @Example(
             title = "Pass input files to the task, execute a Shell command, then retrieve output files.",
             code = """
                 id: new-shell-with-file
-                namespace: myteam
+                namespace: company.team
                 
                 inputs:
                   - id: file
@@ -96,7 +96,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                       region: "{{vars.region}}"
                       bucket: "{{vars.bucker}}"
                     commands:
-                    - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
+                      - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
             full = true
         )
     }

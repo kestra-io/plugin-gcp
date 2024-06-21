@@ -89,7 +89,7 @@ import java.util.concurrent.TimeoutException;
             title = "Execute a Shell command.",
             code = """
                 id: new-shell
-                namespace: myteam
+                namespace: company.team
 
                 tasks:
                   - id: shell
@@ -106,7 +106,7 @@ import java.util.concurrent.TimeoutException;
             title = "Pass input files to the task, execute a Shell command, then retrieve output files.",
             code = """
                 id: new-shell-with-file
-                namespace: myteam
+                namespace: company.team
 
                 inputs:
                   - id: file

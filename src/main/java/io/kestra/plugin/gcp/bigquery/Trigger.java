@@ -30,7 +30,7 @@ import java.util.Optional;
             full = true,
             code = {
                 "id: bigquery-listen",
-                "namespace: io.kestra.tests",
+                "namespace: company.team",
                 "",
                 "tasks:",
                 "  - id: each",
