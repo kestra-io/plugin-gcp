@@ -8,6 +8,7 @@ import io.kestra.core.models.tasks.runners.AbstractLogConsumer;
 
 import java.time.Duration;
 import java.util.Iterator;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,8 +23,12 @@ class LogTail implements AutoCloseable {
 
         logThread = Thread.ofVirtual().start(
             () -> {
-                for (LogEntry entry : this.stream) {
-                    logConsumer.accept(entry.<Payload.StringPayload>getPayload().getData(), isError(entry.getSeverity()));
+                try {
+                    for (LogEntry entry : this.stream) {
+                        logConsumer.accept(entry.<Payload.StringPayload>getPayload().getData(), isError(entry.getSeverity()));
+                    }
+                } catch (CancellationException e) {
+                    // this can happen when the stream is cancelled in close(), just ignore it.
                 }
             }
         );
