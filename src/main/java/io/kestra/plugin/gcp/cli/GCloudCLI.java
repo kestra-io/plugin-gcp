@@ -6,12 +6,15 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.runners.ScriptService;
 import io.kestra.core.models.tasks.*;
+import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.exec.scripts.models.RunnerType;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
+import io.kestra.plugin.scripts.runner.docker.Docker;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -100,12 +103,25 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     protected Map<String, String> env;
 
     @Schema(
-        title = "Docker options when for the `DOCKER` runner.",
-        defaultValue = "{image=" + DEFAULT_IMAGE + ", pullPolicy=ALWAYS}"
+        title = "Deprecated, use 'taskRunner' instead"
+    )
+    @PluginProperty
+    @Deprecated
+    private DockerOptions docker;
+
+    @Schema(
+        title = "The task runner to use.",
+        description = "Task runners are provided by plugins, each have their own properties."
     )
     @PluginProperty
     @Builder.Default
-    protected DockerOptions docker = DockerOptions.builder().build();
+    @Valid
+    private TaskRunner taskRunner = Docker.INSTANCE;
+
+    @Schema(title = "The task runner container image, only used if the task runner is container-based.")
+    @PluginProperty(dynamic = true)
+    @Builder.Default
+    private String containerImage = DEFAULT_IMAGE;
 
     private NamespaceFiles namespaceFiles;
 
@@ -117,17 +133,17 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     public ScriptOutput run(RunContext runContext) throws Exception {
 
         CommandsWrapper commands = new CommandsWrapper(runContext)
-                .withWarningOnStdErr(true)
-                .withRunnerType(RunnerType.DOCKER)
-                .withDockerOptions(injectDefaults(getDocker()))
-                .withCommands(
-                        ScriptService.scriptCommands(
-                                List.of("/bin/sh", "-c"),
-                                null,
-                                this.commands)
-                );
-
-        commands = commands.withEnv(this.getEnv(runContext))
+            .withWarningOnStdErr(true)
+            .withDockerOptions(injectDefaults(getDocker()))
+            .withTaskRunner(this.taskRunner)
+            .withContainerImage(this.containerImage)
+            .withCommands(
+                    ScriptService.scriptCommands(
+                            List.of("/bin/sh", "-c"),
+                            null,
+                            this.commands)
+            )
+            .withEnv(this.getEnv(runContext))
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
             .withOutputFiles(outputFiles);
@@ -136,6 +152,10 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     }
 
     private DockerOptions injectDefaults(DockerOptions original) {
+        if (original == null) {
+            return null;
+        }
+
         var builder = original.toBuilder();
         if (original.getImage() == null) {
             builder.image(DEFAULT_IMAGE);
