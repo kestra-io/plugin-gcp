@@ -129,7 +129,8 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     @Schema(
         title = "Compute resource requirements.",
         description = "ComputeResource defines the amount of resources required for each task. Make sure your tasks " +
-            "have enough resources to successfully run. If you also define the types of resources for a job to use with the " +
+            "have enough [compute resources](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#ComputeResource) " + 
+            "to successfully run. If you also define the types of resources for a job to use with the " +
             "[InstancePolicyOrTemplate](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#instancepolicyortemplate) " +
             "field, make sure both fields are compatible with each other."
     )
