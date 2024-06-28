@@ -17,6 +17,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.*;
 import io.kestra.plugin.gcp.CredentialService;
 import io.kestra.plugin.gcp.GcpInterface;
+import io.micronaut.core.convert.format.ReadableBytesTypeConverter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -26,7 +27,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.*;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -59,24 +59,24 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
             title = "Execute a Shell command.",
             code = """
                 id: new-shell
-                namespace: myteam
+                namespace: company.team
                 
                 tasks:
                   - id: shell
                     type: io.kestra.plugin.scripts.shell.Commands
                     taskRunner:
-                      type: io.kestra.plugin.gcp.runner.GcpBatchTaskRunner
+                      type: io.kestra.plugin.gcp.runner.Batch
                       projectId: "{{vars.projectId}}"
                       region: "{{vars.region}}"
                     commands:
-                    - echo "Hello World\"""",
+                      - echo "Hello World\"""",
             full = true
         ),
         @Example(
             title = "Pass input files to the task, execute a Shell command, then retrieve output files.",
             code = """
                 id: new-shell-with-file
-                namespace: myteam
+                namespace: company.team
                 
                 inputs:
                   - id: file
@@ -91,12 +91,12 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                       - out.txt
                     containerImage: centos
                     taskRunner:
-                      type: io.kestra.plugin.gcp.runner.GcpBatchTaskRunner
+                      type: io.kestra.plugin.gcp.runner.Batch
                       projectId: "{{vars.projectId}}"
                       region: "{{vars.region}}"
                       bucket: "{{vars.bucker}}"
                     commands:
-                    - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
+                      - cp {{workingDir}}/data.txt {{workingDir}}/out.txt""",
             full = true
         )
     },
@@ -105,6 +105,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInterface {
     private static final int BUFFER_SIZE = 8 * 1024;
     public static final String MOUNT_PATH = "/mnt/disks/share";
+    private static final ReadableBytesTypeConverter READABLE_BYTES_TYPE_CONVERTER = new ReadableBytesTypeConverter();
 
     private String projectId;
     private String serviceAccount;
@@ -130,7 +131,8 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     @Schema(
         title = "Compute resource requirements.",
         description = "ComputeResource defines the amount of resources required for each task. Make sure your tasks " +
-            "have enough resources to successfully run. If you also define the types of resources for a job to use with the " +
+            "have enough [compute resources](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#ComputeResource) " +
+            "to successfully run. If you also define the types of resources for a job to use with the " +
             "[InstancePolicyOrTemplate](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#instancepolicyortemplate) " +
             "field, make sure both fields are compatible with each other."
     )
@@ -268,15 +270,15 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                     com.google.cloud.batch.v1.ComputeResource.Builder computeResourceBuilder = com.google.cloud.batch.v1.ComputeResource.newBuilder();
 
                     if (this.computeResource.bootDisk != null) {
-                        computeResourceBuilder.setBootDiskMib(this.computeResource.bootDisk);
+                        computeResourceBuilder.setBootDiskMib(convertBytes(runContext.render(this.computeResource.bootDisk)));
                     }
 
                     if (this.computeResource.cpu != null) {
-                        computeResourceBuilder.setCpuMilli(this.computeResource.cpu);
+                        computeResourceBuilder.setCpuMilli(Long.parseLong(runContext.render(this.computeResource.cpu)));
                     }
 
                     if (this.computeResource.memory != null) {
-                        computeResourceBuilder.setMemoryMib(this.computeResource.memory);
+                        computeResourceBuilder.setMemoryMib(convertBytes(runContext.render(this.computeResource.memory)));
                     }
 
                     taskBuilder.setComputeResource(computeResourceBuilder.build());
@@ -497,6 +499,12 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
         }
     }
 
+    private static Long convertBytes(String bytes) {
+        return READABLE_BYTES_TYPE_CONVERTER.convert(bytes, Number.class)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid size with value '" + bytes + "'"))
+            .longValue();
+    }
+
     @Getter
     @Builder
     public static class NetworkInterface {
@@ -505,7 +513,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
         @NotNull
         private String network;
 
-        @Schema(title = "Subnetwork identifier with the format `projects/HOST_PROJECT_ID/regions/REGION/subnetworks/SUBNET`")
+        @Schema(title = "Subnetwork identifier in the format `projects/HOST_PROJECT_ID/regions/REGION/subnetworks/SUBNET`")
         @PluginProperty(dynamic = true)
         private String subnetwork;
     }
@@ -515,26 +523,26 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     public static class ComputeResource {
         @Schema(
             title = "The milliCPU count.",
-            description = "defines the amount of CPU resources per task in milliCPU units. For example, `1000` " +
+            description = "Defines the amount of CPU resources per task in milliCPU units. For example, `1000` " +
                 "corresponds to 1 vCPU per task. If undefined, the default value is `2000`." +
                 "\n" +
-                "If you also define the VM's machine type using the `machineType` in " +
+                "If you also define the VM's machine type using the `machineType` property in " +
                 "[InstancePolicy](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#instancepolicy) " +
                 "field or inside the `instanceTemplate` in the " +
                 "[InstancePolicyOrTemplate](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#instancepolicyortemplate) " +
                 "field, make sure the CPU resources for both fields are compatible with each other and with how many " +
                 "tasks you want to allow to run on the same VM at the same time.\n" +
                 "\n" +
-                "For example, if you specify the `n2-standard-2` machine type, which has 2 vCPUs each, you are " +
-                "recommended to set `cpu` no more than `2000`, or you are recommended to run two tasks on the same VM " +
-                "if you set cpuMilli to `1000` or less."
+                "For example, if you specify the `n2-standard-2` machine type, which has 2 vCPUs, you can " +
+                "set the `cpu` to no more than `2000`. Alternatively, you can run two tasks on the same VM " +
+                "if you set the `cpu` to `1000` or less."
         )
         @PluginProperty
-        private Integer cpu;
+        private String cpu;
 
         @Schema(
             title = "Memory in MiB.",
-            description = "defines the amount of memory per task in MiB units. If undefined, the default value is `2000`. " +
+            description = "Defines the amount of memory per task in MiB units. If undefined, the default value is `2GB`. " +
                 "If you also define the VM's machine type using the `machineType` in " +
                 "[InstancePolicy](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#instancepolicy) " +
                 "field or inside the `instanceTemplate` in the " +
@@ -542,15 +550,15 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 "field, make sure the memory resources for both fields are compatible with each other and with how many " +
                 "tasks you want to allow to run on the same VM at the same time.\n" +
                 "\n" +
-                "For example, if you specify the `n2-standard-2` machine type, which has 8 GiB each, you are " +
-                "recommended to set `memory` to no more than `8192`, or you are recommended to run two tasks on the " +
-                "same VM if you set `memory` to `4096` or less."
+                "For example, if you specify the `n2-standard-2` machine type, which has 8 GiB of memory, you can set " +
+                "the `memory` to no more than `8GB`. Alternatively, you can run two tasks on the same VM " +
+                "if you set the `memory` to `4GB` or less."
         )
         @PluginProperty
-        private Integer memory;
+        private String memory;
 
-        @Schema(title = "Extra boot disk size in MiB for each task.")
+        @Schema(title = "Extra boot disk size for each task.")
         @PluginProperty
-        private Integer bootDisk;
+        private String bootDisk;
     }
 }
