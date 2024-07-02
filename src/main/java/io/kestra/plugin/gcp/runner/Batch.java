@@ -344,8 +344,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
                 result = batchServiceClient.createJob(createJobRequest);
 
-                final String jobName = result.getName();
-                runContext.logger().info("Job created: {}", jobName);
+                runContext.logger().info("Job created: {}", result.getName());
             }
             Job finalResult = result;
             onKill(() -> safelyKillJob(runContext, credentials, finalResult.getName()));
@@ -364,7 +363,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
             );
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer(), this.waitForLogInterval)) {
-                runContext.logger().info("Waiting for job completion.");
+                runContext.logger().info("Waiting for job completion (timeout: {}).", waitDuration);
                 // Wait for the job termination
                 result = waitForTerminated(batchServiceClient, result, waitDuration);
                 if (result == null) {
@@ -376,7 +375,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
                 if (delete) {
                     batchServiceClient.deleteJobAsync(result.getName());
-                    runContext.logger().info("Job deleted");
+                    runContext.logger().info("Job {} deleted (reason: task completed).", result.getName());
                 }
 
                 if (hasFilesToDownload || outputDirectoryEnabled) {
@@ -488,10 +487,11 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 .build();
 
             batchServiceClient.deleteJobAsync(request).get();
-            runContext.logger().debug("Job deleted: {}", jobName);
+            runContext.logger().info("Job {} deleted (reason: task killed).", jobName);
             // we don't need to clean up the storage here as this will be
             // properly handle by the Task Thread in the run method once the job is terminated (i.e., deleted).
         } catch (InterruptedException e) {
+            runContext.logger().warn("Interrupted while deleting Job: {}", jobName);
             Thread.currentThread().interrupt();
         } catch (ExecutionException | IOException e) {
             Throwable t = e.getCause() != null ? e.getCause() : e;
