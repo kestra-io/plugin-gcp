@@ -473,10 +473,12 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     private void safelyKillJob(final RunContext runContext,
                                final GoogleCredentials credentials,
                                final String jobName) {
+        runContext.logger().info("Killing Job {}", jobName);
         // Use a dedicated BatchServiceClient, as the one used in the run method may be closed in the meantime.
         try (BatchServiceClient batchServiceClient = newBatchServiceClient(credentials)) {
             final Job job = batchServiceClient.getJob(jobName);
             if (isTerminated(job.getStatus().getState())) {
+                runContext.logger().debug("Job {} is already terminated. Skip deletion request.", jobName);
                 // Job execution is already terminated, so we can skip deletion.
                 return;
             }
@@ -493,9 +495,8 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
         } catch (InterruptedException e) {
             runContext.logger().warn("Interrupted while deleting Job: {}", jobName);
             Thread.currentThread().interrupt();
-        } catch (ExecutionException | IOException e) {
-            Throwable t = e.getCause() != null ? e.getCause() : e;
-            runContext.logger().warn("Failed to delete Job: {}", jobName, t);
+        } catch (Exception e) {
+            runContext.logger().warn("Failed to delete Job: {}", jobName, e);
         }
     }
 
