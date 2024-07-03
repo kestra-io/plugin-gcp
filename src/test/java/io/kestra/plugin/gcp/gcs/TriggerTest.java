@@ -122,7 +122,7 @@ class TriggerTest {
         String out = FriendlyId.createFriendlyId();
         Upload.Output upload = testUtils.upload( "trigger/" + out);
 
-        Map.Entry<ConditionContext, TriggerContext> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
@@ -164,7 +164,7 @@ class TriggerTest {
         String out = FriendlyId.createFriendlyId();
         Upload.Output upload = testUtils.upload("trigger/" + out);
 
-        Map.Entry<ConditionContext, TriggerContext> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
