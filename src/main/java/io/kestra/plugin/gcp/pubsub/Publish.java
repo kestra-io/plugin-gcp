@@ -39,13 +39,13 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             code = {
                 "topic: topic-test",
                 "from:",
-                "  -  data: \"{{ 'base64-encoded-string-1' | base64encode }}\"",
+                "  - data: \"{{ 'base64-encoded-string-1' | base64encode }}\"",
                 "     attributes:",
                 "         testAttribute: KestraTest",
-                "     messageId: '1234'",
-                "     orderingKey: 'foo'",
-                "  -  data: \"{{ 'base64-encoded-string-2' | base64encode }}\"",
-                "  -  attributes:",
+                "  - messageId: '1234'",
+                "  - orderingKey: 'foo'",
+                "  - data: \"{{ 'base64-encoded-string-2' | base64encode }}\"",
+                "  - attributes:",
                 "         testAttribute: KestraTest"
             }
         )
