@@ -543,7 +543,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
         @Schema(
             title = "Memory in MiB.",
-            description = "Defines the amount of memory per task in MiB units. If undefined, the default value is `2GB`. " +
+            description = "Defines the amount of memory per task in MiB units. If undefined, the default value is `2048`. " +
                 "If you also define the VM's machine type using the `machineType` in " +
                 "[InstancePolicy](https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#instancepolicy) " +
                 "field or inside the `instanceTemplate` in the " +
@@ -552,8 +552,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 "tasks you want to allow to run on the same VM at the same time.\n" +
                 "\n" +
                 "For example, if you specify the `n2-standard-2` machine type, which has 8 GiB of memory, you can set " +
-                "the `memory` to no more than `8GB`. Alternatively, you can run two tasks on the same VM " +
-                "if you set the `memory` to `4GB` or less."
+                "the `memory` to no more than `8192`."
         )
         @PluginProperty
         private String memory;
