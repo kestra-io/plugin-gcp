@@ -164,7 +164,6 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
                 this.subscriberReference.set(subscriber);
 
                 try {
-                    subscriber.startAsync().awaitRunning();
                     subscriber.addListener(
                         new ApiService.Listener() {
                             @Override
@@ -180,6 +179,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
                             }
                         }, MoreExecutors.directExecutor()
                     );
+                    subscriber.startAsync().awaitRunning();
                 } catch (Exception exception) {
                     if (subscriber.isRunning()) {
                         subscriber.stopAsync().awaitTerminated();
