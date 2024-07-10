@@ -22,12 +22,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.*;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -203,14 +203,16 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     private final Duration waitForLogInterval = Duration.ofSeconds(5);
 
     @Override
-    public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
+    public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToDownload) throws Exception {
         String renderedBucket = runContext.render(this.bucket);
 
         final GoogleCredentials credentials = CredentialService.credentials(runContext, this);
 
-        boolean hasFilesToUpload = !ListUtils.isEmpty(filesToUpload);
+        Logger logger = runContext.logger();
+        List<Path> relativeWorkingDirectoryFilesPaths = taskCommands.relativeWorkingDirectoryFilesPaths();
+        boolean hasFilesToUpload = !ListUtils.isEmpty(relativeWorkingDirectoryFilesPaths);
         if (hasFilesToUpload && bucket == null) {
-            throw new IllegalArgumentException("You must provide a Cloud Storage Bucket to use `inputFiles` or `namespaceFiles`");
+            logger.warn("Working directory is not empty but no Cloud Storage bucket are specified. You must provide a Cloud Storage bucket in order to use `inputFiles` or `namespaceFiles`. Skipping importing files to runner.");
         }
         boolean hasFilesToDownload = !ListUtils.isEmpty(filesToDownload);
         boolean outputDirectoryEnabled = taskCommands.outputDirectoryEnabled();
@@ -248,14 +250,14 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                 var iterator = existingJob.iterateAll().iterator();
                 if (iterator.hasNext()) {
                     result = iterator.next();
-                    runContext.logger().info("Job '{}' is resumed from an already running job ", result.getName());
+                    logger.info("Job '{}' is resumed from an already running job ", result.getName());
                 }
             }
             Path outputDirectory = (Path) additionalVars.get(ScriptService.VAR_OUTPUT_DIR);
             if (result == null) {
                 if (hasFilesToUpload || outputDirectoryEnabled) {
                     GcsUtils.of(projectId, credentials).uploadFiles(runContext,
-                        filesToUpload,
+                        relativeWorkingDirectoryFilesPaths,
                         renderedBucket,
                         batchWorkingDirectory,
                         outputDirectory,
@@ -344,7 +346,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
                 result = batchServiceClient.createJob(createJobRequest);
 
-                runContext.logger().info("Job created: {}", result.getName());
+                logger.info("Job created: {}", result.getName());
             }
             Job finalResult = result;
             onKill(() -> safelyKillJob(runContext, credentials, finalResult.getName()));
@@ -363,7 +365,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
             );
             LogEntryServerStream stream = logging.tailLogEntries(Logging.TailOption.filter(logFilter));
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer(), this.waitForLogInterval)) {
-                runContext.logger().info("Waiting for job completion (timeout: {}).", waitDuration);
+                logger.info("Waiting for job completion (timeout: {}).", waitDuration);
                 // Wait for the job termination
                 result = waitForTerminated(batchServiceClient, result, waitDuration);
                 if (result == null) {
@@ -375,7 +377,7 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
 
                 if (delete) {
                     batchServiceClient.deleteJobAsync(result.getName());
-                    runContext.logger().info("Job {} deleted (reason: task completed).", result.getName());
+                    logger.info("Job {} deleted (reason: task completed).", result.getName());
                 }
 
                 if (hasFilesToDownload || outputDirectoryEnabled) {

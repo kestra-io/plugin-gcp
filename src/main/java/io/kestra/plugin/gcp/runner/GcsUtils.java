@@ -81,7 +81,7 @@ public final class GcsUtils {
     }
 
     public void uploadFiles(RunContext runContext,
-                            List<String> filesToUpload,
+                            List<Path> filesToUpload,
                             String bucket,
                             Path workingDirectory,
                             Path outputDirectory,
@@ -97,9 +97,9 @@ public final class GcsUtils {
 
             var workingDirName = workingDirectory.toString();
             workingDirName = removeLeadingSlash(workingDirName);
-            for (String relativePath : filesToUpload) {
+            for (Path relativePath : filesToUpload) {
                 BlobInfo destination = BlobInfo.newBuilder(BlobId.of(bucket, workingDirName + Path.of("/" + relativePath))).build();
-                Path filePath = runContext.workingDir().resolve(Path.of(relativePath));
+                Path filePath = runContext.workingDir().resolve(relativePath);
 
                 try (var fileInputStream = new FileInputStream(filePath.toFile());
                      var writer = storage.writer(destination)) {

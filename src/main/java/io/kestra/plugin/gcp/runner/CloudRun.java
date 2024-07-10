@@ -50,6 +50,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -185,16 +186,18 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
     private final Duration waitForLogInterval = Duration.ofSeconds(5);
 
     @Override
-    public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToUpload, List<String> filesToDownload) throws Exception {
+    public RunnerResult run(RunContext runContext, TaskCommands taskCommands, List<String> filesToDownload) throws Exception {
 
         final String renderedProjectId = runContext.render(projectId);
         final String renderedBucket = runContext.render(bucket);
         final String renderedRegion = runContext.render(region);
         final GoogleCredentials credentials = CredentialService.credentials(runContext, this);
 
-        boolean hasFilesToUpload = !ListUtils.isEmpty(filesToUpload);
+        Logger logger = runContext.logger();
+        List<Path> relativeWorkingDirectoryFilesPaths = taskCommands.relativeWorkingDirectoryFilesPaths();
+        boolean hasFilesToUpload = !ListUtils.isEmpty(relativeWorkingDirectoryFilesPaths);
         if (hasFilesToUpload && bucket == null) {
-            throw new IllegalArgumentException("You must provide a Cloud Storage Bucket to use `inputFiles` or `namespaceFiles`");
+            logger.warn("Working directory is not empty but no Cloud Storage bucket are specified. You must provide a Cloud Storage bucket in order to use `inputFiles` or `namespaceFiles`. Skipping importing files to runner.");
         }
         final boolean hasFilesToDownload = !ListUtils.isEmpty(filesToDownload);
         final boolean outputDirectoryEnabled = taskCommands.outputDirectoryEnabled();
@@ -213,7 +216,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
 
         if (hasFilesToUpload || outputDirectoryEnabled) {
             GcsUtils.of(renderedProjectId, credentials).uploadFiles(runContext,
-                filesToUpload,
+                relativeWorkingDirectoryFilesPaths,
                 renderedBucket,
                 toAbsoluteBlobPathWithoutMount(workingDir),
                 toAbsoluteBlobPathWithoutMount(outputDir),
@@ -297,7 +300,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
                     .build();
 
             Job jobCreated = jobsClient.createJobAsync(createJobRequest).get();
-            runContext.logger().info("Job created: {}", jobCreated.getName());
+            logger.info("Job created: {}", jobCreated.getName());
 
             // Run the Job
             Duration timeout = getTaskTimeout(taskCommands);
@@ -330,7 +333,7 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
             );
             try (LogTail ignored = new LogTail(stream, taskCommands.getLogConsumer(), this.waitForLogInterval)) {
                 if (!isTerminated(execution)) {
-                    runContext.logger().info("Waiting for execution completion: {}.", executionName);
+                    logger.info("Waiting for execution completion: {}.", executionName);
                     execution = awaitJobExecutionTermination(executionsClient, executionName, timeout);
                 }
                 // Check for the job successful creation
@@ -345,10 +348,10 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
                 if (delete) {
                     // not waiting for Job Execution deletion
                     executionsClient.deleteExecutionAsync(executionName);
-                    runContext.logger().info("Job Execution deleted: {}", executionName);
+                    logger.info("Job Execution deleted: {}", executionName);
                     // not waiting for Job deletion
                     jobsClient.deleteJobAsync(runJobRequest.getName());
-                    runContext.logger().info("Job deleted: {}", runJobRequest.getName());
+                    logger.info("Job deleted: {}", runJobRequest.getName());
                 }
 
                 if (hasFilesToDownload || outputDirectoryEnabled) {
