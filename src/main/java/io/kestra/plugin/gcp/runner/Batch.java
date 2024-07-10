@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.runner;
 
 import com.google.api.gax.paging.Page;
+import com.google.api.gax.rpc.DeadlineExceededException;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.batch.v1.*;
 import com.google.cloud.batch.v1.Runnable;
@@ -12,6 +13,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.tasks.retrys.Constant;
 import io.kestra.core.models.tasks.runners.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.*;
@@ -433,13 +435,17 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
     }
 
     private Job waitForTerminated(BatchServiceClient batchServiceClient, Job result, Duration waitDuration) throws TimeoutException {
+        var retryPolicy = Constant.builder().maxAttempt(3).interval(Duration.ofSeconds(10)).build();
         return Await.until(
             () -> {
-                Job terminated = batchServiceClient.getJob(result.getName());
-                if (isTerminated(terminated.getStatus().getState())) {
-                    return terminated;
-                }
-                return null;
+                // to avoid DeadlineExceededException we retry getJob
+                return new RetryUtils().<Job, DeadlineExceededException>of(retryPolicy).run(DeadlineExceededException.class, () -> {
+                    Job terminated = batchServiceClient.getJob(result.getName());
+                    if (isTerminated(terminated.getStatus().getState())) {
+                        return terminated;
+                    }
+                    return null;
+                });
             },
             completionCheckInterval,
             waitDuration
