@@ -6,23 +6,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.logging.LogEntryServerStream;
 import com.google.cloud.logging.Logging;
 import com.google.cloud.logging.LoggingOptions;
-import com.google.cloud.run.v2.Container;
-import com.google.cloud.run.v2.CreateJobRequest;
-import com.google.cloud.run.v2.EnvVar;
-import com.google.cloud.run.v2.Execution;
-import com.google.cloud.run.v2.ExecutionTemplate;
-import com.google.cloud.run.v2.ExecutionsClient;
-import com.google.cloud.run.v2.ExecutionsSettings;
-import com.google.cloud.run.v2.GCSVolumeSource;
-import com.google.cloud.run.v2.Job;
-import com.google.cloud.run.v2.JobName;
-import com.google.cloud.run.v2.JobsClient;
-import com.google.cloud.run.v2.JobsSettings;
-import com.google.cloud.run.v2.LocationName;
-import com.google.cloud.run.v2.RunJobRequest;
-import com.google.cloud.run.v2.TaskTemplate;
-import com.google.cloud.run.v2.Volume;
-import com.google.cloud.run.v2.VolumeMount;
+import com.google.cloud.run.v2.*;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
@@ -40,6 +24,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.ListUtils;
+import io.kestra.core.utils.MapUtils;
 import io.kestra.plugin.gcp.CredentialService;
 import io.kestra.plugin.gcp.GcpInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -62,6 +47,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 @SuperBuilder
 @ToString
@@ -172,6 +159,14 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
     private final Boolean delete = true;
 
     @Schema(
+        title = "Whether to reconnect to the current job if it already exists."
+    )
+    @NotNull
+    @Builder.Default
+    @PluginProperty
+    private final Boolean resume = true;
+
+    @Schema(
         title = "Determines how often Kestra should poll the container for completion. By default, the task runner checks every 5 seconds whether the job is completed. You can set this to a lower value (e.g. `PT0.1S` = every 100 milliseconds) for quick jobs and to a lower threshold (e.g. `PT1M` = every minute) for long-running jobs. Setting this property to a lower value will reduce the number of API calls Kestra makes to the remote service — keep that in mind in case you see API rate limit errors."
     )
     @Builder.Default
@@ -214,23 +209,6 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
 
         final String workingDirectoryToBlobPath = MOUNT_PATH.relativize(workingDir).toString();
 
-        if (hasFilesToUpload || outputDirectoryEnabled) {
-            GcsUtils.of(renderedProjectId, credentials).uploadFiles(runContext,
-                relativeWorkingDirectoryFilesPaths,
-                renderedBucket,
-                toAbsoluteBlobPathWithoutMount(workingDir),
-                toAbsoluteBlobPathWithoutMount(outputDir),
-                outputDirectoryEnabled
-            );
-        } else if (hasFilesToDownload) {
-            // Create a blob for the WORKING_DIR to be able to mount it as a directory in the container volume.
-            // Used to prevent 'chdir' to fail with no such file exists.
-            BlobInfo workingDirBlob = BlobInfo.newBuilder(BlobId.of(renderedBucket, workingDirectoryToBlobPath + "/")).build();
-            try (Storage storage = GcsUtils.of(renderedProjectId, credentials).storage(runContext)) {
-                storage.create(workingDirBlob);
-            }
-        }
-
         LoggingOptions.Builder loggingOptionsBuilder = LoggingOptions.newBuilder().setCredentials(credentials);
         if (renderedProjectId != null) {
             loggingOptionsBuilder.setProjectId(renderedProjectId);
@@ -239,89 +217,128 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
              ExecutionsClient executionsClient = newExecutionsClient(credentials);
              Logging logging = loggingOptionsBuilder.build().getService()) {
 
-            // Create new Job TaskTemplate
-            TaskTemplate.Builder taskBuilder = TaskTemplate.newBuilder();
-
-            if (hasVolume) {
-                // Create and add Volume
-                Volume volume = Volume.newBuilder()
-                    .setGcs(
-                        GCSVolumeSource
-                            .newBuilder()
-                            .setReadOnly(false)
-                            .setBucket(renderedBucket)
-                            .build()
-                    )
-                    .setName(VOLUME_NAME)
-                    .build();
-                taskBuilder.addVolumes(volume);
-            }
-
-            // Create and add Container
-            Container.Builder containerBuilder = Container.newBuilder()
-                .setImage(taskCommands.getContainerImage())
-                .addAllCommand(taskCommands.getCommands())
-                .addAllEnv(envVars(runContext, taskCommands));
-
-            if (hasVolume) {
-                // Mount the volume
-                containerBuilder.setWorkingDir(workingDir.toString());
-                containerBuilder.addVolumeMounts(
-                    VolumeMount.newBuilder()
-                        .setName(VOLUME_NAME)
-                        .setMountPath(MOUNT_PATH.toString())
-                        .build()
-                );
-            }
-
-            taskBuilder.addContainers(containerBuilder);
-            TaskTemplate task = taskBuilder
-                .build();
-
-            // Create Job Definition
-            Job job = Job.newBuilder()
-                .setLaunchStage(LaunchStage.BETA) // required: Volume is a BETA feature for CloudRun Job.
-                .setTemplate(ExecutionTemplate
-                    .newBuilder()
-                    .setTemplate(task)
-                    .setTaskCount(1)
-                    .build()
-                )
-                .putAllLabels(LabelUtils.labels(runContext))
-                .build();
-
-            final String jobName = ScriptService.jobName(runContext);
-            final CreateJobRequest createJobRequest =
-                CreateJobRequest.newBuilder()
-                    // The job's parent is the region in which the job will run.
-                    .setParent(LocationName.of(renderedProjectId, renderedRegion).toString())
-                    .setJob(job)
-                    .setJobId(jobName)
-                    .build();
-
-            Job jobCreated = jobsClient.createJobAsync(createJobRequest).get();
-            logger.info("Job created: {}", jobCreated.getName());
-
-            // Run the Job
             Duration timeout = getTaskTimeout(taskCommands);
-            final JobName fullJobName = JobName.of(renderedProjectId, renderedRegion, jobName);
-            final RunJobRequest runJobRequest =
-                RunJobRequest.newBuilder()
-                    .setName(fullJobName.toString())
-                    .setOverrides(RunJobRequest.Overrides
+            Job job = null;
+            Execution execution = null;
+            final String jobName = ScriptService.jobName(runContext);
+
+            if (resume) {
+                var listJobsPagedResponse = jobsClient.listJobs(LocationName.of(renderedProjectId, renderedRegion).toString());
+                Optional<Job> existingJob = StreamSupport.stream(listJobsPagedResponse.iterateAll().spliterator(), false)
+                    .filter(candidate -> hasAllLabels(candidate.getLabelsMap(), LabelUtils.labels(runContext)))
+                    .findFirst();
+                if (existingJob.isPresent()) {
+                    job = existingJob.get();
+                    Optional<Execution> existingExecution = StreamSupport.stream(executionsClient.listExecutions(job.getName()).iterateAll().spliterator(), false).findFirst();
+                    if (existingExecution.isPresent()) {
+                        execution = existingExecution.get();
+                        logger.info("Job '{}' is resumed from an already running job execution ({})", job.getName(), execution.getName());
+                    }
+                }
+
+            }
+
+            if (execution == null) {
+                if (hasFilesToUpload || outputDirectoryEnabled) {
+                    GcsUtils.of(renderedProjectId, credentials).uploadFiles(runContext,
+                        relativeWorkingDirectoryFilesPaths,
+                        renderedBucket,
+                        toAbsoluteBlobPathWithoutMount(workingDir),
+                        toAbsoluteBlobPathWithoutMount(outputDir),
+                        outputDirectoryEnabled
+                    );
+                } else if (hasFilesToDownload) {
+                    // Create a blob for the WORKING_DIR to be able to mount it as a directory in the container volume.
+                    // Used to prevent 'chdir' to fail with no such file exists.
+                    BlobInfo workingDirBlob = BlobInfo.newBuilder(BlobId.of(renderedBucket, workingDirectoryToBlobPath + "/")).build();
+                    try (Storage storage = GcsUtils.of(renderedProjectId, credentials).storage(runContext)) {
+                        storage.create(workingDirBlob);
+                    }
+                }
+
+                // Create new Job TaskTemplate
+                TaskTemplate.Builder taskBuilder = TaskTemplate.newBuilder();
+
+                if (hasVolume) {
+                    // Create and add Volume
+                    Volume volume = Volume.newBuilder()
+                        .setGcs(
+                            GCSVolumeSource
+                                .newBuilder()
+                                .setReadOnly(false)
+                                .setBucket(renderedBucket)
+                                .build()
+                        )
+                        .setName(VOLUME_NAME)
+                        .build();
+                    taskBuilder.addVolumes(volume);
+                }
+
+                // Create and add Container
+                Container.Builder containerBuilder = Container.newBuilder()
+                    .setImage(taskCommands.getContainerImage())
+                    .addAllCommand(taskCommands.getCommands())
+                    .addAllEnv(envVars(runContext, taskCommands));
+
+                if (hasVolume) {
+                    // Mount the volume
+                    containerBuilder.setWorkingDir(workingDir.toString());
+                    containerBuilder.addVolumeMounts(
+                        VolumeMount.newBuilder()
+                            .setName(VOLUME_NAME)
+                            .setMountPath(MOUNT_PATH.toString())
+                            .build()
+                    );
+                }
+
+                taskBuilder.addContainers(containerBuilder);
+                TaskTemplate task = taskBuilder
+                    .build();
+
+                // Create Job Definition
+                job = Job.newBuilder()
+                    .setLaunchStage(LaunchStage.BETA) // required: Volume is a BETA feature for CloudRun Job.
+                    .setTemplate(ExecutionTemplate
                         .newBuilder()
+                        .setTemplate(task)
                         .setTaskCount(1)
-                        .setTimeout(com.google.protobuf.Duration
+                        .build()
+                    )
+                    .putAllLabels(LabelUtils.labels(runContext))
+                    .build();
+
+                final CreateJobRequest createJobRequest =
+                    CreateJobRequest.newBuilder()
+                        // The job's parent is the region in which the job will run.
+                        .setParent(LocationName.of(renderedProjectId, renderedRegion).toString())
+                        .setJob(job)
+                        .setJobId(jobName)
+                        .build();
+
+                Job jobCreated = jobsClient.createJobAsync(createJobRequest).get();
+                logger.info("Job created: {}", jobCreated.getName());
+
+                // Run the Job
+
+                final JobName fullJobName = JobName.of(renderedProjectId, renderedRegion, jobName);
+                final RunJobRequest runJobRequest =
+                    RunJobRequest.newBuilder()
+                        .setName(fullJobName.toString())
+                        .setOverrides(RunJobRequest.Overrides
                             .newBuilder()
-                            .setSeconds(timeout.getSeconds())
+                            .setTaskCount(1)
+                            .setTimeout(com.google.protobuf.Duration
+                                .newBuilder()
+                                .setSeconds(timeout.getSeconds())
+                                .build()
+                            )
                             .build()
                         )
-                        .build()
-                    )
-                    .build();
+                        .build();
 
-            OperationFuture<Execution, Execution> future = jobsClient.runJobAsync(runJobRequest);
-            Execution execution = future.getMetadata().get();
+                OperationFuture<Execution, Execution> future = jobsClient.runJobAsync(runJobRequest);
+                execution = future.getMetadata().get();
+            }
             
             final String executionName = execution.getName();
             
@@ -350,8 +367,8 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
                     executionsClient.deleteExecutionAsync(executionName);
                     logger.info("Job Execution deleted: {}", executionName);
                     // not waiting for Job deletion
-                    jobsClient.deleteJobAsync(runJobRequest.getName());
-                    logger.info("Job deleted: {}", runJobRequest.getName());
+                    jobsClient.deleteJobAsync(jobName);
+                    logger.info("Job deleted: {}", jobName);
                 }
 
                 if (hasFilesToDownload || outputDirectoryEnabled) {
@@ -373,7 +390,11 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
             }
         }
     }
-    
+
+    private boolean hasAllLabels(Map<String, String> labelsMap, Map<String, String> labels) {
+        return labelsMap.entrySet().containsAll(labels.entrySet());
+    }
+
     private static ExecutionsClient newExecutionsClient(GoogleCredentials credentials) throws IOException {
         return ExecutionsClient.create(ExecutionsSettings.newBuilder().setCredentialsProvider(() -> credentials).build());
     }
