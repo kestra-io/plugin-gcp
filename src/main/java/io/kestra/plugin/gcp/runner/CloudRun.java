@@ -378,7 +378,6 @@ public class CloudRun extends TaskRunner implements GcpInterface, RemoteRunnerIn
                         filesToDownload,
                         renderedBucket,
                         MOUNT_PATH.relativize(workingDir),
-                        outputDir != null ? MOUNT_PATH.relativize(outputDir) : null,
                         outputDirectoryEnabled
                     );
                 }

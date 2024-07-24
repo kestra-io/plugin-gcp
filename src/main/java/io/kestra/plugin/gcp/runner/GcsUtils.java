@@ -15,8 +15,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Utility class for Google Cloud Storage.
@@ -43,35 +46,20 @@ public final class GcsUtils {
                              List<String> filesToDownload,
                              String bucket,
                              Path workingDirectory,
-                             Path outputDirectory,
                              boolean outputDirectoryEnabled) throws Exception {
         try (Storage storage = storage(runContext)) {
-            if (filesToDownload != null) {
-                for (String relativePath : filesToDownload) {
-                    BlobInfo source = BlobInfo.newBuilder(BlobId.of(
-                        bucket,
-                        removeLeadingSlash(workingDirectory.toString()) + Path.of("/" + relativePath)
-                    )).build();
-                    try (var fileOutputStream = new FileOutputStream(runContext.workingDir().resolve(Path.of(relativePath)).toFile());
-                         var reader = storage.reader(source.getBlobId())) {
-                        byte[] buffer = new byte[BUFFER_SIZE];
-                        int limit;
-                        while ((limit = reader.read(ByteBuffer.wrap(buffer))) >= 0) {
-                            fileOutputStream.write(buffer, 0, limit);
-                        }
-                    }
-                }
-            }
-
-            if (outputDirectoryEnabled) {
-                String outputDirName = normalizeBlobDirName(outputDirectory);
+            if (filesToDownload != null || outputDirectoryEnabled) {
+                List<Storage.BlobListOption> options = new ArrayList<>();
+                options.add(Storage.BlobListOption.prefix(workingDirectory.toString().substring(1)));
+                String outputDirName = normalizeBlobDirName(workingDirectory);
                 final Path outputDirPath = Path.of(outputDirName);
-                Page<Blob> outputDirEntries = storage.list(bucket, Storage.BlobListOption.prefix(outputDirName));
-                outputDirEntries.iterateAll().forEach(blob -> {
+
+                var blobs = storage.list(bucket, options.toArray(new Storage.BlobListOption[0])).iterateAll();
+                blobs.forEach(blob -> {
                     BlobId blobId = blob.getBlobId();
                     if (!blobId.getName().endsWith("/")) {
                         Path relativeBlobPathFromOutputDir = outputDirPath.relativize(Path.of(blobId.getName()));
-                        Path outputFile = taskCommands.getOutputDirectory().resolve(relativeBlobPathFromOutputDir);
+                        Path outputFile = taskCommands.getWorkingDirectory().resolve(relativeBlobPathFromOutputDir);
                         outputFile.getParent().toFile().mkdirs();
                         storage.downloadTo(blobId, outputFile);
                     }
