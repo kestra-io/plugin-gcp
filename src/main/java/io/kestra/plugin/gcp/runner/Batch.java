@@ -389,7 +389,6 @@ public class Batch extends TaskRunner implements GcpInterface, RemoteRunnerInter
                         filesToDownload,
                         renderedBucket,
                         batchWorkingDirectory,
-                        outputDirectory,
                         outputDirectoryEnabled
                     );
                 }
