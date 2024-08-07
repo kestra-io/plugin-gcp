@@ -1,12 +1,8 @@
 package io.kestra.plugin.gcp.pubsub;
 
-import com.google.api.core.ApiService;
 import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.pubsub.v1.ProjectSubscriptionName;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -29,8 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.validation.constraints.NotNull;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
 
 @SuperBuilder
 @ToString
@@ -46,7 +40,9 @@ import reactor.core.publisher.Flux;
         @Example(
             code = {
                 "topic: topic-test",
-                "maxRecords: 10"
+                "maxRecords: 10",
+                "projectId: {{ secret('GCP_PROJECT_ID') }}",
+                "subscription: my-subscription"
             }
         )
     }
@@ -58,6 +54,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
     )
     @PluginProperty(dynamic = true)
+    @NotNull
     private String subscription;
 
     @Schema(
