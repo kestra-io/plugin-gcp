@@ -53,7 +53,6 @@ dependencies {
     compileOnly "org.projectlombok:lombok"
 
     // micronaut
-    compileOnly "io.micronaut:micronaut-context"
     compileOnly "io.micronaut.reactor:micronaut-reactor"
 
     // kestra
@@ -63,7 +62,6 @@ dependencies {
 
     // libs
     implementation group: 'dev.failsafe', name: 'failsafe'
-    implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0' // FIXME platform comes with 2.1.1
 
     api platform('com.google.cloud:libraries-bom:26.37.0')
     api 'com.google.cloud:google-cloud-storage'

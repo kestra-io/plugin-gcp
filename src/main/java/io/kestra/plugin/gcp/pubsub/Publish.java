@@ -81,7 +81,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
             }
 
             try (BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)))) {
-                flowable = Flux.create(FileSerde.reader(inputStream, Message.class), FluxSink.OverflowStrategy.BUFFER);
+                flowable = FileSerde.readAll(inputStream, Message.class);
                 resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 
                 count = resultFlowable.reduce(Integer::sum).block();
