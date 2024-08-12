@@ -38,8 +38,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -126,11 +124,10 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
         try (
             BigQueryWriteClient connection = this.connection(runContext);
-            BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)));
+            BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE)
         ) {
             try (JsonStreamWriter writer = this.jsonStreamWriter(runContext, parentTable, connection).build()) {
-                Integer count = Flux
-                    .create(FileSerde.reader(inputStream), FluxSink.OverflowStrategy.BUFFER)
+                Integer count = FileSerde.readAll(inputStream)
                     .map(this::map)
                     .buffer(this.bufferSize)
                     .map(list -> {
