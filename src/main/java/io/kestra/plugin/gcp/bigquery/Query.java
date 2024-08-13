@@ -22,10 +22,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -562,7 +559,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
 
         try (
-            OutputStream output = new FileOutputStream(tempFile);
+            var output = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)
         ) {
             Flux<Object> flowable = Flux
                 .create(
@@ -576,12 +573,11 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                         s.complete();
                     },
                     FluxSink.OverflowStrategy.BUFFER
-                )
-                .doOnNext(throwConsumer(row -> FileSerde.write(output, row)));
+                );
+            Mono<Long> longMono = FileSerde.writeAll(output, flowable);
 
             // metrics & finalize
-            Mono<Long> count = flowable.count();
-            Long lineCount = count.block();
+            Long lineCount = longMono.block();
 
             output.flush();
 

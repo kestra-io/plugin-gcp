@@ -18,9 +18,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jakarta.validation.constraints.NotNull;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -195,19 +195,16 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
 
     private Pair<URI, Long> store(RunContext runContext, List<QueryDocumentSnapshot> documents) throws IOException {
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-        AtomicLong count = new AtomicLong();
 
-        try (var output = new FileOutputStream(tempFile)) {
-            documents.forEach(throwConsumer(snapshot -> {
-                count.incrementAndGet();
-                FileSerde.write(output, snapshot.getData());
-            }));
+        try (var output = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
+            Flux<Map<String, Object>> flux = Flux.fromIterable(documents).map(snapshot -> snapshot.getData());
+            Mono<Long> count = FileSerde.writeAll(output, flux);
+
+            return Pair.of(
+                runContext.storage().putFile(tempFile),
+                count.block()
+            );
         }
-
-        return Pair.of(
-            runContext.storage().putFile(tempFile),
-            count.get()
-        );
     }
 
     private Pair<List<Object>, Long> fetch(List<QueryDocumentSnapshot> documents) {
