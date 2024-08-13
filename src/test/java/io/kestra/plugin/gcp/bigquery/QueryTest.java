@@ -126,7 +126,8 @@ class QueryTest {
         assertThat(
             CharStreams.toString(new InputStreamReader(storageInterface.get(null, run.getUri()))),
             is(StringUtils.repeat(
-                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,bignumeric:1.25,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{v:null,x:4,y:0,z:[1,2,3]},range:\"[2022-12-01, 2022-12-31)\",interval:\"1-0 0 0:0:0\",json:{age:30,name:\"Alice\"}}\n",
+                "{string:\"hello\",nullable:null,bool:true,int:1,float:1.25e0,bignumeric:1.25,date:2008-12-25,datetime:2008-12-25T15:30:00.123Z,time:LocalTime::\"15:30:00.123456\",timestamp:2008-12-25T15:30:00.123Z,geopoint:[50.6833e0,2.9e0],array:[1,2,3],struct:{v:null,x:4,y:0,z:[1,2,3]},range:\"[2022-12-01, 2022-12-31)\",interval:\"1-0 0 0:0:0\",json:{age:30,name:\"Alice\"}}",
+                "\n",
                 2
             ))
         );
