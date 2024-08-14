@@ -10,4 +10,4 @@ You can also set authentication scopes. By default only one scope is used: `http
 
 ### Common property
 
-Each task allows configuring the GCP project identifier in the `projectId` property. If not set, the default project identifier will be used (the one returned by `ServiceOptions.getDefaultProjectId()`). It can be handy to set this property globally by using [task defaults](../../docs/administrator-guide/configuration/others/#kestra-tasks-defaults) if your cluster access only one GCP project. 
+Each task allows configuring the GCP project identifier in the `projectId` property. If not set, the default project identifier will be used (the one returned by `ServiceOptions.getDefaultProjectId()`). It can be handy to set this property globally by using [plugin defaults](../../docs/administrator-guide/configuration/tasks#plugin-defaults) if your cluster access only one GCP project. 
