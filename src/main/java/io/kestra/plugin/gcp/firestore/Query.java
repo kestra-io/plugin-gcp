@@ -198,11 +198,11 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
 
         try (var output = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
             Flux<Map<String, Object>> flux = Flux.fromIterable(documents).map(snapshot -> snapshot.getData());
-            Mono<Long> count = FileSerde.writeAll(output, flux);
+            Long count = FileSerde.writeAll(output, flux).block();
 
             return Pair.of(
                 runContext.storage().putFile(tempFile),
-                count.block()
+                count
             );
         }
     }
