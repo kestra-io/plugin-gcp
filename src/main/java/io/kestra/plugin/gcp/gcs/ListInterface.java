@@ -18,7 +18,7 @@ public interface ListInterface {
         description = "if DIRECTORY, will only list objects in the specified directory\n" +
             "if RECURSIVE, will list objects in the specified directory recursively\n" +
             "Default value is DIRECTORY\n" +
-            "When using RECURSIVE value, be carefull to move your files to a location not in the `from` scope"
+            "When using RECURSIVE value, be careful to move your files to a location not in the `from` scope"
     )
     @PluginProperty
     List.ListingType getListingType();
