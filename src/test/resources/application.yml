@@ -24,6 +24,7 @@ kestra:
       project: "kestra-unit-test"
     dataproc:
       project: "kestra-unit-test"
+      region: "us-central1"
     vertexai:
       project: "kestra-unit-test"
       region: "us-central1"
