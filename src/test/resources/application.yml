@@ -12,7 +12,7 @@ kestra:
   tasks:
     gcs:
       project: "kestra-unit-test"
-      bucket: "local-kestra-unit-test"
+      bucket: "kestra-unit-test"
       filename: "${random.shortuuid}"
     bigquery:
       project: "kestra-unit-test"
@@ -23,7 +23,7 @@ kestra:
     pubsub:
       project: "kestra-unit-test"
     dataproc:
-      project: "kestra-unit-test-422715"
+      project: "kestra-unit-test"
       region: "us-central1"
     vertexai:
       project: "kestra-unit-test"

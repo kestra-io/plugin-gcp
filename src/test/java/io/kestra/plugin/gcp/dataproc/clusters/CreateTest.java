@@ -38,10 +38,6 @@ public class CreateTest {
             .type(Create.class.getName())
             .projectId(project)
             .clusterName("test-cluster")
-	        .masterMachineType("n1-standard-2")
-	        .masterDiskSizeGB(200)
-	        .workerMachineType("n1-standard-2")
-	        .workerDiskSizeGB(200)
 	        .region(region)
 	        .bucket(bucket)
             .build();

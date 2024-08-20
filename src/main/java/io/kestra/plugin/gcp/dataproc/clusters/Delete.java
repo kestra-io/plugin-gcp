@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.dataproc.clusters;
 
+import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.longrunning.OperationFuture;
 import com.google.cloud.dataproc.v1.ClusterControllerClient;
 import com.google.cloud.dataproc.v1.ClusterControllerSettings;
@@ -25,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
- title = "Delete cluster from Google Cloud Dataproc."
+ title = "Delete clusters from Google Cloud Dataproc."
 )
 @Plugin(
 	examples = @Example(
@@ -60,6 +61,7 @@ public class Delete extends AbstractTask implements RunnableTask<Delete.Output> 
 		String clusterName = runContext.render(this.clusterName);
 
 		ClusterControllerSettings settings = ClusterControllerSettings.newBuilder()
+            .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
 			.setEndpoint(region + DATAPROC_GOOGLEAPIS)
 			.build();
 
