@@ -29,9 +29,16 @@ import java.nio.channels.FileChannel;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "from: \"gs://my_bucket/dir/file.csv\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_download
+                namespace: company.name
+
+                tasks:
+                  - id: download
+                    type: io.kestra.plugin.gcp.gcs.Download
+                    from: "gs://my_bucket/dir/file.csv"
+                """
         )
     }
 )

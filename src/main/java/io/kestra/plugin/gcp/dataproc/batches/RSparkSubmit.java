@@ -26,11 +26,17 @@ import jakarta.validation.constraints.NotNull;
 )
 @Plugin(
     examples = @Example(
-        code = {
-            "mainRFileUri: 'gs://spark-jobs-kestra/dataframe.r'",
-            "name: test-rspark",
-            "region: europe-west3"
-        }
+        full = true,
+        code = """
+            id: gcp_dataproc_r_spark_submit
+            namespace: company.name
+            tasks:
+              - id: r_spark_submit
+                type: io.kestra.plugin.gcp.dataproc.batches.RSparkSubmit
+                mainRFileUri: 'gs://spark-jobs-kestra/dataframe.r'
+                name: test-rspark
+                region: europe-west3
+            """
     )
 )
 public class RSparkSubmit extends AbstractSparkSubmit {

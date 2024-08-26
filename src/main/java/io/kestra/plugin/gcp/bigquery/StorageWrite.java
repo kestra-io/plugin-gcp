@@ -49,11 +49,22 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "from: \"{{ outputs.read.uri }}\"",
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "writeStreamType: DEFAULT"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_storage_write
+                namespace: company.name
+
+                tasks:
+                  - id: read_data
+                    type: io.kestra.plugin.core.http.Download
+                    uri: https://dummyjson.com/products/1
+
+                  - id: storage_write
+                    type: io.kestra.plugin.gcp.bigquery.StorageWrite
+                    from: "{{ outputs.read_data.uri }}"
+                    destinationTable: "my_project.my_dataset.my_table"
+                    writeStreamType: DEFAULT
+                """
         )
     },
     metrics = {

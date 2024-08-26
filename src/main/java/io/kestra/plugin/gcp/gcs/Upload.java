@@ -27,10 +27,17 @@ import java.nio.ByteBuffer;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "from: \"{{ inputs.file }}\"",
-                "to: \"gs://my_bucket/dir/file.csv\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_upload
+                namespace: company.name
+
+                tasks:
+                  - id: upload
+                    type: io.kestra.plugin.gcp.gcs.Upload
+                    from: "{{ inputs.file }}"
+                    to: "gs://my_bucket/dir/file.csv"
+                """
         )
     }
 )

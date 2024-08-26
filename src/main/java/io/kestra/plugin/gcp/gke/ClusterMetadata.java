@@ -29,11 +29,18 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             title = "Fetch a GKE cluster's metadata.",
-            code = {
-                "clusterProjectId: my-project-id",
-                "clusterZone: europe-west1-c",
-                "clusterId: my-cluster-id",
-            }
+            full = true,
+            code = """
+                id: gcp_gke_cluster_metadata
+                namespace: company.name
+
+                tasks:
+                  - id: cluster_metadata
+                    type: io.kestra.plugin.gcp.gke.ClusterMetadata
+                    clusterProjectId: my-project-id
+                    clusterZone: europe-west1-c
+                    clusterId: my-cluster-id
+                """
         )
     }
 )

@@ -23,11 +23,18 @@ import org.slf4j.Logger;
     examples = {
         @Example(
             title = "Update some bucket labels",
-            code = {
-                "name: \"my-bucket\"",
-                "labels:",
-                "  my-label: my-value"
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_update_bucket
+                namespace: company.name
+
+                tasks:
+                  - id: update_bucket
+                    type: io.kestra.plugin.gcp.gcs.UpdateBucket
+                    name: "my-bucket"
+                    labels:
+                      my-label: my-value
+                """
         )
     }
 )

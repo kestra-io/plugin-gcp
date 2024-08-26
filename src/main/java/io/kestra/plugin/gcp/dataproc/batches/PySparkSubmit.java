@@ -26,11 +26,17 @@ import jakarta.validation.constraints.NotNull;
 )
 @Plugin(
     examples = @Example(
-        code = {
-            "mainPythonFileUri: 'gs://spark-jobs-kestra/pi.py'",
-            "name: test-pyspark",
-            "region: europe-west3"
-        }
+        full = true,
+        code = """
+            id: gcp_dataproc_py_spark_submit
+            namespace: company.name
+            tasks:
+              - id: py_spark_submit
+                type: io.kestra.plugin.gcp.dataproc.batches.PySparkSubmit
+                mainPythonFileUri: 'gs://spark-jobs-kestra/pi.py'
+                name: test-pyspark
+                region: europe-west3
+            """
     )
 )
 public class PySparkSubmit extends AbstractSparkSubmit {

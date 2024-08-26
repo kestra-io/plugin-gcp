@@ -25,11 +25,18 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             title = "Add role to a service account on a bucket",
-            code = {
-                "name: \"my-bucket\"",
-                "member: \"sa@project.iam.gserviceaccount.com\"",
-                "role: \"roles/storage.admin\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_create_bucket_iam_policy
+                namespace: company.name
+
+                tasks:
+                  - id: create_bucket_iam_policy
+                    type: io.kestra.plugin.gcp.gcs.CreateBucketIamPolicy
+                    name: "my-bucket"
+                    member: "sa@project.iam.gserviceaccount.com"
+                    role: "roles/storage.admin"
+                """
         )
     }
 )

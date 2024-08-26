@@ -28,19 +28,38 @@ import java.util.Map;
     examples = {
         @Example(
             title = "Set a document from a map.",
-            code = {
-                "collection: \"persons\"",
-                "document:",
-                "  firstname: \"John\"",
-                "  lastname: \"Doe\"",
-            }
+            full = true,
+            code = """
+                id: gcp_firestore_set
+                namespace: company.name
+
+                tasks:
+                  - id: set
+                    type: io.kestra.plugin.gcp.firestore.Set
+                    collection: "persons"
+                    document:
+                      firstname: "John"
+                      lastname: "Doe"
+                """
         ),
         @Example(
             title = "Set a document from a JSON string.",
-            code = {
-                "collection: \"persons\"",
-                "document: \"{{ outputs.task_id.data | json }}\""
-            }
+            full = true,
+            code = """
+                id: gcp_firestore_set
+                namespace: company.name
+
+                inputs:
+                  - id: json_string
+                    type: STRING
+                    default: "{\"firstname\": \"John\", \"lastname\": \"Doe\"}"
+
+                tasks:
+                  - id: set
+                    type: io.kestra.plugin.gcp.firestore.Set
+                    collection: "persons"
+                    document: "{{ inputs.json_string }}"
+                """
         )
     }
 )

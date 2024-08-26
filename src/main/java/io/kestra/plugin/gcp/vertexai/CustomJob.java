@@ -37,18 +37,25 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "projectId: my-gcp-project",
-                "region: europe-west1",
-                "displayName: Start Custom Job",
-                "spec:",
-                "  workerPoolSpecs:",
-                "  - containerSpec:",
-                "      imageUri: gcr.io/my-gcp-project/my-dir/my-image:latest",
-                "    machineSpec:",
-                "      machineType: n1-standard-4",
-                "    replicaCount: 1",
-            }
+            full = true,
+            code = """
+                id: gcp_vertexai_custom_job
+                namespace: company.name
+
+                tasks:
+                  - id: custom_job
+                    type: io.kestra.plugin.gcp.vertexai.CustomJob
+                    projectId: my-gcp-project
+                    region: europe-west1
+                    displayName: Start Custom Job
+                    spec:
+                      workerPoolSpecs:
+                      - containerSpec:
+                          imageUri: gcr.io/my-gcp-project/my-dir/my-image:latest
+                        machineSpec:
+                          machineType: n1-standard-4
+                        replicaCount: 1
+                """
         )
     }
 )

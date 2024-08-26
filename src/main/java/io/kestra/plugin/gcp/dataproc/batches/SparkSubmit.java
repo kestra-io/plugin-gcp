@@ -26,15 +26,21 @@ import jakarta.validation.constraints.NotNull;
 )
 @Plugin(
     examples = @Example(
-        code = {
-            "jarFileUris: ",
-            "  - 'gs://spark-jobs-kestra/spark-examples.jar'",
-            "mainClass: org.apache.spark.examples.SparkPi",
-            "args:",
-            "  - 1000",
-            "name: test-spark",
-            "region: europe-west3"
-        }
+        full = true,
+        code = """
+            id: gcp_dataproc_spark_submit
+            namespace: company.name
+            tasks:
+              - id: spark_submit
+                type: io.kestra.plugin.gcp.dataproc.batches.SparkSubmit
+                jarFileUris: 
+                  - 'gs://spark-jobs-kestra/spark-examples.jar'
+                mainClass: org.apache.spark.examples.SparkPi
+                args:
+                  - 1000
+                name: test-spark
+                region: europe-west3
+            """
     )
 )
 public class SparkSubmit extends AbstractSparkSubmit {

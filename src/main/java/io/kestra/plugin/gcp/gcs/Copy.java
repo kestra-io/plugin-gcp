@@ -31,10 +31,21 @@ import java.net.URI;
     examples = {
         @Example(
             title = "Move a file between bucket path",
-            code = {
-                "from: \"{{ inputs.file }}\"",
-                "delete: true"
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_copy
+                namespace: company.name
+
+                inputs:
+                  - id: file
+                    type: FILE
+
+                tasks:
+                  - id: copy
+                    type: io.kestra.plugin.gcp.gcs.Copy
+                    from: "{{ inputs.file }}"
+                    delete: true
+                """
         )
     }
 )

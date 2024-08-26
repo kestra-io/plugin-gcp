@@ -29,24 +29,31 @@ import java.util.Objects;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "tableDefinition:",
-                "  type: TABLE",
-                "  schema:",
-                "    fields:",
-                "    - name: id",
-                "      type: INT64",
-                "    - name: name",
-                "      type: STRING",
-                "  standardTableDefinition:",
-                "    clustering:",
-                "    - id",
-                "    - name",
-                "friendlyName: new_table"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_create_table
+                namespace: company.name
+
+                tasks:
+                  - id: create_table
+                    type: io.kestra.plugin.gcp.bigquery.CreateTable
+                    projectId: my-project
+                    dataset: my-dataset
+                    table: my-table
+                    tableDefinition:
+                      type: TABLE
+                      schema:
+                        fields:
+                        - name: id
+                          type: INT64
+                        - name: name
+                          type: STRING
+                      standardTableDefinition:
+                        clustering:
+                        - id
+                        - name
+                    friendlyName: new_table
+                """
         )
     }
 )

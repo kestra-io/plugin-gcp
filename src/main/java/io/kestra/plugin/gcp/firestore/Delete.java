@@ -23,10 +23,17 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "collection: \"persons\"",
-                "childPath: \"1\""
-            }
+            full = true,
+            code = """
+                id: gcp_firestore_delete
+                namespace: company.name
+
+                tasks:
+                  - id: delete
+                    type: io.kestra.plugin.gcp.firestore.Delete
+                    collection: "persons"
+                    childPath: "1"
+                """
         )
     }
 )

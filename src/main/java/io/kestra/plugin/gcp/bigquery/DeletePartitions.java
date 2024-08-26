@@ -28,14 +28,21 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "partitionType: DAY",
-                "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"",
-                "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""
-            }
+            full = true,
+            code = """
+                id: gcp_bq_delete_partitions
+                namespace: company.name
+
+                tasks:
+                  - id: delete_partitions
+                    type: io.kestra.plugin.gcp.bigquery.DeletePartitions
+                    projectId: my-project
+                    dataset: my-dataset
+                    table: my-table
+                    partitionType: DAY
+                    from: "{{ now() | dateAdd(-30, 'DAYS') }}"
+                    to: "{{ now() | dateAdd(-7, 'DAYS') }}"
+                """
         )
     },
     metrics = {

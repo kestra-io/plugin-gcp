@@ -37,15 +37,21 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
     examples = {
         @Example(
             title = "Chat completion using the Vertex AI Gemini API.",
-            code = {
-                """
+            full = true,
+            code = """
+                id: gcp_vertexai_chat_completion
+                namespace: company.name
+
+                tasks:
+                  - id: chat_completion
+                    type: io.kestra.plugin.gcp.vertexai.ChatCompletion
                     region: us-central1
                     projectId: my-project
                     context: I love jokes that talk about sport
                     messages:
                       - author: user
-                        content: Please tell me a joke"""
-            }
+                        content: Please tell me a joke
+                """
         )
     }
 )

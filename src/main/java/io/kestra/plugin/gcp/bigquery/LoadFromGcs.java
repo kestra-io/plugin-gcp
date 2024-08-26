@@ -32,39 +32,78 @@ import java.util.List;
     examples = {
         @Example(
             title = "Load an avro file from a gcs bucket",
-            code = {
-                "from:",
-                "  - \"{{ outputs['avro-to-gcs'] }}\"",
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "format: AVRO",
-                "avroOptions:",
-                "  useAvroLogicalTypes: true"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_load_from_gcs
+                namespace: company.name
+
+                tasks:
+                  - id: http_download
+                    type: io.kestra.plugin.core.http.Download
+                    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+
+                  - id: csv_to_ion
+                    type: io.kestra.plugin.serdes.csv.CsvToIon
+                    from: "{{ outputs.http_download.uri }}"
+                    header: true
+                
+                  - id: ion_to_avro
+                    type: io.kestra.plugin.serdes.avro.IonToAvro
+                    from: "{{ outputs.csv_to_ion.uri }}"
+                    schema: |
+                      {
+                        "type": "record",
+                        "name": "Order",
+                        "namespace": "com.example.order",
+                        "fields": [
+                          {"name": "order_id", "type": "int"},
+                          {"name": "customer_name", "type": "string"},
+                          {"name": "customer_email", "type": "string"},
+                          {"name": "product_id", "type": "int"},
+                          {"name": "price", "type": "double"},
+                          {"name": "quantity", "type": "int"},
+                          {"name": "total", "type": "double"}
+                        ]
+                      }
+
+                  - id: load_from_gcs
+                    type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
+                    from:
+                      - "{{ outputs.ion_to_avro.uri }}"
+                    destinationTable: "my_project.my_dataset.my_table"
+                    format: AVRO
+                    avroOptions:
+                      useAvroLogicalTypes: true
+                """
         ),
         @Example(
-            full = true,
             title = "Load a csv file with a defined schema",
-            code = {
-                "- id: load_files_test",
-                "  type: io.kestra.plugin.gcp.bigquery.LoadFromGcs",
-                "  destinationTable: \"myDataset.myTable\"",
-                "  ignoreUnknownValues: true",
-                "  schema:",
-                "    fields:",
-                "      - name: colA",
-                "        type: STRING",
-                "      - name: colB",
-                "        type: NUMERIC",
-                "      - name: colC",
-                "        type: STRING",
-                "  format: CSV",
-                "  csvOptions:",
-                "    allowJaggedRows: true",
-                "    encoding: UTF-8",
-                "    fieldDelimiter: \",\"",
-                "  from:",
-                "  - gs://myBucket/myFile.csv",
-            }
+            full = true,
+            code = """
+                id: gcp_bq_load_files_test
+                namespace: company.name
+
+                tasks:
+                  - id: load_files_test
+                    type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
+                    destinationTable: "myDataset.myTable"
+                    ignoreUnknownValues: true
+                    schema:
+                      fields:
+                        - name: colA
+                          type: STRING
+                        - name: colB
+                          type: NUMERIC
+                        - name: colC
+                          type: STRING
+                    format: CSV
+                    csvOptions:
+                      allowJaggedRows: true
+                      encoding: UTF-8
+                      fieldDelimiter: ","
+                    from:
+                      - gs://myBucket/myFile.csv
+                """
         )
     },
     metrics = {

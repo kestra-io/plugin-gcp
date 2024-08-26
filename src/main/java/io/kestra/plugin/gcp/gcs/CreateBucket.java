@@ -21,12 +21,19 @@ import org.slf4j.Logger;
     examples = {
         @Example(
             title = "Create a new bucket with some options",
-            code = {
-                "name: \"my-bucket\"",
-                "versioningEnabled: true",
-                "labels: ",
-                "  my-label: my-value"
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_create_bucket
+                namespace: company.name
+
+                tasks:
+                  - id: create_bucket
+                    type: io.kestra.plugin.gcp.gcs.CreateBucket
+                    name: "my-bucket"
+                    versioningEnabled: true
+                    labels: 
+                      my-label: my-value
+                """
         )
     }
 )

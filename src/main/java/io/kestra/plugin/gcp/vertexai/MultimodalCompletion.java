@@ -38,17 +38,34 @@ import java.util.Optional;
     examples = {
         @Example(
             title = "Text completion using the Vertex Gemini API",
-            code = {
-                """
+            full = true,
+            code = """
+                id: gcp_vertexai_multimodal_completion
+                namespace: company.name
+
+                tasks:
+                  - id: multimodal_completion
+                    type: io.kestra.plugin.gcp.vertexai.MultimodalCompletion
                     region: us-central1
                     projectId: my-project
                     contents:
-                      - content: Please tell me a joke"""
-            }),
+                      - content: Please tell me a joke
+                """
+        ),
         @Example(
             title = "Multimodal completion using the Vertex Gemini API",
-            code = {
-                """
+            full = true,
+            code = """
+                id: gcp_vertexai_multimodal_completion
+                namespace: company.name
+
+                inputs:
+                  - id: image
+                    type: FILE
+                
+                tasks:
+                  - id: multimodal_completion
+                    type: io.kestra.plugin.gcp.vertexai.MultimodalCompletion
                     region: us-central1
                     projectId: my-project
                     contents:
@@ -56,7 +73,7 @@ import java.util.Optional;
                       - mimeType: image/jpeg
                         content: "{{ inputs.image }}"
                 """
-            })
+        )
     }
 )
 public class MultimodalCompletion extends AbstractGenerativeAi implements RunnableTask<MultimodalCompletion.Output> {

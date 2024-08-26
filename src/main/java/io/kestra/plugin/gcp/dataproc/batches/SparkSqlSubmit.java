@@ -26,11 +26,17 @@ import jakarta.validation.constraints.NotNull;
 )
 @Plugin(
     examples = @Example(
-        code = {
-            "queryFileUri: 'gs://spark-jobs-kestra/foobar.py'",
-            "name: test-sparksql",
-            "region: europe-west3"
-        }
+        full = true,
+        code = """
+            id: gcp_dataproc_spark_sql_submit
+            namespace: company.name
+            tasks:
+              - id: spark_sql_submit
+                type: io.kestra.plugin.gcp.dataproc.batches.SparkSqlSubmit
+                queryFileUri: 'gs://spark-jobs-kestra/foobar.py'
+                name: test-sparksql
+                region: europe-west3
+            """
     )
 )
 public class SparkSqlSubmit extends AbstractSparkSubmit {

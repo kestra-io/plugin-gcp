@@ -26,11 +26,18 @@ import org.slf4j.Logger;
     examples = {
         @Example(
             title = "Create a dataset if not exits",
-            code = {
-                "name: \"my_dataset\"",
-                "location: \"EU\"",
-                "ifExists: \"SKIP\""
-            }
+            full = true,
+            code = """
+                id: gcp_bq_create_dataset
+                namespace: company.name
+
+                tasks:
+                  - id: create_dataset
+                    type: io.kestra.plugin.gcp.bigquery.CreateDataset
+                    name: "my_dataset"
+                    location: "EU"
+                    ifExists: "SKIP"
+                """
         )
     }
 )

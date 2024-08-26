@@ -26,9 +26,16 @@ import java.util.stream.StreamSupport;
     examples = {
         @Example(
             title = "List files in a bucket",
-            code = {
-                "from: \"gs://my_bucket/dir/\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_list
+                namespace: company.name
+
+                tasks:
+                  - id: list
+                    type: io.kestra.plugin.gcp.gcs.List
+                    from: "gs://my_bucket/dir/"
+                """
         )
     }
 )
