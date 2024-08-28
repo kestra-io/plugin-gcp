@@ -33,15 +33,22 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-                "destinationTable: my-dest-table",
-                "partitionType: DAY",
-                "from: \"{{ now() | dateAdd(-30, 'DAYS') }}\"",
-                "to: \"{{ now() | dateAdd(-7, 'DAYS') }}\""
-            }
+            full = true,
+            code = """
+                id: gcp_bq_copy_partitions
+                namespace: company.name
+
+                tasks:
+                  - id: copy_partitions
+                    type: io.kestra.plugin.gcp.bigquery.CopyPartitions
+                    projectId: my-project
+                    dataset: my-dataset
+                    table: my-table
+                    destinationTable: my-dest-table
+                    partitionType: DAY
+                    from: "{{ now() | dateAdd(-30, 'DAYS') }}"
+                    to: "{{ now() | dateAdd(-7, 'DAYS') }}"
+                """
         )
     },
     metrics = {

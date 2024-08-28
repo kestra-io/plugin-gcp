@@ -26,11 +26,18 @@ import java.util.Objects;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table",
-            }
+            full = true,
+            code = """
+                id: gcp_bq_table_metadata
+                namespace: company.name
+
+                tasks:
+                  - id: table_metadata
+                    type: io.kestra.plugin.gcp.bigquery.TableMetadata
+                    projectId: my-project
+                    dataset: my-dataset
+                    table: my-table
+                """
         )
     }
 )

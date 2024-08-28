@@ -36,18 +36,25 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "topic: topic-test",
-                "from:",
-                "  - data: \"{{ 'base64-encoded-string-1' | base64encode }}\"",
-                "     attributes:",
-                "         testAttribute: KestraTest",
-                "  - messageId: '1234'",
-                "  - orderingKey: 'foo'",
-                "  - data: \"{{ 'base64-encoded-string-2' | base64encode }}\"",
-                "  - attributes:",
-                "         testAttribute: KestraTest"
-            }
+            full = true,
+            code = """
+                id: gcp_pubsub_publish
+                namespace: company.name
+
+                tasks:
+                  - id: publish
+                    type: io.kestra.plugin.gcp.pubsub.Publish
+                    topic: topic-test
+                    from:
+                      - data: "{{ 'base64-encoded-string-1' | base64encode }}"
+                         attributes:
+                             testAttribute: KestraTest
+                      - messageId: '1234'
+                      - orderingKey: 'foo'
+                      - data: "{{ 'base64-encoded-string-2' | base64encode }}"
+                      - attributes:
+                             testAttribute: KestraTest
+                """
         )
     }
 )

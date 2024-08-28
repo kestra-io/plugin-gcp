@@ -32,9 +32,16 @@ import reactor.core.scheduler.Schedulers;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "from: \"gs://my_bucket/dir/\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_delete_list
+                namespace: company.name
+
+                tasks:
+                  - id: delete_list
+                    type: io.kestra.plugin.gcp.gcs.DeleteList
+                    from: "gs://my_bucket/dir/"
+                """
         )
     }
 )

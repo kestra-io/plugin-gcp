@@ -28,12 +28,19 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "operationType: COPY",
-                "sourceTables:",
-                "- \"my_project.my_dataset.my_table$20130908\"",
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-            }
+            full = true,
+            code = """
+                id: gcp_bq_copy
+                namespace: company.name
+
+                tasks:
+                  - id: copy
+                    type: io.kestra.plugin.gcp.bigquery.Copy
+                    operationType: COPY
+                    sourceTables:
+                      - "my_project.my_dataset.my_table$20130908"
+                    destinationTable: "my_project.my_dataset.my_table"
+                """
         )
     },
     metrics = {

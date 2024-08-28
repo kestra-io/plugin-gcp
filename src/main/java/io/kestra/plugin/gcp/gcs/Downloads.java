@@ -32,11 +32,18 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
     examples = {
         @Example(
             title = "Download a list of files and move it to an archive folders",
-            code = {
-                "from: gs://my-bucket/kestra/files/",
-                "action: MOVE",
-                "moveDirectory: gs://my-bucket/kestra/archive/",
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_downloads
+                namespace: company.name
+
+                tasks:
+                  - id: downloads
+                    type: io.kestra.plugin.gcp.gcs.Downloads
+                    from: gs://my-bucket/kestra/files/
+                    action: MOVE
+                    moveDirectory: gs://my-bucket/kestra/archive/
+                """
         )
     }
 )

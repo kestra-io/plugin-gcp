@@ -23,9 +23,16 @@ import java.util.NoSuchElementException;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "uri: \"gs://my_bucket/dir/file.csv\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_delete
+                namespace: company.name
+
+                tasks:
+                  - id: delete
+                    type: io.kestra.plugin.gcp.gcs.Delete
+                    uri: "gs://my_bucket/dir/file.csv"
+                """
         )
     }
 )

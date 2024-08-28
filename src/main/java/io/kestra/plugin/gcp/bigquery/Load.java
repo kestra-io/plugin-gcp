@@ -33,13 +33,20 @@ import java.nio.channels.Channels;
     examples = {
         @Example(
             title = "Load an csv file from an input file",
-            code = {
-                "from: \"{{ inputs.file }}\"",
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "format: CSV",
-                "csvOptions:",
-                "  fieldDelimiter: \";\""
-            }
+            full = true,
+            code = """
+                id: gcp_bq_load
+                namespace: company.name
+
+                tasks:
+                  - id: load
+                    type: io.kestra.plugin.gcp.bigquery.Load
+                    from: "{{ inputs.file }}"
+                    destinationTable: "my_project.my_dataset.my_table"
+                    format: CSV
+                    csvOptions:
+                      fieldDelimiter: ";"
+                """
         )
     },
     metrics = {

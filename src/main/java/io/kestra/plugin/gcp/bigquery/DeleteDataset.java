@@ -23,10 +23,17 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             title = "Delete a dataset.",
-            code = {
-                "name: \"my-dataset\"",
-                "deleteContents: true"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_delete_dataset
+                namespace: company.name
+
+                tasks:
+                  - id: delete_dataset
+                    type: io.kestra.plugin.gcp.bigquery.DeleteDataset
+                    name: "my-dataset"
+                    deleteContents: true
+                """
         )
     }
 )

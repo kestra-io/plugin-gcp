@@ -27,9 +27,16 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             title = "Delete a bucket",
-            code = {
-                "name: \"my-bucket\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_delete_bucket
+                namespace: company.name
+
+                tasks:
+                  - id: delete_bucket
+                    type: io.kestra.plugin.gcp.gcs.DeleteBucket
+                    name: "my-bucket"
+                """
         )
     }
 )

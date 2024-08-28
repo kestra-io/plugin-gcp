@@ -31,14 +31,21 @@ import java.util.Map;
     examples = {
         @Example(
             title = "Extract a BigQuery table to a GCS bucket.",
-            code = {
-                "destinationUris: ",
-                "  - \"gs://bucket_name/filename.csv\"",
-                "sourceTable: \"my_project.my_dataset.my_table\"",
-                "format: CSV",
-                "fieldDelimiter: ';'",
-                "printHeader: true"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_extract_to_gcs
+                namespace: company.name
+
+                tasks:
+                  - id: extract_to_gcs
+                    type: io.kestra.plugin.gcp.bigquery.ExtractToGcs
+                    destinationUris: 
+                      - "gs://bucket_name/filename.csv"
+                    sourceTable: "my_project.my_dataset.my_table"
+                    format: CSV
+                    fieldDelimiter: ';'
+                    printHeader: true
+                """
         )
     },
     metrics= {

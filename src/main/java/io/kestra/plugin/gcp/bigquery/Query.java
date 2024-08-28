@@ -47,43 +47,53 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
     examples = {
         @Example(
             title = "Create a table with a custom query.",
-            code = {
-                "destinationTable: \"my_project.my_dataset.my_table\"",
-                "writeDisposition: WRITE_APPEND",
-                "sql: |",
-                "  SELECT ",
-                "    \"hello\" as string,",
-                "    NULL AS `nullable`,",
-                "    1 as int,",
-                "    1.25 AS float,",
-                "    DATE(\"2008-12-25\") AS date,",
-                "    DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,",
-                "    TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,",
-                "    TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,",
-                "    ST_GEOGPOINT(50.6833, 2.9) AS geopoint,",
-                "    ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,",
-                "    STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_query
+                namespace: company.name
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.gcp.bigquery.Query
+                    destinationTable: "my_project.my_dataset.my_table"
+                    writeDisposition: WRITE_APPEND
+                    sql: |
+                      SELECT 
+                        "hello" as string,
+                        NULL AS `nullable`,
+                        1 as int,
+                        1.25 AS float,
+                        DATE("2008-12-25") AS date,
+                        DATETIME "2008-12-25 15:30:00.123456" AS datetime,
+                        TIME(DATETIME "2008-12-25 15:30:00.123456") AS time,
+                        TIMESTAMP("2008-12-25 15:30:00.123456") AS timestamp,
+                        ST_GEOGPOINT(50.6833, 2.9) AS geopoint,
+                        ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,
+                        STRUCT(4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`
+                """
         ),
         @Example(
-            full = true,
             title = "Execute a query and fetch results sets on another task.",
-            code = {
-                "tasks:",
-                "  - id: fetch",
-                "    type: io.kestra.plugin.gcp.bigquery.Query",
-                "    fetch: true",
-                "    sql: |",
-                "      SELECT 1 as id, \"John\" as name",
-                "      UNION ALL",
-                "      SELECT 2 as id, \"Doe\" as name",
-                "  - id: use-fetched-data",
-                "    type: io.kestra.plugin.core.debug.Return",
-                "    format: |",
-                "      {% for row in outputs.fetch.rows %}",
-                "      id : {{ row.id }}, name: {{ row.name }}",
-                "      {% endfor %}"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_query
+                namespace: company.name
+
+                tasks:
+                  - id: fetch
+                    type: io.kestra.plugin.gcp.bigquery.Query
+                    fetch: true
+                    sql: |
+                      SELECT 1 as id, "John" as name
+                      UNION ALL
+                      SELECT 2 as id, "Doe" as name
+                  - id: use_fetched_data
+                    type: io.kestra.plugin.core.debug.Return
+                    format: |
+                      {% for row in outputs.fetch.rows %}
+                      id : {{ row.id }}, name: {{ row.name }}
+                      {% endfor %}
+                """
         )
     },
     metrics = {

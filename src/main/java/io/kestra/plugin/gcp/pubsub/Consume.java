@@ -38,12 +38,19 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "topic: topic-test",
-                "maxRecords: 10",
-                "projectId: {{ secret('GCP_PROJECT_ID') }}",
-                "subscription: my-subscription"
-            }
+            full = true,
+            code = """
+                id: gcp_pubsub_consume
+                namespace: company.name
+
+                tasks:
+                  - id: consume
+                    type: io.kestra.plugin.gcp.pubsub.Consume
+                    topic: topic-test
+                    maxRecords: 10
+                    projectId: {{ secret('GCP_PROJECT_ID') }}
+                    subscription: my-subscription
+                """
         )
     }
 )

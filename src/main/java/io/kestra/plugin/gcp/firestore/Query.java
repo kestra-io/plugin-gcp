@@ -42,12 +42,19 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "collection: \"persons\"",
-                "filters: ",
-                "  - field: \"lastname\"",
-                "    value: \"Doe\""
-            }
+            full = true,
+            code = """
+                id: gcp_firestore_query
+                namespace: company.name
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.gcp.firestore.Query
+                    collection: "persons"
+                    filters: 
+                      - field: "lastname"
+                        value: "Doe"
+                """
         )
     }
 )

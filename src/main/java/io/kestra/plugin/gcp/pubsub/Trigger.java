@@ -32,12 +32,24 @@ import java.util.Optional;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "projectId: test-project-id",
-                "subscription: test-subscription",
-                "topic: test-topic",
-                "maxRecords: 10"
-            }
+            full = true,
+            code = """
+                id: gcp_trigger
+                namespace: company.name
+
+                tasks:
+                  - id: log
+                    type: io.kestra.plugin.core.log.Log
+                    message: "Received: {{ trigger.data }}"
+    
+                triggers:
+                  - id: trigger
+                    type: io.kestra.plugin.gcp.pubsub.Trigger
+                    projectId: test-project-id
+                    subscription: test-subscription
+                    topic: test-topic
+                    maxRecords: 10
+                """
         )
     }
 )

@@ -26,11 +26,18 @@ import org.slf4j.Logger;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "name: \"my_dataset\"",
-                "location: \"EU\"",
-                "friendlyName: \"new Friendly Name\""
-            }
+            full = true,
+            code = """
+                id: gcp_bq_update_dataset
+                namespace: company.name
+
+                tasks:
+                  - id: update_dataset
+                    type: io.kestra.plugin.gcp.bigquery.UpdateDataset
+                    name: "my_dataset"
+                    location: "EU"
+                    friendlyName: "new Friendly Name"
+                """
         )
     }
 )

@@ -30,12 +30,18 @@ import java.util.List;
     examples = {
         @Example(
             title = "Text completion using the Vertex AI Gemini API.",
-            code = {
-                """
+            full = true,
+            code = """
+                id: gcp_vertexai_text_completion
+                namespace: company.name
+
+                tasks:
+                  - id: text_completion
+                    type: io.kestra.plugin.gcp.vertexai.TextCompletion
                     region: us-central1
                     projectId: my-project
-                    prompt: Please tell me a joke"""
-            }
+                    prompt: Please tell me a joke
+                """
         )
     }
 )

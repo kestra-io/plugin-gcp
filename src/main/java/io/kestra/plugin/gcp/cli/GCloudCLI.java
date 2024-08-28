@@ -38,35 +38,56 @@ import java.util.Map;
         examples = {
                 @Example(
                         title = "Create a cluster then list them using a service account.",
-                        code = {
-                                "projectId: my-gcp-project",
-                                "serviceAccount: \"{{ secret('gcp-sa') }}\"",
-                                "commands:",
-                                "  - gcloud container clusters create simple-cluster --region=europe-west3",
-                                "  - gcloud container clusters list"
-                        }
+                        full = true,
+                        code = """
+                            id: gcp_g_cloud_cli
+                            namespace: company.name
+            
+                            tasks:
+                              - id: g_cloud_cli
+                                type: io.kestra.plugin.gcp.cli.GCloudCLI
+                                projectId: my-gcp-project
+                                serviceAccount: "{{ secret('gcp-sa') }}"
+                                commands:
+                                  - gcloud container clusters create simple-cluster --region=europe-west3
+                                  - gcloud container clusters list
+                            """
                 ),
                 @Example(
                         title = "Create a GCS bucket.",
-                        code = {
-                                "projectId: my-gcp-project",
-                                "serviceAccount: \"{{ secret('gcp-sa') }}\"",
-                                "commands:",
-                                "  - gcloud storage buckets create gs://my-bucket"
-                        }
+                        full = true,
+                        code = """
+                            id: gcp_g_cloud_cli
+                            namespace: company.name
+            
+                            tasks:
+                              - id: g_cloud_cli
+                                type: io.kestra.plugin.gcp.cli.GCloudCLI
+                                projectId: my-gcp-project
+                                serviceAccount: "{{ secret('gcp-sa') }}"
+                                commands:
+                                  - gcloud storage buckets create gs://my-bucket
+                            """
                 ),
                 @Example(
                         title = "Output the result of a command.",
-                        code = {
-                                "projectId: my-gcp-project",
-                                "serviceAccount: \"{{ secret('gcp-sa') }}\"",
-                                "commands:",
-                                "  # Outputs as a flow output for UI display",
-                                "  - gcloud pubsub topics list --format=json | tr -d '\\n ' | xargs -0 -I {} echo '::{\"outputs\":{\"gcloud\":{}}}::'",
-                                "",
-                                "  # Outputs as a file, preferred way for large payloads",
-                                "  - gcloud storage ls --json > storage.json"
-                        }
+                        full = true,
+                        code = """
+                            id: gcp_g_cloud_cli
+                            namespace: company.name
+            
+                            tasks:
+                              - id: g_cloud_cli
+                                type: io.kestra.plugin.gcp.cli.GCloudCLI
+                                projectId: my-gcp-project
+                                serviceAccount: "{{ secret('gcp-sa') }}"
+                                commands:
+                                  # Outputs as a flow output for UI display
+                                  - gcloud pubsub topics list --format=json | tr -d '\n ' | xargs -0 -I {} echo '::{"outputs":{"gcloud":{}}}::'
+                                
+                                  # Outputs as a file, preferred way for large payloads
+                                  - gcloud storage ls --json > storage.json
+                            """
                 )
         }
 )

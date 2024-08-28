@@ -24,10 +24,17 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             title = "Get a document from its path.",
-            code = {
-                "collection: \"persons\"",
-                "childPath: \"1\""
-            }
+            full = true,
+            code = """
+                id: gcp_firestore_get
+                namespace: company.name
+
+                tasks:
+                  - id: get
+                    type: io.kestra.plugin.gcp.firestore.Get
+                    collection: "persons"
+                    childPath: "1"
+                """
         )
     }
 )

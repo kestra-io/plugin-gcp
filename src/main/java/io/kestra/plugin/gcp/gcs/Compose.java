@@ -27,11 +27,18 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             title = "Concat files in a bucket",
-            code = {
-                "list: ",
-                "  from: \"gs://my_bucket/dir/\"",
-                "to: \"gs://my_bucket/destination/my-compose-file.txt\""
-            }
+            full = true,
+            code = """
+                id: gcp_gcs_compose
+                namespace: company.name
+
+                tasks:
+                  - id: compose
+                    type: io.kestra.plugin.gcp.gcs.Compose
+                    list: 
+                      from: "gs://my_bucket/dir/"
+                    to: "gs://my_bucket/destination/my-compose-file.txt"
+                """
         )
     }
 )

@@ -24,11 +24,18 @@ import org.slf4j.Logger;
     examples = {
         @Example(
             title = "Delete a partition",
-            code = {
-                "projectId: my-project",
-                "dataset: my-dataset",
-                "table: my-table$20130908"
-            }
+            full = true,
+            code = """
+                id: gcp_bq_delete_table
+                namespace: company.name
+
+                tasks:
+                  - id: delete_table
+                    type: io.kestra.plugin.gcp.bigquery.DeleteTable
+                    projectId: my-project
+                    dataset: my-dataset
+                    table: my-table$20130908
+                """
         )
     }
 )
