@@ -44,8 +44,6 @@ import jakarta.validation.constraints.NotNull;
 @Schema(
     title = "Copy a BigQuery table or partition to other one."
 )
-@StoreFetchValidation
-@StoreFetchDestinationValidation
 public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Schema(
         title = "The source tables.",
