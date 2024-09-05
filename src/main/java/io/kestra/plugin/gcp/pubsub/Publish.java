@@ -91,7 +91,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
                 flowable = FileSerde.readAll(inputStream, Message.class);
                 resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 
-                count = resultFlowable.reduce(Integer::sum).block();
+                count = resultFlowable.reduce(Integer::sum).blockOptional().orElse(0);
             }
 
         } else if (this.from instanceof List) {
@@ -101,7 +101,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
             resultFlowable = this.buildFlowable(flowable, publisher, runContext);
 
-            count = resultFlowable.reduce(Integer::sum).block();
+            count = resultFlowable.reduce(Integer::sum).blockOptional().orElse(0);
         } else {
             var msg = JacksonMapper.toMap(this.from, Message.class);
             publisher.publish(msg.to(runContext, this.serdeType));
