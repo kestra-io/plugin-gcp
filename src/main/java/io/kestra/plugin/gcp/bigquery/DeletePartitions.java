@@ -31,7 +31,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
             full = true,
             code = """
                 id: gcp_bq_delete_partitions
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: delete_partitions

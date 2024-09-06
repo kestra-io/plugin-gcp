@@ -33,7 +33,7 @@ import java.util.List;
             full = true,
             code = """
                 id: gcp_vertexai_text_completion
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: text_completion

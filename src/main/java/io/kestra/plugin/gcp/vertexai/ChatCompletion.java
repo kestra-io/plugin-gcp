@@ -40,7 +40,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = """
                 id: gcp_vertexai_chat_completion
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: chat_completion

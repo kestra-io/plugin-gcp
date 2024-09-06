@@ -34,7 +34,7 @@ import java.net.URI;
             full = true,
             code = """
                 id: gcp_gcs_copy
-                namespace: company.name
+                namespace: company.team
 
                 inputs:
                   - id: file

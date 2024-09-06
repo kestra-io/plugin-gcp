@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
             full = true,
             code = """
                 id: gcp_gcs_upload
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: upload

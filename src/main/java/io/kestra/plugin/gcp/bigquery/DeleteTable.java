@@ -27,7 +27,7 @@ import org.slf4j.Logger;
             full = true,
             code = """
                 id: gcp_bq_delete_table
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: delete_table

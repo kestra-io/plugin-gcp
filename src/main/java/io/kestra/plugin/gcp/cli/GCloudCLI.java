@@ -41,7 +41,7 @@ import java.util.Map;
                         full = true,
                         code = """
                             id: gcp_g_cloud_cli
-                            namespace: company.name
+                            namespace: company.team
             
                             tasks:
                               - id: g_cloud_cli
@@ -58,7 +58,7 @@ import java.util.Map;
                         full = true,
                         code = """
                             id: gcp_g_cloud_cli
-                            namespace: company.name
+                            namespace: company.team
             
                             tasks:
                               - id: g_cloud_cli
@@ -74,7 +74,7 @@ import java.util.Map;
                         full = true,
                         code = """
                             id: gcp_g_cloud_cli
-                            namespace: company.name
+                            namespace: company.team
             
                             tasks:
                               - id: g_cloud_cli

@@ -29,7 +29,7 @@ import java.util.Objects;
             full = true,
             code = """
                 id: gcp_bq_table_metadata
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: table_metadata

@@ -32,7 +32,7 @@ import java.util.Objects;
             full = true,
             code = """
                 id: gcp_bq_create_table
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: create_table

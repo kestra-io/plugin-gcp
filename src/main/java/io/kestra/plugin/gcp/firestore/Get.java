@@ -27,7 +27,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_firestore_get
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: get

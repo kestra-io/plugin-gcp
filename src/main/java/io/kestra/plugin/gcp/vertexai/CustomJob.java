@@ -40,7 +40,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_vertexai_custom_job
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: custom_job

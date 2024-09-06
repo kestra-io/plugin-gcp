@@ -35,7 +35,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = """
                 id: gcp_gcs_downloads
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: downloads

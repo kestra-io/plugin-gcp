@@ -29,7 +29,7 @@ import java.util.stream.StreamSupport;
             full = true,
             code = """
                 id: gcp_gcs_list
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: list
