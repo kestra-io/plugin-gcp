@@ -45,7 +45,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
             full = true,
             code = """
                 id: gcp_firestore_query
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: query

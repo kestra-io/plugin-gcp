@@ -31,7 +31,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_bq_copy
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: copy

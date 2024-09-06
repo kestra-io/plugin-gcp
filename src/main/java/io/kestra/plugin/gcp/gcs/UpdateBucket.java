@@ -26,7 +26,7 @@ import org.slf4j.Logger;
             full = true,
             code = """
                 id: gcp_gcs_update_bucket
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: update_bucket

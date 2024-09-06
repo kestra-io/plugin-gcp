@@ -35,7 +35,7 @@ import reactor.core.scheduler.Schedulers;
             full = true,
             code = """
                 id: gcp_gcs_delete_list
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: delete_list

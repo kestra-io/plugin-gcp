@@ -34,7 +34,7 @@ import java.util.Map;
             full = true,
             code = """
                 id: gcp_bq_extract_to_gcs
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: extract_to_gcs

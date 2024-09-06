@@ -50,7 +50,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = """
                 id: gcp_bq_query
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: query
@@ -77,7 +77,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = """
                 id: gcp_bq_query
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: fetch

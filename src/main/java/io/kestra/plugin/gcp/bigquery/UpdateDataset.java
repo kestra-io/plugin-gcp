@@ -29,7 +29,7 @@ import org.slf4j.Logger;
             full = true,
             code = """
                 id: gcp_bq_update_dataset
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: update_dataset

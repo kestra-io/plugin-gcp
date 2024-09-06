@@ -24,7 +24,7 @@ import org.slf4j.Logger;
             full = true,
             code = """
                 id: gcp_gcs_create_bucket
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: create_bucket

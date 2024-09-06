@@ -26,7 +26,7 @@ import java.util.NoSuchElementException;
             full = true,
             code = """
                 id: gcp_gcs_delete
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: delete

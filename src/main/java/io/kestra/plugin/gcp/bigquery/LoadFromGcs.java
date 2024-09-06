@@ -35,7 +35,7 @@ import java.util.List;
             full = true,
             code = """
                 id: gcp_bq_load_from_gcs
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: http_download
@@ -81,7 +81,7 @@ import java.util.List;
             full = true,
             code = """
                 id: gcp_bq_load_files_test
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: load_files_test

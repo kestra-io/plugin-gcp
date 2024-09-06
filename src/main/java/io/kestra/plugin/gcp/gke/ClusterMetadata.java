@@ -32,7 +32,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_gke_cluster_metadata
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: cluster_metadata

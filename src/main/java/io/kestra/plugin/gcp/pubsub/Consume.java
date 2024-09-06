@@ -41,7 +41,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_pubsub_consume
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: consume

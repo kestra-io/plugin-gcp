@@ -32,7 +32,7 @@ import java.nio.channels.FileChannel;
             full = true,
             code = """
                 id: gcp_gcs_download
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: download

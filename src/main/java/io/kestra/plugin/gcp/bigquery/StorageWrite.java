@@ -52,7 +52,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = """
                 id: gcp_bq_storage_write
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: read_data

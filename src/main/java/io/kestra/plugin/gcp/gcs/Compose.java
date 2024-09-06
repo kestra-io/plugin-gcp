@@ -30,7 +30,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_gcs_compose
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: compose

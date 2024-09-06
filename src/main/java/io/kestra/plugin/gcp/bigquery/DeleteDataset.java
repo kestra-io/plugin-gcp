@@ -26,7 +26,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_bq_delete_dataset
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: delete_dataset

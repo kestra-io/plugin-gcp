@@ -39,7 +39,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = """
                 id: gcp_pubsub_publish
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: publish

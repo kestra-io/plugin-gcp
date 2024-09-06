@@ -29,7 +29,7 @@ import jakarta.validation.constraints.NotNull;
         full = true,
         code = """
             id: gcp_dataproc_py_spark_submit
-            namespace: company.name
+            namespace: company.team
             tasks:
               - id: py_spark_submit
                 type: io.kestra.plugin.gcp.dataproc.batches.PySparkSubmit

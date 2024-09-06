@@ -36,7 +36,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             full = true,
             code = """
                 id: gcp_bq_copy_partitions
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: copy_partitions

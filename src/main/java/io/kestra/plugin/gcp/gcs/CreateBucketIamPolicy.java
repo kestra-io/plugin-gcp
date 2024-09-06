@@ -28,7 +28,7 @@ import jakarta.validation.constraints.NotNull;
             full = true,
             code = """
                 id: gcp_gcs_create_bucket_iam_policy
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: create_bucket_iam_policy

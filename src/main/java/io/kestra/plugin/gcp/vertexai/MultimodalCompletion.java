@@ -41,7 +41,7 @@ import java.util.Optional;
             full = true,
             code = """
                 id: gcp_vertexai_multimodal_completion
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: multimodal_completion
@@ -57,7 +57,7 @@ import java.util.Optional;
             full = true,
             code = """
                 id: gcp_vertexai_multimodal_completion
-                namespace: company.name
+                namespace: company.team
 
                 inputs:
                   - id: image

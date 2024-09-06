@@ -31,7 +31,7 @@ import java.util.Map;
             full = true,
             code = """
                 id: gcp_firestore_set
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: set
@@ -47,7 +47,7 @@ import java.util.Map;
             full = true,
             code = """
                 id: gcp_firestore_set
-                namespace: company.name
+                namespace: company.team
 
                 inputs:
                   - id: json_string

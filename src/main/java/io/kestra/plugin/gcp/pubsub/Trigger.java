@@ -35,7 +35,7 @@ import java.util.Optional;
             full = true,
             code = """
                 id: gcp_trigger
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: log

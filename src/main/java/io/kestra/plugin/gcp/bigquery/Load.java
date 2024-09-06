@@ -36,7 +36,7 @@ import java.nio.channels.Channels;
             full = true,
             code = """
                 id: gcp_bq_load
-                namespace: company.name
+                namespace: company.team
 
                 tasks:
                   - id: load
