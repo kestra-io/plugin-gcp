@@ -63,7 +63,7 @@ dependencies {
     // libs
     implementation group: 'dev.failsafe', name: 'failsafe'
 
-    api platform('com.google.cloud:libraries-bom:26.37.0')
+    api platform('com.google.cloud:libraries-bom:26.44.0')
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
