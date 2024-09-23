@@ -709,7 +709,24 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (LegacySQLTypeName.RANGE.equals(field.getType())) {
-            return value.getStringValue();
+            if (LegacySQLTypeName.DATE.toString().equals(field.getRangeElementType().getType())) {
+                return Map.of(
+                    "start", LocalDate.parse(value.getRangeValue().getStart().getStringValue()),
+                    "end", LocalDate.parse(value.getRangeValue().getEnd().getStringValue())
+                );
+            } else if (LegacySQLTypeName.DATETIME.toString().equals(field.getRangeElementType().getType())) {
+                return Map.of(
+                    "start", Instant.parse(value.getRangeValue().getStart().getStringValue() + "Z"),
+                    "end", LocalDate.parse(value.getRangeValue().getEnd().getStringValue() + "Z")
+                );
+            } else if (LegacySQLTypeName.TIMESTAMP.toString().equals(field.getRangeElementType().getType())) {
+                return Map.of(
+                    "start", value.getRangeValue().getStart().getTimestampInstant(),
+                    "end", value.getRangeValue().getEnd().getTimestampInstant()
+                );
+            } else {
+                return value.getRangeValue().getValues();
+            }
         }
 
         throw new IllegalArgumentException("Invalid type '" + field.getType() + "'");
