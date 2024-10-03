@@ -20,7 +20,7 @@ class HttpFunctionTest {
     @Inject
     private RunContextFactory runContextFactory;
 
-    @Disabled("Disabled with CI/CD, to run the test provide an Azure Function URI")
+    @Disabled("Disabled with CI/CD, to run the test provide a GCP Function URL")
     @Test
     void testAzureFunctionWithStringOutput() throws Exception {
         HttpFunction httpTrigger = HttpFunction.builder()

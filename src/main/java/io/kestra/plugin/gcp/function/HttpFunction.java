@@ -3,7 +3,6 @@ package io.kestra.plugin.gcp.function;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.IdTokenCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.gson.JsonSyntaxException;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -113,7 +112,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
                 return Output.builder()
                     .responseBody(mapper.readTree(body))
                     .build();
-            } catch (JsonSyntaxException e) {
+            } catch (Exception e) {
                 return Output.builder()
                     .responseBody(body)
                     .build();
