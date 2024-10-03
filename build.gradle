@@ -52,8 +52,14 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok"
     compileOnly "org.projectlombok:lombok"
 
-    // micronaut
+    // Micronaut
+    compileOnly "io.micronaut:micronaut-http-client"
     compileOnly "io.micronaut.reactor:micronaut-reactor"
+    compileOnly "io.micronaut:micronaut-jackson-databind"
+
+    compileOnly group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names'
+    compileOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava'
+    compileOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310'
 
     // kestra
     annotationProcessor group: "io.kestra", name: "processor", version: kestraVersion
