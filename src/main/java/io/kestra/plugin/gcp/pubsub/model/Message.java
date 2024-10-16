@@ -11,7 +11,6 @@ import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
 import java.io.IOException;
-import java.util.Base64;
 import java.util.Map;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
@@ -50,7 +49,7 @@ public class Message {
             } else {
                 serializedData = serdeType.serialize(data);
             }
-            builder.setData(ByteString.copyFrom(Base64.getEncoder().encode(serializedData)));
+            builder.setData(ByteString.copyFrom(serializedData));
         }
         if(attributes != null && !attributes.isEmpty()) {
             attributes.forEach(throwBiConsumer((key, value) -> builder.putAttributes(runContext.render(key), runContext.render(value))));
@@ -71,7 +70,7 @@ public class Message {
             .orderingKey(message.getOrderingKey());
 
         if (message.getData() != null) {
-            var decodedData = Base64.getDecoder().decode(message.getData().toByteArray());
+            var decodedData = message.getData().toByteArray();
             builder.data(serdeType.deserialize(decodedData));
         }
 
