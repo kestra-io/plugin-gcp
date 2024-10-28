@@ -37,8 +37,8 @@ tasks.withType(JavaCompile) {
 configurations.all {
     resolutionStrategy {
         // micronaut bom import version not compatible with google one
-        force("com.google.protobuf:protobuf-java:3.25.3")
-        force("com.google.protobuf:protobuf-java-util:3.25.3")
+        force("com.google.protobuf:protobuf-java:4.28.3")
+        force("com.google.protobuf:protobuf-java-util:4.28.3")
     }
 }
 
