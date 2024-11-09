@@ -10,6 +10,7 @@ import io.kestra.core.runners.RunContext;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.HashMap;
 
 @SuperBuilder
 @ToString
@@ -17,14 +18,14 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractTask extends Task implements GcpInterface {
-    protected String projectId;
+  protected String projectId;
 
-    protected String serviceAccount;
+  protected HashMap<String, String> serviceAccount;
 
-    @Builder.Default
-    protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+  @Builder.Default
+  protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
-    public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        return CredentialService.credentials(runContext, this);
-    }
+  public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    return CredentialService.credentials(runContext, this);
+  }
 }
