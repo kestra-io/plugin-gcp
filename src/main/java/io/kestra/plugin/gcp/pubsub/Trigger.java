@@ -59,6 +59,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
     private String serviceAccount;
 
+    private String impersonatedServiceAccount;
+
     @Builder.Default
     private List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 

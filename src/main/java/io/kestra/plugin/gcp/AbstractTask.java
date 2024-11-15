@@ -10,7 +10,6 @@ import io.kestra.core.runners.RunContext;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.HashMap;
 
 @SuperBuilder
 @ToString
@@ -20,7 +19,9 @@ import java.util.HashMap;
 public abstract class AbstractTask extends Task implements GcpInterface {
   protected String projectId;
 
-  protected HashMap<String, String> serviceAccount;
+  protected String serviceAccount;
+
+  protected String impersonatedServiceAccount;
 
   @Builder.Default
   protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");

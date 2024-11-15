@@ -11,9 +11,7 @@ import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 public final class CredentialService {
   private CredentialService() {
@@ -23,11 +21,9 @@ public final class CredentialService {
       throws IllegalVariableEvaluationException, IOException {
     GoogleCredentials credentials;
 
-    HashMap<String, String> serviceAccount = gcpInterface.getServiceAccount();
-
-    if (serviceAccount.get("key") != null) {
-      String serviceAccountJson = runContext.render(serviceAccount.get("key"));
-      ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccountJson.getBytes());
+    if (gcpInterface.getServiceAccount() != null) {
+      String serviceAccount = runContext.render(gcpInterface.getServiceAccount());
+      ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccount.getBytes());
       credentials = ServiceAccountCredentials.fromStream(byteArrayInputStream);
       Logger logger = runContext.logger();
 
@@ -47,9 +43,9 @@ public final class CredentialService {
       credentials = credentials.createScoped(runContext.render(gcpInterface.getScopes()));
     }
 
-    if (serviceAccount.get("impersonate") != null) {
-      List<String> targetScopes = runContext.render(gcpInterface.getScopes());
-      credentials = ImpersonatedCredentials.create(credentials, serviceAccount.get("impersonate"), null, targetScopes,
+    if (gcpInterface.getImpersonatedServiceAccount() != null) {
+      credentials = ImpersonatedCredentials.create(credentials, gcpInterface.getImpersonatedServiceAccount(), null,
+          runContext.render(gcpInterface.getScopes()),
           3600);
     }
 
