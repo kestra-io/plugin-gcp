@@ -17,16 +17,16 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractTask extends Task implements GcpInterface {
-  protected String projectId;
+    protected String projectId;
 
-  protected String serviceAccount;
+    protected String serviceAccount;
 
-  protected String impersonatedServiceAccount;
+    protected String impersonatedServiceAccount;
 
-  @Builder.Default
-  protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+    @Builder.Default
+    protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
 
-  public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-    return CredentialService.credentials(runContext, this);
-  }
+    public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        return CredentialService.credentials(runContext, this);
+    }
 }
