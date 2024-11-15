@@ -14,41 +14,43 @@ import java.io.IOException;
 import java.util.Map;
 
 public final class CredentialService {
-  private CredentialService() {
-  }
+    private CredentialService() {
+    }
 
-  public static GoogleCredentials credentials(RunContext runContext, GcpInterface gcpInterface)
-      throws IllegalVariableEvaluationException, IOException {
-    GoogleCredentials credentials;
+    public static GoogleCredentials credentials(RunContext runContext, GcpInterface gcpInterface)
+            throws IllegalVariableEvaluationException, IOException {
+        GoogleCredentials credentials;
 
-    if (gcpInterface.getServiceAccount() != null) {
-      String serviceAccount = runContext.render(gcpInterface.getServiceAccount());
-      ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccount.getBytes());
-      credentials = ServiceAccountCredentials.fromStream(byteArrayInputStream);
-      Logger logger = runContext.logger();
+        if (gcpInterface.getServiceAccount() != null) {
+            String serviceAccount = runContext.render(gcpInterface.getServiceAccount());
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serviceAccount.getBytes());
+            credentials = ServiceAccountCredentials.fromStream(byteArrayInputStream);
+            Logger logger = runContext.logger();
 
-      if (logger.isTraceEnabled()) {
-        byteArrayInputStream.reset();
-        Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream, new TypeReference<>() {
-        });
-        if (jsonKey.containsKey("client_email")) {
-          logger.trace(" • Using service account: {}", jsonKey.get("client_email"));
+            if (logger.isTraceEnabled()) {
+                byteArrayInputStream.reset();
+                Map<String, String> jsonKey = JacksonMapper.ofJson().readValue(byteArrayInputStream,
+                        new TypeReference<>() {
+                        });
+                if (jsonKey.containsKey("client_email")) {
+                    logger.trace(" • Using service account: {}", jsonKey.get("client_email"));
+                }
+            }
+        } else {
+            credentials = GoogleCredentials.getApplicationDefault();
         }
-      }
-    } else {
-      credentials = GoogleCredentials.getApplicationDefault();
-    }
 
-    if (gcpInterface.getScopes() != null) {
-      credentials = credentials.createScoped(runContext.render(gcpInterface.getScopes()));
-    }
+        if (gcpInterface.getScopes() != null) {
+            credentials = credentials.createScoped(runContext.render(gcpInterface.getScopes()));
+        }
 
-    if (gcpInterface.getImpersonatedServiceAccount() != null) {
-      credentials = ImpersonatedCredentials.create(credentials, gcpInterface.getImpersonatedServiceAccount(), null,
-          runContext.render(gcpInterface.getScopes()),
-          3600);
-    }
+        if (gcpInterface.getImpersonatedServiceAccount() != null) {
+            credentials = ImpersonatedCredentials.create(credentials, gcpInterface.getImpersonatedServiceAccount(),
+                    null,
+                    runContext.render(gcpInterface.getScopes()),
+                    3600);
+        }
 
-    return credentials;
-  }
+        return credentials;
+    }
 }
