@@ -45,7 +45,7 @@ public final class CredentialService {
         }
 
         if (gcpInterface.getImpersonatedServiceAccount() != null) {
-            credentials = ImpersonatedCredentials.create(credentials, gcpInterface.getImpersonatedServiceAccount(),
+            credentials = ImpersonatedCredentials.create(credentials, runContext.render(gcpInterface.getImpersonatedServiceAccount()),
                     null,
                     runContext.render(gcpInterface.getScopes()),
                     3600);
