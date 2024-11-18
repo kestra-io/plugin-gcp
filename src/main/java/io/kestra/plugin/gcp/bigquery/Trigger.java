@@ -28,26 +28,26 @@ import java.util.Optional;
         @Example(
             title = "Wait for a sql query to return results and iterate through rows.",
             full = true,
-            code = {
-                "id: bigquery-listen",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.plugin.core.flow.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.plugin.core.debug.Return",
-                "        format: \"{{ taskrun.value }}\"",
-                "    value: \"{{ trigger.rows }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.gcp.bigquery.Trigger",
-                "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM `myproject.mydataset.mytable`\"",
-                "    fetch: true"
-            }
+            code = """
+                id: bigquery_listen
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.ForEach
+                    values: "{{ trigger.rows }}"
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ taskrun.value }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.gcp.bigquery.Trigger
+                    interval: "PT5M"
+                    sql: "SELECT * FROM `myproject.mydataset.mytable`"
+                    fetch: true
+                """
         )
     }
 )

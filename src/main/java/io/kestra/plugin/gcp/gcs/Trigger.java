@@ -41,54 +41,54 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
         @Example(
             title = "Wait for a list of files on a GCS bucket, and iterate through the files.",
             full = true,
-            code = {
-                "id: gcs-listen",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.plugin.core.flow.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.plugin.core.debug.Return",
-                "        format: \"{{ taskrun.value }}\"",
-                "    value: \"{{ trigger.blobs | jq('.[].uri') }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.gcp.gcs.Trigger",
-                "    interval: \"PT5M\"",
-                "    from: gs://my-bucket/kestra/listen/",
-                "    action: MOVE",
-                "    moveDirectory: gs://my-bucket/kestra/archive/",
-            }
+            code = """
+                id: gcs_listen
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.ForEach
+                    values: "{{ trigger.blobs | jq('.[].uri') }}"
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ taskrun.value }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.gcp.gcs.Trigger
+                    interval: "PT5M"
+                    from: gs://my-bucket/kestra/listen/
+                    action: MOVE
+                    moveDirectory: gs://my-bucket/kestra/archive/
+                """
         ),
         @Example(
             title = "Wait for a list of files on a GCS bucket and iterate through the files. Delete files manually after processing to prevent infinite triggering.",
             full = true,
-            code = {
-                "id: gcs-listen",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.plugin.core.flow.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.plugin.core.debug.Return",
-                "        format: \"{{ taskrun.value }}\"",
-                "      - id: delete",
-                "        type: io.kestra.plugin.gcp.gcs.Delete",
-                "        uri: \"{{ taskrun.value }}\"",
-                "    value: \"{{ trigger.blobs | jq('.[].uri') }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.gcp.gcs.Trigger",
-                "    interval: \"PT5M\"",
-                "    from: gs://my-bucket/kestra/listen/",
-                "    action: NONE",
-            }
+            code = """
+                id: gcs_listen
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.EachSequential
+                    values: "{{ trigger.blobs | jq('.[].uri') }}"
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ taskrun.value }}"
+                      - id: delete
+                        type: io.kestra.plugin.gcp.gcs.Delete
+                        uri: "{{ taskrun.value }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.gcp.gcs.Trigger
+                    interval: "PT5M"
+                    from: gs://my-bucket/kestra/listen/
+                    action: NONE
+                """
         )
     }
 )
