@@ -5,15 +5,10 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.plugin.gcp.gcs.models.Blob;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.net.URI;
-import java.util.Objects;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;

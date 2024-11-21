@@ -60,7 +60,7 @@ class ComposeTest {
             .from(run.getUri().toString())
             .build();
 
-        InputStream get = storageInterface.get(null, download.run(runContext).getUri());
+        InputStream get = storageInterface.get(null, null, download.run(runContext).getUri());
 
         assertThat(
             CharStreams.toString(new InputStreamReader(get)),

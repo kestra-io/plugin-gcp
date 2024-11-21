@@ -39,6 +39,7 @@ class DeleteTest {
 
         URI source = storageInterface.put(
             null,
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(file)
         );

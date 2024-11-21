@@ -48,6 +48,7 @@ class LoadFromGcsTest {
 
         URI put = storageInterface.put(
             null,
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(applicationFile)
         );
