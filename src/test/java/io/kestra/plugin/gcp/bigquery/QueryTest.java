@@ -8,7 +8,6 @@ import dev.failsafe.FailsafeException;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
@@ -23,7 +22,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import jakarta.inject.Inject;
@@ -123,7 +121,7 @@ class QueryTest {
             .build();
 
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
-        String ionResult = CharStreams.toString(new InputStreamReader(storageInterface.get(null, run.getUri())));
+        String ionResult = CharStreams.toString(new InputStreamReader(storageInterface.get(null, null, run.getUri())));
 
         assertThat(ionResult, containsString("string:\"hello\""));
         assertThat(ionResult, containsString("datetime:2008-12-25T15:30:00.123Z"));

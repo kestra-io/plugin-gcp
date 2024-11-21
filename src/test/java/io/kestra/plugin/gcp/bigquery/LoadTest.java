@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import jakarta.inject.Inject;
 
@@ -41,6 +40,7 @@ class LoadTest {
     @Test
     void fromCsv() throws Exception {
         URI source = storageInterface.put(
+            null,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
@@ -73,6 +73,7 @@ class LoadTest {
     void fromAvro() throws Exception {
         URI source = storageInterface.put(
             null,
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
                 .getResource("bigquery/insurance_sample.avro"))
@@ -101,6 +102,7 @@ class LoadTest {
     @Test
     void fromEmpty() throws Exception {
         URI source = storageInterface.put(
+            null,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             IOUtils.toInputStream("", StandardCharsets.UTF_8)

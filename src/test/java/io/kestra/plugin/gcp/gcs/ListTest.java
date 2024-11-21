@@ -105,6 +105,7 @@ class ListTest {
     static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
         URI source = storageInterface.put(
             null,
+            null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(ListTest.class.getClassLoader()
                 .getResource("application.yml"))

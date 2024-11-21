@@ -98,7 +98,7 @@ public class ExtractToGcsTest extends AbstractBigquery {
             .build();
 
         Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
-        InputStream get = storageInterface.get(null, downloadOutput.getUri());
+        InputStream get = storageInterface.get(null, null, downloadOutput.getUri());
 
         // Tests
         assertThat(extractOutput.getFileCounts().get(0), is(1L));
