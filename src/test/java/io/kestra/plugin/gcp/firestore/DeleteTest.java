@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.firestore;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -25,7 +26,7 @@ class DeleteTest {
         var runContext = runContextFactory.of();
 
         var delete = Delete.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .childPath("1")
             .build();

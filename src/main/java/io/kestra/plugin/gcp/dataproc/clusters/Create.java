@@ -153,7 +153,7 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
                 .build();
 
             CreateClusterRequest request = CreateClusterRequest.newBuilder()
-                .setProjectId(runContext.render(this.projectId))
+                .setProjectId(runContext.render(this.projectId).as(String.class).orElse(null))
                 .setRegion(region)
                 .setCluster(cluster)
                 .build();

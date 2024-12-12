@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.pubsub;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.queues.QueueFactoryInterface;
 import io.kestra.core.queues.QueueInterface;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
@@ -84,7 +85,7 @@ class RealtimeTriggerTest {
                 .id(Publish.class.getSimpleName())
                 .type(Publish.class.getName())
                 .topic("test-topic")
-                .projectId(this.project)
+                .projectId(Property.of(this.project))
                 .from(
                     List.of(
                         Message.builder().data("Hello World").build()

@@ -32,7 +32,7 @@ abstract class AbstractFirestore extends AbstractTask {
     Firestore connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return FirestoreOptions.newBuilder()
             .setCredentials(this.credentials(runContext))
-            .setProjectId(runContext.render(projectId))
+            .setProjectId(runContext.render(projectId).as(String.class).orElse(null))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();

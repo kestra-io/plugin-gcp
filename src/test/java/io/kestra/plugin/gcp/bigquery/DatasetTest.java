@@ -6,6 +6,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Dataset;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.gcp.bigquery.models.AccessControl;
 import io.kestra.plugin.gcp.bigquery.models.Entity;
 import io.micronaut.context.annotation.Value;
@@ -52,7 +53,7 @@ class DatasetTest {
             .id(DatasetTest.class.getSimpleName())
             .type(CreateDataset.class.getName())
             .name("{{dataset}}")
-            .projectId("{{project}}");
+            .projectId(new Property<>("{{project}}"));
     }
 
     @Test
@@ -108,7 +109,7 @@ class DatasetTest {
             .id(UpdateDataset.class.getSimpleName())
             .type(CreateDataset.class.getName())
             .name("{{dataset}}")
-            .projectId("{{project}}")
+            .projectId(new Property<>("{{project}}"))
             .description("update")
             .build();
 
@@ -161,7 +162,7 @@ class DatasetTest {
             .id(DatasetTest.class.getSimpleName())
             .type(DeleteDataset.class.getName())
             .name("{{dataset}}")
-            .projectId("{{project}}")
+            .projectId(new Property<>("{{project}}"))
             .deleteContents(true)
             .build();
 
@@ -174,7 +175,7 @@ class DatasetTest {
             .id(DatasetTest.class.getSimpleName())
             .type(DeleteDataset.class.getName())
             .name("{{dataset}}")
-            .projectId("{{project}}")
+            .projectId(new Property<>("{{project}}"))
             .deleteContents(true)
             .build();
 

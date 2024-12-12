@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +48,7 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
+            .projectId(Property.of(this.project))
             .dataset(this.dataset)
             .table(friendlyId)
             .build();
@@ -84,7 +85,7 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
+            .projectId(Property.of(this.project))
             .dataset(this.dataset)
             .table(friendlyId)
             .build();
@@ -120,7 +121,7 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
+            .projectId(Property.of(this.project))
             .dataset(this.dataset)
             .table(friendlyId)
             .build();
@@ -136,7 +137,7 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
+            .projectId(Property.of(this.project))
             .dataset(this.dataset)
             .table(friendlyId)
             .ifNotExists(TableMetadata.IfNotExists.SKIP)

@@ -64,7 +64,7 @@ abstract public class AbstractPartition extends AbstractTable {
 
     protected TableId tableId(RunContext runContext, String partition) throws IllegalVariableEvaluationException {
         return this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table) + "$" + partition) :
+            TableId.of(runContext.render(this.projectId).as(String.class).orElse(null), runContext.render(this.dataset), runContext.render(this.table) + "$" + partition) :
             TableId.of(runContext.render(this.dataset), runContext.render(this.table) + "$" + partition);
     }
 

@@ -279,7 +279,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         BigQueryWriteSettings bigQueryWriteSettings = BigQueryWriteSettings
             .newBuilder()
             .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
-            .setQuotaProjectId(this.projectId)
+            .setQuotaProjectId(runContext.render(this.projectId).as(String.class).orElse(null))
             .build();
 
         return BigQueryWriteClient.create(bigQueryWriteSettings);
@@ -299,7 +299,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             BigQuery bigQuery = AbstractBigquery.connection(
                 runContext,
                 this.credentials(runContext),
-                this.projectId,
+                runContext.render(this.projectId).as(String.class).orElse(null),
                 this.location
             );
 

@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.dataproc.batches;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -37,7 +38,7 @@ class SparkSubmitTest {
             .args(List.of("1000"))
             .id(SparkSubmit.class.getSimpleName())
             .type(SparkSubmit.class.getName())
-            .projectId(project)
+            .projectId(Property.of(project))
             .name("test-spark")
             .build();
 

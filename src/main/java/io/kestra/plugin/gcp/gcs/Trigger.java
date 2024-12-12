@@ -7,6 +7,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.GcpInterface;
@@ -44,7 +45,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             code = """
                 id: gcs_listen
                 namespace: company.team
-                
+
                 tasks:
                   - id: each
                     type: io.kestra.plugin.core.flow.ForEach
@@ -53,7 +54,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                       - id: return
                         type: io.kestra.plugin.core.debug.Return
                         format: "{{ taskrun.value }}"
-                
+
                 triggers:
                   - id: watch
                     type: io.kestra.plugin.gcp.gcs.Trigger
@@ -69,7 +70,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             code = """
                 id: gcs_listen
                 namespace: company.team
-                
+
                 tasks:
                   - id: each
                     type: io.kestra.plugin.core.flow.EachSequential
@@ -81,7 +82,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                       - id: delete
                         type: io.kestra.plugin.gcp.gcs.Delete
                         uri: "{{ taskrun.value }}"
-                
+
                 triggers:
                   - id: watch
                     type: io.kestra.plugin.gcp.gcs.Trigger
@@ -96,12 +97,12 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
-    protected String projectId;
-    protected String serviceAccount;
-    protected String impersonatedServiceAccount;
+    protected Property<String> projectId;
+    protected Property<String> serviceAccount;
+    protected Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    protected java.util.List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+    protected Property<java.util.List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private String from;
 

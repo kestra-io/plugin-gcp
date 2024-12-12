@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.firestore;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
 import io.micronaut.context.annotation.Value;
@@ -26,7 +27,7 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .filters(List.of(
                 Query.Filter.builder().field("lastname").value("Doe").build())
@@ -59,7 +60,7 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .filters(List.of(
                 Query.Filter.builder().field("lastname").value("Doe").build(),
@@ -93,7 +94,7 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .fetchType(FetchType.FETCH)
             .build();
@@ -123,7 +124,7 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .filters(List.of(
                 Query.Filter.builder().field("lastname").value("Doe").operator(Query.QueryOperator.NOT_EQUAL_TO).build())
@@ -157,7 +158,7 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .filters(List.of(
                 Query.Filter.builder().field("lastname").value("Doe").build())

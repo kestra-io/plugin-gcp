@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.firestore;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -25,7 +26,7 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .childPath("1")
             .document(Map.of("firstname", "John",
@@ -48,7 +49,7 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .childPath("2")
             .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
@@ -69,7 +70,7 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .collection("persons")
             .childPath("3")
             .document(null)

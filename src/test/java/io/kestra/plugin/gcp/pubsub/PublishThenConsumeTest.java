@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.FileSerde;
@@ -39,7 +40,7 @@ class PublishThenConsumeTest {
         var runContext = runContextFactory.of();
 
         var publish = Publish.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .topic("test-topic")
             .from(
                 List.of(
@@ -53,7 +54,7 @@ class PublishThenConsumeTest {
         assertThat(publishOutput.getMessagesCount(), is(2));
 
         var consume = Consume.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .topic("test-topic")
             .subscription("test-subscription")
             .maxRecords(2)
@@ -68,7 +69,7 @@ class PublishThenConsumeTest {
         var runContext = runContextFactory.of();
 
         var publish = Publish.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .topic("test-topic")
             .serdeType(SerdeType.JSON)
             .from(
@@ -83,7 +84,7 @@ class PublishThenConsumeTest {
         assertThat(publishOutput.getMessagesCount(), is(1));
 
         var consume = Consume.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .topic("test-topic")
             .serdeType(SerdeType.JSON)
             .subscription("test-subscription")
@@ -100,7 +101,7 @@ class PublishThenConsumeTest {
         var uri = createTestFile(runContext);
 
         var publish = Publish.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .topic("test-topic")
             .from(uri.toString())
             .build();
@@ -110,7 +111,7 @@ class PublishThenConsumeTest {
 
 
         var consume = Consume.builder()
-            .projectId(project)
+            .projectId(Property.of(project))
             .topic("test-topic")
             .subscription("test-subscription")
             .maxRecords(2)

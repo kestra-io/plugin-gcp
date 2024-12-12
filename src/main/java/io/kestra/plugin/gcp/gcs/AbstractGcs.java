@@ -26,7 +26,7 @@ public abstract class AbstractGcs extends AbstractTask {
         return StorageOptions
             .newBuilder()
             .setCredentials(this.credentials(runContext))
-            .setProjectId(runContext.render(projectId))
+            .setProjectId(runContext.render(projectId).as(String.class).orElse(null))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();

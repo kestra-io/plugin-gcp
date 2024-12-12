@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.gcp.bigquery.models.Field;
@@ -39,7 +40,7 @@ class CreateUpdateTableTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         CreateTable task = CreateTable.builder()
-            .projectId(this.project)
+            .projectId(Property.of(this.project))
             .dataset(this.dataset)
             .table(friendlyId)
             .friendlyName("new_table")
@@ -80,7 +81,7 @@ class CreateUpdateTableTest {
         assertThat(run.getExpirationTime(), notNullValue());
 
         UpdateTable updateTask = UpdateTable.builder()
-            .projectId(this.project)
+            .projectId(Property.of(this.project))
             .dataset(this.dataset)
             .table(friendlyId)
             .friendlyName("new_table_2")
@@ -98,7 +99,7 @@ class CreateUpdateTableTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         CreateTable task = CreateTable.builder()
-                .projectId(this.project)
+                .projectId(Property.of(this.project))
                 .dataset(this.dataset)
                 .table(friendlyId)
                 .friendlyName("new_table")

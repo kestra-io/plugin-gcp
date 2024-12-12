@@ -161,7 +161,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             logger.info("Starting with batch id '{}'", batchId);
 
             CreateBatchRequest request = CreateBatchRequest.newBuilder()
-                .setParent(LocationName.of(runContext.render(this.projectId), region).toString())
+                .setParent(LocationName.of(runContext.render(this.projectId).as(String.class).orElse(null), region).toString())
                 .setBatch(batch)
                 .setBatchId(batchId)
                 .build();

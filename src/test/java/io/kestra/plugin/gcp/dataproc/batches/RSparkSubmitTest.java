@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.dataproc.batches;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -33,7 +34,7 @@ class RSparkSubmitTest {
             .mainRFileUri("gs://spark-jobs-kestra/dataframe.r")
             .id(RSparkSubmit.class.getSimpleName())
             .type(RSparkSubmit.class.getName())
-            .projectId(project)
+            .projectId(Property.of(project))
             .name("test-rspark")
             .build();
 

@@ -37,7 +37,7 @@ abstract public class AbstractTable extends AbstractBigquery {
 
     protected TableId tableId(RunContext runContext) throws IllegalVariableEvaluationException {
         return this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table)) :
+            TableId.of(runContext.render(this.projectId).as(String.class).orElse(null), runContext.render(this.dataset), runContext.render(this.table)) :
             TableId.of(runContext.render(this.dataset), runContext.render(this.table));
     }
 

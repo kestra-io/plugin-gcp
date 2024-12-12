@@ -4,6 +4,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,7 +32,7 @@ import java.util.Optional;
             code = """
                 id: bigquery_listen
                 namespace: company.team
-                
+
                 tasks:
                   - id: each
                     type: io.kestra.plugin.core.flow.ForEach
@@ -40,7 +41,7 @@ import java.util.Optional;
                       - id: return
                         type: io.kestra.plugin.core.debug.Return
                         format: "{{ taskrun.value }}"
-                
+
                 triggers:
                   - id: watch
                     type: io.kestra.plugin.gcp.bigquery.Trigger
@@ -56,10 +57,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
-    protected String projectId;
-    protected String serviceAccount;
+    protected Property<String> projectId;
+    protected Property<String> serviceAccount;
     @Builder.Default
-    protected java.util.List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+    protected Property<java.util.List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private String sql;
 

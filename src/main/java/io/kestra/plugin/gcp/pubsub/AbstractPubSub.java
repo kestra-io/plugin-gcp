@@ -29,7 +29,7 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
 
     Publisher createPublisher(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
 
-        TopicName topicName = TopicName.of(runContext.render(projectId), runContext.render(topic));
+        TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic));
         return Publisher.newBuilder(topicName)
             .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
@@ -38,8 +38,8 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
 
     public ProjectSubscriptionName createSubscription(RunContext runContext, String subscription, boolean autoCreateSubscription) throws IOException, IllegalVariableEvaluationException {
 
-        TopicName topicName = TopicName.of(runContext.render(projectId), runContext.render(topic));
-        ProjectSubscriptionName subscriptionName = ProjectSubscriptionName.of(runContext.render(projectId), runContext.render(subscription));
+        TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic));
+        ProjectSubscriptionName subscriptionName = ProjectSubscriptionName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(subscription));
 
         if(autoCreateSubscription) {
             SubscriptionAdminSettings subscriptionAdminSettings = SubscriptionAdminSettings.newBuilder()
@@ -49,7 +49,7 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
 
             // List all existing subscriptions and create the subscription if needed
             try (SubscriptionAdminClient subscriptionAdminClient = SubscriptionAdminClient.create(subscriptionAdminSettings)) {
-                Iterable<Subscription> subscriptions = subscriptionAdminClient.listSubscriptions(ProjectName.of(runContext.render(projectId)))
+                Iterable<Subscription> subscriptions = subscriptionAdminClient.listSubscriptions(ProjectName.of(runContext.render(projectId).as(String.class).orElse(null)))
                     .iterateAll();
                 Optional<Subscription> existing = StreamSupport.stream(subscriptions.spliterator(), false)
                     .filter(sub -> sub.getName().equals(subscriptionName.toString()))

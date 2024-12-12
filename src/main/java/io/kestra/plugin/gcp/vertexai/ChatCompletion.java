@@ -89,7 +89,7 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String projectId = runContext.render(this.getProjectId());
+        String projectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
         String region = runContext.render(this.getRegion());
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {

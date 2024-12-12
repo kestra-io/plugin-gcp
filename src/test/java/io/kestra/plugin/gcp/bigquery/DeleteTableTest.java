@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -51,7 +52,7 @@ class DeleteTableTest {
         DeleteTable task = DeleteTable.builder()
             .id(QueryTest.class.getSimpleName())
             .type(DeleteTable.class.getName())
-            .projectId(this.project)
+            .projectId(Property.of(this.project))
             .dataset(this.dataset)
             .table(table + "$" + partition)
             .build();

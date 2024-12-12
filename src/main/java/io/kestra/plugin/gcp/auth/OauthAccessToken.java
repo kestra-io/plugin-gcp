@@ -26,7 +26,7 @@ public class OauthAccessToken extends AbstractTask implements RunnableTask<Oauth
     @Override
     public Output run(RunContext runContext) throws Exception {
         AccessToken accessToken = this.credentials(runContext)
-            .createScoped(runContext.render(this.scopes))
+            .createScoped(runContext.render(this.scopes).asList(String.class))
             .refreshAccessToken();
 
         var output = AccessTokenOutput.builder()

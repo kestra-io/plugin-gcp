@@ -8,6 +8,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.gcp.gcs.models.AccessControl;
 import io.kestra.plugin.gcp.gcs.models.BucketLifecycleRule;
 import io.kestra.plugin.gcp.gcs.models.Entity;
@@ -59,7 +60,7 @@ class BucketTest {
             .id(BucketTest.class.getSimpleName())
             .type(CreateBucket.class.getName())
             .name("{{bucket}}")
-            .projectId("{{project}}");
+            .projectId(new Property<>("{{project}}"));
     }
 
     @Test
@@ -115,7 +116,7 @@ class BucketTest {
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
             .name("{{bucket}}")
-            .projectId("{{project}}")
+            .projectId(new Property<>("{{project}}"))
             .indexPage("update")
             .build();
 
@@ -165,7 +166,7 @@ class BucketTest {
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
             .name("{{bucket}}")
-            .projectId("{{project}}")
+            .projectId(new Property<>("{{project}}"))
             .member("domain:kestra.io")
             .role("roles/storage.objectViewer");
 
@@ -189,7 +190,7 @@ class BucketTest {
             .id(BucketTest.class.getSimpleName())
             .type(DeleteBucket.class.getName())
             .name("{{bucket}}")
-            .projectId("{{project}}")
+            .projectId(new Property<>("{{project}}"))
             .build();
 
         DeleteBucket.Output run = task.run(runContext);
@@ -201,7 +202,7 @@ class BucketTest {
             .id(BucketTest.class.getSimpleName())
             .type(DeleteBucket.class.getName())
             .name("{{bucket}}")
-            .projectId("{{project}}")
+            .projectId(new Property<>("{{project}}"))
             .build();
 
         run = task.run(runContext);

@@ -81,7 +81,7 @@ abstract public class AbstractBigquery extends AbstractTask {
         return connection(
             runContext,
             this.credentials(runContext),
-            this.projectId,
+            runContext.render(this.projectId).as(String.class).orElse(null),
             this.location
         );
     }

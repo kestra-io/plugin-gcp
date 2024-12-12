@@ -56,7 +56,7 @@ public class TableMetadata extends AbstractTable implements RunnableTask<Abstrac
         Logger logger = runContext.logger();
 
         TableId tableId = this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table)) :
+            TableId.of(runContext.render(this.projectId).as(String.class).orElse(null), runContext.render(this.dataset), runContext.render(this.table)) :
             TableId.of(runContext.render(this.dataset), runContext.render(this.table));
 
         logger.debug("Getting table metadata '{}'", tableId);
