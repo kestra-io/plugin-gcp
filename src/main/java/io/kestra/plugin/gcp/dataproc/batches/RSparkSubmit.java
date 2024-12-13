@@ -6,6 +6,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -44,26 +45,28 @@ public class RSparkSubmit extends AbstractSparkSubmit {
         title = "The HCFS URI of the main R file to use as the driver. Must be a `.R` or `.r` file.",
         description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    protected String mainRFileUri;
+    protected Property<String> mainRFileUri;
 
     @Override
     protected void buildBatch(Batch.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException {
         SparkRBatch.Builder sparkBuilder = SparkRBatch.newBuilder();
 
-        sparkBuilder.setMainRFileUri(runContext.render(mainRFileUri));
+        sparkBuilder.setMainRFileUri(runContext.render(mainRFileUri).as(String.class).orElseThrow());
 
-        if (this.fileUris != null) {
-            sparkBuilder.addAllFileUris(runContext.render(this.fileUris));
+        var renderedFileUris = runContext.render(this.fileUris).asList(String.class);
+        if (!renderedFileUris.isEmpty()) {
+            sparkBuilder.addAllFileUris(renderedFileUris);
         }
 
-        if (this.archiveUris != null) {
-            sparkBuilder.addAllArchiveUris(runContext.render(this.archiveUris));
+        var renderedArchiveUris = runContext.render(this.archiveUris).asList(String.class);
+        if (!renderedArchiveUris.isEmpty()) {
+            sparkBuilder.addAllArchiveUris(renderedArchiveUris);
         }
 
-        if (this.args != null) {
-            sparkBuilder.addAllArgs(runContext.render(this.args));
+        var renderedArgs = runContext.render(this.args).asList(String.class);
+        if (!renderedArgs.isEmpty()) {
+            sparkBuilder.addAllArgs(renderedArgs);
         }
 
         builder.setSparkRBatch(sparkBuilder.build());

@@ -6,6 +6,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -45,30 +46,33 @@ public class PySparkSubmit extends AbstractSparkSubmit {
         title = "The HCFS URI of the main Python file to use as the Spark driver. Must be a .py file.",
         description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    protected String mainPythonFileUri;
+    protected Property<String> mainPythonFileUri;
 
     @Override
     protected void buildBatch(Batch.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException {
         PySparkBatch.Builder sparkBuilder = PySparkBatch.newBuilder();
 
-        sparkBuilder.setMainPythonFileUri(runContext.render(mainPythonFileUri));
+        sparkBuilder.setMainPythonFileUri(runContext.render(mainPythonFileUri).as(String.class).orElseThrow());
 
-        if (this.jarFileUris != null) {
-            sparkBuilder.addAllJarFileUris(runContext.render(this.jarFileUris));
+        var renderedJarFileUris = runContext.render(this.jarFileUris).asList(String.class);
+        if (!renderedJarFileUris.isEmpty()) {
+            sparkBuilder.addAllJarFileUris(renderedJarFileUris);
         }
 
-        if (this.fileUris != null) {
-            sparkBuilder.addAllFileUris(runContext.render(this.fileUris));
+        var renderedFileUris = runContext.render(this.fileUris).asList(String.class);
+        if (!renderedFileUris.isEmpty()) {
+            sparkBuilder.addAllFileUris(renderedFileUris);
         }
 
-        if (this.archiveUris != null) {
-            sparkBuilder.addAllArchiveUris(runContext.render(this.archiveUris));
+        var renderedArchiveUris = runContext.render(this.archiveUris).asList(String.class);
+        if (!renderedArchiveUris.isEmpty()) {
+            sparkBuilder.addAllArchiveUris(renderedArchiveUris);
         }
 
-        if (this.args != null) {
-            sparkBuilder.addAllArgs(runContext.render(this.args));
+        var renderedArgs = runContext.render(this.args).asList(String.class);
+        if (!renderedArgs.isEmpty()) {
+            sparkBuilder.addAllArgs(renderedArgs);
         }
 
         builder.setPysparkBatch(sparkBuilder.build());

@@ -4,6 +4,7 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.dataproc.v1.*;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Slugify;
@@ -30,16 +31,14 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     @Schema(
         title = "The region"
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String region;
+    private Property<String> region;
 
     @Schema(
         title = "The batch name"
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String name;
+    private Property<String> name;
 
     @Schema(
         title = "Execution configuration for a workload."
@@ -64,8 +63,8 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        String region = runContext.render(this.region);
-        String batchId = Slugify.of(runContext.render(name + "-{{ execution.id}}"));
+        String region = runContext.render(this.region).as(String.class).orElseThrow();
+        String batchId = Slugify.of(runContext.render(runContext.render(name).as(String.class).orElseThrow() + "-{{ execution.id}}"));
         if (batchId.length() > 63) {
             batchId = batchId.substring(0, 63);
         }
@@ -83,25 +82,26 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
 
             if (this.execution != null) {
                 if (this.execution.networkUri != null) {
-                    executionConfig.setNetworkUri(runContext.render(this.execution.networkUri));
+                    executionConfig.setNetworkUri(runContext.render(this.execution.networkUri).as(String.class).orElseThrow());
                 }
 
                 if (this.execution.subnetworkUri != null) {
-                    executionConfig.setSubnetworkUri(runContext.render(this.execution.subnetworkUri));
+                    executionConfig.setSubnetworkUri(runContext.render(this.execution.subnetworkUri).as(String.class).orElseThrow());
                 }
 
-                if (this.execution.networkTags != null) {
-                    for (int i = 0; i < this.execution.networkTags.size(); i++) {
-                        executionConfig.setNetworkTags(i, runContext.render(this.execution.networkTags.get(i)));
+                var tagsList = runContext.render(this.execution.networkTags).asList(String.class);
+                if (!tagsList.isEmpty()) {
+                    for (int i = 0; i < tagsList.size(); i++) {
+                        executionConfig.setNetworkTags(i, tagsList.get(i));
                     }
                 }
 
                 if (this.execution.serviceAccountEmail != null) {
-                    executionConfig.setServiceAccount(runContext.render(this.execution.serviceAccountEmail));
+                    executionConfig.setServiceAccount(runContext.render(this.execution.serviceAccountEmail).as(String.class).orElseThrow());
                 }
 
                 if (this.execution.kmsKey != null) {
-                    executionConfig.setKmsKey(runContext.render(this.execution.kmsKey));
+                    executionConfig.setKmsKey(runContext.render(this.execution.kmsKey).as(String.class).orElseThrow());
                 }
             }
 
@@ -112,12 +112,12 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
                 PeripheralsConfig.Builder peripheralsConfig = PeripheralsConfig.newBuilder();
 
                 if (this.peripherals.metastoreService != null) {
-                    peripheralsConfig.setMetastoreService(runContext.render(this.peripherals.metastoreService));
+                    peripheralsConfig.setMetastoreService(runContext.render(this.peripherals.metastoreService).as(String.class).orElseThrow());
                 }
 
                 if (this.peripherals.sparkHistoryServer != null) {
                     peripheralsConfig.setSparkHistoryServerConfig(SparkHistoryServerConfig.newBuilder()
-                        .setDataprocCluster(runContext.render(this.peripherals.sparkHistoryServer.dataprocCluster))
+                        .setDataprocCluster(runContext.render(this.peripherals.sparkHistoryServer.dataprocCluster).as(String.class).orElseThrow())
                         .build()
                     );
                 }
@@ -131,15 +131,16 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
                 RuntimeConfig.Builder runtimeConfig = RuntimeConfig.newBuilder();
 
                 if (this.runtime.containerImage != null) {
-                    runtimeConfig.setContainerImage(runContext.render(this.runtime.containerImage));
+                    runtimeConfig.setContainerImage(runContext.render(this.runtime.containerImage).as(String.class).orElseThrow());
                 }
 
                 if (this.runtime.version != null) {
-                    runtimeConfig.setVersion(runContext.render(this.runtime.version));
+                    runtimeConfig.setVersion(runContext.render(this.runtime.version).as(String.class).orElseThrow());
                 }
 
-                if (this.runtime.properties != null) {
-                    runtimeConfig.putAllProperties(this.runtime.properties
+                var runtimeProps = runContext.render(this.runtime.properties).asMap(String.class, String.class);
+                if (!runtimeProps.isEmpty()) {
+                    runtimeConfig.putAllProperties(runtimeProps
                         .entrySet()
                         .stream()
                         .map(throwFunction(entry -> new AbstractMap.SimpleEntry<>(
@@ -177,32 +178,27 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
         @Schema(
             title = "Network URI to connect workload to."
         )
-        @PluginProperty(dynamic = true)
-        private String networkUri;
+        private Property<String> networkUri;
 
         @Schema(
             title = "Subnetwork URI to connect workload to."
         )
-        @PluginProperty(dynamic = true)
-        private String subnetworkUri;
+        private Property<String> subnetworkUri;
 
         @Schema(
             title = "Tags used for network traffic control."
         )
-        @PluginProperty(dynamic = true)
-        private List<String> networkTags;
+        private Property<List<String>> networkTags;
 
         @Schema(
             title = "Service account used to execute workload."
         )
-        @PluginProperty(dynamic = true)
-        private String serviceAccountEmail;
+        private Property<String> serviceAccountEmail;
 
         @Schema(
             title = "The Cloud KMS key to use for encryption."
         )
-        @PluginProperty(dynamic = true)
-        private String kmsKey;
+        private Property<String> kmsKey;
     }
 
     @Builder
@@ -212,8 +208,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Resource name of an existing Dataproc Metastore service.",
             description = "Example: `projects/[project_id]/locations/[region]/services/[service_id]`"
         )
-        @PluginProperty(dynamic = true)
-        private String metastoreService;
+        private Property<String> metastoreService;
 
         @Schema(
             title = "Resource name of an existing Dataproc Metastore service.",
@@ -230,8 +225,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Resource name of an existing Dataproc Cluster to act as a Spark History Server for the workload.",
             description = "Example: `projects/[project_id]/regions/[region]/clusters/[cluster_name]`"
         )
-        @PluginProperty(dynamic = true)
-        private String dataprocCluster;
+        private Property<String> dataprocCluster;
     }
 
     @Builder
@@ -241,20 +235,17 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Optional custom container image for the job runtime environment.",
             description = "If not specified, a default container image will be used."
         )
-        @PluginProperty(dynamic = true)
-        private String containerImage;
+        private Property<String> containerImage;
 
         @Schema(
             title = "Version of the batch runtime."
         )
-        @PluginProperty(dynamic = true)
-        private String version;
+        private Property<String> version;
 
         @Schema(
             title = "properties used to configure the workload execution (map of key/value pairs)."
         )
-        @PluginProperty(dynamic = true)
-        private Map<String, String> properties;
+        private Property<Map<String, String>> properties;
     }
 
     @Builder

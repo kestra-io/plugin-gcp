@@ -6,6 +6,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -33,7 +34,7 @@ import jakarta.validation.constraints.NotNull;
             tasks:
               - id: spark_submit
                 type: io.kestra.plugin.gcp.dataproc.batches.SparkSubmit
-                jarFileUris: 
+                jarFileUris:
                   - 'gs://spark-jobs-kestra/spark-examples.jar'
                 mainClass: org.apache.spark.examples.SparkPi
                 args:
@@ -48,32 +49,35 @@ public class SparkSubmit extends AbstractSparkSubmit {
         title = "The name of the driver main class.",
         description = "The jar file that contains the class must be in the classpath or specified in `jarFileUris`"
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String mainClass;
+    private Property<String> mainClass;
 
     @Override
     protected void buildBatch(Batch.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException {
         SparkBatch.Builder sparkBuilder = SparkBatch.newBuilder();
 
         if (this.mainClass != null) {
-            sparkBuilder.setMainClass(runContext.render(this.mainClass));
+            sparkBuilder.setMainClass(runContext.render(this.mainClass).as(String.class).orElseThrow());
         }
 
-        if (this.jarFileUris != null) {
-            sparkBuilder.addAllJarFileUris(runContext.render(this.jarFileUris));
+        var renderedJarFileUris = runContext.render(this.jarFileUris).asList(String.class);
+        if (!renderedJarFileUris.isEmpty()) {
+            sparkBuilder.addAllJarFileUris(renderedJarFileUris);
         }
 
-        if (this.fileUris != null) {
-            sparkBuilder.addAllFileUris(runContext.render(this.fileUris));
+        var renderedFileUris = runContext.render(this.fileUris).asList(String.class);
+        if (!renderedFileUris.isEmpty()) {
+            sparkBuilder.addAllFileUris(renderedFileUris);
         }
 
-        if (this.archiveUris != null) {
-            sparkBuilder.addAllArchiveUris(runContext.render(this.archiveUris));
+        var renderedArchiveUris = runContext.render(this.archiveUris).asList(String.class);
+        if (!renderedArchiveUris.isEmpty()) {
+            sparkBuilder.addAllArchiveUris(renderedArchiveUris);
         }
 
-        if (this.args != null) {
-            sparkBuilder.addAllArgs(runContext.render(this.args));
+        var renderedArgs = runContext.render(this.args).asList(String.class);
+        if (!renderedArgs.isEmpty()) {
+            sparkBuilder.addAllArgs(renderedArgs);
         }
 
         builder.setSparkBatch(sparkBuilder.build());
