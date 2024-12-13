@@ -59,7 +59,7 @@ dependencies {
     compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
     // libs
-    implementation group: 'dev.failsafe', name: 'failsafe'
+    compileOnly group: 'dev.failsafe', name: 'failsafe'
 
     // Google libraries are managed by the the Kestra Platform so they are aligned on all plugins
     api platform('com.google.cloud:libraries-bom')
@@ -103,6 +103,8 @@ dependencies {
     // lombok
     testAnnotationProcessor "org.projectlombok:lombok"
     testCompileOnly 'org.projectlombok:lombok'
+
+    testCompileOnly group: 'dev.failsafe', name: 'failsafe'
 
     // micronaut
     testAnnotationProcessor "io.micronaut:micronaut-inject-java"
