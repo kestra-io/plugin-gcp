@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery.models;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -19,19 +20,16 @@ public class MaterializedViewDefinition {
     private final Instant lastRefreshDate;
 
     @Schema(title = "The query whose result is persisted.")
-    @PluginProperty(dynamic = true)
-    public final String query;
+    public final Property<String> query;
 
     @Schema(title = "Whether automatic refresh is enabled for the materialized view when the base table is updated.")
-    @PluginProperty(dynamic = false)
-    private final Boolean enableRefresh;
+    private final Property<Boolean> enableRefresh;
 
     @Schema(title = "The maximum frequency at which this materialized view will be refreshed.")
-    @PluginProperty(dynamic = false)
-    private final Duration refreshInterval;
+    private final Property<Duration> refreshInterval;
 
-    public static MaterializedViewDefinition of(com.google.cloud.bigquery.MaterializedViewDefinition materializedViewDefinition) {
-        return MaterializedViewDefinition.builder()
+    public static MaterializedViewDefinition.Output of(com.google.cloud.bigquery.MaterializedViewDefinition materializedViewDefinition) {
+        return MaterializedViewDefinition.Output.builder()
             .lastRefreshDate(materializedViewDefinition.getLastRefreshTime() == null ? null : Instant.ofEpochMilli(materializedViewDefinition.getLastRefreshTime()))
             .query(materializedViewDefinition.getQuery())
             .enableRefresh(materializedViewDefinition.getEnableRefresh())
@@ -40,16 +38,25 @@ public class MaterializedViewDefinition {
     }
 
     public com.google.cloud.bigquery.MaterializedViewDefinition to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.bigquery.MaterializedViewDefinition.Builder builder = com.google.cloud.bigquery.MaterializedViewDefinition.newBuilder(runContext.render(this.query));
+        com.google.cloud.bigquery.MaterializedViewDefinition.Builder builder = com.google.cloud.bigquery.MaterializedViewDefinition.newBuilder(runContext.render(this.query).as(String.class).orElse(null));
 
         if (this.enableRefresh != null) {
-            builder.setEnableRefresh(this.enableRefresh);
+            builder.setEnableRefresh(runContext.render(this.enableRefresh).as(Boolean.class).orElseThrow());
         }
 
         if (this.refreshInterval != null) {
-            builder.setRefreshIntervalMs(this.refreshInterval.toMillis());
+            builder.setRefreshIntervalMs(runContext.render(this.refreshInterval).as(Duration.class).orElseThrow().toMillis());
         }
 
         return builder.build();
+    }
+
+    @Getter
+    @Builder
+    public static class Output {
+        private final Instant lastRefreshDate;
+        public final String query;
+        private final Boolean enableRefresh;
+        private final Duration refreshInterval;
     }
 }

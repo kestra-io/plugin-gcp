@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.LoadJobConfiguration;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -46,7 +47,7 @@ import java.util.List;
                     type: io.kestra.plugin.serdes.csv.CsvToIon
                     from: "{{ outputs.http_download.uri }}"
                     header: true
-                
+
                   - id: ion_to_avro
                     type: io.kestra.plugin.serdes.avro.IonToAvro
                     from: "{{ outputs.csv_to_ion.uri }}"
@@ -125,18 +126,17 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
             " gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the" +
             " 'bucket' name."
     )
-    @PluginProperty(dynamic = true)
-    private List<String> from;
+    private Property<List<String>> from;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        List<String> from = runContext.render(this.from);
+        List<String> from = runContext.render(this.from).asList(String.class);
 
         LoadJobConfiguration.Builder builder = LoadJobConfiguration
-            .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)), from);
+            .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable).as(String.class).orElse(null)), from);
 
         this.setOptions(builder, runContext);
 
@@ -146,7 +146,7 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
         Job loadJob = this.waitForJob(logger, () -> connection.create(JobInfo.newBuilder(configuration)
             .setJobId(BigQueryService.jobId(runContext, this))
             .build()
-        ));
+        ), runContext);
 
         return this.outputs(runContext, configuration, loadJob);
     }

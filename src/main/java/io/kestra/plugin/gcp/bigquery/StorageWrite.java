@@ -11,8 +11,8 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import jakarta.validation.constraints.NotEmpty;
+
 import jakarta.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
@@ -80,34 +80,28 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Schema(
         title = "The fully-qualified URIs that point to source data"
     )
-    @PluginProperty(dynamic = true)
-    private String from;
+    private Property<String> from;
 
     @NotNull
-    @NotEmpty
     @Schema(
         title = "The table where to load data",
         description = "The table must be created before."
     )
-    @PluginProperty(dynamic = true)
-    private String destinationTable;
+    private Property<String> destinationTable;
 
     @NotNull
-    @NotEmpty
     @Builder.Default
     @Schema(
         title = "The type of write stream to use"
     )
-    @PluginProperty
-    private final WriteStreamType writeStreamType = WriteStreamType.DEFAULT;
+    private final Property<WriteStreamType> writeStreamType = Property.of(WriteStreamType.DEFAULT);
 
     @NotNull
     @Builder.Default
     @Schema(
         title = "The number of records to send on each query"
     )
-    @PluginProperty
-    protected final Integer bufferSize = 1000;
+    protected final Property<Integer> bufferSize = Property.of(1000);
 
     @Schema(
         title = "The geographic location where the dataset should reside",
@@ -116,13 +110,12 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             " \n" +
             " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
     )
-    @PluginProperty(dynamic = true)
-    protected String location;
+    protected Property<String> location;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable));
+        TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable).as(String.class).orElseThrow());
 
         if (tableId.getProject() == null || tableId.getDataset() == null || tableId.getTable() == null) {
             throw new Exception("Invalid destinationTable " + tableId);
@@ -131,7 +124,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         TableName parentTable = TableName.of(tableId.getProject(), tableId.getDataset(), tableId.getTable());
 
         // reader
-        URI from = new URI(runContext.render(this.from));
+        URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
 
         try (
             BigQueryWriteClient connection = this.connection(runContext);
@@ -140,7 +133,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             try (JsonStreamWriter writer = this.jsonStreamWriter(runContext, parentTable, connection).build()) {
                 Integer count = FileSerde.readAll(inputStream)
                     .map(this::map)
-                    .buffer(this.bufferSize)
+                    .buffer(runContext.render(this.bufferSize).as(Integer.class).orElseThrow())
                     .map(list -> {
                         JSONArray result = new JSONArray();
                         list.forEach(result::put);
@@ -166,7 +159,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
                 Output.OutputBuilder builder = Output.builder()
                     .rows(count);
 
-                if (this.writeStreamType == WriteStreamType.PENDING) {
+                if (runContext.render(this.writeStreamType).as(WriteStreamType.class).orElseThrow() == WriteStreamType.PENDING) {
                     logger.debug("Commit pending stream '{}'", writer.getStreamName());
 
                     // Commit the streams for PENDING
@@ -196,7 +189,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
                 Output output = builder
                     .build();
 
-                String[] tags = tags(tableId);
+                String[] tags = tags(tableId, runContext);
 
                 runContext.metric(Counter.of("rows", output.getRows(), tags));
                 if (output.getRowsCount() != null) {
@@ -285,25 +278,25 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         return BigQueryWriteClient.create(bigQueryWriteSettings);
     }
 
-    private String[] tags(TableId tableId) {
+    private String[] tags(TableId tableId, RunContext runContext) throws IllegalVariableEvaluationException {
         return new String[]{
-            "write_stream_type", this.writeStreamType.name(),
+            "write_stream_type", runContext.render(this.writeStreamType).as(WriteStreamType.class).orElseThrow().name(),
             "project_id", tableId.getProject(),
             "dataset", tableId.getDataset(),
         };
     }
 
     private JsonStreamWriter.Builder jsonStreamWriter(RunContext runContext, TableName parentTable, BigQueryWriteClient client) throws IllegalVariableEvaluationException, IOException {
-        if (this.writeStreamType == WriteStreamType.DEFAULT) {
+        if (runContext.render(this.writeStreamType).as(WriteStreamType.class).orElseThrow() == WriteStreamType.DEFAULT) {
             // Write to the default stream: https://cloud.google.com/bigquery/docs/write-api#write_to_the_default_stream
             BigQuery bigQuery = AbstractBigquery.connection(
                 runContext,
                 this.credentials(runContext),
                 runContext.render(this.projectId).as(String.class).orElse(null),
-                this.location
+                runContext.render(this.location).as(String.class).orElse(null)
             );
 
-            TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable));
+            TableId tableId = BigQueryService.tableId(runContext.render(this.destinationTable).as(String.class).orElseThrow());
 
             Table table = bigQuery.getTable(tableId.getDataset(), tableId.getTable());
 
@@ -326,7 +319,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
             WriteStream stream = WriteStream
                 .newBuilder()
-                .setType(WriteStream.Type.valueOf(this.writeStreamType.name()))
+                .setType(WriteStream.Type.valueOf(runContext.render(this.writeStreamType).as(WriteStreamType.class).orElseThrow().name()))
                 .build();
 
             CreateWriteStreamRequest createWriteStreamRequest = CreateWriteStreamRequest

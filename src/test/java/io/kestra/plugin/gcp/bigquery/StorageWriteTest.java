@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.FileSerde;
@@ -49,7 +50,7 @@ class StorageWriteTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("CREATE TABLE " + table + " AS " + "SELECT \n" +
+            .sql(Property.of("CREATE TABLE " + table + " AS " + "SELECT \n" +
                 "  \"hello\" as string,\n" +
                 "  CAST(NULL AS INT) AS `nullable`,\n" +
                 "  TRUE AS `bool`,\n" +
@@ -62,7 +63,7 @@ class StorageWriteTest {
                 "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
                 "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
                 "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
-            )
+            ))
             .build();
         create.run(TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of()));
 
@@ -94,9 +95,9 @@ class StorageWriteTest {
         StorageWrite task = StorageWrite.builder()
             .id("test-unit")
             .type(StorageWrite.class.getName())
-            .destinationTable(table)
-            .location("EU")
-            .from(put.toString())
+            .destinationTable(Property.of(table))
+            .location(Property.of("EU"))
+            .from(Property.of(put.toString()))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());

@@ -16,7 +16,7 @@ public class BigQueryService {
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
         return JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()).as(String.class).orElse(null))
-            .setLocation(runContext.render(abstractBigquery.getLocation()))
+            .setLocation(runContext.render(abstractBigquery.getLocation()).as(String.class).orElse(null))
             .build();
     }
 

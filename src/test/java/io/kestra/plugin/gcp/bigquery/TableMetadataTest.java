@@ -49,8 +49,8 @@ class TableMetadataTest {
 
         TableMetadata task = TableMetadata.builder()
             .projectId(Property.of(this.project))
-            .dataset(this.dataset)
-            .table(friendlyId)
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
             .build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -86,8 +86,8 @@ class TableMetadataTest {
 
         TableMetadata task = TableMetadata.builder()
             .projectId(Property.of(this.project))
-            .dataset(this.dataset)
-            .table(friendlyId)
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
             .build();
 
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -122,8 +122,8 @@ class TableMetadataTest {
 
         TableMetadata task = TableMetadata.builder()
             .projectId(Property.of(this.project))
-            .dataset(this.dataset)
-            .table(friendlyId)
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
             .build();
 
         // flow is not created
@@ -138,9 +138,9 @@ class TableMetadataTest {
 
         TableMetadata task = TableMetadata.builder()
             .projectId(Property.of(this.project))
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .ifNotExists(TableMetadata.IfNotExists.SKIP)
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
+            .ifNotExists(Property.of(TableMetadata.IfNotExists.SKIP))
             .build();
 
         TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));

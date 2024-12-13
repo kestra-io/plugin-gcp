@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -21,8 +22,8 @@ class BigQueryServiceTest {
         var task = Query.builder()
             .id("query")
             .type(Query.class.getName())
-            .sql("{{sql}}")
-            .location("EU")
+            .sql(new Property<>("{{sql}}"))
+            .location(Property.of("EU"))
             .fetch(true)
             .build();
 

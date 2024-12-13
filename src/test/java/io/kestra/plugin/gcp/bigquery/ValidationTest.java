@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.validations.ModelValidator;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,7 @@ class ValidationTest {
         Query.QueryBuilder<?, ?> builder = Query.builder()
             .id("test")
             .type(Query.class.getName())
-            .sql("SELECT 1");
+            .sql(Property.of("SELECT 1"));
 
         Query task = builder
             .store(false)
@@ -53,11 +54,11 @@ class ValidationTest {
         Query.QueryBuilder<?, ?> builder = Query.builder()
             .id("test")
             .type(Query.class.getName())
-            .sql("SELECT 1");
+            .sql(Property.of("SELECT 1"));
 
         Query task = builder
             .store(false)
-            .destinationTable("project.dataset.table")
+            .destinationTable(Property.of("project.dataset.table"))
             .build();
 
         Optional<ConstraintViolationException> valid = modelValidator.isValid(task);
@@ -65,7 +66,7 @@ class ValidationTest {
 
         task = builder
             .store(true)
-            .destinationTable("project.dataset.table")
+            .destinationTable(Property.of("project.dataset.table"))
             .build();
 
         valid = modelValidator.isValid(task);

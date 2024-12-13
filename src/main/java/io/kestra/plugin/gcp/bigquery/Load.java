@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.TableDataWriteChannel;
 import com.google.cloud.bigquery.WriteChannelConfiguration;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -65,15 +66,13 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
     @Schema(
         title = "The fully-qualified URIs that point to source data"
     )
-    @PluginProperty(dynamic = true)
-    private String from;
+    private Property<String> from;
 
     @Schema(
         title = "Does the task will failed for an empty file"
     )
-    @PluginProperty
     @Builder.Default
-    private Boolean failedOnEmpty = true;
+    private Property<Boolean> failedOnEmpty = Property.of(true);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -81,14 +80,14 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         Logger logger = runContext.logger();
 
         WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
-            .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable)));
+            .newBuilder(BigQueryService.tableId(runContext.render(this.destinationTable).as(String.class).orElse(null)));
 
         this.setOptions(builder, runContext);
 
         WriteChannelConfiguration configuration = builder.build();
         logger.debug("Starting load\n{}", JacksonMapper.log(configuration));
 
-        URI from = new URI(runContext.render(this.from));
+        URI from = new URI(runContext.render(this.from).as(String.class).orElse(null));
         try (InputStream data = runContext.storage().getFile(from)) {
             long byteWritten = 0L;
 
@@ -104,7 +103,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
             }
 
             if (byteWritten == 0) {
-                if (failedOnEmpty) {
+                if (runContext.render(failedOnEmpty).as(Boolean.class).orElseThrow()) {
                     throw new Exception("Can't load an empty file and this one don't contain any data");
                 }
 
@@ -113,7 +112,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
                     .build();
             }
 
-            Job job = this.waitForJob(logger, writer::getJob);
+            Job job = this.waitForJob(logger, writer::getJob, runContext);
 
             return this.outputs(runContext, configuration, job);
         }

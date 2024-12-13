@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Dataset;
 import com.google.cloud.bigquery.DatasetInfo;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -46,7 +47,7 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
     @Schema(
         title = "Policy to apply if a dataset already exists."
     )
-    private final IfExists ifExists = IfExists.ERROR;
+    private final Property<IfExists> ifExists = Property.of(IfExists.ERROR);
 
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {
@@ -71,10 +72,10 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
                 throw exception;
             }
 
-            if (this.ifExists == IfExists.UPDATE) {
+            if (runContext.render(this.ifExists).as(IfExists.class).orElseThrow() == IfExists.UPDATE) {
                 dataset = connection.update(datasetInfo);
-            } else if (this.ifExists == IfExists.SKIP) {
-                dataset = connection.getDataset(runContext.render(this.name));
+            } else if (runContext.render(this.ifExists).as(IfExists.class).orElseThrow() == IfExists.SKIP) {
+                dataset = connection.getDataset(runContext.render(this.name).as(String.class).orElseThrow());
             } else {
                 throw exception;
             }

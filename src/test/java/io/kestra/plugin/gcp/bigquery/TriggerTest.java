@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.queues.QueueFactoryInterface;
 import io.kestra.core.queues.QueueInterface;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
@@ -78,7 +79,7 @@ class TriggerTest {
             Query createTable = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
-                .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)")
+                .sql(Property.of("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"))
                 .build();
 
             worker.run();
@@ -99,7 +100,7 @@ class TriggerTest {
             Query deleteTable = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
-                .sql("DROP TABLE `" + project + "." + dataset + "." + table + "`")
+                .sql(Property.of("DROP TABLE `" + project + "." + dataset + "." + table + "`"))
                 .build();
             deleteTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
         }

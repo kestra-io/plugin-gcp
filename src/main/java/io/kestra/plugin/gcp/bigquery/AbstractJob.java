@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.JobInfo;
+import io.kestra.core.models.property.Property;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -13,16 +14,16 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJob extends AbstractBigquery implements AbstractJobInterface {
-    protected String destinationTable;
+    protected Property<String> destinationTable;
 
-    protected JobInfo.WriteDisposition writeDisposition;
+    protected Property<JobInfo.WriteDisposition> writeDisposition;
 
-    protected JobInfo.CreateDisposition createDisposition;
+    protected Property<JobInfo.CreateDisposition> createDisposition;
 
-    protected Duration jobTimeout;
+    protected Property<Duration> jobTimeout;
 
-    protected Map<String, String> labels;
+    protected Property<Map<String, String>> labels;
 
     @Builder.Default
-    protected Boolean dryRun = false;
+    protected Property<Boolean> dryRun = Property.of(false);
 }

@@ -3,7 +3,10 @@ package io.kestra.plugin.gcp.bigquery;
 import com.google.cloud.bigquery.Acl;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.EncryptionConfiguration;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.gcp.bigquery.models.AccessControl;
+import io.kestra.plugin.gcp.bigquery.models.Entity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -28,8 +31,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     @Schema(
         title = "The dataset's user-defined ID."
     )
-    @PluginProperty(dynamic = true)
-    protected String name;
+    protected Property<String> name;
 
     @Schema(
         title = "The dataset's access control configuration."
@@ -49,8 +51,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
             " expiration time indicated by this property. This property is experimental and might be" +
             " subject to change or removed."
     )
-    @PluginProperty
-    protected Long defaultTableLifetime;
+    protected Property<Long> defaultTableLifetime;
 
     @Schema(
         title = "The dataset description.",
@@ -62,8 +63,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
     @Schema(
         title = "A user-friendly name for the dataset."
     )
-    @PluginProperty(dynamic = true)
-    protected String friendlyName;
+    protected Property<String> friendlyName;
 
     @Schema(
         title = "The geographic location where the dataset should reside.",
@@ -73,8 +73,7 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
             " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset" +
             "      Location</a>"
     )
-    @PluginProperty(dynamic = true)
-    protected String location;
+    protected Property<String> location;
 
     @Schema(
         title = "The default encryption key for all tables in the dataset.",
@@ -97,24 +96,22 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
             " updating a partitioned table, that value takes precedence over the default partition" +
             " expiration time indicated by this property. The value may be null."
     )
-    @PluginProperty
-    protected Long defaultPartitionExpirationMs;
+    protected Property<Long> defaultPartitionExpirationMs;
 
     @Schema(
         title = "The dataset's labels."
     )
-    @PluginProperty(dynamic = true)
-    protected Map<String, String> labels;
+    protected Property<Map<String, String>> labels;
 
     protected DatasetInfo datasetInfo(RunContext runContext) throws Exception {
-        DatasetInfo.Builder builder = DatasetInfo.newBuilder(runContext.render(this.name));
+        DatasetInfo.Builder builder = DatasetInfo.newBuilder(runContext.render(this.name).as(String.class).orElseThrow());
 
         if (this.acl != null) {
-            builder.setAcl(mapAcls(this.acl));
+            builder.setAcl(mapAcls(this.acl, runContext));
         }
 
         if (this.defaultTableLifetime != null) {
-            builder.setDefaultTableLifetime(this.defaultTableLifetime);
+            builder.setDefaultTableLifetime(runContext.render(this.defaultTableLifetime).as(Long.class).orElseThrow());
         }
 
         if (this.description != null) {
@@ -122,11 +119,11 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         }
 
         if (this.friendlyName != null) {
-            builder.setFriendlyName(runContext.render(this.friendlyName));
+            builder.setFriendlyName(runContext.render(this.friendlyName).as(String.class).orElseThrow());
         }
 
         if (this.location != null) {
-            builder.setLocation(runContext.render(this.location));
+            builder.setLocation(runContext.render(this.location).as(String.class).orElseThrow());
         }
 
         if (this.defaultEncryptionConfiguration != null) {
@@ -134,12 +131,12 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         }
 
         if (this.defaultPartitionExpirationMs != null) {
-            builder.setDefaultPartitionExpirationMs(this.defaultPartitionExpirationMs);
+            builder.setDefaultPartitionExpirationMs(runContext.render(this.defaultPartitionExpirationMs).as(Long.class).orElseThrow());
         }
 
         if (this.labels != null) {
             builder.setLabels(
-                this.labels.entrySet().stream()
+                runContext.render(this.labels).asMap(String.class, String.class).entrySet().stream()
                     .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Rethrow.throwFunction(e -> runContext.render(e.getValue()))
@@ -150,36 +147,35 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         return builder.build();
     }
 
-    private List<Acl> mapAcls(List<AccessControl> accessControls) {
+    private List<Acl> mapAcls(List<AccessControl> accessControls, RunContext runContext) throws IllegalVariableEvaluationException {
         if (accessControls == null) {
             return null;
         }
 
         List<Acl> acls = new ArrayList<>();
         for (AccessControl accessControl : accessControls) {
-            acls.add(mapAcl(accessControl));
+            acls.add(mapAcl(accessControl, runContext));
         }
 
         return acls;
     }
 
-    private Acl mapAcl(AccessControl accessControl) {
+    private Acl mapAcl(AccessControl accessControl, RunContext runContext) throws IllegalVariableEvaluationException {
         if (accessControl == null || accessControl.getEntity() == null || accessControl.getRole() == null) {
             return null;
         }
 
-        switch (accessControl.getEntity().getType()) {
-            case USER:
-                return Acl.of(new Acl.User(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
-            case GROUP:
-                return Acl.of(new Acl.Group(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
-            case DOMAIN:
-                return Acl.of(new Acl.Domain(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
-            case IAM_MEMBER:
-                return Acl.of(new Acl.IamMember(accessControl.getEntity().getValue()), Acl.Role.valueOf(accessControl.getRole().name()));
-            default:
-                return null;
-        }
+        var renderedValue = runContext.render(accessControl.getEntity().getValue()).as(String.class);
+        var renderedRole = runContext.render(accessControl.getRole()).as(AccessControl.Role.class);
+
+        return switch (runContext.render(accessControl.getEntity().getType()).as(Entity.Type.class).orElseThrow()) {
+            case USER -> Acl.of(new Acl.User(renderedValue.get()), Acl.Role.valueOf(renderedRole.get().name()));
+            case GROUP -> Acl.of(new Acl.Group(renderedValue.get()), Acl.Role.valueOf(renderedRole.get().name()));
+            case DOMAIN -> Acl.of(new Acl.Domain(renderedValue.get()), Acl.Role.valueOf(renderedRole.get().name()));
+            case IAM_MEMBER ->
+                Acl.of(new Acl.IamMember(renderedValue.get()), Acl.Role.valueOf(renderedRole.get().name()));
+            default -> null;
+        };
     }
 
     @Builder

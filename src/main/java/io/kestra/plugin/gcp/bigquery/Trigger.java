@@ -62,10 +62,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     protected Property<java.util.List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
-    private String sql;
+    private Property<String> sql;
 
     @Builder.Default
-    private boolean legacySql = false;
+    private Property<Boolean> legacySql = Property.of(false);
 
     @Builder.Default
     private boolean fetch = false;

@@ -7,6 +7,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -56,18 +57,18 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
     }
 )
 public class CopyPartitions extends AbstractPartition implements RunnableTask<CopyPartitions.Output>, AbstractJobInterface {
-    protected String destinationTable;
+    protected Property<String> destinationTable;
 
-    protected JobInfo.WriteDisposition writeDisposition;
+    protected Property<JobInfo.WriteDisposition> writeDisposition;
 
-    protected JobInfo.CreateDisposition createDisposition;
+    protected Property<JobInfo.CreateDisposition> createDisposition;
 
-    protected Duration jobTimeout;
+    protected Property<Duration> jobTimeout;
 
-    protected Map<String, String> labels;
+    protected Property<Map<String, String>> labels;
 
     @Builder.Default
-    protected Boolean dryRun = false;
+    protected Property<Boolean> dryRun = Property.of(false);
 
     @Override
     public CopyPartitions.Output run(RunContext runContext) throws Exception {
@@ -82,7 +83,7 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         runContext.metric(Counter.of("size", partitionToCopy.size()));
 
         Copy task = Copy.builder()
-            .sourceTables(partitionToCopy
+            .sourceTables(Property.of(partitionToCopy
                 .stream()
                 .map(throwFunction(s -> {
                     TableId current = this.tableId(runContext, s);
@@ -97,7 +98,7 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
                     return String.join(".", source);
                 }))
                 .collect(Collectors.toList())
-            )
+            ))
             .destinationTable(this.destinationTable)
             .writeDisposition(this.writeDisposition)
             .createDisposition(this.createDisposition)
