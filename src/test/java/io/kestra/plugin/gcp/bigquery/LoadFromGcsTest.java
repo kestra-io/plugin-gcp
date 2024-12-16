@@ -57,8 +57,8 @@ class LoadFromGcsTest {
         Upload upload = Upload.builder()
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(put.toString())
-            .to("gs://" + this.bucket + "/" + FriendlyId.createFriendlyId() + ".json")
+            .from(Property.of(put.toString()))
+            .to(Property.of("gs://" + this.bucket + "/" + FriendlyId.createFriendlyId() + ".json"))
             .build();
 
         upload.run(TestsUtils.mockRunContext(this.runContextFactory, upload, ImmutableMap.of()));
@@ -67,7 +67,7 @@ class LoadFromGcsTest {
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(LoadFromGcs.class.getName())
             .from(Property.of(Collections.singletonList(
-                upload.getTo()
+                upload.getTo().toString()
             )))
             .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .format(AbstractLoad.Format.JSON)

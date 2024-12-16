@@ -104,17 +104,16 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     protected Property<java.util.List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
-    private String from;
+    private Property<String> from;
 
-    private ActionInterface.Action action;
+    private Property<ActionInterface.Action> action;
 
-    private String moveDirectory;
+    private Property<String> moveDirectory;
 
     @Builder.Default
-    private final List.ListingType listingType = ListInterface.ListingType.DIRECTORY;
+    private final Property<List.ListingType> listingType = Property.of(ListingType.DIRECTORY);
 
-    @PluginProperty(dynamic = true)
-    private String regExp;
+    private Property<String> regExp;
 
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
@@ -126,7 +125,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.from)
-            .filter(ListInterface.Filter.FILES)
+            .filter(Property.of(Filter.FILES))
             .listingType(this.listingType)
             .regExp(this.regExp)
             .build();
@@ -152,7 +151,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
         Downloads.performAction(
             run.getBlobs(),
-            this.action,
+            runContext.render(this.action).as(Action.class).orElseThrow(),
             this.moveDirectory,
             runContext,
             this.projectId,

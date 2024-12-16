@@ -1,7 +1,10 @@
 package io.kestra.plugin.gcp.gcs.models;
 
 import com.google.cloud.storage.Acl;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,8 +29,7 @@ public class AccessControl {
     @Schema(
         title = "The role to assign to the entity"
     )
-    @PluginProperty(dynamic = true)
-    private final Role role;
+    private final Property<Role> role;
 
     public enum Role {
         READER,
@@ -35,25 +37,34 @@ public class AccessControl {
         OWNER
     }
 
-    public static List<Acl> convert(List<AccessControl> accessControls) {
+    public static List<Acl> convert(List<AccessControl> accessControls, RunContext runContext) {
         return accessControls
             .stream()
-            .map(c -> c.convert())
+            .map(c -> {
+                try {
+                    return c.convert(runContext);
+                } catch (IllegalVariableEvaluationException e) {
+                    throw new RuntimeException(e);
+                }
+            })
             .collect(Collectors.toList());
     }
 
-    private Acl convert() {
+    private Acl convert(RunContext runContext) throws IllegalVariableEvaluationException {
         if (this.getEntity() == null || this.getRole() == null) {
             return null;
         }
 
-        switch (this.getEntity().getType()) {
+        var role = runContext.render(this.getRole()).as(Role.class);
+        var value = runContext.render(this.getEntity().getValue()).as(String.class);
+
+        switch (runContext.render(this.getEntity().getType()).as(Entity.Type.class).orElseThrow()) {
             case USER:
-                return Acl.of(new Acl.User(this.getEntity().getValue()), Acl.Role.valueOf(this.getRole().name()));
+                return Acl.of(new Acl.User(value.get()), Acl.Role.valueOf(role.get().name()));
             case GROUP:
-                return Acl.of(new Acl.Group(this.getEntity().getValue()), Acl.Role.valueOf(this.getRole().name()));
+                return Acl.of(new Acl.Group(value.get()), Acl.Role.valueOf(role.get().name()));
             case DOMAIN:
-                return Acl.of(new Acl.Domain(this.getEntity().getValue()), Acl.Role.valueOf(this.getRole().name()));
+                return Acl.of(new Acl.Domain(value.get()), Acl.Role.valueOf(role.get().name()));
             default:
                 return null;
         }

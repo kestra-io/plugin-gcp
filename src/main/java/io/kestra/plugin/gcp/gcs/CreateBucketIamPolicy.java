@@ -7,6 +7,7 @@ import com.google.cloud.storage.Storage;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,28 +49,25 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
     @Schema(
         title = "Bucket's unique name"
     )
-    @PluginProperty(dynamic = true)
-    protected String name;
+    protected Property<String> name;
 
     @NotNull
     @Schema(
         title = "Bucket's unique name"
     )
-    @PluginProperty(dynamic = true)
-    protected String member;
+    protected Property<String> member;
 
     @NotNull
     @Schema(
         title = "Bucket's unique name"
     )
-    @PluginProperty(dynamic = true)
-    protected String role;
+    protected Property<String> role;
 
     @Builder.Default
     @Schema(
         title = "Policy to apply if a policy already exists."
     )
-    private IfExists ifExists = IfExists.SKIP;
+    private Property<IfExists> ifExists = Property.of(IfExists.SKIP);
 
     @Override
     public CreateBucketIamPolicy.Output run(RunContext runContext) throws Exception {
@@ -77,9 +75,9 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
 
         Logger logger = runContext.logger();
 
-        String bucketName = runContext.render(this.name);
-        Identity identity = Identity.valueOf(runContext.render(this.member));
-        Role role = Role.of(runContext.render(this.role));
+        String bucketName = runContext.render(this.name).as(String.class).orElseThrow();
+        Identity identity = Identity.valueOf(runContext.render(this.member).as(String.class).orElseThrow());
+        Role role = Role.of(runContext.render(this.role).as(String.class).orElseThrow());
 
         Policy currentPolicy = connection.getIamPolicy(bucketName);
 
@@ -100,7 +98,7 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
 
         if (exists) {
             String exception = "Binding " + role.getValue() + " for member " + member + " already exists";
-            if (this.ifExists == IfExists.ERROR) {
+            if (IfExists.ERROR.equals(runContext.render(this.ifExists).as(IfExists.class).orElseThrow())) {
                 throw new Exception(exception);
             } else {
                 logger.info(exception);

@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.gcs;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -53,8 +54,8 @@ class DownloadTest {
         Upload upload = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
+            .from(Property.of(source.toString()))
+            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
             .build();
 
         Upload.Output uploadOutput = upload.run(runContext(upload));
@@ -62,7 +63,7 @@ class DownloadTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(uploadOutput.getUri().toString())
+            .from(Property.of(uploadOutput.getUri().toString()))
             .build();
 
 

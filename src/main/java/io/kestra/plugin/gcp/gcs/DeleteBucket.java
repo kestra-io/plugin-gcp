@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -45,15 +46,14 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
     @Schema(
         title = "Bucket's unique name"
     )
-    @PluginProperty(dynamic = true)
-    protected String name;
+    protected Property<String> name;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        String name = runContext.render(this.name);
+        String name = runContext.render(this.name).as(String.class).orElseThrow();
 
         logger.debug("Deleting bucket '{}'", name);
 

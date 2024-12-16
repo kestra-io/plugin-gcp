@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -49,8 +50,8 @@ class CopyTest {
         Upload upload = Upload.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
+            .from(Property.of(source.toString()))
+            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .build();
 
         upload.run(runContext(upload));
@@ -58,8 +59,8 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
-            .from("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
-            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml")
+            .from(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml"))
             .build();
 
         Copy.Output run = task.run(runContext(task));
@@ -74,8 +75,8 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
-            .from("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
-            .to("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml")
+            .from(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> {

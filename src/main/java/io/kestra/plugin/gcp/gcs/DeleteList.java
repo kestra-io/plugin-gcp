@@ -7,6 +7,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,6 +24,8 @@ import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Schedulers;
+
+import static io.kestra.core.utils.Rethrow.throwConsumer;
 
 @SuperBuilder
 @ToString
@@ -52,9 +55,8 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
     @Schema(
         title = "raise an error if the file is not found"
     )
-    @PluginProperty(dynamic = true)
     @Builder.Default
-    private final Boolean errorOnEmpty = false;
+    private final Property<Boolean> errorOnEmpty = Property.of(false);
 
     @Min(2)
     @Schema(
@@ -68,16 +70,16 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         Storage connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        URI from = encode(runContext, this.from);
-        String regExp = runContext.render(this.regExp);
+        URI from = encode(runContext, runContext.render(this.from).as(String.class).orElseThrow());
+        String regExp = runContext.render(this.regExp).as(String.class).orElse(null);
 
 
         Flux<Blob> flowable = Flux
-            .create(emitter -> {
-                this.iterator(connection, from)
+            .create(throwConsumer(emitter -> {
+                this.iterator(connection, from, runContext)
                     .forEachRemaining(emitter::next);
                 emitter.complete();
-            }, FluxSink.OverflowStrategy.BUFFER);
+            }), FluxSink.OverflowStrategy.BUFFER);
 
         Flux<Long> result;
 
@@ -101,7 +103,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         runContext.metric(Counter.of("count", finalResult.getLeft()));
         runContext.metric(Counter.of("size", finalResult.getRight()));
 
-        if (errorOnEmpty && finalResult.getLeft() == 0) {
+        if (runContext.render(errorOnEmpty).as(Boolean.class).orElse(false) && finalResult.getLeft() == 0) {
             throw new NoSuchElementException("Unable to find any files to delete on '" + from + "'");
         }
 

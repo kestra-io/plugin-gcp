@@ -52,27 +52,26 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
     title = "Download multiple files from a GCS bucket."
 )
 public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Output>, ListInterface, ActionInterface {
-    private String from;
+    private Property<String> from;
 
     @Schema(
         title = "If set to `true`, lists all versions of a blob. The default is `false`."
     )
-    @PluginProperty(dynamic = true)
-    private Boolean allVersions;
+    private Property<Boolean> allVersions;
 
     @Builder.Default
-    private final List.ListingType listingType = ListInterface.ListingType.DIRECTORY;
+    private final Property<List.ListingType> listingType = Property.of(ListingType.DIRECTORY);
 
-    private String regExp;
+    private Property<String> regExp;
 
-    private ActionInterface.Action action;
+    private Property<ActionInterface.Action> action;
 
-    private String moveDirectory;
+    private Property<String> moveDirectory;
 
     static void performAction(
         java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
         ActionInterface.Action action,
-        String moveDirectory,
+        Property<String> moveDirectory,
         RunContext runContext,
         Property<String> projectId,
         Property<String> serviceAccount,
@@ -83,7 +82,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 Delete delete = Delete.builder()
                     .id("archive")
                     .type(Delete.class.getName())
-                    .uri(blob.getUri().toString())
+                    .uri(Property.of(blob.getUri().toString()))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
                     .scopes(scopes)
@@ -95,11 +94,11 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 Copy copy = Copy.builder()
                     .id("archive")
                     .type(Copy.class.getName())
-                    .from(blob.getUri().toString())
-                    .to(StringUtils.stripEnd(runContext.render(moveDirectory) + "/", "/")
+                    .from(Property.of(blob.getUri().toString()))
+                    .to(Property.of(StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")
                         + "/" + FilenameUtils.getName(blob.getName())
-                    )
-                    .delete(true)
+                    ))
+                    .delete(Property.of(true))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
                     .scopes(scopes)
@@ -118,7 +117,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.from)
-            .filter(Filter.FILES)
+            .filter(Property.of(Filter.FILES))
             .listingType(this.listingType)
             .regExp(this.regExp)
             .allVersions(this.allVersions)
@@ -148,7 +147,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
         Downloads.performAction(
             run.getBlobs(),
-            this.action,
+            runContext.render(this.action).as(Action.class).orElseThrow(),
             this.moveDirectory,
             runContext,
             this.projectId,
