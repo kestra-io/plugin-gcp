@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.firestore;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -42,15 +43,14 @@ public class Delete extends AbstractFirestore implements RunnableTask<Delete.Out
         title = "The Firestore document child path.",
         description = "The Firestore document child path."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String childPath;
+    private Property<String> childPath;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
-            var future = collectionRef.document(runContext.render(this.childPath)).delete();
+            var future = collectionRef.document(runContext.render(this.childPath).as(String.class).orElseThrow()).delete();
 
             // wait for the write to happen
             var writeResult = future.get();

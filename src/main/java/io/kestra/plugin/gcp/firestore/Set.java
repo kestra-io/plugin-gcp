@@ -5,6 +5,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
@@ -75,8 +76,7 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     @Schema(
         title = "The Firestore document child path."
     )
-    @PluginProperty(dynamic = true)
-    private String childPath;
+    private Property<String> childPath;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -84,7 +84,7 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
             var collectionRef = this.collection(runContext, firestore);
             var documentReference = this.childPath == null ?
                 collectionRef.document() :
-                collectionRef.document(runContext.render(this.childPath));
+                collectionRef.document(runContext.render(this.childPath).as(String.class).orElseThrow());
             var future = documentReference.set(fields(runContext, this.document));
 
             // wait for the write to happen

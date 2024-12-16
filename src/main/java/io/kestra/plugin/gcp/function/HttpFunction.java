@@ -85,8 +85,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         description = "The maximum duration the task should wait until the Azure Function completion."
     )
     @Builder.Default
-    @PluginProperty(dynamic = true)
-    protected Duration maxDuration = Duration.ofMinutes(60);
+    protected Property<Duration> maxDuration = Property.of(Duration.ofMinutes(60));
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -106,7 +105,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
                     .headers(Map.of(HttpHeaders.AUTHORIZATION, "Bearer " + token)),
                 Argument.of(String.class))
             );
-            HttpResponse result =  maxDuration != null ? mono.block(maxDuration) : mono.block();
+            HttpResponse result =  maxDuration != null ? mono.block(runContext.render(maxDuration).as(Duration.class).orElseThrow()) : mono.block();
             String body = result != null &&  result.getBody().isPresent() ? (String) result.getBody().get() : "";
             try {
                 ObjectMapper mapper = new ObjectMapper();
