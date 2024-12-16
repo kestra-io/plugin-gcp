@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.gcs;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
@@ -44,11 +45,11 @@ class ComposeTest {
             .id(ComposeTest.class.getSimpleName())
             .type(Compose.class.getName())
             .list(Compose.List.builder()
-                .from("gs://" +  bucket + "/tasks/gcp/upload/compose-" + dir + "/")
-                .listingType(ListInterface.ListingType.RECURSIVE)
+                .from(Property.of("gs://" +  bucket + "/tasks/gcp/upload/compose-" + dir + "/"))
+                .listingType(Property.of(ListInterface.ListingType.RECURSIVE))
                 .build()
             )
-            .to("gs://" +  bucket + "/tasks/gcp/compose-result/compose.txt")
+            .to(Property.of("gs://" +  bucket + "/tasks/gcp/compose-result/compose.txt"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
@@ -57,7 +58,7 @@ class ComposeTest {
         Download download = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(run.getUri().toString())
+            .from(Property.of(run.getUri().toString()))
             .build();
 
         InputStream get = storageInterface.get(null, null, download.run(runContext).getUri());

@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -43,22 +44,20 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Schema(
         title = "The file to delete"
     )
-    @PluginProperty(dynamic = true)
-    private String uri;
+    private Property<String> uri;
 
     @Schema(
         title = "Raise an error if the file is not found"
     )
-    @PluginProperty
     @Builder.Default
-    private final Boolean errorOnMissing = false;
+    private final Property<Boolean> errorOnMissing = Property.of(false);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI render = encode(runContext, this.uri);
+        URI render = encode(runContext, runContext.render(this.uri).as(String.class).orElse(null));
 
         BlobId source = BlobId.of(
             render.getAuthority(),
@@ -69,7 +68,7 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
 
         boolean delete = connection.delete(source);
 
-        if (errorOnMissing && !delete) {
+        if (runContext.render(errorOnMissing).as(Boolean.class).orElse(false) && !delete) {
             throw new NoSuchElementException("Unable to find file '" + render + "'");
         }
 

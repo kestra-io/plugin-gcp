@@ -4,6 +4,7 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.queues.QueueFactoryInterface;
 import io.kestra.core.queues.QueueInterface;
@@ -114,9 +115,9 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/trigger/")
-            .action(ActionInterface.Action.MOVE)
-            .moveDirectory("gs://" + bucket + "/test/move")
+            .from(Property.of("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
+            .action(Property.of(ActionInterface.Action.MOVE))
+            .moveDirectory(Property.of("gs://" + bucket + "/test/move"))
             .build();
 
         String out = FriendlyId.createFriendlyId();
@@ -135,7 +136,7 @@ class TriggerTest {
             Download task = Download.builder()
                 .id(DownloadTest.class.getSimpleName())
                 .type(Download.class.getName())
-                .from(upload.getUri().toString())
+                .from(Property.of(upload.getUri().toString()))
                 .build();
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
@@ -145,7 +146,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from("gs://" + bucket + "/test/move/" + out + ".yml")
+            .from(Property.of("gs://" + bucket + "/test/move/" + out + ".yml"))
             .build();
 
         Download.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
@@ -157,8 +158,8 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/trigger/")
-            .action(ActionInterface.Action.NONE)
+            .from(Property.of("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
+            .action(Property.of(ActionInterface.Action.NONE))
             .build();
 
         String out = FriendlyId.createFriendlyId();
@@ -176,7 +177,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(upload.getUri().toString())
+            .from(Property.of(upload.getUri().toString()))
             .build();
 
         Assertions.assertDoesNotThrow(() -> task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of())));
@@ -184,7 +185,7 @@ class TriggerTest {
         Delete delete = Delete.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .uri(upload.getUri().toString())
+            .uri(Property.of(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
     }

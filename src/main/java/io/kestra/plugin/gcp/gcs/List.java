@@ -1,12 +1,13 @@
 package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.Storage;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -47,20 +48,25 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
         title = "The filter files or directory"
     )
     @Builder.Default
-    @PluginProperty
-    protected final Filter filter = Filter.BOTH;
+    protected final Property<Filter> filter = Property.of(Filter.BOTH);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        URI from = encode(runContext, this.from);
-        String regExp = runContext.render(this.regExp);
+        URI from = encode(runContext, runContext.render(this.from).as(String.class).orElse(null));
+        String regExp = runContext.render(this.regExp).as(String.class).orElse(null);
 
         java.util.List<Blob> blobs = StreamSupport
-            .stream(this.iterator(connection, from), false)
-            .filter(blob -> this.filter(blob, regExp))
+            .stream(this.iterator(connection, from, runContext), false)
+            .filter(blob -> {
+                try {
+                    return this.filter(blob, regExp, runContext.render(this.filter).as(Filter.class).orElseThrow());
+                } catch (IllegalVariableEvaluationException e) {
+                    throw new RuntimeException(e);
+                }
+            })
             .map(Blob::of)
             .collect(Collectors.toList());
 
@@ -74,8 +80,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
             .build();
     }
 
-    @Override
-    protected boolean filter(com.google.cloud.storage.Blob blob, String regExp) {
+    protected boolean filter(com.google.cloud.storage.Blob blob, String regExp, Filter filter) {
         boolean b = filter == Filter.DIRECTORY ? blob.isDirectory() :
             (filter != Filter.FILES || !blob.isDirectory());
 

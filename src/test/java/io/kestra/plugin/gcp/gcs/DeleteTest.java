@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -49,8 +50,8 @@ class DeleteTest {
         Upload upload = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(source.toString())
-            .to("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml")
+            .from(Property.of(source.toString()))
+            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
             .build();
 
         Upload.Output uploadOutput = upload.run(runContext(upload));
@@ -58,7 +59,7 @@ class DeleteTest {
         Delete task = Delete.builder()
             .id(DeleteTest.class.getSimpleName())
             .type(Download.class.getName())
-            .uri(uploadOutput.getUri().toString())
+            .uri(Property.of(uploadOutput.getUri().toString()))
             .build();
 
 

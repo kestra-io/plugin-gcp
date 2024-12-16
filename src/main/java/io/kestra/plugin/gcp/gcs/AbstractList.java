@@ -3,7 +3,9 @@ package io.kestra.plugin.gcp.gcs;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Storage;
 import com.google.common.collect.Iterables;
-import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -22,21 +24,20 @@ import jakarta.validation.constraints.NotNull;
 @NoArgsConstructor
 public abstract class AbstractList extends AbstractGcs implements ListInterface {
     @NotNull
-    protected String from;
+    protected Property<String> from;
 
     @Schema(
         title = "If set to `true`, lists all versions of a blob. The default is `false`."
     )
-    @PluginProperty(dynamic = true)
-    private Boolean allVersions;
+    private Property<Boolean> allVersions;
 
     @Builder.Default
-    private final ListingType listingType = ListingType.DIRECTORY;
+    private final Property<ListingType> listingType = Property.of(ListingType.DIRECTORY);
 
-    protected String regExp;
+    protected Property<String> regExp;
 
-    public Spliterator<com.google.cloud.storage.Blob> iterator(Storage connection, URI from) {
-        Page<com.google.cloud.storage.Blob> list = connection.list(from.getAuthority(), options(from));
+    public Spliterator<com.google.cloud.storage.Blob> iterator(Storage connection, URI from, RunContext runContext) throws IllegalVariableEvaluationException {
+        Page<com.google.cloud.storage.Blob> list = connection.list(from.getAuthority(), options(from, runContext));
 
         return list.iterateAll().spliterator();
     }
@@ -45,7 +46,7 @@ public abstract class AbstractList extends AbstractGcs implements ListInterface 
         return regExp == null || Blob.uri(blob).toString().matches(regExp);
     }
 
-    private Storage.BlobListOption[] options(URI from) {
+    private Storage.BlobListOption[] options(URI from, RunContext runContext) throws IllegalVariableEvaluationException {
         java.util.List<Storage.BlobListOption> options = new ArrayList<>();
 
         if (!from.getPath().equals("")) {
@@ -53,10 +54,10 @@ public abstract class AbstractList extends AbstractGcs implements ListInterface 
         }
 
         if (this.allVersions != null) {
-            options.add(Storage.BlobListOption.versions(this.allVersions));
+            options.add(Storage.BlobListOption.versions(runContext.render(this.allVersions).as(Boolean.class).orElseThrow()));
         }
 
-        if (this.listingType == ListingType.DIRECTORY) {
+        if (runContext.render(this.listingType).as(ListingType.class).orElseThrow() == ListingType.DIRECTORY) {
             options.add(Storage.BlobListOption.currentDirectory());
         }
 

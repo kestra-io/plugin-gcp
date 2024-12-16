@@ -4,6 +4,7 @@ import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -48,46 +49,40 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
     @Schema(
         title = "The file to copy"
     )
-    @PluginProperty(dynamic = true)
-    private String from;
+    private Property<String> from;
 
     @Schema(
         title = "The destination path"
     )
-    @PluginProperty(dynamic = true)
-    private String to;
+    private Property<String> to;
 
     @Schema(
         title = "The blob's data content type."
     )
-    @PluginProperty(dynamic = true)
-    private String contentType;
+    private Property<String> contentType;
 
     @Schema(
         title = "The blob's data content encoding."
     )
-    @PluginProperty(dynamic = true)
-    private String contentEncoding;
+    private Property<String> contentEncoding;
 
     @Schema(
         title = "The blob's data content disposition."
     )
-    @PluginProperty(dynamic = true)
-    private String contentDisposition;
+    private Property<String> contentDisposition;
 
     @Schema(
         title = "The blob's data cache control."
     )
-    @PluginProperty(dynamic = true)
-    private String cacheControl;
+    private Property<String> cacheControl;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI from = encode(runContext, this.from);
-        URI to = encode(runContext, this.to);
+        URI from = encode(runContext, runContext.render(this.from).as(String.class).orElse(null));
+        URI to = encode(runContext, runContext.render(this.to).as(String.class).orElse(null));
 
         BlobInfo.Builder builder = BlobInfo
             .newBuilder(BlobId.of(
@@ -96,19 +91,19 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
             ));
 
         if (this.contentType != null) {
-            builder.setContentType(runContext.render(this.contentType));
+            builder.setContentType(runContext.render(this.contentType).as(String.class).orElseThrow());
         }
 
         if (this.contentEncoding != null) {
-            builder.setContentEncoding(runContext.render(this.contentEncoding));
+            builder.setContentEncoding(runContext.render(this.contentEncoding).as(String.class).orElseThrow());
         }
 
         if (this.contentDisposition != null) {
-            builder.setContentDisposition(runContext.render(this.contentDisposition));
+            builder.setContentDisposition(runContext.render(this.contentDisposition).as(String.class).orElseThrow());
         }
 
         if (this.cacheControl != null) {
-            builder.setCacheControl(runContext.render(this.cacheControl));
+            builder.setCacheControl(runContext.render(this.cacheControl).as(String.class).orElseThrow());
         }
 
         BlobInfo destination = builder.build();

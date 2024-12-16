@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.gcs;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -53,28 +54,26 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
     @Schema(
         title = "The file to copy"
     )
-    @PluginProperty(dynamic = true)
-    private String from;
+    private Property<String> from;
 
     @Schema(
         title = "The destination path"
     )
-    @PluginProperty(dynamic = true)
-    private String to;
+    private Property<String> to;
 
     @Schema(
         title = "Whether to delete the source files (from parameter) on success copy"
     )
     @Builder.Default
-    private final Boolean delete = false;
+    private final Property<Boolean> delete = Property.of(false);
 
     @Override
     public Copy.Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI from = encode(runContext, this.from);
-        URI to = encode(runContext, this.to);
+        URI from = encode(runContext, runContext.render(this.from).as(String.class).orElse(null));
+        URI to = encode(runContext, runContext.render(this.to).as(String.class).orElse(null));
 
         BlobId source = BlobId.of(from.getScheme().equals("gs") ? from.getAuthority() : from.getScheme(), blobPath(from.getPath().substring(1)));
 
@@ -94,7 +93,7 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
 
         runContext.metric(Counter.of("file.size", result.getSize()));
 
-        if (this.delete) {
+        if (runContext.render(this.delete).as(Boolean.class).orElse(false)) {
             connection.delete(source);
         }
 

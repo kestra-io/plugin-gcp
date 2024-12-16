@@ -4,6 +4,7 @@ import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.gcs.models.Bucket;
@@ -31,7 +32,7 @@ import org.slf4j.Logger;
                     type: io.kestra.plugin.gcp.gcs.CreateBucket
                     name: "my-bucket"
                     versioningEnabled: true
-                    labels: 
+                    labels:
                       my-label: my-value
                 """
         )
@@ -45,7 +46,7 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
     @Schema(
         title = "Policy to apply if a bucket already exists."
     )
-    private IfExists ifExists = IfExists.ERROR;
+    private Property<IfExists> ifExists = Property.of(IfExists.ERROR);
 
     @Override
     public AbstractBucket.Output run(RunContext runContext) throws Exception {
@@ -66,14 +67,15 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
         }
 
         // Bucket exists, we check the ifExists policy
-        if (this.ifExists == IfExists.UPDATE) {
+        var existPolicy = runContext.render(this.ifExists).as(IfExists.class).orElseThrow();
+        if (IfExists.UPDATE.equals(existPolicy)) {
             logger.debug("Updating bucket '{}'", bucketInfo);
             return Output.builder()
                 .bucket(Bucket.of(connection.update(bucketInfo)))
                 .updated(true)
                 .build();
 
-        } else if (this.ifExists == IfExists.SKIP) {
+        } else if (IfExists.SKIP.equals(existPolicy)) {
             logger.debug("Bucket '{}' already exists, skipping", bucketInfo);
             return Output.builder()
                 .bucket(Bucket.of(connection.update(bucketInfo)))

@@ -4,6 +4,7 @@ import com.google.cloud.ReadChannel;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.utils.FileUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -49,8 +50,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
     @Schema(
         title = "The file to copy"
     )
-    @PluginProperty(dynamic = true)
-    private String from;
+    private Property<String> from;
 
     static File download(RunContext runContext, Storage connection, BlobId source) throws IOException {
         Blob blob = connection.get(source);
@@ -76,7 +76,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
         Storage connection = this.connection(runContext);
 
         Logger logger = runContext.logger();
-        URI from = encode(runContext, this.from);
+        URI from = encode(runContext, runContext.render(this.from).as(String.class).orElse(null));
 
         BlobId source = BlobId.of(
             from.getAuthority(),

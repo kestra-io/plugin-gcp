@@ -7,6 +7,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,7 +36,7 @@ import jakarta.validation.constraints.NotNull;
                 tasks:
                   - id: compose
                     type: io.kestra.plugin.gcp.gcs.Compose
-                    list: 
+                    list:
                       from: "gs://my_bucket/dir/"
                     to: "gs://my_bucket/destination/my-compose-file.txt"
                 """
@@ -56,22 +57,21 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     @Schema(
         title = "The destination path"
     )
-    @PluginProperty(dynamic = true)
-    private String to;
+    private Property<String> to;
 
     @Schema(
         title = "if `true`, don't failed if no result"
     )
     @PluginProperty
     @Builder.Default
-    private Boolean allowEmpty = false;
+    private Property<Boolean> allowEmpty = Property.of(false);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        URI to = encode(runContext, this.to);
+        URI to = encode(runContext, runContext.render(this.to).as(String.class).orElse(null));
 
         // target
         BlobInfo destination = BlobInfo
@@ -88,14 +88,14 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.list.getFrom())
-            .filter(ListInterface.Filter.FILES)
+            .filter(Property.of(ListInterface.Filter.FILES))
             .listingType(this.list.getListingType())
             .regExp(this.list.getRegExp())
             .build();
 
         io.kestra.plugin.gcp.gcs.List.Output run = listActions.run(runContext);
 
-        if (run.getBlobs().size() == 0 && this.allowEmpty == false) {
+        if (run.getBlobs().size() == 0 && runContext.render(this.allowEmpty).as(Boolean.class).orElse(false).equals(false)) {
             throw new FileNotFoundException("No files founds");
         }
 
@@ -127,14 +127,14 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     @Getter
     public static class List implements ListInterface {
         @NotNull
-        private String from;
+        private Property<String> from;
 
         @Builder.Default
-        private final io.kestra.plugin.gcp.gcs.List.Filter filter = ListInterface.Filter.BOTH;
+        private final Property<io.kestra.plugin.gcp.gcs.List.Filter> filter = Property.of(Filter.BOTH);
 
         @Builder.Default
-        private final io.kestra.plugin.gcp.gcs.List.ListingType listingType = ListInterface.ListingType.DIRECTORY;
+        private final Property<io.kestra.plugin.gcp.gcs.List.ListingType> listingType = Property.of(ListingType.DIRECTORY);
 
-        private String regExp;
+        private Property<String> regExp;
     }
 }

@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.utils.IdUtils;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -39,8 +40,8 @@ class DownloadsTest {
         Downloads task = Downloads.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Downloads.class.getName())
-            .from("gs://" + bucket + "/tasks/gcp/upload/" + random + "/")
-            .action(ActionInterface.Action.DELETE)
+            .from(Property.of("gs://" + bucket + "/tasks/gcp/upload/" + random + "/"))
+            .action(Property.of(ActionInterface.Action.DELETE))
             .build();
 
         Downloads.Output run = task.run(runContext(task));

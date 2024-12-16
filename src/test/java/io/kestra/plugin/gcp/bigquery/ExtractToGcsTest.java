@@ -95,7 +95,7 @@ public class ExtractToGcsTest extends AbstractBigquery {
         Download downloadTask = Download.builder()
             .id(ExtractToGcsTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(extractOutput.getDestinationUris().get(0))
+            .from(Property.of(extractOutput.getDestinationUris().get(0)))
             .build();
 
         Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));

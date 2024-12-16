@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
@@ -38,7 +39,7 @@ class DeleteListTest {
             .id(DeleteList.class.getSimpleName())
             .type(DeleteList.class.getName())
             .concurrent(8)
-            .from("gs://" + this.bucket + "/tasks/gcp/" + dir + "/")
+            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .build();
         DeleteList.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
 
