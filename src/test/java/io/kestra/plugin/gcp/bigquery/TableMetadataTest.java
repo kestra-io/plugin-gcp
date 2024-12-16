@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import lombok.extern.slf4j.Slf4j;
@@ -47,9 +48,9 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
             .build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -84,9 +85,9 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
             .build();
 
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -120,9 +121,9 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
             .build();
 
         // flow is not created
@@ -136,10 +137,10 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .ifNotExists(TableMetadata.IfNotExists.SKIP)
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
+            .ifNotExists(Property.of(TableMetadata.IfNotExists.SKIP))
             .build();
 
         TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));

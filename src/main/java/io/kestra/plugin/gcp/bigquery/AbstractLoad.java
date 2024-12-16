@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.cloud.bigquery.*;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -28,14 +29,12 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         title = "The table where to put query results.",
         description = "If not provided, a new table is created."
     )
-    @PluginProperty(dynamic = true)
-    protected String destinationTable;
+    protected Property<String> destinationTable;
 
     @Schema(
         title = "The clustering specification for the destination table."
     )
-    @PluginProperty(dynamic = true)
-    private List<String> clusteringFields;
+    private Property<List<String>> clusteringFields;
 
     @Schema(
         title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job.",
@@ -44,40 +43,34 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
             " table is a partition of a table, specified by partition decorators. For normal tables," +
             " WRITE_TRUNCATE will always overwrite the schema."
     )
-    @PluginProperty(dynamic = false)
-    private List<JobInfo.SchemaUpdateOption> schemaUpdateOptions;
+    private Property<List<JobInfo.SchemaUpdateOption>> schemaUpdateOptions;
 
     @Schema(
         title = "The time partitioning field for the destination table."
     )
-    @PluginProperty(dynamic = true)
-    private String timePartitioningField;
+    private Property<String> timePartitioningField;
 
     @Schema(
         title = "The time partitioning type specification for the destination table."
     )
-    @PluginProperty(dynamic = true)
     @Builder.Default
-    private TimePartitioning.Type timePartitioningType = TimePartitioning.Type.DAY;
+    private Property<TimePartitioning.Type> timePartitioningType = Property.of(TimePartitioning.Type.DAY);
 
 
     @Schema(
         title = "The action that should occur if the destination table already exists."
     )
-    @PluginProperty(dynamic = false)
-    private JobInfo.WriteDisposition writeDisposition;
+    private Property<JobInfo.WriteDisposition> writeDisposition;
 
     @Schema(
         title = "[Experimental] Automatic inference of the options and schema for CSV and JSON sources."
     )
-    @PluginProperty(dynamic = false)
-    private Boolean autodetect;
+    private Property<Boolean> autodetect;
 
     @Schema(
         title = "Whether the job is allowed to create tables."
     )
-    @PluginProperty(dynamic = false)
-    private JobInfo.CreateDisposition createDisposition;
+    private Property<JobInfo.CreateDisposition> createDisposition;
 
     @Schema(
         title = "Whether BigQuery should allow extra values that are not represented in the table schema.",
@@ -85,16 +78,14 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
             " are treated as bad records, and if there are too many bad records, an invalid error is" +
             " returned in the job result. By default unknown values are not allowed."
     )
-    @PluginProperty(dynamic = false)
-    private Boolean ignoreUnknownValues;
+    private Property<Boolean> ignoreUnknownValues;
 
     @Schema(
         title = "The maximum number of bad records that BigQuery can ignore when running the job.",
         description = " If the number of bad records exceeds this value, an invalid error is returned in the job result." +
             " By default, no bad record is ignored."
     )
-    @PluginProperty(dynamic = false)
-    private Integer maxBadRecords;
+    private Property<Integer> maxBadRecords;
 
     @Schema(
         title = "The schema for the destination table.",
@@ -106,18 +97,16 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
             "  fields:\n" +
             "    - name: colA\n" +
             "      type: STRING\n" +
-            "    - name: colB\n" + 
+            "    - name: colB\n" +
             "      type: NUMERIC\n"+
             "```\n" +
             "See type from [StandardSQLTypeName](https://javadoc.io/static/com.google.cloud/google-cloud-bigquery/1.88.0/com/google/cloud/bigquery/StandardSQLTypeName.html)"
     )
-    @PluginProperty(dynamic = false)
-    private Map<String, Object> schema;
+    private Property<Map<String, Object>> schema;
 
     @Schema(
         title = "The source format, and possibly some parsing options, of the external data."
     )
-    @PluginProperty(dynamic = false)
     private Format format;
 
     @Schema(
@@ -133,42 +122,42 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     @SuppressWarnings("DuplicatedCode")
     protected void setOptions(LoadConfiguration.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException, JsonProcessingException {
         if (this.clusteringFields != null) {
-            builder.setClustering(Clustering.newBuilder().setFields(runContext.render(this.clusteringFields)).build());
+            builder.setClustering(Clustering.newBuilder().setFields(runContext.render(this.clusteringFields).asList(String.class)).build());
         }
 
         if (this.schemaUpdateOptions != null) {
-            builder.setSchemaUpdateOptions(this.schemaUpdateOptions);
+            builder.setSchemaUpdateOptions(runContext.render(this.schemaUpdateOptions).asList(JobInfo.SchemaUpdateOption.class));
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(this.timePartitioningType)
-                .setField(runContext.render(this.timePartitioningField))
+            builder.setTimePartitioning(TimePartitioning.newBuilder(runContext.render(this.timePartitioningType).as(TimePartitioning.Type.class).orElseThrow())
+                .setField(runContext.render(runContext.render(this.timePartitioningField).as(String.class).orElseThrow()))
                 .build()
             );
         }
 
         if (this.writeDisposition != null) {
-            builder.setWriteDisposition(this.writeDisposition);
+            builder.setWriteDisposition(runContext.render(this.writeDisposition).as(JobInfo.WriteDisposition.class).orElseThrow());
         }
 
         if (this.autodetect != null) {
-            builder.setAutodetect(autodetect);
+            builder.setAutodetect(runContext.render(autodetect).as(Boolean.class).orElseThrow());
         }
 
         if (this.createDisposition != null) {
-            builder.setCreateDisposition(this.createDisposition);
+            builder.setCreateDisposition(runContext.render(this.createDisposition).as(JobInfo.CreateDisposition.class).orElseThrow());
         }
 
         if (this.ignoreUnknownValues != null) {
-            builder.setIgnoreUnknownValues(this.ignoreUnknownValues);
+            builder.setIgnoreUnknownValues(runContext.render(this.ignoreUnknownValues).as(Boolean.class).orElseThrow());
         }
 
         if (this.maxBadRecords != null) {
-            builder.setMaxBadRecords(this.maxBadRecords);
+            builder.setMaxBadRecords(runContext.render(this.maxBadRecords).as(Integer.class).orElseThrow());
         }
 
         if (this.schema != null) {
-            builder.setSchema(schema(this.schema));
+            builder.setSchema(schema(runContext.render(this.schema).asMap(String.class, Object.class)));
         }
 
         switch (this.format) {
@@ -182,7 +171,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 builder.setFormatOptions(FormatOptions.avro());
 
                 if (this.avroOptions != null && this.avroOptions.useAvroLogicalTypes != null) {
-                    builder.setUseAvroLogicalTypes(this.avroOptions.useAvroLogicalTypes);
+                    builder.setUseAvroLogicalTypes(runContext.render(this.avroOptions.useAvroLogicalTypes).as(Boolean.class).orElseThrow());
                 }
                 break;
             case PARQUET:
@@ -255,7 +244,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
 
     private void metrics(RunContext runContext, JobStatistics.LoadStatistics stats, Job job) throws IllegalVariableEvaluationException {
         String[] tags = {
-            "destination_table", runContext.render(this.destinationTable),
+            "destination_table", runContext.render(this.destinationTable).as(String.class).orElse(null),
             "project_id", job.getJobId().getProject(),
             "location", job.getJobId().getLocation(),
         };
@@ -308,15 +297,13 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " records, an invalid error is returned in the job result. By default, rows with missing" +
                 " trailing columns are considered bad records."
         )
-        @PluginProperty(dynamic = false)
-        private Boolean allowJaggedRows;
+        private Property<Boolean> allowJaggedRows;
 
         @Schema(
             title = "Whether BigQuery should allow quoted data sections that contain newline characters in a CSV file.",
             description = "By default quoted newline are not allowed."
         )
-        @PluginProperty(dynamic = true)
-        private Boolean allowQuotedNewLines;
+        private Property<Boolean> allowQuotedNewLines;
 
         @Schema(
             title = "The character encoding of the data.",
@@ -324,8 +311,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split" +
                 " using the values set in {@link #setQuote(String)} and {@link #setFieldDelimiter(String)}."
         )
-        @PluginProperty(dynamic = true)
-        private String encoding;
+        private Property<String> encoding;
 
         @Schema(
             title = "The separator for fields in a CSV file.",
@@ -334,8 +320,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " binary state. BigQuery also supports the escape sequence \"\\t\" to specify a tab separator. The" +
                 " default value is a comma (',')."
         )
-        @PluginProperty(dynamic = true)
-        private String fieldDelimiter;
+        private Property<String> fieldDelimiter;
 
         @Schema(
             title = "The value that is used to quote data sections in a CSV file.",
@@ -346,42 +331,40 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " contains quoted newline characters, you must also set {@link" +
                 " #setAllowQuotedNewLines(boolean)} property to {@code true}."
         )
-        @PluginProperty(dynamic = true)
-        private String quote;
+        private Property<String> quote;
 
         @Schema(
             title = "The number of rows at the top of a CSV file that BigQuery will skip when reading the data",
             description = "The default value is 0. This property is useful if you have header rows in the file" +
                 " that should be skipped."
         )
-        @PluginProperty(dynamic = false)
-        private Long skipLeadingRows;
+        private Property<Long> skipLeadingRows;
 
         private com.google.cloud.bigquery.CsvOptions to(RunContext runContext) throws IllegalVariableEvaluationException {
             com.google.cloud.bigquery.CsvOptions.Builder builder = com.google.cloud.bigquery.CsvOptions.newBuilder();
 
             if (this.allowJaggedRows != null) {
-                builder.setAllowJaggedRows(this.allowJaggedRows);
+                builder.setAllowJaggedRows(runContext.render(this.allowJaggedRows).as(Boolean.class).orElseThrow());
             }
 
             if (this.allowQuotedNewLines != null) {
-                builder.setAllowQuotedNewLines(this.allowQuotedNewLines);
+                builder.setAllowQuotedNewLines(runContext.render(this.allowQuotedNewLines).as(Boolean.class).orElseThrow());
             }
 
             if (this.encoding != null) {
-                builder.setEncoding(runContext.render(this.encoding));
+                builder.setEncoding(runContext.render(this.encoding).as(String.class).orElseThrow());
             }
 
             if (this.fieldDelimiter != null) {
-                builder.setFieldDelimiter(runContext.render(this.fieldDelimiter));
+                builder.setFieldDelimiter(runContext.render(this.fieldDelimiter).as(String.class).orElseThrow());
             }
 
             if (this.quote != null) {
-                builder.setQuote(runContext.render(this.quote));
+                builder.setQuote(runContext.render(this.quote).as(String.class).orElseThrow());
             }
 
             if (this.skipLeadingRows != null) {
-                builder.setSkipLeadingRows(this.skipLeadingRows);
+                builder.setSkipLeadingRows(runContext.render(this.skipLeadingRows).as(Long.class).orElseThrow());
             }
 
             return builder.build();
@@ -400,7 +383,6 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " types (such as TIMESTAMP) instead of only using their raw types (such as INTEGER)",
             description = "The value may be null."
         )
-        @PluginProperty(dynamic = false)
-        private Boolean useAvroLogicalTypes;
+        private Property<Boolean> useAvroLogicalTypes;
     }
 }

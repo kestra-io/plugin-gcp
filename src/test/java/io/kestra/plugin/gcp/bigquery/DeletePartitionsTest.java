@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -122,10 +123,10 @@ class DeletePartitionsTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+            .sql(Property.of("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
                 "PARTITION BY " + partition + "\n" +
                 "AS " + insert
-            )
+            ))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
@@ -134,12 +135,12 @@ class DeletePartitionsTest {
         DeletePartitions task = DeletePartitions.builder()
             .id(QueryTest.class.getSimpleName())
             .type(DeleteTable.class.getName())
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .partitionType(partitionType)
-            .table(table)
-            .from(from)
-            .to(to)
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .partitionType(Property.of(partitionType))
+            .table(Property.of(table))
+            .from(Property.of(from))
+            .to(Property.of(to))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         DeletePartitions.Output run = task.run(runContext);
@@ -150,7 +151,7 @@ class DeletePartitionsTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .fetchOne(true)
-            .sql("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;")
+            .sql(Property.of("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;"))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, query, ImmutableMap.of());
         Query.Output queryRun = query.run(runContext);

@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigquery.models;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -11,7 +12,7 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class TableDefinition {
     @Schema(title = "The table's type.")
-    private final Type type;
+    private final Property<Type> type;
 
     @Schema(title = "The table's schema.")
     private final io.kestra.plugin.gcp.bigquery.models.Schema schema;
@@ -28,38 +29,30 @@ public class TableDefinition {
     @Schema(title = "The external table definition if the type is `EXTERNAL`.")
     private final ExternalTableDefinition externalTableDefinition;
 
-    public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition of(T tableDefinition) {
-        TableDefinitionBuilder tableDefinitionBuilder = TableDefinition.builder()
+    public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition.Output of(T tableDefinition) {
+        TableDefinition.Output.OutputBuilder outputBuilder = Output.builder()
             .type(Type.valueOf(tableDefinition.getType().toString()));
 
         if (tableDefinition.getSchema() != null) {
-            tableDefinitionBuilder.schema(io.kestra.plugin.gcp.bigquery.models.Schema.of(tableDefinition.getSchema()));
+            outputBuilder.schema(io.kestra.plugin.gcp.bigquery.models.Schema.of(tableDefinition.getSchema()));
         }
 
-        if (tableDefinition instanceof com.google.cloud.bigquery.ViewDefinition) {
-            var viewDefinition = ((com.google.cloud.bigquery.ViewDefinition) tableDefinition);
-
-            tableDefinitionBuilder.viewDefinition(ViewDefinition.of(viewDefinition));
-        } else if (tableDefinition instanceof com.google.cloud.bigquery.MaterializedViewDefinition) {
-            var materializedViewDefinition = ((com.google.cloud.bigquery.MaterializedViewDefinition) tableDefinition);
-
-            tableDefinitionBuilder.materializedViewDefinition(MaterializedViewDefinition.of(materializedViewDefinition));
-        } else if (tableDefinition instanceof com.google.cloud.bigquery.ExternalTableDefinition) {
-            var externalTableDefinition = ((com.google.cloud.bigquery.ExternalTableDefinition) tableDefinition);
-
-            tableDefinitionBuilder.externalTableDefinition(ExternalTableDefinition.of(externalTableDefinition));
-        } else if (tableDefinition instanceof com.google.cloud.bigquery.StandardTableDefinition) {
-            var standardTableDefinition = ((com.google.cloud.bigquery.StandardTableDefinition) tableDefinition);
-
-            tableDefinitionBuilder.standardTableDefinition(StandardTableDefinition.of(standardTableDefinition));
+        if (tableDefinition instanceof com.google.cloud.bigquery.ViewDefinition viewDefinition) {
+            outputBuilder.viewDefinition(ViewDefinition.of(viewDefinition));
+        } else if (tableDefinition instanceof com.google.cloud.bigquery.MaterializedViewDefinition materializedViewDefinition) {
+            outputBuilder.materializedViewDefinition(MaterializedViewDefinition.of(materializedViewDefinition));
+        } else if (tableDefinition instanceof com.google.cloud.bigquery.ExternalTableDefinition externalTableDefinition) {
+            outputBuilder.externalTableDefinition(ExternalTableDefinition.of(externalTableDefinition));
+        } else if (tableDefinition instanceof com.google.cloud.bigquery.StandardTableDefinition standardTableDefinition) {
+            outputBuilder.standardTableDefinition(StandardTableDefinition.of(standardTableDefinition));
         }
 
-        return tableDefinitionBuilder.build();
+        return outputBuilder.build();
     }
 
     @SuppressWarnings("unchecked")
     public <T extends com.google.cloud.bigquery.TableDefinition> T to(RunContext runContext) throws Exception {
-        switch (this.type) {
+        switch (runContext.render(this.type).as(Type.class).orElse(null)) {
             case VIEW:
                 return (T) this.viewDefinition.to(runContext);
             case TABLE:
@@ -81,5 +74,16 @@ public class TableDefinition {
         MATERIALIZED_VIEW,
         EXTERNAL,
         MODEL
+    }
+
+    @Builder
+    @Getter
+    public static class Output {
+        private final Type type;
+        private final io.kestra.plugin.gcp.bigquery.models.Schema.Output schema;
+        private final ViewDefinition.Output viewDefinition;
+        private final ExternalTableDefinition.Output externalTableDefinition;
+        private final StandardTableDefinition.Output standardTableDefinition;
+        private final MaterializedViewDefinition.Output materializedViewDefinition;
     }
 }

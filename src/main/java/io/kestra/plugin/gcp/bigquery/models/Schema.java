@@ -20,8 +20,8 @@ public class Schema {
     )
     private final List<Field> fields;
 
-    public static Schema of(com.google.cloud.bigquery.Schema schema) {
-        return Schema.builder()
+    public static Schema.Output of(com.google.cloud.bigquery.Schema schema) {
+        return Schema.Output.builder()
             .fields(schema.getFields()
                 .stream()
                 .map(Field::of)
@@ -37,5 +37,11 @@ public class Schema {
                 .map(throwFunction(field -> field.to(runContext)))
                 .collect(Collectors.toList())
         );
+    }
+
+    @Builder
+    @Getter
+    public static class Output {
+        private List<Field.Output> fields;
     }
 }

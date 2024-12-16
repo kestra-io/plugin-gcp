@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.gcp.bigquery.models.Field;
@@ -39,27 +40,27 @@ class CreateUpdateTableTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         CreateTable task = CreateTable.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .friendlyName("new_table")
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
+            .friendlyName(Property.of("new_table"))
             .tableDefinition(TableDefinition.builder()
-                .type(TableDefinition.Type.TABLE)
+                .type(Property.of(TableDefinition.Type.TABLE))
                 .schema(Schema.builder()
                     .fields(Arrays.asList(
                         Field.builder()
-                            .name("id")
-                            .type(StandardSQLTypeName.INT64)
+                            .name(Property.of("id"))
+                            .type(Property.of(StandardSQLTypeName.INT64))
                             .build(),
                         Field.builder()
-                            .name("name")
-                            .type(StandardSQLTypeName.STRING)
+                            .name(Property.of("name"))
+                            .type(Property.of(StandardSQLTypeName.STRING))
                             .build()
                     ))
                     .build()
                 )
                 .standardTableDefinition(StandardTableDefinition.builder()
-                    .clustering(Arrays.asList("id", "name"))
+                    .clustering(Property.of(Arrays.asList("id", "name")))
                     .build()
                 )
                 .build()
@@ -80,11 +81,11 @@ class CreateUpdateTableTest {
         assertThat(run.getExpirationTime(), notNullValue());
 
         UpdateTable updateTask = UpdateTable.builder()
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .table(friendlyId)
-            .friendlyName("new_table_2")
-            .expirationDuration(Duration.ofHours(2))
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .table(Property.of(friendlyId))
+            .friendlyName(Property.of("new_table_2"))
+            .expirationDuration(Property.of(Duration.ofHours(2)))
             .build();
 
         UpdateTable.Output updateRun = updateTask.run(runContext);
@@ -98,21 +99,21 @@ class CreateUpdateTableTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         CreateTable task = CreateTable.builder()
-                .projectId(this.project)
-                .dataset(this.dataset)
-                .table(friendlyId)
-                .friendlyName("new_table")
+                .projectId(Property.of(this.project))
+                .dataset(Property.of(this.dataset))
+                .table(Property.of(friendlyId))
+                .friendlyName(Property.of("new_table"))
                 .tableDefinition(TableDefinition.builder()
-                        .type(TableDefinition.Type.TABLE)
+                        .type(Property.of(TableDefinition.Type.TABLE))
                         .schema(Schema.builder()
                                 .fields(Arrays.asList(
                                         Field.builder()
-                                                .name("id")
-                                                .type(StandardSQLTypeName.INT64)
+                                                .name(Property.of("id"))
+                                                .type(Property.of(StandardSQLTypeName.INT64))
                                                 .build(),
                                         Field.builder()
-                                                .name("name")
-                                                .type(StandardSQLTypeName.STRING)
+                                                .name(Property.of("name"))
+                                                .type(Property.of(StandardSQLTypeName.STRING))
                                                 .build()
                                 ))
                                 .build()

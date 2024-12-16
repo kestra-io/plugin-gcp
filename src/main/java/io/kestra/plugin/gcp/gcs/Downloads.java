@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -73,9 +74,9 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         ActionInterface.Action action,
         String moveDirectory,
         RunContext runContext,
-        String projectId,
-        String serviceAccount,
-        java.util.List<String> scopes
+        Property<String> projectId,
+        Property<String> serviceAccount,
+        Property<java.util.List<String>> scopes
     ) throws Exception {
         if (action == ActionInterface.Action.DELETE) {
             for (Blob blob : blobList) {

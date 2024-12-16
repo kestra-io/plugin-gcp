@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -66,11 +67,11 @@ public class ExtractToGcsTest extends AbstractBigquery {
         ExtractToGcs task = ExtractToGcs.builder()
             .id(ExtractToGcsTest.class.getSimpleName())
             .type(ExtractToGcs.class.getName())
-            .destinationUris(Collections.singletonList(
+            .destinationUris(Property.of(Collections.singletonList(
                 "gs://" + this.bucket + "/" + this.filename
-            ))
-            .sourceTable(this.project + "." + this.dataset + "." + this.table)
-            .printHeader(printHeader)
+            )))
+            .sourceTable(Property.of(this.project + "." + this.dataset + "." + this.table))
+            .printHeader(Property.of(printHeader))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());

@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -31,11 +32,13 @@ class CopyTest {
 
     @Test
     void run() throws Exception {
+        var tableValue = project + "." + dataset + "." + FriendlyId.createFriendlyId();
+
         Query create = Query.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(QueryTest.sql())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+            .sql(Property.of(QueryTest.sql()))
+            .destinationTable(Property.of(tableValue))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
@@ -45,8 +48,8 @@ class CopyTest {
         Copy copy = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
-            .sourceTables(List.of(create.getDestinationTable()))
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+            .sourceTables(Property.of(List.of(tableValue)))
+            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .build();
 
         runContext = TestsUtils.mockRunContext(runContextFactory, copy, ImmutableMap.of());
@@ -57,7 +60,7 @@ class CopyTest {
         Query fetch = Query.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("SELECT * FROM " + create.getDestinationTable())
+            .sql(Property.of("SELECT * FROM " + create.getDestinationTable()))
             .fetchOne(true)
             .build();
 

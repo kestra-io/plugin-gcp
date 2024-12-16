@@ -74,7 +74,7 @@ public class Delete extends AbstractTask implements RunnableTask<Delete.Output> 
 
         try (ClusterControllerClient client = ClusterControllerClient.create(settings)) {
             DeleteClusterRequest request = DeleteClusterRequest.newBuilder()
-                .setProjectId(runContext.render(this.projectId))
+                .setProjectId(runContext.render(this.projectId).as(String.class).orElse(null))
                 .setRegion(region)
                 .setClusterName(clusterName)
                 .build();

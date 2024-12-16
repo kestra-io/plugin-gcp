@@ -6,6 +6,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Dataset;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.gcp.bigquery.models.AccessControl;
 import io.kestra.plugin.gcp.bigquery.models.Entity;
 import io.micronaut.context.annotation.Value;
@@ -51,8 +52,8 @@ class DatasetTest {
         return CreateDataset.builder()
             .id(DatasetTest.class.getSimpleName())
             .type(CreateDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}");
+            .name(new Property<>("{{dataset}}"))
+            .projectId(new Property<>("{{project}}"));
     }
 
     @Test
@@ -79,7 +80,7 @@ class DatasetTest {
     void createNoException() throws Exception {
         CreateDataset task = createBuilder()
             .description("createUpdate")
-            .ifExists(CreateDataset.IfExists.SKIP)
+            .ifExists(Property.of(CreateDataset.IfExists.SKIP))
             .build();
 
         AbstractDataset.Output run = task.run(runContext());
@@ -92,7 +93,7 @@ class DatasetTest {
     void createUpdate() throws Exception {
         CreateDataset task = createBuilder()
             .description("createUpdate")
-            .ifExists(CreateDataset.IfExists.UPDATE)
+            .ifExists(Property.of(CreateDataset.IfExists.UPDATE))
             .build();
 
         AbstractDataset.Output run = task.run(runContext());
@@ -107,8 +108,8 @@ class DatasetTest {
         UpdateDataset task = UpdateDataset.builder()
             .id(UpdateDataset.class.getSimpleName())
             .type(CreateDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}")
+            .name(new Property<>("{{dataset}}"))
+            .projectId(new Property<>("{{project}}"))
             .description("update")
             .build();
 
@@ -124,13 +125,13 @@ class DatasetTest {
 
         CreateDataset task = createBuilder()
             .description(RANDOM_ID_2)
-            .ifExists(CreateDataset.IfExists.UPDATE)
+            .ifExists(Property.of(CreateDataset.IfExists.UPDATE))
             .acl(Collections.singletonList(
                 AccessControl.builder()
                     .entity(Entity.builder()
-                        .type(Entity.Type.USER)
-                        .value("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com").build())
-                    .role(AccessControl.Role.OWNER)
+                        .type(Property.of(Entity.Type.USER))
+                        .value(Property.of("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com")).build())
+                    .role(Property.of(AccessControl.Role.OWNER))
                     .build()
             ))
             .build();
@@ -160,9 +161,9 @@ class DatasetTest {
         DeleteDataset task = DeleteDataset.builder()
             .id(DatasetTest.class.getSimpleName())
             .type(DeleteDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}")
-            .deleteContents(true)
+            .name(new Property<>("{{dataset}}"))
+            .projectId(new Property<>("{{project}}"))
+            .deleteContents(Property.of(true))
             .build();
 
         DeleteDataset.Output run = task.run(runContext);
@@ -173,9 +174,9 @@ class DatasetTest {
         task = DeleteDataset.builder()
             .id(DatasetTest.class.getSimpleName())
             .type(DeleteDataset.class.getName())
-            .name("{{dataset}}")
-            .projectId("{{project}}")
-            .deleteContents(true)
+            .name(new Property<>("{{dataset}}"))
+            .projectId(new Property<>("{{project}}"))
+            .deleteContents(Property.of(true))
             .build();
 
         run = task.run(runContext);

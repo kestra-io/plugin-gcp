@@ -118,7 +118,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                 .setDisplayName(jobName);
 
             LocationName parent = LocationName.of(
-                runContext.render(this.projectId),
+                runContext.render(this.projectId).as(String.class).orElse(null),
                 runContext.render(this.region)
             );
 
@@ -144,7 +144,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
             try {
                 tailThread = LogTailService.tail(
                     logger,
-                    runContext.render(this.projectId),
+                    runContext.render(this.projectId).as(String.class).orElse(null),
                     credentials,
                     "resource.labels.job_id=\"" + response.getName()
                         .substring(response.getName().lastIndexOf("/") + 1) + "\" AND " +

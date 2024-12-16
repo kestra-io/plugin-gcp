@@ -7,6 +7,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
@@ -88,51 +89,43 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
     @Schema(
         title = "The zone."
     )
-    @PluginProperty(dynamic = true)
-    private String zone;
+    private Property<String> zone;
 
     @Schema(
         title = "The master machine type."
     )
-    @PluginProperty(dynamic = true)
-    private String masterMachineType;
+    private Property<String> masterMachineType;
 
     @Schema(
         title = "The disk size in GB for each master node."
     )
-    @PluginProperty
-    private Integer masterDiskSizeGB;
+    private Property<Integer> masterDiskSizeGB;
 
     @Schema(
         title = "The worker machine type."
     )
-    @PluginProperty(dynamic = true)
-    private String workerMachineType;
+    private Property<String> workerMachineType;
 
     @Schema(
         title = "The disk size in GB for each worker node."
     )
-    @PluginProperty
-    private Integer workerDiskSizeGB;
+    private Property<Integer> workerDiskSizeGB;
 
     @Schema(
         title = "The number of workers."
     )
-    @PluginProperty
-    private Integer workers;
+    private Property<Integer> workers;
 
     @Schema(
         title = "The GCS bucket name."
     )
-    @PluginProperty(dynamic = true)
-    private String bucket;
+    private Property<String> bucket;
 
     @Schema(
         title = "The Dataproc image URI.",
         description = "The Compute Engine image resource used for cluster instances."
     )
-    @PluginProperty(dynamic = true)
-    private String imageVersion;
+    private Property<String> imageVersion;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -153,7 +146,7 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
                 .build();
 
             CreateClusterRequest request = CreateClusterRequest.newBuilder()
-                .setProjectId(runContext.render(this.projectId))
+                .setProjectId(runContext.render(this.projectId).as(String.class).orElse(null))
                 .setRegion(region)
                 .setCluster(cluster)
                 .build();
@@ -188,20 +181,20 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
 
         if (this.workerMachineType != null) {
             configBuilder.setWorkerConfig(
-                configureMachine(runContext, this.workerMachineType, this.workerDiskSizeGB, this.workers)
+                configureMachine(runContext, this.workerMachineType, this.workerDiskSizeGB, runContext.render(this.workers).as(Integer.class).orElse(null))
             );
         }
 
         if (this.zone != null) {
             configBuilder.setGceClusterConfig(
                 GceClusterConfig.newBuilder()
-                    .setZoneUri(runContext.render(this.zone))
+                    .setZoneUri(runContext.render(this.zone).as(String.class).orElseThrow())
                     .build()
             );
         }
 
         if (this.bucket != null) {
-            configBuilder.setConfigBucket(runContext.render(this.bucket));
+            configBuilder.setConfigBucket(runContext.render(this.bucket).as(String.class).orElseThrow());
         }
 
         return configBuilder.build();
@@ -209,25 +202,25 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
 
     private InstanceGroupConfig configureMachine(
         RunContext runContext,
-        String machineType,
-        Integer diskSizeGB,
+        Property<String> machineType,
+        Property<Integer> diskSizeGB,
         Integer workers
     ) throws IllegalVariableEvaluationException {
         InstanceGroupConfig.Builder instanceGroupConfigBuilder = InstanceGroupConfig.newBuilder()
-            .setMachineTypeUri(runContext.render(machineType));
+            .setMachineTypeUri(runContext.render(machineType).as(String.class).orElseThrow());
 
         if (diskSizeGB != null) {
             instanceGroupConfigBuilder
                 .setDiskConfig(
                     DiskConfig.newBuilder()
-                        .setBootDiskSizeGb(diskSizeGB)
+                        .setBootDiskSizeGb(runContext.render(diskSizeGB).as(Integer.class).orElseThrow())
                         .build()
                 );
         }
 
         if (this.imageVersion != null) {
             instanceGroupConfigBuilder
-                .setImageUri(runContext.render(this.imageVersion));
+                .setImageUri(runContext.render(this.imageVersion).as(String.class).orElseThrow());
         }
 
         if (workers != null) {

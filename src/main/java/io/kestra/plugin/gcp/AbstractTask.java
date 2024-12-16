@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp;
 
 import com.google.auth.oauth2.GoogleCredentials;
+import io.kestra.core.models.property.Property;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -17,14 +18,14 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractTask extends Task implements GcpInterface {
-    protected String projectId;
+    protected Property<String> projectId;
 
-    protected String serviceAccount;
+    protected Property<String> serviceAccount;
 
-    protected String impersonatedServiceAccount;
+    protected Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    protected List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+    protected Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return CredentialService.credentials(runContext, this);

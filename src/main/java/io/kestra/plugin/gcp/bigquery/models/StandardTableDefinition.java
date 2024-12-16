@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery.models;
 import com.google.cloud.bigquery.Clustering;
 import com.google.cloud.bigquery.StandardTableDefinition.StreamingBuffer;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -19,7 +20,7 @@ public class StandardTableDefinition {
     private final StreamingBuffer streamingBuffer;
 
     @Schema(title = "Returns the clustering configuration for this table. If {@code null}, the table is not clustered.")
-    private final List<String> clustering;
+    private final Property<List<String>> clustering;
 
     @Schema(title = "Returns the time partitioning configuration for this table. If {@code null}, the table is not time-partitioned.")
     private final TimePartitioning timePartitioning;
@@ -27,8 +28,8 @@ public class StandardTableDefinition {
     @Schema(title = "Returns the range partitioning configuration for this table. If {@code null}, the table is not range-partitioned.")
     private final RangePartitioning rangePartitioning;
 
-    public static StandardTableDefinition of(com.google.cloud.bigquery.StandardTableDefinition standardTableDefinition) {
-        return StandardTableDefinition.builder()
+    public static StandardTableDefinition.Output of(com.google.cloud.bigquery.StandardTableDefinition standardTableDefinition) {
+        return StandardTableDefinition.Output.builder()
             .streamingBuffer(standardTableDefinition.getStreamingBuffer())
             .clustering(standardTableDefinition.getClustering() == null ? null : standardTableDefinition.getClustering().getFields())
             .timePartitioning(standardTableDefinition.getTimePartitioning() == null ? null : TimePartitioning.of(standardTableDefinition.getTimePartitioning()))
@@ -40,7 +41,7 @@ public class StandardTableDefinition {
         com.google.cloud.bigquery.StandardTableDefinition.Builder builder = com.google.cloud.bigquery.StandardTableDefinition.newBuilder();
 
         if (this.clustering != null) {
-            builder.setClustering(Clustering.newBuilder().setFields(runContext.render(this.clustering)).build());
+            builder.setClustering(Clustering.newBuilder().setFields(runContext.render(this.clustering).asList(String.class)).build());
         }
 
         if (this.timePartitioning != null) {
@@ -56,5 +57,14 @@ public class StandardTableDefinition {
         }
 
         return builder.build();
+    }
+
+    @Getter
+    @Builder
+    public static class Output {
+        private final StreamingBuffer streamingBuffer;
+        private final List<String> clustering;
+        private final TimePartitioning.Output timePartitioning;
+        private final RangePartitioning.Output rangePartitioning;
     }
 }

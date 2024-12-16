@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -32,7 +33,7 @@ class CopyPartitionsTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+            .sql(Property.of("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
                     "PARTITION BY DATE(transaction_date)\n" +
                     "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')\n" +
                     "UNION ALL\n" +
@@ -43,7 +44,7 @@ class CopyPartitionsTest {
                     "(SELECT 4, DATETIME '2020-04-04 12:30:00.45')\n" +
                     "UNION ALL\n" +
                     "(SELECT 5, DATETIME '2020-04-05 12:30:00.45')"
-                )
+                ))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
@@ -53,13 +54,13 @@ class CopyPartitionsTest {
         CopyPartitions task = CopyPartitions.builder()
             .id(QueryTest.class.getSimpleName())
             .type(CopyPartitions.class.getName())
-            .projectId(this.project)
-            .dataset(this.dataset)
-            .partitionType(AbstractPartition.PartitionType.DAY)
-            .table(table)
-            .from("{{ '2020-04-02' | date() }}")
-            .to("{{ '2020-04-04' | date() }}")
-            .destinationTable(this.project + "." + this.dataset + "." + destinationTable)
+            .projectId(Property.of(this.project))
+            .dataset(Property.of(this.dataset))
+            .partitionType(Property.of(AbstractPartition.PartitionType.DAY))
+            .table(Property.of(table))
+            .from(new Property<>("{{ '2020-04-02' | date() }}"))
+            .to(new Property<>("{{ '2020-04-04' | date() }}"))
+            .destinationTable(Property.of(this.project + "." + this.dataset + "." + destinationTable))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         CopyPartitions.Output run = task.run(runContext);
@@ -70,7 +71,7 @@ class CopyPartitionsTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .fetchOne(true)
-            .sql("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + destinationTable + "`;")
+            .sql(Property.of("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + destinationTable + "`;"))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, query, ImmutableMap.of());
         Query.Output queryRun = query.run(runContext);

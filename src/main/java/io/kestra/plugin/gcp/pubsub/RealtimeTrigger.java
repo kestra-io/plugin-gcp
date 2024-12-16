@@ -12,6 +12,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.pubsub.model.Message;
@@ -68,14 +69,14 @@ import java.util.concurrent.atomic.AtomicReference;
 )
 public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerInterface, TriggerOutput<Message>, PubSubConnectionInterface {
 
-    private String projectId;
+    private Property<String> projectId;
 
-    private String serviceAccount;
+    private Property<String> serviceAccount;
 
-    private String impersonatedServiceAccount;
+    private Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    private List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+    private Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private String topic;
 

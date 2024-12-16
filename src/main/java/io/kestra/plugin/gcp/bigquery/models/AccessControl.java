@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.bigquery.models;
 
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,15 +17,13 @@ public class AccessControl {
     @Schema(
         title = "The GCP entity."
     )
-    @PluginProperty(dynamic = true)
     private final Entity entity;
 
     @NotNull
     @Schema(
         title = "The role to assign to the entity."
     )
-    @PluginProperty(dynamic = true)
-    private final Role role;
+    private final Property<Role> role;
 
     public enum Role {
         READER,

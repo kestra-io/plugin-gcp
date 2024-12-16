@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.dataproc.clusters;
 
 import autovalue.shaded.com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -34,7 +35,7 @@ public class DeleteTest {
         Delete create = Delete.builder()
             .id(Delete.class.getSimpleName())
             .type(Delete.class.getName())
-            .projectId(project)
+            .projectId(Property.of(project))
             .clusterName("test-cluster")
 	        .region(region)
             .build();

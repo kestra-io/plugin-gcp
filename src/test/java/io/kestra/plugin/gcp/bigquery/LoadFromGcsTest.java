@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.plugin.gcp.gcs.Upload;
 import io.micronaut.context.annotation.Value;
@@ -65,17 +66,17 @@ class LoadFromGcsTest {
         LoadFromGcs task = LoadFromGcs.builder()
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(LoadFromGcs.class.getName())
-            .from(Collections.singletonList(
+            .from(Property.of(Collections.singletonList(
                 upload.getTo()
-            ))
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+            )))
+            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .format(AbstractLoad.Format.JSON)
-            .schema(ImmutableMap.of(
+            .schema(Property.of(ImmutableMap.of(
                 "fields", Arrays.asList(
                     ImmutableMap.of("name", "name", "type", "STRING"),
                     ImmutableMap.of("name", "post_abbr", "type", "STRING")
                 )
-            ))
+            )))
             .build();
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 

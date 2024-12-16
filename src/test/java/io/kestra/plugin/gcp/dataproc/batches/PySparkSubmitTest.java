@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.dataproc.batches;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -29,11 +30,11 @@ class PySparkSubmitTest {
     void run() throws Exception {
         PySparkSubmit create = PySparkSubmit.builder()
             // The file can be found in src/main/resources/dataproc and must be uploaded to the GCS bucket before running the test
-            .mainPythonFileUri("gs://spark-jobs-kestra/pi.py")
             .id(PySparkSubmitTest.class.getSimpleName())
             .type(PySparkSubmit.class.getName())
-            .projectId(project)
-            .name("test-pyspark")
+            .mainPythonFileUri(Property.of("gs://spark-jobs-kestra/pi.py"))
+            .projectId(Property.of(project))
+            .name(Property.of("test-pyspark"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());

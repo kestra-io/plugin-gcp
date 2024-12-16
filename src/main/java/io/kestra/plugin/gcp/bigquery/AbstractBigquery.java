@@ -7,6 +7,7 @@ import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobException;
 import dev.failsafe.Failsafe;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -42,8 +43,7 @@ abstract public class AbstractBigquery extends AbstractTask {
             " \n" +
             " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
     )
-    @PluginProperty(dynamic = true)
-    protected String location;
+    protected Property<String> location;
 
     @Schema(
         title = "Automatic retry for retryable BigQuery exceptions.",
@@ -58,31 +58,29 @@ abstract public class AbstractBigquery extends AbstractTask {
     @Schema(
         title = "The reasons which would trigger an automatic retry."
     )
-    @PluginProperty(dynamic = true)
-    protected List<String> retryReasons = Arrays.asList(
+    protected Property<List<String>> retryReasons = Property.of(Arrays.asList(
         "rateLimitExceeded",
         "jobBackendError",
         "internalError",
         "jobInternalError"
-    );
+    ));
 
     @Builder.Default
     @Schema(
         title = "The messages which would trigger an automatic retry.",
         description = "Message is tested as a substring of the full message, and is case insensitive."
     )
-    @PluginProperty(dynamic = true)
-    protected List<String> retryMessages = Arrays.asList(
+    protected Property<List<String>> retryMessages = Property.of(Arrays.asList(
         "due to concurrent update",
         "Retrying the job may solve the problem"
-    );
+    ));
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return connection(
             runContext,
             this.credentials(runContext),
-            this.projectId,
-            this.location
+            runContext.render(this.projectId).as(String.class).orElse(null),
+            runContext.render(this.location).as(String.class).orElse(null)
         );
     }
 
@@ -97,11 +95,11 @@ abstract public class AbstractBigquery extends AbstractTask {
             .getService();
     }
 
-    protected Job waitForJob(Logger logger, Callable<Job> createJob) {
-        return this.waitForJob(logger, createJob, false);
+    protected Job waitForJob(Logger logger, Callable<Job> createJob, RunContext runContext) {
+        return this.waitForJob(logger, createJob, false, runContext);
     }
 
-    protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun) {
+    protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun, RunContext runContext) {
         return Failsafe
             .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
                     .type("exponential")
@@ -111,7 +109,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                     .maxAttempt(10)
                     .build()
                 )
-                .handleIf(throwable -> this.shouldRetry(throwable, logger))
+                .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
                 .onFailure(event -> logger.error(
                     "Stop retry, attempts {} elapsed {} seconds",
                     event.getAttemptCount(),
@@ -170,19 +168,19 @@ abstract public class AbstractBigquery extends AbstractTask {
             });
     }
 
-    private boolean shouldRetry(Throwable failure, Logger logger) {
+    private boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
         if (!(failure instanceof BigQueryException)) {
             logger.warn("Cancelled retrying, unknown exception type {}", failure.getClass(), failure);
             return false;
         }
 
         for (BigQueryError error : ((BigQueryException) failure).getErrors()) {
-            if (this.retryReasons != null && this.retryReasons.contains(error.getReason())) {
+            if (runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
                 return true;
             }
 
             if (this.retryMessages != null) {
-                for (String message: this.retryMessages) {
+                for (String message: runContext.render(this.retryMessages).asList(String.class)) {
                     if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
                         return true;
                     }

@@ -34,6 +34,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @SuperBuilder
@@ -51,7 +52,7 @@ import java.util.Map;
         code = """
             id: test_gcp_function
             namespace: com.company.test.gcp
-            
+
             tasks:
               - id: get_hello_json
                 type: io.kestra.plugin.gcp.function.HttpFunction
@@ -77,7 +78,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         description = "JSON body of the Azure function"
     )
     @Builder.Default
-    protected Property<Map<String, Object>> httpBody = Property.of(Collections.emptyMap());
+    protected Property<Map<String, Object>> httpBody = Property.of(new HashMap<>());
 
     @Schema(
         title = "Max duration",
@@ -90,8 +91,8 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
     @Override
     public Output run(RunContext runContext) throws Exception {
         IdTokenCredentials idTokenCredentials = IdTokenCredentials.newBuilder()
-            .setIdTokenProvider((ServiceAccountCredentials) this.credentials(runContext).createScoped(runContext.render(this.scopes)))
-            .setTargetAudience(this.url.as(runContext, String.class))
+            .setIdTokenProvider((ServiceAccountCredentials) this.credentials(runContext).createScoped(runContext.render(this.scopes).asList(String.class)))
+            .setTargetAudience(runContext.render(this.url).as(String.class).orElseThrow())
             .build();
 
         String token = idTokenCredentials.refreshAccessToken().getTokenValue();
@@ -99,9 +100,9 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         try (HttpClient client = this.client(runContext)) {
             Mono<HttpResponse> mono = Mono.from(client.exchange(HttpRequest
                     .create(
-                        HttpMethod.valueOf(httpMethod.as(runContext, String.class)),
-                        url.as(runContext, String.class)
-                    ).body(httpBody.asMap(runContext, String.class, Object.class))
+                        HttpMethod.valueOf(runContext.render(this.httpMethod).as(String.class).orElseThrow()),
+                        runContext.render(this.url).as(String.class).orElseThrow()
+                    ).body(runContext.render(this.httpBody).asMap(String.class, Object.class))
                     .headers(Map.of(HttpHeaders.AUTHORIZATION, "Bearer " + token)),
                 Argument.of(String.class))
             );
@@ -142,7 +143,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         httpConfig.setMaxContentLength(Integer.MAX_VALUE);
         httpConfig.setReadTimeout(HTTP_READ_TIMEOUT);
 
-        DefaultHttpClient client = (DefaultHttpClient) FACTORY.createClient(URI.create(url.as(runContext, String.class)).toURL(), httpConfig);
+        DefaultHttpClient client = (DefaultHttpClient) FACTORY.createClient(URI.create(runContext.render(this.url).as(String.class).orElseThrow()).toURL(), httpConfig);
         client.setMediaTypeCodecRegistry(mediaTypeCodecRegistry);
 
         return client;

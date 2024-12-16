@@ -5,6 +5,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.pubsub.model.SerdeType;
@@ -41,7 +42,7 @@ import java.util.Optional;
                   - id: log
                     type: io.kestra.plugin.core.log.Log
                     message: "Received: {{ trigger.data }}"
-    
+
                 triggers:
                   - id: trigger
                     type: io.kestra.plugin.gcp.pubsub.Trigger
@@ -55,14 +56,14 @@ import java.util.Optional;
 )
 public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Consume.Output>, PubSubConnectionInterface {
 
-    private String projectId;
+    private Property<String> projectId;
 
-    private String serviceAccount;
+    private Property<String> serviceAccount;
 
-    private String impersonatedServiceAccount;
+    private Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    private List<String> scopes = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+    private Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private String topic;
 

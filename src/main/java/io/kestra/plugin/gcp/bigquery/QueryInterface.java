@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.kestra.core.models.annotations.PluginProperty;
 
@@ -7,15 +8,13 @@ public interface QueryInterface {
     @Schema(
         title = "The sql query to run"
     )
-    @PluginProperty(dynamic = true)
-    String getSql();
+    Property<String> getSql();
 
     @Schema(
         title = "Whether to use BigQuery's legacy SQL dialect for this query",
         description = "By default this property is set to false."
     )
-    @PluginProperty
-    boolean isLegacySql();
+    Property<Boolean> getLegacySql();
 
     @Schema(
         title = "Whether to Fetch the data from the query result to the task output"

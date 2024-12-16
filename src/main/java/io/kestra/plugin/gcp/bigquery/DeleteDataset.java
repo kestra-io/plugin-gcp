@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -45,28 +46,26 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
     @Schema(
         title = "The dataset's user-defined id."
     )
-    @PluginProperty(dynamic = true)
-    private String name;
+    private Property<String> name;
 
     @Schema(
         title = "Whether to delete a dataset even if non-empty.",
         description = "If not provided, attempting to" +
             " delete a non-empty dataset will result in a exception being thrown."
     )
-    @PluginProperty
-    private Boolean deleteContents;
+    private Property<Boolean> deleteContents;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
-        String name = runContext.render(this.name);
+        String name = runContext.render(this.name).as(String.class).orElseThrow();
 
         logger.debug("Deleting dataset '{}'", name);
 
         boolean delete;
 
-        if (deleteContents) {
+        if (runContext.render(deleteContents).as(Boolean.class).orElse(false)) {
             delete = connection.delete(name, BigQuery.DatasetDeleteOption.deleteContents());
         } else {
             delete = connection.delete(name);

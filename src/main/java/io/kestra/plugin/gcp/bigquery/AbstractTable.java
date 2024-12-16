@@ -3,7 +3,9 @@ package io.kestra.plugin.gcp.bigquery;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.gcp.bigquery.models.EncryptionConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -25,20 +27,23 @@ abstract public class AbstractTable extends AbstractBigquery {
     @Schema(
         title = "The dataset's user-defined ID."
     )
-    @PluginProperty(dynamic = true)
-    protected String dataset;
+    protected Property<String> dataset;
 
     @NotNull
     @Schema(
         title = "The table's user-defined ID."
     )
-    @PluginProperty(dynamic = true)
-    protected String table;
+    protected Property<String> table;
 
     protected TableId tableId(RunContext runContext) throws IllegalVariableEvaluationException {
         return this.projectId != null  ?
-            TableId.of(runContext.render(this.projectId), runContext.render(this.dataset), runContext.render(this.table)) :
-            TableId.of(runContext.render(this.dataset), runContext.render(this.table));
+            TableId.of(
+                runContext.render(this.projectId).as(String.class).orElseThrow(),
+                runContext.render(this.dataset).as(String.class).orElseThrow(),
+                runContext.render(this.table).as(String.class).orElseThrow()) :
+            TableId.of(
+                runContext.render(this.dataset).as(String.class).orElseThrow(),
+                runContext.render(this.table).as(String.class).orElseThrow());
     }
 
     @Getter
@@ -118,12 +123,12 @@ abstract public class AbstractTable extends AbstractBigquery {
         @Schema(
             title = "The table definition."
         )
-        private final io.kestra.plugin.gcp.bigquery.models.TableDefinition definition;
+        private final TableDefinition.Output definition;
 
         @Schema(
             title = "The encryption configuration."
         )
-        private final io.kestra.plugin.gcp.bigquery.models.EncryptionConfiguration encryptionConfiguration;
+        private final EncryptionConfiguration.Output encryptionConfiguration;
 
         @Schema(
             title = "Return a map for labels applied to the table."

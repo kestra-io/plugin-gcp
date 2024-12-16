@@ -62,7 +62,7 @@ import java.util.Optional;
                 inputs:
                   - id: image
                     type: FILE
-                
+
                 tasks:
                   - id: multimodal_completion
                     type: io.kestra.plugin.gcp.vertexai.MultimodalCompletion
@@ -89,7 +89,7 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
 
     @Override
     public MultimodalCompletion.Output run(RunContext runContext) throws Exception {
-        String projectId = runContext.render(this.getProjectId());
+        String projectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
         String region = runContext.render(this.getRegion());
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {

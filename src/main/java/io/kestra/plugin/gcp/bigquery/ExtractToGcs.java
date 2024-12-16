@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.cloud.bigquery.*;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -39,7 +40,7 @@ import java.util.Map;
                 tasks:
                   - id: extract_to_gcs
                     type: io.kestra.plugin.gcp.bigquery.ExtractToGcs
-                    destinationUris: 
+                    destinationUris:
                       - "gs://bucket_name/filename.csv"
                     sourceTable: "my_project.my_dataset.my_table"
                     format: CSV
@@ -61,34 +62,29 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
     @Schema(
         title = "The table to export."
     )
-    @PluginProperty(dynamic = true)
-    private String sourceTable;
+    private Property<String> sourceTable;
 
     @Schema(
         title = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
             "the extracted table should be written."
     )
-    @PluginProperty(dynamic = true)
-    private List<String> destinationUris;
+    private Property<List<String>> destinationUris;
 
     @Schema(
         title = "the compression value to use for exported files. If not set exported files " +
             "are not compressed. "
     )
-    @PluginProperty(dynamic = true)
-    private String compression;
+    private Property<String> compression;
 
     @Schema(
         title = "The delimiter to use between fields in the exported data. By default \",\" is used."
     )
-    @PluginProperty(dynamic = true)
-    private String fieldDelimiter;
+    private Property<String> fieldDelimiter;
 
     @Schema(
         title = "The exported file format. If not set table is exported in CSV format. "
     )
-    @PluginProperty(dynamic = true)
-    private String format;
+    private Property<String> format;
 
     @Schema(
         title = "[Optional] Flag if format is set to \"AVRO\".",
@@ -96,15 +92,13 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
             "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
             "types (timestamp-micros), instead of only using their raw types (avro-long)."
     )
-    @PluginProperty
-    private Boolean useAvroLogicalTypes;
+    private Property<Boolean> useAvroLogicalTypes;
 
     @Schema(
         title = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
             "BigQuery may attempt to terminate the job."
     )
-    @PluginProperty
-    private Long jobTimeoutMs;
+    private Property<Long> jobTimeoutMs;
 
     @Schema(
         title = "The labels associated with this job.",
@@ -116,14 +110,12 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
             "Parameters:\n" +
             "    labels - labels or null for none "
     )
-    @PluginProperty(dynamic = true)
-    private Map<String,String> labels;
+    private Property<Map<String, String>> labels;
 
     @Schema(
         title = "Whether to print out a header row in the results. By default an header is printed."
     )
-    @PluginProperty
-    private Boolean printHeader;
+    private Property<Boolean> printHeader;
 
     @Override
     public ExtractToGcs.Output run(RunContext runContext) throws Exception {
@@ -179,7 +171,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
     private void metrics(RunContext runContext, JobStatistics.ExtractStatistics stats, Job job) throws IllegalVariableEvaluationException {
         String[] tags = {
-            "source_table", runContext.render(this.sourceTable),
+            "source_table", runContext.render(this.sourceTable).as(String.class).orElse(null),
             "project_id", job.getJobId().getProject(),
             "location", job.getJobId().getLocation(),
         };
@@ -196,45 +188,46 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
     protected ExtractJobConfiguration buildExtractJob(RunContext runContext) throws IllegalVariableEvaluationException {
         ExtractJobConfiguration.Builder builder = ExtractJobConfiguration
             .newBuilder(
-                BigQueryService.tableId(runContext.render(this.sourceTable)),
-                runContext.render(this.destinationUris)
+                BigQueryService.tableId(runContext.render(this.sourceTable).as(String.class).orElse(null)),
+                runContext.render(this.destinationUris).asList(String.class)
             );
 
         if (runContext.render(this.sourceTable) != null){
-            builder.setSourceTable(BigQueryService.tableId(runContext.render(this.sourceTable)));
+            builder.setSourceTable(BigQueryService.tableId(runContext.render(this.sourceTable).as(String.class).orElseThrow()));
         }
 
         if (runContext.render(this.destinationUris) != null){
-            builder.setDestinationUris(runContext.render(this.destinationUris));
+            builder.setDestinationUris(runContext.render(this.destinationUris).asList(String.class));
         }
 
         if (runContext.render(this.compression) != null) {
-            builder.setCompression(runContext.render(runContext.render(this.compression)));
+            builder.setCompression(runContext.render(runContext.render(this.compression).as(String.class).orElseThrow()));
         }
 
         if (runContext.render(this.fieldDelimiter) != null) {
-            builder.setFieldDelimiter(runContext.render(this.fieldDelimiter));
+            builder.setFieldDelimiter(runContext.render(this.fieldDelimiter).as(String.class).orElseThrow());
         }
 
         if (runContext.render(this.format) != null) {
-            builder.setFormat(runContext.render(this.format));
+            builder.setFormat(runContext.render(this.format).as(String.class).orElseThrow());
         }
 
         if (this.printHeader != null) {
-            builder.setPrintHeader(this.printHeader);
+            builder.setPrintHeader(runContext.render(this.printHeader).as(Boolean.class).orElseThrow());
         }
 
         if (this.jobTimeoutMs != null) {
-            builder.setJobTimeoutMs(this.jobTimeoutMs);
+            builder.setJobTimeoutMs(runContext.render(this.jobTimeoutMs).as(Long.class).orElseThrow());
         }
 
         if (this.useAvroLogicalTypes != null) {
-            builder.setUseAvroLogicalTypes(this.useAvroLogicalTypes);
+            builder.setUseAvroLogicalTypes(runContext.render(this.useAvroLogicalTypes).as(Boolean.class).orElseThrow());
         }
 
         Map<String, String> finalLabels = new HashMap<>(BigQueryService.labels(runContext));
-        if (this.labels != null) {
-            finalLabels.putAll(this.labels);
+        var renderedLbels = runContext.render(this.labels).asList(String.class);
+        if (!renderedLbels.isEmpty()) {
+            finalLabels.putAll(renderedLbels);
         }
         builder.setLabels(finalLabels);
 

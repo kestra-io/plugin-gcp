@@ -6,6 +6,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -44,18 +45,18 @@ public class SparkSqlSubmit extends AbstractSparkSubmit {
         title = "The HCFS URI of the script that contains Spark SQL queries to execute.",
         description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    protected String queryFileUri;
+    protected Property<String> queryFileUri;
 
     @Override
     protected void buildBatch(Batch.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException {
         SparkSqlBatch.Builder sparkBuilder = SparkSqlBatch.newBuilder();
 
-        sparkBuilder.setQueryFileUri(runContext.render(queryFileUri));
+        sparkBuilder.setQueryFileUri(runContext.render(queryFileUri).as(String.class).orElseThrow());
 
-        if (this.jarFileUris != null) {
-            sparkBuilder.addAllJarFileUris(runContext.render(this.jarFileUris));
+        var renderedJarFileUris = runContext.render(this.jarFileUris).asList(String.class);
+        if (!renderedJarFileUris.isEmpty()) {
+            sparkBuilder.addAllJarFileUris(renderedJarFileUris);
         }
 
         builder.setSparkSqlBatch(sparkBuilder.build());

@@ -8,6 +8,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -56,17 +57,15 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
         title = "The source tables.",
         description = "Can be table or partitions."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private List<String> sourceTables;
+    private Property<List<String>> sourceTables;
 
     @Schema(
         title = "The destination table.",
         description = "If not provided a new table is created."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String destinationTable;
+    private Property<String> destinationTable;
 
     @Schema(
         title = "Sets the supported operation types in table copy job.",
@@ -76,9 +75,8 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
             "* `RESTORE`: The source table type is SNAPSHOT and the destination table type is TABLE.\n" +
             "* `CLONE`: The source and destination table have the same table type, but only bill for unique data."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private OperationType operationType;
+    private Property<OperationType> operationType;
 
     @Override
     public Copy.Output run(RunContext runContext) throws Exception {
@@ -96,8 +94,8 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
                     .setJobId(BigQueryService.jobId(runContext, this))
                     .build()
                 ),
-            this.dryRun
-        );
+            runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
+            runContext);
 
         JobStatistics.CopyStatistics copyJobStatistics = copyJob.getStatistics();
 
@@ -111,28 +109,28 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
 
     protected CopyJobConfiguration jobConfiguration(RunContext runContext) throws IllegalVariableEvaluationException {
         CopyJobConfiguration.Builder builder = CopyJobConfiguration.newBuilder(
-            BigQueryService.tableId(runContext.render(this.destinationTable)),
-            runContext.render(this.sourceTables).stream().map(BigQueryService::tableId).collect(Collectors.toList())
+            BigQueryService.tableId(runContext.render(this.destinationTable).as(String.class).orElseThrow()),
+            runContext.render(this.sourceTables).asList(String.class).stream().map(BigQueryService::tableId).collect(Collectors.toList())
         );
 
         if (this.writeDisposition != null) {
-            builder.setWriteDisposition(this.writeDisposition);
+            builder.setWriteDisposition(runContext.render(this.writeDisposition).as(JobInfo.WriteDisposition.class).orElseThrow());
         }
 
         if (this.createDisposition != null) {
-            builder.setCreateDisposition(this.createDisposition);
+            builder.setCreateDisposition(runContext.render(this.createDisposition).as(JobInfo.CreateDisposition.class).orElseThrow());
         }
 
         if (this.operationType != null) {
-            builder.setOperationType(this.operationType.name());
+            builder.setOperationType(runContext.render(this.operationType).as(OperationType.class).orElseThrow().name());
         }
 
         if (this.labels != null) {
-            builder.setLabels(this.labels);
+            builder.setLabels(runContext.render(this.labels).asMap(String.class, String.class ));
         }
 
         if (this.jobTimeout != null) {
-            builder.setJobTimeoutMs(this.jobTimeout.toMillis());
+            builder.setJobTimeoutMs(runContext.render(this.jobTimeout).as(Duration.class).orElseThrow().toMillis());
         }
 
         builder.setLabels(BigQueryService.labels(runContext));

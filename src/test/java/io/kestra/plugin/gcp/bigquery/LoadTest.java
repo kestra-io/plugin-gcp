@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.apache.commons.io.IOUtils;
@@ -51,13 +52,13 @@ class LoadTest {
         Load task = Load.builder()
             .id(LoadTest.class.getSimpleName())
             .type(Load.class.getName())
-            .from(source.toString())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+            .from(Property.of(source.toString()))
+            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .format(AbstractLoad.Format.CSV)
-            .autodetect(true)
+            .autodetect(Property.of(true))
             .csvOptions(AbstractLoad.CsvOptions.builder()
-                .fieldDelimiter("|")
-                .allowJaggedRows(true)
+                .fieldDelimiter(Property.of("|"))
+                .allowJaggedRows(Property.of(true))
                 .build()
             )
             .build();
@@ -83,11 +84,11 @@ class LoadTest {
         Load task = Load.builder()
             .id(LoadTest.class.getSimpleName())
             .type(Load.class.getName())
-            .from(source.toString())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+            .from(Property.of(source.toString()))
+            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .format(AbstractLoad.Format.AVRO)
             .avroOptions(AbstractLoad.AvroOptions.builder()
-                .useAvroLogicalTypes(true)
+                .useAvroLogicalTypes(Property.of(true))
                 .build()
             )
             .build();
@@ -111,13 +112,13 @@ class LoadTest {
         Load.LoadBuilder<?, ?> task = Load.builder()
             .id(LoadTest.class.getSimpleName())
             .type(Load.class.getName())
-            .from(source.toString())
-            .destinationTable(project + "." + dataset + "." + FriendlyId.createFriendlyId())
+            .from(Property.of(source.toString()))
+            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .format(AbstractLoad.Format.CSV)
-            .autodetect(true)
+            .autodetect(Property.of(true))
             .csvOptions(AbstractLoad.CsvOptions.builder()
-                .fieldDelimiter("|")
-                .allowJaggedRows(true)
+                .fieldDelimiter(Property.of("|"))
+                .allowJaggedRows(Property.of(true))
                 .build()
             );
 
@@ -126,7 +127,7 @@ class LoadTest {
         Exception exception = assertThrows(Exception.class, () -> task.build().run(runContext));
         assertThat(exception.getMessage(), containsString("Can't load an empty file"));
 
-        AbstractLoad.Output run = task.failedOnEmpty(false).build().run(runContext);
+        AbstractLoad.Output run = task.failedOnEmpty(Property.of(false)).build().run(runContext);
         assertThat(run.getRows(), is(0L));
     }
 }
