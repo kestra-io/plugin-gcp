@@ -5,6 +5,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
@@ -69,10 +70,9 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     private Object from;
 
     @Builder.Default
-    @PluginProperty
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private SerdeType serdeType = SerdeType.STRING;
+    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
 
     @Override
     public Publish.Output run(RunContext runContext) throws Exception {
@@ -104,13 +104,13 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
             count = resultFlowable.reduce(Integer::sum).blockOptional().orElse(0);
         } else {
             var msg = JacksonMapper.toMap(this.from, Message.class);
-            publisher.publish(msg.to(runContext, this.serdeType));
+            publisher.publish(msg.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow()));
         }
 
         publisher.shutdown();
 
         // metrics
-        runContext.metric(Counter.of("records", count, "topic", runContext.render(this.getTopic())));
+        runContext.metric(Counter.of("records", count, "topic", runContext.render(this.getTopic()).as(String.class).orElseThrow()));
 
         return Output.builder()
             .messagesCount(count)
@@ -120,7 +120,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     private Flux<Integer> buildFlowable(Flux<Message> flowable, Publisher publisher, RunContext runContext) throws Exception {
         return flowable
             .map(throwFunction(message -> {
-                publisher.publish(message.to(runContext, this.serdeType));
+                publisher.publish(message.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow()));
                 return 1;
             }));
     }

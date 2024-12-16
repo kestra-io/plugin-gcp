@@ -11,6 +11,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.flows.State;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -90,11 +91,19 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Override
     public MultimodalCompletion.Output run(RunContext runContext) throws Exception {
         String projectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
-        String region = runContext.render(this.getRegion());
+        String region = runContext.render(this.getRegion()).as(String.class).orElseThrow();
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
             var model = buildModel(MODEL_ID, vertexAI);
-            var parts = contents.stream().map( content -> content.getMimeType() == null ? content.getContent() : createPart(runContext, content)).toList();
+            var parts = contents.stream()
+                .map( content -> {
+                    try {
+                        return content.getMimeType() == null ? runContext.render(content.getContent()).as(String.class).orElseThrow() : createPart(runContext, content);
+                    } catch (IllegalVariableEvaluationException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
 
             var response = model.generateContent(ContentMaker.fromMultiModalData(parts.toArray()));
             runContext.logger().debug(response.toString());
@@ -103,7 +112,11 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
 
             var finishReason = ResponseHandler.getFinishReason(response);
             var safetyRatings = response.getCandidates(0).getSafetyRatingsList().stream()
-                .map(safetyRating -> new SafetyRating(safetyRating.getCategory().name(), safetyRating.getProbability().name(), safetyRating.getBlocked()))
+                .map(safetyRating -> new SafetyRating(
+                    safetyRating.getCategory().name(),
+                    safetyRating.getProbability().name(),
+                    safetyRating.getBlocked())
+                )
                 .toList();
             var output = Output.builder()
                 .finishReason(finishReason.name())
@@ -126,9 +139,9 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     }
 
     private Part createPart(RunContext runContext, Content content) {
-        try (InputStream is = runContext.storage().getFile(URI.create(runContext.render(content.getContent())))) {
+        try (InputStream is = runContext.storage().getFile(URI.create(runContext.render(content.getContent()).as(String.class).orElseThrow()))) {
             byte[] partBytes = is.readAllBytes();
-            return PartMaker.fromMimeTypeAndData(content.mimeType, partBytes);
+            return PartMaker.fromMimeTypeAndData(runContext.render(content.mimeType).as(String.class).orElseThrow(), partBytes);
         } catch (IllegalVariableEvaluationException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -168,16 +181,14 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
         @Schema(
             title = "Mime type of the content, use it only when the content is not text."
         )
-        @PluginProperty(dynamic = true)
-        String mimeType;
+        Property<String> mimeType;
 
         @Schema(
             title = "The content itself, should be a string for text content or a Kestra internal storage URI for other content types.",
             description = "If the content is not text, the `mimeType` property must be set."
         )
-        @PluginProperty
         @NotNull
-        String content;
+        Property<String> content;
     }
 
     @Value

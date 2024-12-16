@@ -9,6 +9,7 @@ import com.google.cloud.aiplatform.v1.LocationName;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
@@ -63,16 +64,14 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     @Schema(
         title = "The GCP region."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String region;
+    private Property<String> region;
 
     @Schema(
         title = "The job display name."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String displayName;
+    private Property<String> displayName;
 
     @Schema(
         title = "The job specification."
@@ -85,18 +84,16 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
         title = "Wait for the end of the job.",
         description = "Allowing to capture job status & logs."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
     @Builder.Default
-    private Boolean wait = true;
+    private Property<Boolean> wait = Property.of(true);
 
     @Schema(
         title = "Delete the job at the end."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
     @Builder.Default
-    private Boolean delete = true;
+    private Property<Boolean> delete = Property.of(true);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -106,11 +103,11 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
         AtomicBoolean stopLog = new AtomicBoolean(false);
 
         JobServiceSettings pipelineServiceSettings = JobServiceSettings.newBuilder()
-            .setEndpoint(runContext.render(this.region) + "-aiplatform.googleapis.com:443")
+            .setEndpoint(runContext.render(this.region).as(String.class).orElseThrow() + "-aiplatform.googleapis.com:443")
             .setCredentialsProvider(fixedCredentialsProvider)
             .build();
 
-        String jobName = runContext.render(this.displayName);
+        String jobName = runContext.render(this.displayName).as(String.class).orElseThrow();
 
         try (JobServiceClient client = JobServiceClient.create(pipelineServiceSettings)) {
             com.google.cloud.aiplatform.v1.CustomJob.Builder builder = com.google.cloud.aiplatform.v1.CustomJob.newBuilder()
@@ -119,7 +116,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
 
             LocationName parent = LocationName.of(
                 runContext.render(this.projectId).as(String.class).orElse(null),
-                runContext.render(this.region)
+                runContext.render(this.region).as(String.class).orElseThrow()
             );
 
             com.google.cloud.aiplatform.v1.CustomJob response = client.createCustomJob(parent, builder.build());
@@ -152,7 +149,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                     stopLog
                 );
 
-                if (this.wait) {
+                if (runContext.render(this.wait).as(Boolean.class).orElseThrow()) {
                     com.google.cloud.aiplatform.v1.CustomJob result = Await.until(
                         () -> {
                             com.google.cloud.aiplatform.v1.CustomJob customJob = client.getCustomJob(response.getName());
@@ -181,7 +178,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                     // wait for logs
                     tailThread.join();
 
-                    if (this.delete) {
+                    if (runContext.render(this.delete).as(Boolean.class).orElseThrow()) {
                         client.deleteCustomJobAsync(response.getName()).get();
                         logger.info("Job {} is deleted", response.getName());
                     }

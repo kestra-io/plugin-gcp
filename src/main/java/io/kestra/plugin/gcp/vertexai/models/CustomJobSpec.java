@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.vertexai.models;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -35,8 +36,7 @@ public class CustomJobSpec {
             "       Agent](https://cloud.google.com/vertex-ai/docs/general/access-control#service-agents)\n" +
             "       for the CustomJob's project is used."
     )
-    @PluginProperty(dynamic = true)
-    private String serviceAccount;
+    private Property<String> serviceAccount;
 
     @Schema(
         title = "The full name of the Compute Engine [network](https://cloud.google.com/compute/docs/networks-and-firewalls#networks) to which the Job should be peered.",
@@ -46,8 +46,7 @@ public class CustomJobSpec {
             "To specify this field, you must have already [configured VPC Network Peering for Vertex AI](https://cloud.google.com/vertex-ai/docs/general/vpc-peering).\n" +
             "If this field is left unspecified, the job is not peered with any network."
     )
-    @PluginProperty(dynamic = true)
-    private String network;
+    private Property<String> network;
 
     @Schema(
         title = "The name of a Vertex AI Tensorboard resource to which this CustomJob",
@@ -59,8 +58,7 @@ public class CustomJobSpec {
     @Schema(
         title = "Whether you want Vertex AI to enable [interactive shell access](https://cloud.google.com/vertex-ai/docs/training/monitor-debug-interactive-shell) to training containers."
     )
-    @PluginProperty(dynamic = false)
-    private Boolean enableWebAccess;
+    private Property<Boolean> enableWebAccess;
 
     @Schema(
         title = "Scheduling options for a CustomJob."
@@ -83,11 +81,11 @@ public class CustomJobSpec {
             .forEach(builder::addWorkerPoolSpecs);
 
         if (this.getServiceAccount() != null) {
-            builder.setServiceAccount(runContext.render(this.getServiceAccount()));
+            builder.setServiceAccount(runContext.render(this.getServiceAccount()).as(String.class).orElseThrow());
         }
 
         if (this.getNetwork() != null) {
-            builder.setNetwork(runContext.render(this.getNetwork()));
+            builder.setNetwork(runContext.render(this.getNetwork()).as(String.class).orElseThrow());
         }
 
         if (this.getTensorboard() != null) {
@@ -95,7 +93,7 @@ public class CustomJobSpec {
         }
 
         if (this.getEnableWebAccess() != null) {
-            builder.setEnableWebAccess(this.getEnableWebAccess());
+            builder.setEnableWebAccess(runContext.render(this.getEnableWebAccess()).as(Boolean.class).orElseThrow());
         }
 
         if (this.getScheduling() != null) {

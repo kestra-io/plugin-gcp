@@ -6,6 +6,7 @@ import com.google.cloud.vertexai.generativeai.ContentMaker;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -90,7 +91,7 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
     @Override
     public Output run(RunContext runContext) throws Exception {
         String projectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
-        String region = runContext.render(this.getRegion());
+        String region = runContext.render(this.getRegion()).as(String.class).orElseThrow();
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
             var model = buildModel(MODEL_ID, vertexAI);
@@ -98,7 +99,7 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
 
             if (history != null) {
                 List<com.google.cloud.vertexai.api.Content> historyContents = history.stream()
-                    .map(throwFunction(message -> ContentMaker.fromString(runContext.render(message.content))))
+                    .map(throwFunction(message -> ContentMaker.fromString(runContext.render(message.content).as(String.class).orElseThrow())))
                     .toList();
                 chatSession.setHistory(historyContents);
             }
@@ -108,7 +109,7 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
             }
 
             List<GenerateContentResponse> responses = messages.stream()
-                .map(throwFunction(message -> chatSession.sendMessage(runContext.render(message.content))))
+                .map(throwFunction(message -> chatSession.sendMessage(runContext.render(message.content).as(String.class).orElseThrow())))
                 .toList();
 
 
@@ -144,9 +145,8 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
         @PluginProperty(dynamic = true)
         private String author;
 
-        @PluginProperty(dynamic = true)
         @NotNull
-        private String content;
+        private Property<String> content;
     }
 
     @Builder
