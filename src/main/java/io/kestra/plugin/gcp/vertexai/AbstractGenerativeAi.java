@@ -5,6 +5,7 @@ import com.google.cloud.vertexai.api.*;
 import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,9 +33,8 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     @Schema(
         title = "The GCP region."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String region;
+    private Property<String> region;
 
     @Builder.Default
     @Schema(
