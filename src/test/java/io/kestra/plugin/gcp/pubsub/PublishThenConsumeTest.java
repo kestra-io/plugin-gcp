@@ -41,7 +41,7 @@ class PublishThenConsumeTest {
 
         var publish = Publish.builder()
             .projectId(Property.of(project))
-            .topic("test-topic")
+            .topic(Property.of("test-topic"))
             .from(
                 List.of(
                     Message.builder().data("Hello World").build(),
@@ -55,9 +55,9 @@ class PublishThenConsumeTest {
 
         var consume = Consume.builder()
             .projectId(Property.of(project))
-            .topic("test-topic")
-            .subscription("test-subscription")
-            .maxRecords(2)
+            .topic(Property.of("test-topic"))
+            .subscription(Property.of("test-subscription"))
+            .maxRecords(Property.of(2))
             .build();
 
         var consumeOutput = consume.run(runContextFactory.of());
@@ -70,8 +70,8 @@ class PublishThenConsumeTest {
 
         var publish = Publish.builder()
             .projectId(Property.of(project))
-            .topic("test-topic")
-            .serdeType(SerdeType.JSON)
+            .topic(Property.of("test-topic"))
+            .serdeType(Property.of(SerdeType.JSON))
             .from(
                 List.of(
                     Message.builder().data("""
@@ -85,10 +85,10 @@ class PublishThenConsumeTest {
 
         var consume = Consume.builder()
             .projectId(Property.of(project))
-            .topic("test-topic")
-            .serdeType(SerdeType.JSON)
-            .subscription("test-subscription")
-            .maxRecords(1)
+            .topic(Property.of("test-topic"))
+            .serdeType(Property.of(SerdeType.JSON))
+            .subscription(Property.of("test-subscription"))
+            .maxRecords(Property.of(1))
             .build();
 
         var consumeOutput = consume.run(runContextFactory.of());
@@ -102,7 +102,7 @@ class PublishThenConsumeTest {
 
         var publish = Publish.builder()
             .projectId(Property.of(project))
-            .topic("test-topic")
+            .topic(Property.of("test-topic"))
             .from(uri.toString())
             .build();
 
@@ -112,9 +112,9 @@ class PublishThenConsumeTest {
 
         var consume = Consume.builder()
             .projectId(Property.of(project))
-            .topic("test-topic")
-            .subscription("test-subscription")
-            .maxRecords(2)
+            .topic(Property.of("test-topic"))
+            .subscription(Property.of("test-subscription"))
+            .maxRecords(Property.of(2))
             .build();
 
         var consumeOutput = consume.run(runContextFactory.of());

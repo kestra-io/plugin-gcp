@@ -4,6 +4,7 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.container.v1.ClusterManagerClient;
 import com.google.cloud.container.v1.ClusterManagerSettings;
 import com.google.container.v1.Cluster;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -52,20 +53,17 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
     @Schema(
         title = "Cluster ID whose metadata needs to be fetched."
     )
-    @PluginProperty(dynamic = true)
-    private String clusterId;
+    private Property<String> clusterId;
 
     @Schema(
         title = "GCP zone in which the GKE cluster is present."
     )
-    @PluginProperty(dynamic = true)
-    private String clusterZone;
+    private Property<String> clusterZone;
 
     @Schema(
         title = "GCP project ID where the GKE cluster is present."
     )
-    @PluginProperty(dynamic = true)
-    private String clusterProjectId;
+    private Property<String> clusterProjectId;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -79,8 +77,8 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
             .clusterIpv4Cidr(cluster.getClusterIpv4Cidr())
             .subNetwork(cluster.getSubnetwork())
             .endpoint(cluster.getEndpoint())
-            .zone(clusterZone)
-            .project(clusterProjectId)
+            .zone(runContext.render(clusterZone).as(String.class).orElse(null))
+            .project(runContext.render(clusterProjectId).as(String.class).orElse(null))
             .createTime(cluster.getCreateTime())
             .nodePoolsCount(cluster.getNodePoolsCount())
             .nodePools(cluster.getNodePoolsList()
@@ -111,9 +109,9 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
 
         try (ClusterManagerClient client = ClusterManagerClient.create(clusterManagerSettings)) {
             return client.getCluster(
-                runContext.render(clusterProjectId),
-                runContext.render(clusterZone),
-                runContext.render(clusterId)
+                runContext.render(clusterProjectId).as(String.class).orElse(null),
+                runContext.render(clusterZone).as(String.class).orElse(null),
+                runContext.render(clusterId).as(String.class).orElse(null)
             );
         }
     }

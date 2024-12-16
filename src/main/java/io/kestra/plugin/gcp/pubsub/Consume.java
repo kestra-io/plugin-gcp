@@ -3,10 +3,11 @@ package io.kestra.plugin.gcp.pubsub;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
@@ -60,30 +61,25 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         title = "The Pub/Sub subscription.",
         description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String subscription;
+    private Property<String> subscription;
 
     @Schema(
         title = "Whether the Pub/Sub subscription should be created if not exists."
     )
-    @PluginProperty
     @Builder.Default
-    private Boolean autoCreateSubscription = true;
+    private Property<Boolean> autoCreateSubscription = Property.of(true);
 
-    @PluginProperty
     @Schema(title = "Max number of records, when reached the task will end.")
-    private Integer maxRecords;
+    private Property<Integer> maxRecords;
 
-    @PluginProperty
     @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
-    private Duration maxDuration;
+    private Property<Duration> maxDuration;
 
     @Builder.Default
-    @PluginProperty
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private SerdeType serdeType = SerdeType.STRING;
+    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -91,7 +87,11 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             throw new IllegalArgumentException("'maxDuration' or 'maxRecords' must be set to avoid an infinite loop");
         }
 
-        var subscriptionName = this.createSubscription(runContext, subscription, autoCreateSubscription);
+        var subscriptionName = this.createSubscription(
+            runContext,
+            runContext.render(subscription).as(String.class).orElseThrow(),
+            runContext.render(autoCreateSubscription).as(Boolean.class).orElseThrow()
+        );
         var total = new AtomicInteger();
         var started = ZonedDateTime.now();
         var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
@@ -100,7 +100,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             AtomicReference<Exception> threadException = new AtomicReference<>();
             MessageReceiver receiver = (message, consumer) -> {
                 try {
-                    FileSerde.write(outputFile, Message.of(message, serdeType));
+                    FileSerde.write(outputFile, Message.of(message, runContext.render(serdeType).as(SerdeType.class).orElseThrow()));
                     total.getAndIncrement();
                     consumer.ack();
                 }
@@ -114,7 +114,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                 .build();
             subscriber.startAsync().awaitRunning();
 
-            while (!this.ended(total, started)) {
+            while (!this.ended(total, started, runContext)) {
                 if (threadException.get() != null) {
                     subscriber.stopAsync().awaitTerminated();
                     throw threadException.get();
@@ -123,7 +123,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             }
             subscriber.stopAsync().awaitTerminated();
 
-            runContext.metric(Counter.of("records", total.get(), "topic", runContext.render(this.getTopic())));
+            runContext.metric(Counter.of("records", total.get(), "topic", runContext.render(this.getTopic()).as(String.class).orElseThrow()));
             outputFile.flush();
         }
         return Output.builder()
@@ -132,15 +132,14 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             .build();
     }
 
-    private boolean ended(AtomicInteger count, ZonedDateTime start) {
-        if (this.maxRecords != null && count.get() >= this.maxRecords) {
-            return true;
-        }
-        if (this.maxDuration != null && ZonedDateTime.now().toEpochSecond() > start.plus(this.maxDuration).toEpochSecond()) {
+    private boolean ended(AtomicInteger count, ZonedDateTime start, RunContext runContext) throws IllegalVariableEvaluationException {
+        var max = runContext.render(this.maxRecords).as(Integer.class);
+        if (max.isPresent() && count.get() >= max.get()) {
             return true;
         }
 
-        return false;
+        var duration = runContext.render(this.maxDuration).as(Duration.class);
+        return duration.isPresent() && ZonedDateTime.now().toEpochSecond() > start.plus(duration.get()).toEpochSecond();
     }
 
     @Builder

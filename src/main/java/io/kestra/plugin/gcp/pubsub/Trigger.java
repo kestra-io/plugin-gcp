@@ -65,38 +65,33 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     private Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
-    private String topic;
+    private Property<String> topic;
 
     @Schema(
         title = "The Pub/Sub subscription",
         description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
     )
-    @PluginProperty(dynamic = true)
-    private String subscription;
+    private Property<String> subscription;
 
     @Schema(
         title = "Whether the Pub/Sub subscription should be created if not exist"
     )
-    @PluginProperty
     @Builder.Default
-    private Boolean autoCreateSubscription = true;
+    private Property<Boolean> autoCreateSubscription = Property.of(true);
 
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
-    @PluginProperty
     @Schema(title = "Max number of records, when reached the task will end.")
-    private Integer maxRecords;
+    private Property<Integer> maxRecords;
 
-    @PluginProperty
     @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
-    private Duration maxDuration;
+    private Property<Duration> maxDuration;
 
     @Builder.Default
-    @PluginProperty
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private SerdeType serdeType = SerdeType.STRING;
+    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
 
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {

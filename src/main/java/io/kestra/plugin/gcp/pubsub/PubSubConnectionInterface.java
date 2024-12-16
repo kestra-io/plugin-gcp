@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.pubsub;
 
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.gcp.GcpInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -13,5 +14,5 @@ public interface PubSubConnectionInterface extends GcpInterface {
     )
     @PluginProperty(dynamic = true)
     @NotNull
-    String getTopic();
+    Property<String> getTopic();
 }

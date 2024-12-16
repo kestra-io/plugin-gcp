@@ -84,7 +84,7 @@ class RealtimeTriggerTest {
             Publish task = Publish.builder()
                 .id(Publish.class.getSimpleName())
                 .type(Publish.class.getName())
-                .topic("test-topic")
+                .topic(Property.of("test-topic"))
                 .projectId(Property.of(this.project))
                 .from(
                     List.of(

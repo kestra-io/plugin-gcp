@@ -78,38 +78,33 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
     @Builder.Default
     private Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
-    private String topic;
+    private Property<String> topic;
 
     @Schema(
         title = "The Pub/Sub subscription",
         description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
     )
-    @PluginProperty(dynamic = true)
-    private String subscription;
+    private Property<String> subscription;
 
     @Schema(
         title = "Whether the Pub/Sub subscription should be created if not exist"
     )
-    @PluginProperty
     @Builder.Default
-    private Boolean autoCreateSubscription = true;
+    private Property<Boolean> autoCreateSubscription = Property.of(true);
 
     @Builder.Default
-    private final Duration interval = Duration.ofSeconds(60);
+    private final Property<Duration> interval = Property.of(Duration.ofSeconds(60));
 
-    @PluginProperty
     @Schema(title = "Max number of records, when reached the task will end.")
-    private Integer maxRecords;
+    private Property<Integer> maxRecords;
 
-    @PluginProperty
     @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
-    private Duration maxDuration;
+    private Property<Duration> maxDuration;
 
     @Builder.Default
-    @PluginProperty
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private SerdeType serdeType = SerdeType.STRING;
+    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
@@ -142,15 +137,20 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
     }
 
     private Publisher<Message> publisher(final Consume task, final RunContext runContext) throws Exception {
-        ProjectSubscriptionName subscriptionName = task.createSubscription(runContext, subscription, autoCreateSubscription);
+        ProjectSubscriptionName subscriptionName = task.createSubscription(
+            runContext,
+            runContext.render(subscription).as(String.class).orElse(null),
+            runContext.render(autoCreateSubscription).as(Boolean.class).orElse(true)
+        );
         GoogleCredentials credentials = task.credentials(runContext);
 
+        var serdeTypeRendered = runContext.render(serdeType).as(SerdeType.class).orElseThrow();
         return Flux.create(
             emitter -> {
                 AtomicInteger total = new AtomicInteger();
                 final MessageReceiver receiver = (message, consumer) -> {
                     try {
-                        emitter.next(Message.of(message, serdeType));
+                        emitter.next(Message.of(message, serdeTypeRendered));
                         total.getAndIncrement();
                         consumer.ack();
                     }  catch(Exception exception) {

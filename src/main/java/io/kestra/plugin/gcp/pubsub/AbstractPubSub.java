@@ -6,8 +6,10 @@ import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
 import com.google.pubsub.v1.*;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,11 +27,12 @@ import java.util.stream.StreamSupport;
 @Getter
 @NoArgsConstructor
 abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionInterface {
-    private String topic;
+    @NotNull
+    private Property<String> topic;
 
     Publisher createPublisher(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
 
-        TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic));
+        TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic).as(String.class).orElseThrow());
         return Publisher.newBuilder(topicName)
             .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
@@ -38,7 +41,7 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
 
     public ProjectSubscriptionName createSubscription(RunContext runContext, String subscription, boolean autoCreateSubscription) throws IOException, IllegalVariableEvaluationException {
 
-        TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic));
+        TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic).as(String.class).orElseThrow());
         ProjectSubscriptionName subscriptionName = ProjectSubscriptionName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(subscription));
 
         if(autoCreateSubscription) {
