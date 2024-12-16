@@ -27,8 +27,8 @@ class SetTest {
 
         var set = Set.builder()
             .projectId(Property.of(project))
-            .collection("persons")
-            .childPath("1")
+            .collection(Property.of("persons"))
+            .childPath(Property.of("1"))
             .document(Map.of("firstname", "John",
                 "lastname", "Doe"
             ))
@@ -50,8 +50,8 @@ class SetTest {
 
         var set = Set.builder()
             .projectId(Property.of(project))
-            .collection("persons")
-            .childPath("2")
+            .collection(Property.of("persons"))
+            .childPath(Property.of("2"))
             .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
             .build();
 
@@ -71,8 +71,8 @@ class SetTest {
 
         var set = Set.builder()
             .projectId(Property.of(project))
-            .collection("persons")
-            .childPath("3")
+            .collection(Property.of("persons"))
+            .childPath(Property.of("3"))
             .document(null)
             .build();
 

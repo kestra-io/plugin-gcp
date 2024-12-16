@@ -8,6 +8,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -51,7 +52,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
                   - id: query
                     type: io.kestra.plugin.gcp.firestore.Query
                     collection: "persons"
-                    filters: 
+                    filters:
                       - field: "lastname"
                         value: "Doe"
                 """
@@ -67,8 +68,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             + "NONE do nothing."
     )
     @Builder.Default
-    @PluginProperty
-    private FetchType fetchType = FetchType.STORE;
+    private Property<FetchType> fetchType = Property.of(FetchType.STORE);
 
     @Schema(
         title = "List of query filters that will be added as a where clause."
@@ -79,27 +79,23 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     @Schema(
         title = "Field name for the order by clause."
     )
-    @PluginProperty
-    private String orderBy;
+    private Property<String> orderBy;
 
     @Schema(
         title = "Field name for the order by clause."
     )
-    @PluginProperty
     @Builder.Default
-    private Direction orderDirection = Direction.ASCENDING;
+    private Property<Direction> orderDirection = Property.of(Direction.ASCENDING);
 
     @Schema(
         title = "Start offset for pagination of the query results."
     )
-    @PluginProperty
-    private Integer offset;
+    private Property<Integer> offset;
 
     @Schema(
         title = "Maximum numbers of returned results."
     )
-    @PluginProperty
-    private Integer limit;
+    private Property<Integer> limit;
 
     @Override
     public FetchOutput run(RunContext runContext) throws Exception {
@@ -109,21 +105,24 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             var query = getQuery(runContext, collectionRef, this.filters);
 
             if (this.orderBy != null) {
-                query.orderBy(this.orderBy, this.orderDirection);
+                query.orderBy(
+                    runContext.render(this.orderBy).as(String.class).orElseThrow(),
+                    runContext.render(this.orderDirection).as(Direction.class).orElseThrow()
+                );
             }
 
             if (this.offset != null) {
-                query.offset(this.offset);
+                query.offset(runContext.render(this.offset).as(Integer.class).orElseThrow());
             }
 
             if (this.limit != null) {
-                query.limit(this.limit);
+                query.limit(runContext.render(this.limit).as(Integer.class).orElseThrow());
             }
 
             var queryDocumentSnapshots = query.get().get().getDocuments();
 
             var outputBuilder = FetchOutput.builder();
-            switch (fetchType) {
+            switch (runContext.render(fetchType).as(FetchType.class).orElseThrow()) {
                 case FETCH:
                     Pair<List<Object>, Long> fetch = this.fetch(queryDocumentSnapshots);
                     outputBuilder
@@ -175,24 +174,42 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     private com.google.cloud.firestore.Query appendQueryPart(RunContext runContext, com.google.cloud.firestore.Query query,
                                                              Filter filter)
         throws IllegalVariableEvaluationException {
-        switch (filter.getOperator()) {
+        switch (runContext.render(filter.getOperator()).as(QueryOperator.class).orElseThrow()) {
             case EQUAL_TO: {
-                return query.whereEqualTo(filter.getField(), runContext.render(filter.getValue()));
+                return query.whereEqualTo(
+                    runContext.render(filter.getField()).as(String.class).orElseThrow(),
+                    runContext.render(filter.getValue()).as(String.class).orElse(null)
+                );
             }
             case NOT_EQUAL_TO: {
-                return query.whereNotEqualTo(filter.getField(), runContext.render(filter.getValue()));
+                return query.whereNotEqualTo(
+                    runContext.render(filter.getField()).as(String.class).orElseThrow(),
+                    runContext.render(filter.getValue()).as(String.class).orElse(null)
+                );
             }
             case LESS_THAN: {
-                return query.whereLessThan(filter.getField(), runContext.render(filter.getValue()));
+                return query.whereLessThan(
+                    runContext.render(filter.getField()).as(String.class).orElseThrow(),
+                    runContext.render(filter.getValue()).as(String.class).orElseThrow()
+                );
             }
             case LESS_THAN_OR_EQUAL_TO: {
-                return query.whereLessThanOrEqualTo(filter.getField(), runContext.render(filter.getValue()));
+                return query.whereLessThanOrEqualTo(
+                    runContext.render(filter.getField()).as(String.class).orElseThrow(),
+                    runContext.render(filter.getValue()).as(String.class).orElseThrow()
+                );
             }
             case GREATER_THAN: {
-                return query.whereGreaterThan(filter.getField(), runContext.render(filter.getValue()));
+                return query.whereGreaterThan(
+                    runContext.render(filter.getField()).as(String.class).orElseThrow(),
+                    runContext.render(filter.getValue()).as(String.class).orElseThrow()
+                );
             }
             case GREATER_THAN_OR_EQUAL_TO: {
-                return query.whereGreaterThanOrEqualTo(filter.getField(), runContext.render(filter.getValue()));
+                return query.whereGreaterThanOrEqualTo(
+                    runContext.render(filter.getField()).as(String.class).orElseThrow(),
+                    runContext.render(filter.getValue()).as(String.class).orElseThrow()
+                );
             }
             // more where clause could be supported, but we need to validate that the value is a List
         }
@@ -245,24 +262,21 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         @Schema(
             title = "Field name for the filter."
         )
-        @PluginProperty(dynamic = false)
         @NotNull
-        private String field;
+        private Property<String> field;
 
         @Schema(
             title = "Field value for the filter.",
             description = "Field value for the filter. Only strings are supported at the moment."
         )
-        @PluginProperty(dynamic = true)
         @NotNull
-        private String value;
+        private Property<String> value;
 
         @Schema(
             title = "The operator for the filter, by default EQUAL_TO that will call 'collection.whereEqualTo(name, value)'"
         )
-        @PluginProperty(dynamic = false)
         @Builder.Default
-        private QueryOperator operator = QueryOperator.EQUAL_TO;
+        private Property<QueryOperator> operator = Property.of(QueryOperator.EQUAL_TO);
     }
 
     public enum QueryOperator {

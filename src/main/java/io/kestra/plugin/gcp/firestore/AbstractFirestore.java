@@ -5,6 +5,7 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreOptions;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,8 +27,7 @@ abstract class AbstractFirestore extends AbstractTask {
     @Schema(
         title = "The Firestore collection"
     )
-    @PluginProperty(dynamic = true)
-    protected String collection;
+    protected Property<String> collection;
 
     Firestore connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return FirestoreOptions.newBuilder()
@@ -39,6 +39,6 @@ abstract class AbstractFirestore extends AbstractTask {
     }
 
     CollectionReference collection(RunContext runContext, Firestore firestore) throws IllegalVariableEvaluationException {
-        return firestore.collection(runContext.render(collection));
+        return firestore.collection(runContext.render(collection).as(String.class).orElse(null));
     }
 }

@@ -26,8 +26,8 @@ class GetTest {
 
         var get = Get.builder()
             .projectId(Property.of(project))
-            .collection("persons")
-            .childPath("1")
+            .collection(Property.of("persons"))
+            .childPath(Property.of("1"))
             .build();
 
         // create something to get
