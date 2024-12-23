@@ -5,6 +5,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -76,6 +77,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     private boolean fetchOne = false;
 
+    @Builder.Default
+    private Property<FetchType> fetchType = Property.of(FetchType.NONE);
+
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();
@@ -91,6 +95,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .legacySql(this.legacySql)
             .fetch(this.fetch)
             .store(this.store)
+            .fetchType(this.fetchType)
             .fetchOne(this.fetchOne)
             .build();
         Query.Output run = task.run(runContext);

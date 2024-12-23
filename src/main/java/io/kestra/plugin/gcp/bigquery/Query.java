@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.serializers.JacksonMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -126,6 +127,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     @Builder.Default
     private boolean fetchOne = false;
+
+    @Builder.Default
+    private Property<FetchType> fetchType = Property.of(FetchType.NONE);
 
     // private List<String> positionalParameters;
 
@@ -271,18 +275,21 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             logger.debug("Query loaded in: {}", tableIdentity.getDataset() + "." + tableIdentity.getTable());
         }
 
-        this.metrics(runContext, queryJobStatistics, queryJob);
+        FetchType fetchTypeRendered = this.computeFetchType(runContext);
+
+        this.metrics(runContext, queryJobStatistics, queryJob, fetchTypeRendered);
 
         Output.OutputBuilder output = Output.builder()
             .jobId(queryJob.getJobId().getJob());
 
-        if (this.fetch || this.fetchOne || this.store) {
+
+        if (!FetchType.NONE.equals(fetchTypeRendered)) {
             TableResult result = queryJob.getQueryResults();
-            String[] tags = this.tags(queryJobStatistics, queryJob);
+            String[] tags = this.tags(queryJobStatistics, queryJob, fetchTypeRendered);
 
             runContext.metric(Counter.of("total.rows", result.getTotalRows(), tags));
 
-            if (this.store) {
+            if (FetchType.STORE.equals(fetchTypeRendered)) {
                 Map.Entry<URI, Long> store = this.storeResult(result, runContext);
 
                 runContext.metric(Counter.of("fetch.rows", store.getValue(), tags));
@@ -300,7 +307,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
                 output.size((long) fetch.size());
 
-                if (this.fetch) {
+                if (FetchType.FETCH.equals(fetchTypeRendered)) {
                     output.rows(fetch);
                 } else {
                     output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
@@ -453,11 +460,11 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         private DestinationTable destinationTable;
     }
 
-    private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob) {
+    private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob, FetchType fetchType) {
         return new String[]{
             "statement_type", stats.getStatementType().name(),
-            "fetch", this.fetch || this.fetchOne ? "true" : "false",
-            "store", this.store ? "true" : "false",
+            "fetch", FetchType.FETCH.equals(fetchType) || FetchType.FETCH_ONE.equals(fetchType) ? "true" : "false",
+            "store", FetchType.STORE.equals(fetchType) ? "true" : "false",
             "project_id", queryJob.getJobId().getProject(),
             "location", queryJob.getJobId().getLocation(),
         };
@@ -497,8 +504,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
     }
 
-    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob) throws IllegalVariableEvaluationException {
-        String[] tags = this.tags(stats, queryJob);
+    private void metrics(RunContext runContext, JobStatistics.QueryStatistics stats, Job queryJob, FetchType fetchTypeRendered) throws IllegalVariableEvaluationException {
+        String[] tags = this.tags(stats, queryJob, fetchTypeRendered);
 
         if (stats.getEstimatedBytesProcessed() != null) {
             runContext.metric(Counter.of("estimated.bytes.processed", stats.getEstimatedBytesProcessed(), tags));
