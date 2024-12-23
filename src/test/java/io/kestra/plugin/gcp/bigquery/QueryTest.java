@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import dev.failsafe.FailsafeException;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +25,12 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import jakarta.inject.Inject;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -70,9 +75,17 @@ class QueryTest {
 
     }
 
-    @Test
+    private static Stream<Arguments> provideFetchOrFetchType() {
+        return Stream.of(
+            Arguments.of(true, null),
+            Arguments.of(false, Property.of(FetchType.FETCH))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideFetchOrFetchType")
     @SuppressWarnings("unchecked")
-    void fetch() throws Exception {
+    void fetch(boolean fetch, Property<FetchType> fetchType) throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of(
             "sql", sql(),
             "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "io.kestra.tests"),
@@ -83,7 +96,8 @@ class QueryTest {
         Query task = Query.builder()
             .sql(new Property<>("{{sql}}"))
             .location(Property.of("EU"))
-            .fetch(true)
+            .fetch(fetch)
+            .fetchType(fetchType)
             .build();
 
         Query.Output run = task.run(runContext);
@@ -112,13 +126,22 @@ class QueryTest {
         assertThat(((Map<String, Object>) rows.get(0).get("json")).get("age"), is(30));
     }
 
-    @Test
-    void store() throws Exception {
+    private static Stream<Arguments> provideStoreOrFetchType() {
+        return Stream.of(
+            Arguments.of(true, null),
+            Arguments.of(false, Property.of(FetchType.STORE))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideStoreOrFetchType")
+    void store(boolean store, Property<FetchType> fetchType) throws Exception {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .sql(Property.of(sql() + "\n UNION ALL \n " + sql()))
-            .store(true)
+            .store(store)
+            .fetchType(fetchType)
             .build();
 
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
@@ -130,13 +153,15 @@ class QueryTest {
         assertThat(ionResult, containsString("interval:\"1-0 0 0:0:0\""));
     }
 
-    @Test
-    void fetchLongPage() throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideFetchOrFetchType")
+    void fetchLongPage(boolean fetch, Property<FetchType> fetchType) throws Exception {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .sql(Property.of("SELECT repository_forks FROM `bigquery-public-data.samples.github_timeline` LIMIT 100000"))
-            .fetch(true)
+            .fetch(fetch)
+            .fetchType(fetchType)
             .build();
 
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
