@@ -4,6 +4,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.ScriptService;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.models.tasks.runners.TaskRunner;
@@ -22,6 +23,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +44,7 @@ import java.util.Map;
                         code = """
                             id: gcp_g_cloud_cli
                             namespace: company.team
-            
+
                             tasks:
                               - id: g_cloud_cli
                                 type: io.kestra.plugin.gcp.cli.GCloudCLI
@@ -59,7 +61,7 @@ import java.util.Map;
                         code = """
                             id: gcp_g_cloud_cli
                             namespace: company.team
-            
+
                             tasks:
                               - id: g_cloud_cli
                                 type: io.kestra.plugin.gcp.cli.GCloudCLI
@@ -75,7 +77,7 @@ import java.util.Map;
                         code = """
                             id: gcp_g_cloud_cli
                             namespace: company.team
-            
+
                             tasks:
                               - id: g_cloud_cli
                                 type: io.kestra.plugin.gcp.cli.GCloudCLI
@@ -84,7 +86,7 @@ import java.util.Map;
                                 commands:
                                   # Outputs as a flow output for UI display
                                   - gcloud pubsub topics list --format=json | tr -d '\n ' | xargs -0 -I {} echo '::{"outputs":{"gcloud":{}}}::'
-                                
+
                                   # Outputs as a file, preferred way for large payloads
                                   - gcloud storage ls --json > storage.json
                             """
@@ -148,10 +150,12 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
 
     private Object inputFiles;
 
-    private List<String> outputFiles;
+    private Property<List<String>> outputFiles;
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
+
+        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
 
         CommandsWrapper commands = new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
@@ -167,7 +171,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
             .withEnv(this.getEnv(runContext))
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
-            .withOutputFiles(outputFiles);
+            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
 
         return commands.run();
     }
