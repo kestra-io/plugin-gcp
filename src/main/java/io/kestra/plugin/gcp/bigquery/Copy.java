@@ -75,7 +75,6 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
             "* `RESTORE`: The source table type is SNAPSHOT and the destination table type is TABLE.\n" +
             "* `CLONE`: The source and destination table have the same table type, but only bill for unique data."
     )
-    @NotNull
     private Property<OperationType> operationType;
 
     @Override
