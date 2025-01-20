@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.vertexai.models;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -37,8 +38,7 @@ public class WorkerPoolSpec {
     @Schema(
         title = "The specification of the disk."
     )
-    @PluginProperty(dynamic = false)
-    private Integer replicaCount;
+    private Property<Integer> replicaCount;
 
     @Schema(
         title = "The python package specs."
@@ -56,7 +56,7 @@ public class WorkerPoolSpec {
         }
 
         if (this.getReplicaCount() != null) {
-            builder.setReplicaCount(this.replicaCount);
+            builder.setReplicaCount(runContext.render(this.replicaCount).as(Integer.class).orElseThrow());
         }
 
         if (this.getPythonPackageSpec() != null) {

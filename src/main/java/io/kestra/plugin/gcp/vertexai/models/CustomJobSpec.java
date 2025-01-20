@@ -52,8 +52,7 @@ public class CustomJobSpec {
         title = "The name of a Vertex AI Tensorboard resource to which this CustomJob",
         description = "will upload Tensorboard logs. Format:`projects/{project}/locations/{location}/tensorboards/{tensorboard}`"
     )
-    @PluginProperty(dynamic = true)
-    private String tensorboard;
+    private Property<String> tensorboard;
 
     @Schema(
         title = "Whether you want Vertex AI to enable [interactive shell access](https://cloud.google.com/vertex-ai/docs/training/monitor-debug-interactive-shell) to training containers."
@@ -89,7 +88,7 @@ public class CustomJobSpec {
         }
 
         if (this.getTensorboard() != null) {
-            builder.setTensorboard(runContext.render(this.getTensorboard()));
+            builder.setTensorboard(runContext.render(this.getTensorboard()).as(String.class).orElseThrow());
         }
 
         if (this.getEnableWebAccess() != null) {

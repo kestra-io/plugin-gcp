@@ -97,31 +97,23 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     @Schema(
         title = "The full service account JSON key to use to authenticate to gcloud."
     )
-    @PluginProperty(dynamic = true)
-    protected String serviceAccount;
+    protected Property<String> serviceAccount;
 
     @Schema(
         title = "The GCP project ID to scope the commands to."
     )
-    @PluginProperty(dynamic = true)
-    protected String projectId;
+    protected Property<String> projectId;
 
     @Schema(
         title = "The commands to run."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    @NotEmpty
-    protected List<String> commands;
+    protected Property<List<String>> commands;
 
     @Schema(
         title = "Additional environment variables for the current process."
     )
-    @PluginProperty(
-            additionalProperties = String.class,
-            dynamic = true
-    )
-    protected Map<String, String> env;
+    protected Property<Map<String, String>> env;
 
     @Schema(
         title = "Deprecated, use 'taskRunner' instead"
@@ -140,9 +132,8 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     private TaskRunner<?> taskRunner = Docker.instance();
 
     @Schema(title = "The task runner container image, only used if the task runner is container-based.")
-    @PluginProperty(dynamic = true)
     @Builder.Default
-    private String containerImage = DEFAULT_IMAGE;
+    private Property<String> containerImage = Property.of(DEFAULT_IMAGE);
 
     private NamespaceFiles namespaceFiles;
 
@@ -159,12 +150,13 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
             .withWarningOnStdErr(true)
             .withDockerOptions(injectDefaults(getDocker()))
             .withTaskRunner(this.taskRunner)
-            .withContainerImage(this.containerImage)
+            .withContainerImage(runContext.render(this.containerImage).as(String.class).orElseThrow())
             .withCommands(
                     ScriptService.scriptCommands(
                             List.of("/bin/sh", "-c"),
                             null,
-                            this.commands)
+                            runContext.render(this.commands).asList(String.class)
+                    )
             )
             .withEnv(this.getEnv(runContext))
             .withNamespaceFiles(namespaceFiles)
@@ -191,7 +183,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         Map<String, String> envs = new HashMap<>();
 
         if (serviceAccount != null) {
-            Path serviceAccountPath = runContext.workingDir().createTempFile(runContext.render(this.serviceAccount).getBytes());
+            Path serviceAccountPath = runContext.workingDir().createTempFile(runContext.render(this.serviceAccount).as(String.class).orElseThrow().getBytes());
             envs.putAll(Map.of(
                     "GOOGLE_APPLICATION_CREDENTIALS", serviceAccountPath.toString(),
                     "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", serviceAccountPath.toString()
@@ -199,11 +191,12 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         }
 
         if (projectId != null) {
-            envs.put("CLOUDSDK_CORE_PROJECT", runContext.render(this.projectId));
+            envs.put("CLOUDSDK_CORE_PROJECT", runContext.render(this.projectId).as(String.class).orElseThrow());
         }
 
-        if (this.env != null) {
-            envs.putAll(this.env);
+        var renderedEnv = runContext.render(this.env).asMap(String.class, String.class);
+        if (!renderedEnv.isEmpty()) {
+            envs.putAll(renderedEnv);
         }
 
         return envs;

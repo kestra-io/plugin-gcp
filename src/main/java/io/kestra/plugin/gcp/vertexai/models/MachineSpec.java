@@ -1,7 +1,7 @@
 package io.kestra.plugin.gcp.vertexai.models;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -21,33 +21,25 @@ public class MachineSpec {
             "See the [list of machine types supported for custom " +
             "training](https://cloud.google.com/vertex-ai/docs/training/configure-compute#machine-types)."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String machineType;
+    private Property<String> machineType;
 
     @Schema(
         title = "The number of accelerators to attach to the machine."
     )
-    @PluginProperty(dynamic = false)
-    private Integer acceleratorCount;
+    private Property<Integer> acceleratorCount;
 
     @Schema(
         title = "The type of accelerator(s) that may be attached to the machine."
     )
-    @PluginProperty(dynamic = true)
-    private com.google.cloud.aiplatform.v1.AcceleratorType acceleratorType;
+    private Property<com.google.cloud.aiplatform.v1.AcceleratorType> acceleratorType;
 
     public com.google.cloud.aiplatform.v1.MachineSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
         com.google.cloud.aiplatform.v1.MachineSpec.Builder builder = com.google.cloud.aiplatform.v1.MachineSpec.newBuilder()
-            .setMachineType(runContext.render(this.getMachineType()));
+            .setMachineType(runContext.render(this.getMachineType()).as(String.class).orElseThrow());
 
-        if (this.getAcceleratorCount() != null) {
-            builder.setAcceleratorCount(this.getAcceleratorCount());
-        }
-
-        if (this.getAcceleratorType() != null) {
-            builder.setAcceleratorType(this.getAcceleratorType());
-        }
+        runContext.render(this.getAcceleratorCount()).as(Integer.class).ifPresent(builder::setAcceleratorCount);
+        runContext.render(this.getAcceleratorType()).as(com.google.cloud.aiplatform.v1.AcceleratorType.class).ifPresent(builder::setAcceleratorType);
 
         return builder.build();
     }
