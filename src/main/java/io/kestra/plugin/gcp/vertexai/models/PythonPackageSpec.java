@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.vertexai.models;
 import com.google.cloud.aiplatform.v1.EnvVar;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -24,44 +25,43 @@ public class PythonPackageSpec {
         title = "The Google Cloud Storage location of the Python package files which are the training program and its dependent packages.",
         description = "The maximum number of package URIs is 100."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private List<String> packageUris;
+    private Property<List<String>> packageUris;
 
     @Schema(
         title = "The Google Cloud Storage location of the Python package files which are the training program and its dependent packages.",
         description = "The maximum number of package URIs is 100."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private List<String> args;
+    private Property<List<String>> args;
 
     @Schema(
         title = "Environment variables to be passed to the python module.",
         description = "Maximum limit is 100."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private Map<String, String> envs;
+    private Property<Map<String, String>> envs;
 
     public com.google.cloud.aiplatform.v1.PythonPackageSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
         com.google.cloud.aiplatform.v1.PythonPackageSpec.Builder builder = com.google.cloud.aiplatform.v1.PythonPackageSpec.newBuilder();
 
-        if (this.packageUris != null) {
-            builder.addAllPackageUris(runContext.render(this.packageUris));
+        var renderedPackage = runContext.render(this.packageUris).asList(String.class);
+        if (!renderedPackage.isEmpty()) {
+            builder.addAllPackageUris(renderedPackage);
         }
 
-        if (this.args != null) {
-            builder.addAllArgs(runContext.render(this.args));
+        var renderedArgs = runContext.render(this.args).asList(String.class);
+        if (!renderedArgs.isEmpty()) {
+            builder.addAllArgs(renderedArgs);
         }
 
-        if (this.packageUris != null) {
-            builder.addAllEnv(this.envs
+        if (!renderedPackage.isEmpty()) {
+            builder.addAllEnv(runContext.render(this.envs).asMap(String.class, String.class)
                 .entrySet()
                 .stream()
                 .map(throwFunction(e -> EnvVar.newBuilder()
-                    .setName(runContext.render(e.getKey()))
-                    .setValue(runContext.render(e.getValue()))
+                    .setName(e.getKey())
+                    .setValue(e.getValue())
                     .build()
                 ))
                 .collect(Collectors.toList())

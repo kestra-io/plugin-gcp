@@ -5,9 +5,11 @@ import com.google.cloud.vertexai.generativeai.ContentMaker;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -48,12 +50,12 @@ import java.util.List;
 public class TextCompletion extends AbstractGenerativeAi implements RunnableTask<TextCompletion.Output> {
     private static final String MODEL_ID = "gemini-pro";
 
-    @PluginProperty(dynamic = true)
     @Schema(
         title = "Text input to generate model response.",
         description = "Prompts can include preamble, questions, suggestions, instructions, or examples."
     )
-    private String prompt;
+    @NotNull
+    private Property<String> prompt;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -62,7 +64,7 @@ public class TextCompletion extends AbstractGenerativeAi implements RunnableTask
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
             var model = buildModel(MODEL_ID, vertexAI);
-            var content = ContentMaker.fromString(runContext.render(this.prompt));
+            var content = ContentMaker.fromString(runContext.render(this.prompt).as(String.class).orElseThrow());
 
             var response = model.generateContent(content);
             runContext.logger().debug(response.toString());

@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.cli;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
@@ -16,7 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-public class GCloudCLITest {
+class GCloudCLITest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -29,10 +30,10 @@ public class GCloudCLITest {
         GCloudCLI execute = GCloudCLI.builder()
                 .id(IdUtils.create())
                 .type(GCloudCLI.class.getName())
-                .projectId(projectId)
-                .serviceAccount(serviceAccount)
-                .env(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}"))
-                .commands(List.of(
+                .projectId(Property.of(projectId))
+                .serviceAccount(Property.of(serviceAccount))
+                .env(new Property<>(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
+                .commands(Property.of(List.of(
                         "echo \"::{\\\"outputs\\\":{" +
                                 "\\\"appCredentials\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\"," +
                                 "\\\"cliCredentials\\\":\\\"$(cat $CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE)\\\"," +
@@ -40,7 +41,7 @@ public class GCloudCLITest {
                                 "\\\"customEnv\\\":\\\"$"+envKey+"\\\"" +
                                 "}}::\"",
                         "gcloud version"
-                ))
+                )))
                 .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of("envKey", envKey, "envValue", envValue));
