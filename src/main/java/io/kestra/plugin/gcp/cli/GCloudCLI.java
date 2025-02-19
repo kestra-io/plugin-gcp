@@ -151,13 +151,8 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
             .withDockerOptions(injectDefaults(getDocker()))
             .withTaskRunner(this.taskRunner)
             .withContainerImage(runContext.render(this.containerImage).as(String.class).orElseThrow())
-            .withCommands(
-                    ScriptService.scriptCommands(
-                            List.of("/bin/sh", "-c"),
-                            null,
-                            runContext.render(this.commands).asList(String.class)
-                    )
-            )
+            .withInterpreter(Property.of(List.of("/bin/sh", "-c")))
+            .withCommands(this.commands)
             .withEnv(this.getEnv(runContext))
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
