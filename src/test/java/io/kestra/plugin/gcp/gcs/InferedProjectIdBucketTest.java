@@ -1,8 +1,8 @@
 package io.kestra.plugin.gcp.gcs;
 
-public class BucketTest extends AbstractBucketTest {
+public class InferedProjectIdBucketTest extends AbstractBucketTest {
     @Override
     public boolean inferProjectId() {
-        return false;
+        return true;
     }
 }
