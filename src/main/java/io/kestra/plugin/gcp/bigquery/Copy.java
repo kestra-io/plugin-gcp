@@ -124,15 +124,16 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
             builder.setOperationType(runContext.render(this.operationType).as(OperationType.class).orElseThrow().name());
         }
 
-        if (this.labels != null) {
-            builder.setLabels(runContext.render(this.labels).asMap(String.class, String.class ));
-        }
-
         if (this.jobTimeout != null) {
             builder.setJobTimeoutMs(runContext.render(this.jobTimeout).as(Duration.class).orElseThrow().toMillis());
         }
 
-        builder.setLabels(BigQueryService.labels(runContext));
+        Map<String, String> finalLabels = new HashMap<>(BigQueryService.labels(runContext));
+        var renderedLabels = runContext.render(this.labels).asMap(String.class, String.class);
+        if (!renderedLabels.isEmpty()) {
+            finalLabels.putAll(renderedLabels);
+        }
+        builder.setLabels(finalLabels);
 
         return builder.build();
     }
