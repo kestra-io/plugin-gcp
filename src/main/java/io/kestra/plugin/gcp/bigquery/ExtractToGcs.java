@@ -225,13 +225,12 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         }
 
         Map<String, String> finalLabels = new HashMap<>(BigQueryService.labels(runContext));
-        var renderedLbels = runContext.render(this.labels).asList(String.class);
-        if (!renderedLbels.isEmpty()) {
-            finalLabels.putAll(renderedLbels);
+        var renderedLabels = runContext.render(this.labels).asMap(String.class, String.class);
+        if (!renderedLabels.isEmpty()) {
+            finalLabels.putAll(renderedLabels);
         }
         builder.setLabels(finalLabels);
 
         return builder.build();
     }
 }
-

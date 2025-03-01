@@ -359,4 +359,30 @@ class QueryTest {
 
         countDownLatch.await();
     }
+
+    @Test
+    void labelsAreNotOverwritten() throws Exception {
+        Map<String, String> initialLabels = new HashMap<>();
+        initialLabels.put("env", "test");
+        initialLabels.put("engine", "bigquery");
+
+        Query task = Query.builder()
+                .id("query")
+                .type(Query.class.getName())
+                .sql(Property.of("SELECT 1"))
+                .labels(Property.of(initialLabels))
+                .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var labels = task.jobConfiguration(runContext).getLabels();
+
+        assertThat(labels.size(), is(6));
+        assertThat(labels.get("env"), is("test"));
+        assertThat(labels.get("engine"), is("bigquery"));
+        assertThat(labels.get("kestra_namespace"), is("io_kestra_plugin_gcp_bigquery_querytest"));
+        assertThat(labels.get("kestra_flow_id"), is("labelsarenotoverwritten"));
+        assertThat(labels.get("kestra_execution_id"), notNullValue());
+        assertThat(labels.get("kestra_task_id"), is("query"));
+    }
 }

@@ -377,11 +377,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             builder.setUseLegacySql(runContext.render(this.useLegacySql).as(Boolean.class).orElseThrow());
         }
 
-        var renderedLabels = runContext.render(this.labels).asMap(String.class, String.class);
-        if (!renderedLabels.isEmpty()) {
-            builder.setLabels(renderedLabels);
-        }
-
         if (this.jobTimeout != null) {
             builder.setJobTimeoutMs(runContext.render(this.jobTimeout).as(Duration.class).orElseThrow().toMillis());
         }
@@ -418,7 +413,12 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             builder.setFlattenResults(runContext.render(this.flattenResults).as(Boolean.class).orElseThrow());
         }
 
-        builder.setLabels(BigQueryService.labels(runContext));
+        Map<String, String> finalLabels = new HashMap<>(BigQueryService.labels(runContext));
+        var renderedLabels = runContext.render(this.labels).asMap(String.class, String.class);
+        if (!renderedLabels.isEmpty()) {
+            finalLabels.putAll(renderedLabels);
+        }
+        builder.setLabels(finalLabels);
 
         return builder.build();
     }
