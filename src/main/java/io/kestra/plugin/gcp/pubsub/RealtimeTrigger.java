@@ -46,9 +46,10 @@ import java.util.concurrent.atomic.AtomicReference;
 @Plugin(
     examples = {
         @Example(
+            full = true,
             title = "Consume a message from a Pub/Sub topic in real-time.",
             code = """
-                id: realtime-pubsub
+                id: realtime_pubsub
                 namespace: company.team
 
                 tasks:
@@ -64,6 +65,36 @@ import java.util.concurrent.atomic.AtomicReference;
                     subscription: test-subscription
                 """,
             full = true
+        ),
+        @Example(
+            full = true,
+            title = "Use GCP Pub/Sub Realtime Trigger to push events into Firestore",
+            code = """
+                id: pubsub_realtime_trigger
+                namespace: company.team
+                
+                tasks:
+                  - id: insert_into_firestore
+                    type: io.kestra.plugin.gcp.firestore.Set
+                    projectId: test-project-id
+                    collection: orders
+                    document:
+                      order_id: "{{ trigger.data | jq('.order_id') | first }}"
+                      customer_name: "{{ trigger.data | jq('.customer_name') | first }}"
+                      customer_email: "{{ trigger.data | jq('.customer_email') | first }}"
+                      product_id: "{{ trigger.data | jq('.product_id') | first }}"
+                      price: "{{ trigger.data | jq('.price') | first }}"
+                      quantity: "{{ trigger.data | jq('.quantity') | first }}"
+                      total: "{{ trigger.data | jq('.total') | first }}"
+                
+                triggers:
+                  - id: realtime_trigger
+                    type: io.kestra.plugin.gcp.pubsub.RealtimeTrigger
+                    projectId: test-project-id
+                    topic: orders
+                    subscription: kestra-subscription
+                    serdeType: JSON
+            """
         )
     }
 )
