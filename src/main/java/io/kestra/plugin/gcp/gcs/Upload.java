@@ -29,10 +29,15 @@ import java.nio.ByteBuffer;
     examples = {
         @Example(
             full = true,
+            title = "Uploada FILE input to GCS",
             code = """
                 id: gcp_gcs_upload
                 namespace: company.team
 
+                inputs:
+                  - id: file
+                    type: FILE
+            
                 tasks:
                   - id: upload
                     type: io.kestra.plugin.gcp.gcs.Upload
