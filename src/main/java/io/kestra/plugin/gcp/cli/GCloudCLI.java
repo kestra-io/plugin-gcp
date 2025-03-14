@@ -37,8 +37,8 @@ import java.util.Map;
 @Plugin(
         examples = {
                 @Example(
-                        title = "Create a cluster then list them using a service account.",
                         full = true,
+                        title = "Create a cluster then list them using a service account.",
                         code = """
                             id: gcp_g_cloud_cli
                             namespace: company.team
@@ -54,8 +54,8 @@ import java.util.Map;
                             """
                 ),
                 @Example(
-                        title = "Create a GCS bucket.",
                         full = true,
+                        title = "Create a GCS bucket.",
                         code = """
                             id: gcp_g_cloud_cli
                             namespace: company.team
@@ -70,8 +70,8 @@ import java.util.Map;
                             """
                 ),
                 @Example(
-                        title = "Output the result of a command.",
                         full = true,
+                        title = "Output the result of a command.",
                         code = """
                             id: gcp_g_cloud_cli
                             namespace: company.team
@@ -88,6 +88,27 @@ import java.util.Map;
                                   # Outputs as a file, preferred way for large payloads
                                   - gcloud storage ls --json > storage.json
                             """
+                ),
+                @Example(
+                    full = true,
+                    title = "List storage buckets in a given GCP project and output the result",
+                    code = """
+                        id: gcloud_cli_flow
+                        namespace: company.team
+                        
+                        tasks:
+                          - id: gcloud_cli
+                            type: io.kestra.plugin.gcp.cli.GCloudCLI
+                            serviceAccount: "{{ secret('GCP_CREDS') }}"
+                            projectId: yourProject
+                            outputFiles:
+                              - storage.json
+                            commands:
+                              - gcloud storage ls
+                              - gcloud storage ls --json > storage.json
+                              - gcloud storage ls --json | tr -d '\n ' | xargs -0 -I {} echo
+                                '::{"outputs":{"gcloud":{}}}::'
+                    """
                 )
         }
 )
