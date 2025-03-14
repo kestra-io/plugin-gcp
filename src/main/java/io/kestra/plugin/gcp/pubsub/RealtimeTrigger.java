@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     projectId: test-project-id
                     topic: test-topic
                     subscription: test-subscription
-                """,
+                """
         ),
         @Example(
             full = true,
