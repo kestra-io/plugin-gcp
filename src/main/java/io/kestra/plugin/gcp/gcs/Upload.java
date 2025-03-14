@@ -44,6 +44,24 @@ import java.nio.ByteBuffer;
                     from: "{{ inputs.file }}"
                     to: "gs://my_bucket/dir/file.csv"
                 """
+        ),
+        @Example(
+            full = true,
+            title = "Download data and upload to Google Cloud Storage",
+            code = """
+                id: load_to_cloud_storage
+                namespace: company.team
+                
+                tasks:
+                  - id: data
+                    type: io.kestra.plugin.core.http.Download
+                    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
+                
+                  - id: cloud_storage
+                    type: io.kestra.plugin.gcp.gcs.Upload
+                    from: "{{ outputs.data.uri }}"
+                    to: gs://kestra-demo/data.csv
+            """
         )
     }
 )
