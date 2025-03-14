@@ -64,7 +64,6 @@ import java.util.concurrent.atomic.AtomicReference;
                     topic: test-topic
                     subscription: test-subscription
                 """,
-            full = true
         ),
         @Example(
             full = true,
