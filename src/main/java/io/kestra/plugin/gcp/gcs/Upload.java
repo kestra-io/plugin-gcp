@@ -37,7 +37,7 @@ import java.nio.ByteBuffer;
                 inputs:
                   - id: file
                     type: FILE
-            
+
                 tasks:
                   - id: upload
                     type: io.kestra.plugin.gcp.gcs.Upload
@@ -51,12 +51,12 @@ import java.nio.ByteBuffer;
             code = """
                 id: load_to_cloud_storage
                 namespace: company.team
-                
+
                 tasks:
                   - id: data
                     type: io.kestra.plugin.core.http.Download
                     uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv
-                
+
                   - id: cloud_storage
                     type: io.kestra.plugin.gcp.gcs.Upload
                     from: "{{ outputs.data.uri }}"
@@ -72,6 +72,7 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
     @Schema(
         title = "The file to copy"
     )
+    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @Schema(

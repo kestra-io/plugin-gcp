@@ -66,6 +66,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
     @Schema(
         title = "The fully-qualified URIs that point to source data"
     )
+    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @Schema(
