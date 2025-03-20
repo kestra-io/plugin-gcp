@@ -69,12 +69,15 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private Property<Boolean> legacySql = Property.of(false);
 
     @Builder.Default
+    @Deprecated
     private boolean fetch = false;
 
     @Builder.Default
+    @Deprecated
     private boolean store = false;
 
     @Builder.Default
+    @Deprecated
     private boolean fetchOne = false;
 
     @Builder.Default

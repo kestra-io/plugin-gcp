@@ -120,12 +120,15 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Boolean> legacySql = Property.of(false);
 
     @Builder.Default
+    @Deprecated
     private boolean fetch = false;
 
     @Builder.Default
+    @Deprecated
     private boolean store = false;
 
     @Builder.Default
+    @Deprecated
     private boolean fetchOne = false;
 
     @Builder.Default
@@ -285,7 +288,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
             TableResult result = queryJob.getQueryResults();
-            String[] tags = this.tags(queryJobStatistics, queryJob, fetchTypeRendered);
+            String[] tags = this.tags(queryJobStatistics, queryJob, fetchTypeRendpered);
 
             runContext.metric(Counter.of("total.rows", result.getTotalRows(), tags));
 
