@@ -288,7 +288,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
             TableResult result = queryJob.getQueryResults();
-            String[] tags = this.tags(queryJobStatistics, queryJob, fetchTypeRendpered);
+            String[] tags = this.tags(queryJobStatistics, queryJob, fetchTypeRendered);
 
             runContext.metric(Counter.of("total.rows", result.getTotalRows(), tags));
 
