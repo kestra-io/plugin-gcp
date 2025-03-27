@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.vertexai;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.aiplatform.v1.JobServiceClient;
@@ -22,9 +23,14 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
 import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
@@ -95,6 +101,11 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     @Builder.Default
     private Property<Boolean> delete = Property.of(true);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @Builder.Default
+    private AtomicReference<Runnable> killable = new AtomicReference<>();
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
@@ -120,6 +131,9 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
             );
 
             com.google.cloud.aiplatform.v1.CustomJob response = client.createCustomJob(parent, builder.build());
+
+            //Set killable in case kill method is called
+            killable.set(() -> safelyKillJob(runContext, pipelineServiceSettings, response.getName()));
 
             if (response.hasError()) {
                 throw new Exception(response.getError().getMessage());
@@ -195,6 +209,22 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                 }
             }
         }
+    }
+
+    private static void safelyKillJob(RunContext runContext, JobServiceSettings settings, String jobName) {
+        try (final JobServiceClient client = JobServiceClient.create(settings)) {
+            client.deleteCustomJobAsync(jobName).get();
+        } catch (InterruptedException | ExecutionException e) {
+            runContext.logger().warn("Interrupted while deleting Job: {}", jobName);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            runContext.logger().warn("Failed to delete Job: {}", jobName, e);
+        }
+    }
+
+    @Override
+    public void kill() {
+        Optional.ofNullable(killable.get()).ifPresent(Runnable::run);
     }
 
     @Builder
