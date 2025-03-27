@@ -103,12 +103,12 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     @Builder.Default
-    private AtomicReference<Runnable> killable = new AtomicReference<>();
+    private final AtomicReference<Runnable> killable = new AtomicReference<>();
 
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     @Builder.Default
-    private AtomicBoolean isKilled = new AtomicBoolean(false);
+    private final AtomicBoolean isKilled = new AtomicBoolean(false);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -222,7 +222,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
             runContext.logger().warn("API issue when cancelling job: {}", jobName);
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            runContext.logger().warn("Failed to delete Job: {}", jobName, e);
+            runContext.logger().warn("Failed to cancel job: {}", jobName, e);
         }
     }
 
