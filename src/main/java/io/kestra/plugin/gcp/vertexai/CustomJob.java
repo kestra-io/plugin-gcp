@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.vertexai;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.ApiException;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.aiplatform.v1.JobServiceClient;
 import com.google.cloud.aiplatform.v1.JobServiceSettings;
@@ -26,7 +27,6 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -104,6 +104,11 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     @Getter(AccessLevel.NONE)
     @Builder.Default
     private AtomicReference<Runnable> killable = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @Builder.Default
+    private AtomicBoolean isKilled = new AtomicBoolean(false);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -212,9 +217,9 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
 
     private static void safelyKillJob(RunContext runContext, JobServiceSettings settings, String jobName) {
         try (final JobServiceClient client = JobServiceClient.create(settings)) {
-            client.deleteCustomJobAsync(jobName).get();
-        } catch (InterruptedException | ExecutionException e) {
-            runContext.logger().warn("Interrupted while deleting Job: {}", jobName);
+            client.cancelCustomJob(jobName);
+        } catch (ApiException e) {
+            runContext.logger().warn("API issue when cancelling job: {}", jobName);
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             runContext.logger().warn("Failed to delete Job: {}", jobName, e);
@@ -223,7 +228,9 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
 
     @Override
     public void kill() {
-        Optional.ofNullable(killable.get()).ifPresent(Runnable::run);
+        if (isKilled.compareAndSet(false, true)) {
+            Optional.ofNullable(killable.get()).ifPresent(Runnable::run);
+        }
     }
 
     @Builder
