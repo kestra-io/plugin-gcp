@@ -49,7 +49,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
     }
 )
 @Schema(
-    title = "Delete all file to a GCS bucket."
+    title = "Delete all files from a GCS bucket."
 )
 public class DeleteList extends AbstractList implements RunnableTask<DeleteList.Output>, ListInterface {
     @Schema(

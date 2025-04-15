@@ -38,7 +38,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Start a Vertex AI [custom job](https://cloud.google.com/vertex-ai/docs/training/create-custom-job)."
+    title = "Start a custom job in Google Vertex AI.",
+    description = "For more details, check out the [custom job documentation](https://cloud.google.com/vertex-ai/docs/training/create-custom-job)."
 )
 @Plugin(
     examples = {

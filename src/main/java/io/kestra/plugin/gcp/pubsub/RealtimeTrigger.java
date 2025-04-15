@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Consume a message in real-time from a Pub/Sub topic and create one execution per message.",
+    title = "Trigger a flow from message consumption in real-time from a Google Pub/Sub topic.",
     description = "If you would like to consume multiple messages processed within a given time frame and process them in batch, you can use the [io.kestra.plugin.gcp.pubsub.Trigger](https://kestra.io/plugins/plugin-gcp/triggers/io.kestra.plugin.gcp.pubsub.trigger) instead."
 )
 @Plugin(

@@ -46,7 +46,7 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Get GKE cluster's metadata."
+    title = "Get a GKE cluster's metadata."
 )
 public class ClusterMetadata extends AbstractTask implements RunnableTask<ClusterMetadata.Output> {
     @NotNull

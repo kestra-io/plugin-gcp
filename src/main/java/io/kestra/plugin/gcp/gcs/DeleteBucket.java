@@ -22,7 +22,7 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a bucket."
+    title = "Delete a GCS bucket."
 )
 @Plugin(
     examples = {

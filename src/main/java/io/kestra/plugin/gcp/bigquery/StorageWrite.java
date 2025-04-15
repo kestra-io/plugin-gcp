@@ -73,8 +73,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
     }
 )
 @Schema(
-    title = "Load an kestra internal storage file on bigquery using " +
-        "[BigQuery Storage API](https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode)"
+    title = "Load a Kestra internal storage file into BigQuery using the BigQuery Storage API.",
+    description = "For more details, check out the [BigQuery Storage API](https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode)."
 )
 public class StorageWrite extends AbstractTask implements RunnableTask<StorageWrite.Output> {
     @Schema(

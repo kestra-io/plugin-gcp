@@ -109,7 +109,7 @@ import java.util.stream.StreamSupport;
     }
 )
 @Schema(
-    title = "Execute BigQuery SQL query in a specific BigQuery database."
+    title = "Run a SQL query in a specific BigQuery database."
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation

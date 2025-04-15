@@ -33,7 +33,7 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Consume messages from a Pub/Sub topic.",
+    title = "Consume messages from a Google Pub/Sub topic.",
     description = "Requires a maxDuration or a maxRecords."
 )
 @Plugin(

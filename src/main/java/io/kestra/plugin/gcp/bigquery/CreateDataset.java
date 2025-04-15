@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a dataset or update if it already exists."
+    title = "Create a BigQuery dataset or update if it already exists."
 )
 @Plugin(
     examples = {

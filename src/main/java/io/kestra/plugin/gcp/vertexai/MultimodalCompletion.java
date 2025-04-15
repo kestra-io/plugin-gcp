@@ -32,7 +32,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Multimodal completion using the Vertex AI Gemini large language models (LLM).",
+    title = "Use Multimodal completion using the Google Vertex AI Gemini LLM.",
     description = "See [Overview of multimodal models](https://cloud.google.com/vertex-ai/docs/generative-ai/multimodal/overview) for more information."
 )
 @Plugin(
