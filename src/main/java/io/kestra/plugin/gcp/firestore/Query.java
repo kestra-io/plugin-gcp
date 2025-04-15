@@ -38,7 +38,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query documents of a collection."
+    title = "Query documents from a Google Cloud Firestore collection."
 )
 @Plugin(
     examples = {

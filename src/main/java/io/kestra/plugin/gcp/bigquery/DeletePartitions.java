@@ -23,7 +23,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete partitions between interval"
+    title = "Delete BigQuery partitions between intervals."
 )
 @Plugin(
     examples = {

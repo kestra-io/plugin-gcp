@@ -26,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
- title = "Delete clusters from Google Cloud Dataproc."
+ title = "Delete a Google Cloud Dataproc cluster."
 )
 @Plugin(
     examples = @Example(

@@ -23,7 +23,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on BigQuery."
+    title = "Trigger a flow if a periodically executed BigQuery query returns a non-empty result set."
 )
 @Plugin(
     examples = {

@@ -52,7 +52,7 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Copy a BigQuery table or partition to other one."
+    title = "Copy a BigQuery table or partition to another one."
 )
 public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Schema(

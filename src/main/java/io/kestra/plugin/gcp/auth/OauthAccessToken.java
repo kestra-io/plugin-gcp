@@ -20,7 +20,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Fetch an OAuth access token."
+    title = "Fetch a GCP OAuth access token."
 )
 public class OauthAccessToken extends AbstractTask implements RunnableTask<OauthAccessToken.Output> {
     @Override

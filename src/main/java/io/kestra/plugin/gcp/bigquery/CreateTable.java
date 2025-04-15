@@ -24,7 +24,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a table"
+    title = "Create a BigQuery table."
 )
 @Plugin(
     examples = {

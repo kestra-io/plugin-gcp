@@ -117,7 +117,7 @@ import java.util.List;
     }
 )
 @Schema(
-    title = "Load data from GCS (Google Cloud Storage) to BigQuery"
+    title = "Load data from GCS to BigQuery."
 )
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     @Schema(

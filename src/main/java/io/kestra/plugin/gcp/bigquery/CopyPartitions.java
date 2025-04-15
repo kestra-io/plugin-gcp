@@ -29,7 +29,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy partitions between interval to another table "
+    title = "Copy BigQuery partitions between intervals to another table."
 )
 @Plugin(
     examples = {

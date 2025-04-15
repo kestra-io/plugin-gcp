@@ -19,7 +19,7 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get a document from a collection."
+    title = "Get a document from a Google Cloud Firestore collection."
 )
 @Plugin(
     examples = {

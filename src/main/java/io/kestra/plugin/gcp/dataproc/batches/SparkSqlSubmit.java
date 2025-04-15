@@ -23,7 +23,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "[Apache Spark SQL](https://spark.apache.org/sql/) queries as a batch workload."
+    title = "Submit Apache Spark SQL queries as a batch workload to a Google Cloud Dataproc cluster.",
+    description = "For more details, check out the [Apache Spark SQL documentation](https://spark.apache.org/sql/)."
 )
 @Plugin(
     examples = @Example(

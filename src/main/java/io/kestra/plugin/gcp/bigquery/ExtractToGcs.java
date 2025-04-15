@@ -55,7 +55,7 @@ import java.util.Map;
     }
 )
 @Schema(
-    title = "Extract data from BigQuery table to GCS (Google Cloud Storage)."
+    title = "Extract data from a BigQuery table to GCS."
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
 

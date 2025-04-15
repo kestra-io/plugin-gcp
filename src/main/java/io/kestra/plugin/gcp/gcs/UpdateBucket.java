@@ -39,7 +39,7 @@ import org.slf4j.Logger;
     }
 )
 @Schema(
-    title = "Update a bucket."
+    title = "Update a GCS bucket."
 )
 public class UpdateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Override

@@ -25,7 +25,7 @@ import java.net.URI;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy a file between bucket",
+    title = "Copy a file between GCS buckets.",
     description = "Copy the file between Internal Storage or Google Cloud Storage file"
 )
 @Plugin(

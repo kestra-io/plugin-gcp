@@ -41,7 +41,7 @@ import java.util.stream.StreamSupport;
     }
 )
 @Schema(
-    title = "List file on a GCS bucket."
+    title = "List files from a GCS bucket."
 )
 public class List extends AbstractList implements RunnableTask<List.Output>, ListInterface {
     @Schema(

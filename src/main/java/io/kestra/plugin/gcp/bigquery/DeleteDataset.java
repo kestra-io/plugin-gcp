@@ -39,7 +39,7 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Delete a dataset."
+    title = "Delete a BigQuery dataset."
 )
 public class DeleteDataset extends AbstractBigquery implements RunnableTask<DeleteDataset.Output> {
     @NotNull

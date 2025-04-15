@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a table or a partition"
+    title = "Delete a BigQuery table or a partition."
 )
 @Plugin(
     examples = {
