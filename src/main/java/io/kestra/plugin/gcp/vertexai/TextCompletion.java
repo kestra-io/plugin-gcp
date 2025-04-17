@@ -48,7 +48,6 @@ import java.util.List;
     }
 )
 public class TextCompletion extends AbstractGenerativeAi implements RunnableTask<TextCompletion.Output> {
-    private static final String MODEL_ID = "gemini-pro";
 
     @Schema(
         title = "Text input to generate model response.",
@@ -61,9 +60,10 @@ public class TextCompletion extends AbstractGenerativeAi implements RunnableTask
     public Output run(RunContext runContext) throws Exception {
         String projectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
         String region = runContext.render(this.getRegion()).as(String.class).orElseThrow();
+        String modelId = runContext.render(this.getModelId()).as(String.class).orElseThrow();
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
-            var model = buildModel(MODEL_ID, vertexAI);
+            var model = buildModel(modelId, vertexAI);
             var content = ContentMaker.fromString(runContext.render(this.prompt).as(String.class).orElseThrow());
 
             var response = model.generateContent(content);

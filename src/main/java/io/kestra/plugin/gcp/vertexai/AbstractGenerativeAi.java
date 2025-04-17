@@ -43,6 +43,14 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     @PluginProperty
     private ModelParameter parameters = ModelParameter.builder().build();
 
+    @Schema(
+        title = "The identifier of the Vertex AI model to use.",
+        description = "Specifies which generative model (e.g., 'gemini-1.5-flash', 'gemini-1.0-pro') to use for the completion."
+    )
+    @PluginProperty(dynamic = true)
+    @Builder.Default
+    private Property<String> modelId = Property.of("gemini-pro");
+
     protected GenerativeModel buildModel(String modelName, VertexAI vertexAI) {
         GenerativeModel model = new GenerativeModel(modelName, vertexAI);
         if (this.getParameters() != null) {

@@ -57,7 +57,6 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
     }
 )
 public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask<ChatCompletion.Output> {
-    private static final String MODEL_ID = "gemini-pro";
 
     @PluginProperty(dynamic = true)
     @Schema(
@@ -92,9 +91,10 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
     public Output run(RunContext runContext) throws Exception {
         String projectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
         String region = runContext.render(this.getRegion()).as(String.class).orElseThrow();
+        String modelId = runContext.render(this.getModelId()).as(String.class).orElseThrow();
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
-            var model = buildModel(MODEL_ID, vertexAI);
+            var model = buildModel(modelId, vertexAI);
             var chatSession = model.startChat();
 
             if (history != null) {
