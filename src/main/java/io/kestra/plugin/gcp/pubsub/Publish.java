@@ -32,7 +32,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Publish a message to a Pub/Sub topic"
+    title = "Publish a message to a Google Pub/Sub topic."
 )
 @Plugin(
     examples = {

@@ -21,7 +21,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Update table metadata"
+    title = "Update a BigQuery table’s metadata."
 )
 @Plugin(
     examples = {

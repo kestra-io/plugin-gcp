@@ -60,12 +60,13 @@ import java.nio.channels.Channels;
     }
 )
 @Schema(
-    title = "Load data from local file to BigQuery"
+    title = "Load data from a local file to BigQuery."
 )
 public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     @Schema(
         title = "The fully-qualified URIs that point to source data"
     )
+    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @Schema(

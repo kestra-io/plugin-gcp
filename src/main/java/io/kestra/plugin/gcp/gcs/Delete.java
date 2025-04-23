@@ -38,7 +38,7 @@ import java.util.NoSuchElementException;
     }
 )
 @Schema(
-    title = "Delete a file to a GCS bucket."
+    title = "Delete a file from a GCS bucket."
 )
 public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Schema(

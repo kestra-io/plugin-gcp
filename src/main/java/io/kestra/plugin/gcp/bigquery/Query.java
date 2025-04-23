@@ -109,7 +109,7 @@ import java.util.stream.StreamSupport;
     }
 )
 @Schema(
-    title = "Execute BigQuery SQL query in a specific BigQuery database."
+    title = "Run a SQL query in a specific BigQuery database."
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
@@ -120,12 +120,15 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Boolean> legacySql = Property.of(false);
 
     @Builder.Default
+    @Deprecated
     private boolean fetch = false;
 
     @Builder.Default
+    @Deprecated
     private boolean store = false;
 
     @Builder.Default
+    @Deprecated
     private boolean fetchOne = false;
 
     @Builder.Default

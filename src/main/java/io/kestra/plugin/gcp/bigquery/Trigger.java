@@ -23,7 +23,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on BigQuery."
+    title = "Trigger a flow if a periodically executed BigQuery query returns a non-empty result set."
 )
 @Plugin(
     examples = {
@@ -69,12 +69,15 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private Property<Boolean> legacySql = Property.of(false);
 
     @Builder.Default
+    @Deprecated
     private boolean fetch = false;
 
     @Builder.Default
+    @Deprecated
     private boolean store = false;
 
     @Builder.Default
+    @Deprecated
     private boolean fetchOne = false;
 
     @Builder.Default

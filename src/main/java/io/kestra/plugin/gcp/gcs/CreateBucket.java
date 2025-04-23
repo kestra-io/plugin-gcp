@@ -39,7 +39,7 @@ import org.slf4j.Logger;
     }
 )
 @Schema(
-    title = "Create a bucket or update if it already exists."
+    title = "Create a GCS bucket or update if it already exists."
 )
 public class CreateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Builder.Default

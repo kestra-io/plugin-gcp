@@ -55,7 +55,7 @@ import java.util.Map;
     }
 )
 @Schema(
-    title = "Extract data from BigQuery table to GCS (Google Cloud Storage)."
+    title = "Extract data from a BigQuery table to GCS."
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
 
@@ -192,23 +192,23 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
                 runContext.render(this.destinationUris).asList(String.class)
             );
 
-        if (runContext.render(this.sourceTable) != null){
+        if (this.sourceTable != null){
             builder.setSourceTable(BigQueryService.tableId(runContext.render(this.sourceTable).as(String.class).orElseThrow()));
         }
 
-        if (runContext.render(this.destinationUris) != null){
+        if (this.destinationUris != null){
             builder.setDestinationUris(runContext.render(this.destinationUris).asList(String.class));
         }
 
-        if (runContext.render(this.compression) != null) {
+        if (this.compression != null) {
             builder.setCompression(runContext.render(runContext.render(this.compression).as(String.class).orElseThrow()));
         }
 
-        if (runContext.render(this.fieldDelimiter) != null) {
+        if (this.fieldDelimiter != null) {
             builder.setFieldDelimiter(runContext.render(this.fieldDelimiter).as(String.class).orElseThrow());
         }
 
-        if (runContext.render(this.format) != null) {
+        if (this.format != null) {
             builder.setFormat(runContext.render(this.format).as(String.class).orElseThrow());
         }
 

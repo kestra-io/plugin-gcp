@@ -23,7 +23,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Set a document in a collection."
+    title = "Set a document in a Google Cloud Firestore collection."
 )
 @Plugin(
     examples = {

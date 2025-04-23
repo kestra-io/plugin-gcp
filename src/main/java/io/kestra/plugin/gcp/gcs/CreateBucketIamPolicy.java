@@ -42,7 +42,7 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Add role on an existing bucket."
+    title = "Add role on an existing GCS bucket."
 )
 public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<CreateBucketIamPolicy.Output> {
     @NotNull

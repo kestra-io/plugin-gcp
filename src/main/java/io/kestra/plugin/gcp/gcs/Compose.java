@@ -44,7 +44,7 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "List file on a GCS bucket."
+    title = "List files in a GCS bucket."
 )
 public class Compose extends AbstractGcs implements RunnableTask<Compose.Output> {
     @Schema(

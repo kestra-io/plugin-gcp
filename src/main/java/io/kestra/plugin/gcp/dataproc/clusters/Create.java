@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create clusters in Google Cloud Dataproc."
+    title = "Create a Google Cloud Dataproc cluster."
 )
 @Plugin(
     examples = {

@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Update a dataset."
+    title = "Update a BigQuery dataset."
 )
 @Plugin(
     examples = {

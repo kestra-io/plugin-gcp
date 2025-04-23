@@ -43,8 +43,8 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger Google Cloud Run Function.",
-    description = "Use this task to trigger an Cloud Run Function and collect the result if any"
+    title = "Run a Google Cloud Run function.",
+    description = "Use this task to trigger an Cloud Run Function and collect the result."
 )
 @Plugin(examples = {
     @Example(

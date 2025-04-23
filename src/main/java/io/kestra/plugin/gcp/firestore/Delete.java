@@ -19,7 +19,7 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a document from a collection."
+    title = "Delete a document from a Google Cloud Firestore collection."
 )
 @Plugin(
     examples = {

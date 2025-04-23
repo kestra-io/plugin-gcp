@@ -23,7 +23,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Submit an [Apache PySpark](https://spark.apache.org/docs/latest/api/python/getting_started/) batch workload."
+    title = "Submit an Apache PySpark batch workload to a Google Cloud Dataproc cluster.",
+    description = "To get started, check out the [Apache PySpark API documentation](https://spark.apache.org/docs/latest/api/python/getting_started/)."
 )
 @Plugin(
     examples = @Example(

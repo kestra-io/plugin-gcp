@@ -40,15 +40,16 @@ import java.util.concurrent.atomic.AtomicReference;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Consume a message in real-time from a Pub/Sub topic and create one execution per message.",
+    title = "Trigger a flow from message consumption in real-time from a Google Pub/Sub topic.",
     description = "If you would like to consume multiple messages processed within a given time frame and process them in batch, you can use the [io.kestra.plugin.gcp.pubsub.Trigger](https://kestra.io/plugins/plugin-gcp/triggers/io.kestra.plugin.gcp.pubsub.trigger) instead."
 )
 @Plugin(
     examples = {
         @Example(
+            full = true,
             title = "Consume a message from a Pub/Sub topic in real-time.",
             code = """
-                id: realtime-pubsub
+                id: realtime_pubsub
                 namespace: company.team
 
                 tasks:
@@ -62,8 +63,37 @@ import java.util.concurrent.atomic.AtomicReference;
                     projectId: test-project-id
                     topic: test-topic
                     subscription: test-subscription
-                """,
-            full = true
+                """
+        ),
+        @Example(
+            full = true,
+            title = "Use GCP Pub/Sub Realtime Trigger to push events into Firestore",
+            code = """
+                id: pubsub_realtime_trigger
+                namespace: company.team
+                
+                tasks:
+                  - id: insert_into_firestore
+                    type: io.kestra.plugin.gcp.firestore.Set
+                    projectId: test-project-id
+                    collection: orders
+                    document:
+                      order_id: "{{ trigger.data | jq('.order_id') | first }}"
+                      customer_name: "{{ trigger.data | jq('.customer_name') | first }}"
+                      customer_email: "{{ trigger.data | jq('.customer_email') | first }}"
+                      product_id: "{{ trigger.data | jq('.product_id') | first }}"
+                      price: "{{ trigger.data | jq('.price') | first }}"
+                      quantity: "{{ trigger.data | jq('.quantity') | first }}"
+                      total: "{{ trigger.data | jq('.total') | first }}"
+                
+                triggers:
+                  - id: realtime_trigger
+                    type: io.kestra.plugin.gcp.pubsub.RealtimeTrigger
+                    projectId: test-project-id
+                    topic: orders
+                    subscription: kestra-subscription
+                    serdeType: JSON
+            """
         )
     }
 )

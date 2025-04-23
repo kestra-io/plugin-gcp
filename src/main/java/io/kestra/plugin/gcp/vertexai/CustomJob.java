@@ -1,6 +1,8 @@
 package io.kestra.plugin.gcp.vertexai;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.ApiException;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.aiplatform.v1.JobServiceClient;
 import com.google.cloud.aiplatform.v1.JobServiceSettings;
@@ -24,7 +26,10 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
 import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
@@ -33,7 +38,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Start a Vertex AI [custom job](https://cloud.google.com/vertex-ai/docs/training/create-custom-job)."
+    title = "Start a custom job in Google Vertex AI.",
+    description = "For more details, check out the [custom job documentation](https://cloud.google.com/vertex-ai/docs/training/create-custom-job)."
 )
 @Plugin(
     examples = {
@@ -95,6 +101,16 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     @Builder.Default
     private Property<Boolean> delete = Property.of(true);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @Builder.Default
+    private final AtomicReference<Runnable> killable = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @Builder.Default
+    private final AtomicBoolean isKilled = new AtomicBoolean(false);
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
@@ -120,6 +136,9 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
             );
 
             com.google.cloud.aiplatform.v1.CustomJob response = client.createCustomJob(parent, builder.build());
+
+            //Set killable in case kill method is called
+            killable.set(() -> safelyKillJob(runContext, pipelineServiceSettings, response.getName()));
 
             if (response.hasError()) {
                 throw new Exception(response.getError().getMessage());
@@ -194,6 +213,24 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                     tailThread.join();
                 }
             }
+        }
+    }
+
+    private static void safelyKillJob(RunContext runContext, JobServiceSettings settings, String jobName) {
+        try (final JobServiceClient client = JobServiceClient.create(settings)) {
+            client.cancelCustomJob(jobName);
+        } catch (ApiException e) {
+            runContext.logger().warn("API issue when cancelling job: {}", jobName);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            runContext.logger().warn("Failed to cancel job: {}", jobName, e);
+        }
+    }
+
+    @Override
+    public void kill() {
+        if (isKilled.compareAndSet(false, true)) {
+            Optional.ofNullable(killable.get()).ifPresent(Runnable::run);
         }
     }
 

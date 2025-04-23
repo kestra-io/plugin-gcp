@@ -22,7 +22,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get table metadata."
+    title = "Get a BigQuery table’s metadata."
 )
 @Plugin(
     examples = {
