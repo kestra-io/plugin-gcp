@@ -85,7 +85,7 @@ class TriggerTest {
             worker.run();
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
+            repositoryLoader.load(null, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
 
             createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
 

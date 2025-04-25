@@ -78,7 +78,7 @@ class RealtimeTriggerTest {
             worker.run();
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(RealtimeTriggerTest.class.getClassLoader().getResource("flows/pubsub/realtime.yaml")));
+            repositoryLoader.load(null, Objects.requireNonNull(RealtimeTriggerTest.class.getClassLoader().getResource("flows/pubsub/realtime.yaml")));
 
             // publish message to trigger the flow
             Publish task = Publish.builder()
