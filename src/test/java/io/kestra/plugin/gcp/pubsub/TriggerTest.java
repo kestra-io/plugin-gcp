@@ -77,7 +77,7 @@ class TriggerTest {
             worker.run();
             scheduler.run();
 
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/pubsub/pubsub-listen.yaml")));
+            repositoryLoader.load(null, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/pubsub/pubsub-listen.yaml")));
 
             // publish two messages to trigger the flow
             Publish task = Publish.builder()

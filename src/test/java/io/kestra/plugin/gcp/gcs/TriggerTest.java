@@ -93,7 +93,7 @@ class TriggerTest {
 
             worker.run();
             scheduler.run();
-            repositoryLoader.load(Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
+            repositoryLoader.load(null, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
 
             boolean await = queueCount.await(10, TimeUnit.SECONDS);
             try {
