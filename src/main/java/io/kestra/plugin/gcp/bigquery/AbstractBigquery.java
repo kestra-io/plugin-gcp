@@ -61,6 +61,7 @@ abstract public class AbstractBigquery extends AbstractTask {
     protected Property<List<String>> retryReasons = Property.of(Arrays.asList(
         "rateLimitExceeded",
         "jobBackendError",
+        "backendError",
         "internalError",
         "jobInternalError"
     ));
@@ -72,7 +73,8 @@ abstract public class AbstractBigquery extends AbstractTask {
     )
     protected Property<List<String>> retryMessages = Property.of(Arrays.asList(
         "due to concurrent update",
-        "Retrying the job may solve the problem"
+        "Retrying the job may solve the problem",
+        "Retrying may solve the problem"
     ));
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
