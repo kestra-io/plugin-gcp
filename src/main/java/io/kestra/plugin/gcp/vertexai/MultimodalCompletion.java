@@ -80,7 +80,7 @@ import java.util.Optional;
 public class MultimodalCompletion extends AbstractGenerativeAi implements RunnableTask<MultimodalCompletion.Output> {
 
     @Schema(
-        title = "The contents."
+        title = "The chat content prompt for the model to respond to"
     )
     @PluginProperty(dynamic = true)
     @NotEmpty
@@ -150,22 +150,22 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Value
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The generated response text."
+            title = "The generated response text"
         )
         String text;
 
         @Schema(
-            title = "The response safety ratings."
+            title = "The response safety ratings"
         )
         List<SafetyRating> safetyRatings;
 
         @Schema(
-            title = "Whether the response has been blocked for safety reasons."
+            title = "Whether the response has been blocked for safety reasons"
         )
         boolean blocked;
 
         @Schema(
-            title = "The reason the generation has finished."
+            title = "The reason the generation has finished"
         )
         String finishReason;
 
