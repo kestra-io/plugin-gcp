@@ -7,6 +7,7 @@ import com.google.common.io.CharStreams;
 import dev.failsafe.FailsafeException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.tenant.TenantService;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import lombok.extern.slf4j.Slf4j;
@@ -145,7 +146,7 @@ class QueryTest {
             .build();
 
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
-        String ionResult = CharStreams.toString(new InputStreamReader(storageInterface.get(null, null, run.getUri())));
+        String ionResult = CharStreams.toString(new InputStreamReader(storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri())));
 
         assertThat(ionResult, containsString("string:\"hello\""));
         assertThat(ionResult, containsString("datetime:2008-12-25T15:30:00.123Z"));

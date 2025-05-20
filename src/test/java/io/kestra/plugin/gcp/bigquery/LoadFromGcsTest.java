@@ -4,6 +4,7 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.gcp.gcs.Upload;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -48,7 +49,7 @@ class LoadFromGcsTest {
         );
 
         URI put = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(applicationFile)

@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.gcs;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.tenant.TenantService;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ class DeleteTest {
             .toURI());
 
         URI source = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(file)
