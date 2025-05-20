@@ -108,7 +108,7 @@ import java.util.Map;
                               - gcloud storage ls --json > storage.json
                               - gcloud storage ls --json | tr -d '\n ' | xargs -0 -I {} echo
                                 '::{"outputs":{"gcloud":{}}}::'
-                    """
+                        """
                 )
         }
 )
