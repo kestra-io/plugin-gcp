@@ -61,7 +61,7 @@ import java.nio.ByteBuffer;
                     type: io.kestra.plugin.gcp.gcs.Upload
                     from: "{{ outputs.data.uri }}"
                     to: gs://kestra-demo/data.csv
-            """
+                """
         )
     }
 )

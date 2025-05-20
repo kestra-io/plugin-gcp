@@ -93,7 +93,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     topic: orders
                     subscription: kestra-subscription
                     serdeType: JSON
-            """
+                """
         )
     }
 )
