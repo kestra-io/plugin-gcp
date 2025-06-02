@@ -78,11 +78,9 @@ import java.util.Optional;
     }
 )
 public class MultimodalCompletion extends AbstractGenerativeAi implements RunnableTask<MultimodalCompletion.Output> {
-    private static final String MODEL_ID = "gemini-pro-vision";
-
 
     @Schema(
-        title = "The contents."
+        title = "The chat content prompt for the model to respond to"
     )
     @PluginProperty(dynamic = true)
     @NotEmpty
@@ -92,9 +90,10 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     public MultimodalCompletion.Output run(RunContext runContext) throws Exception {
         String projectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
         String region = runContext.render(this.getRegion()).as(String.class).orElseThrow();
+        String modelId = runContext.render(this.getModelId()).as(String.class).orElseThrow();
 
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
-            var model = buildModel(MODEL_ID, vertexAI);
+            var model = buildModel(modelId, vertexAI);
             var parts = contents.stream()
                 .map( content -> {
                     try {
@@ -151,22 +150,22 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Value
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The generated response text."
+            title = "The generated response text"
         )
         String text;
 
         @Schema(
-            title = "The response safety ratings."
+            title = "The response safety ratings"
         )
         List<SafetyRating> safetyRatings;
 
         @Schema(
-            title = "Whether the response has been blocked for safety reasons."
+            title = "Whether the response has been blocked for safety reasons"
         )
         boolean blocked;
 
         @Schema(
-            title = "The reason the generation has finished."
+            title = "The reason the generation has finished"
         )
         String finishReason;
 

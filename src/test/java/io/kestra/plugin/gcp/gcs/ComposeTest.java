@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -61,7 +62,7 @@ class ComposeTest {
             .from(Property.of(run.getUri().toString()))
             .build();
 
-        InputStream get = storageInterface.get(null, null, download.run(runContext).getUri());
+        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, download.run(runContext).getUri());
 
         assertThat(
             CharStreams.toString(new InputStreamReader(get)),

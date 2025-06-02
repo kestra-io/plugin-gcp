@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.bigquery;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.tenant.TenantService;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.apache.commons.io.IOUtils;
@@ -41,7 +42,7 @@ class LoadTest {
     @Test
     void fromCsv() throws Exception {
         URI source = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
@@ -73,7 +74,7 @@ class LoadTest {
     @Test
     void fromAvro() throws Exception {
         URI source = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(new File(Objects.requireNonNull(LoadTest.class.getClassLoader()
@@ -103,7 +104,7 @@ class LoadTest {
     @Test
     void fromEmpty() throws Exception {
         URI source = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             IOUtils.toInputStream("", StandardCharsets.UTF_8)

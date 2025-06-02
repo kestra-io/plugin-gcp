@@ -4,6 +4,7 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.tenant.TenantService;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ class DownloadTest {
             .toURI());
 
         URI source = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
             new FileInputStream(file)
@@ -70,7 +71,7 @@ class DownloadTest {
         Download.Output run = task.run(runContext(task));
         assertThat(run.getUri().toString(), endsWith(".yml"));
 
-        InputStream get = storageInterface.get(null, null, run.getUri());
+        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri());
 
         assertThat(
             CharStreams.toString(new InputStreamReader(get)),

@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.tenant.TenantService;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -99,7 +100,7 @@ public class ExtractToGcsTest extends AbstractBigquery {
             .build();
 
         Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));
-        InputStream get = storageInterface.get(null, null, downloadOutput.getUri());
+        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, downloadOutput.getUri());
 
         // Tests
         assertThat(extractOutput.getFileCounts().get(0), is(1L));

@@ -62,7 +62,6 @@ dependencies {
     compileOnly group: 'dev.failsafe', name: 'failsafe'
 
     // Google libraries are managed by the the Kestra Platform so they are aligned on all plugins
-    api platform('com.google.cloud:libraries-bom')
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
@@ -145,7 +144,7 @@ configurations {
 }
 
 dependencies {
-    agent "org.aspectj:aspectjweaver:1.9.22.1"
+    agent "org.aspectj:aspectjweaver:1.9.24"
 }
 
 test {
