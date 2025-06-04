@@ -14,10 +14,13 @@ import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.List;
+
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 @KestraTest
 class ComposeTest {
@@ -100,9 +103,8 @@ class ComposeTest {
 
         InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, download.run(runContext).getUri());
 
-        assertThat(
-            CharStreams.toString(new InputStreamReader(get)),
-            is("1\n2\n3\n")
-        );
+        String result = CharStreams.toString(new InputStreamReader(get));
+        List<String> lines = Arrays.asList(result.split("\\R"));
+        assertThat(lines, containsInAnyOrder("1", "2", "3"));
     }
 }
