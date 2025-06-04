@@ -69,4 +69,40 @@ class ComposeTest {
         );
 
     }
+
+    @Test
+    void runWithDefaultListingType() throws Exception {
+        String dir = FriendlyId.createFriendlyId();
+        String basePath = "compose-" + dir + "/";
+
+        testUtils.upload(basePath + FriendlyId.createFriendlyId(), "data/1.txt");
+        testUtils.upload(basePath + FriendlyId.createFriendlyId(), "data/2.txt");
+        testUtils.upload(basePath + FriendlyId.createFriendlyId(), "data/3.txt");
+
+        Compose task = Compose.builder()
+            .id("compose-default-listingType")
+            .type(Compose.class.getName())
+            .list(Compose.List.builder()
+                .from(Property.of("gs://" + bucket + "/tasks/gcp/upload/" + basePath))
+                .build()
+            )
+            .to(Property.of("gs://" + bucket + "/tasks/gcp/compose-result/compose-default.txt"))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
+        Compose.Output run = task.run(runContext);
+
+        Download download = Download.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .from(Property.of(run.getUri().toString()))
+            .build();
+
+        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, download.run(runContext).getUri());
+
+        assertThat(
+            CharStreams.toString(new InputStreamReader(get)),
+            is("1\n2\n3\n")
+        );
+    }
 }

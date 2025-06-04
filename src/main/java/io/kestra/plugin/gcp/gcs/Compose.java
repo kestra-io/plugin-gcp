@@ -89,7 +89,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
             .scopes(this.scopes)
             .from(this.list.getFrom())
             .filter(Property.of(ListInterface.Filter.FILES))
-            .listingType(this.list.getListingType())
+            .listingType(this.list.getListingType() != null ? this.list.getListingType() : Property.of(ListInterface.ListingType.DIRECTORY))
             .regExp(this.list.getRegExp())
             .build();
 
