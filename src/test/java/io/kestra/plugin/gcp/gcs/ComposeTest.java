@@ -101,7 +101,7 @@ class ComposeTest {
             .from(Property.of(run.getUri().toString()))
             .build();
 
-        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, download.run(runContext).getUri());
+        InputStream get = storageInterface.get(null, null, download.run(runContext).getUri());
 
         String result = CharStreams.toString(new InputStreamReader(get));
         List<String> lines = Arrays.asList(result.split("\\R"));
