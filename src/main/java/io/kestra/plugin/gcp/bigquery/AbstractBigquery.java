@@ -147,7 +147,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                         logger.warn(
                             "Error query on {} with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
+                            bqException.getErrors() == null ? "" : String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
                         );
 
                         throw new BigQueryException(bqException.getErrors());
@@ -157,7 +157,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                         logger.warn(
                             "Error query on job '{}' with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
+                            bqException.getErrors() == null ? "" : String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
                         );
 
                         throw new BigQueryException(bqException.getErrors());
