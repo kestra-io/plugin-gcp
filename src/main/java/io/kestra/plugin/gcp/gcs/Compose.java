@@ -27,7 +27,7 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            title = "Concat files in a bucket",
+            title = "Concatenate files in a bucket",
             full = true,
             code = """
                 id: gcp_gcs_compose
@@ -44,7 +44,8 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "List files in a GCS bucket."
+    title = "Compose multiple objects in a GCS bucket into a single object.",
+    description = "This task allows you to concatenate up to 32 files in a given GCS bucket into a single file."
 )
 public class Compose extends AbstractGcs implements RunnableTask<Compose.Output> {
     @Schema(

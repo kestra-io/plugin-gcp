@@ -26,7 +26,7 @@ import java.util.stream.StreamSupport;
 @Plugin(
     examples = {
         @Example(
-            title = "List files in a bucket",
+            title = "List files in a GCS bucket",
             full = true,
             code = """
                 id: gcp_gcs_list
@@ -45,7 +45,7 @@ import java.util.stream.StreamSupport;
 )
 public class List extends AbstractList implements RunnableTask<List.Output>, ListInterface {
     @Schema(
-        title = "The filter files or directory"
+        title = "The filter for files or a directory"
     )
     @Builder.Default
     protected final Property<Filter> filter = Property.of(Filter.BOTH);
