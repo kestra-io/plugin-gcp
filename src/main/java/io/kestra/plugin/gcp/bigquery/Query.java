@@ -629,7 +629,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (LegacySQLTypeName.DATETIME.equals(field.getType())) {
-            return Instant.parse(value.getStringValue() + "Z");
+            Instant.parse(value.getStringValue() + "Z");
+            return value.getStringValue() + "Z";
         }
 
         if (LegacySQLTypeName.FLOAT.equals(field.getType())) {
