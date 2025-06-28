@@ -149,7 +149,7 @@ class QueryTest {
         String ionResult = CharStreams.toString(new InputStreamReader(storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri())));
 
         assertThat(ionResult, containsString("string:\"hello\""));
-        assertThat(ionResult, containsString("datetime:2008-12-25T15:30:00.123Z"));
+        assertThat(ionResult, containsString("datetime:\"2008-12-25T15:30:00.123456Z\""));
         assertThat(ionResult, containsString("string:\"hello\""));
         assertThat(ionResult, containsString("interval:\"1-0 0 0:0:0\""));
     }
