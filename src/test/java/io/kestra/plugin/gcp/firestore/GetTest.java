@@ -25,9 +25,9 @@ class GetTest {
         var runContext = runContextFactory.of();
 
         var get = Get.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
-            .childPath(Property.of("1"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
+            .childPath(Property.ofValue("1"))
             .build();
 
         // create something to get

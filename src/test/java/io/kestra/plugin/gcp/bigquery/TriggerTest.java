@@ -79,7 +79,7 @@ class TriggerTest {
             Query createTable = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
-                .sql(Property.of("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"))
+                .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"))
                 .build();
 
             worker.run();
@@ -100,7 +100,7 @@ class TriggerTest {
             Query deleteTable = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
-                .sql(Property.of("DROP TABLE `" + project + "." + dataset + "." + table + "`"))
+                .sql(Property.ofValue("DROP TABLE `" + project + "." + dataset + "." + table + "`"))
                 .build();
             deleteTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
         }

@@ -26,7 +26,7 @@ public abstract class AbstractTask extends Task implements GcpInterface {
     protected Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    protected Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
+    protected Property<List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         GoogleCredentials credentials = CredentialService.credentials(runContext, this);
@@ -34,7 +34,7 @@ public abstract class AbstractTask extends Task implements GcpInterface {
         //Infer projectID from credentials if projectId is null
         if (credentials instanceof ServiceAccountCredentials serviceAccountCredentials) {
             String projectIdFromServiceAccount = serviceAccountCredentials.getProjectId();
-            projectId = projectId != null ? projectId : new Property<>(projectIdFromServiceAccount);
+            projectId = projectId != null ? projectId : Property.ofExpression(projectIdFromServiceAccount);
         }
         return credentials;
     }

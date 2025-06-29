@@ -33,9 +33,9 @@ class RSparkSubmitTest {
             // The file can be found in src/main/resources/dataproc and must be uploaded to the GCS bucket before running the test
             .id(RSparkSubmit.class.getSimpleName())
             .type(RSparkSubmit.class.getName())
-            .mainRFileUri(Property.of("gs://spark-jobs-kestra/dataframe.r"))
-            .projectId(Property.of(project))
-            .name(Property.of("test-rspark"))
+            .mainRFileUri(Property.ofValue("gs://spark-jobs-kestra/dataframe.r"))
+            .projectId(Property.ofValue(project))
+            .name(Property.ofValue("test-rspark"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, submit, ImmutableMap.of());

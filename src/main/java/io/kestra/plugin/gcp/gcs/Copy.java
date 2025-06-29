@@ -65,7 +65,7 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         title = "Whether to delete the source files (from parameter) on success copy"
     )
     @Builder.Default
-    private final Property<Boolean> delete = Property.of(false);
+    private final Property<Boolean> delete = Property.ofValue(false);
 
     @Override
     public Copy.Output run(RunContext runContext) throws Exception {

@@ -22,8 +22,8 @@ class BigQueryServiceTest {
         var task = Query.builder()
             .id("query")
             .type(Query.class.getName())
-            .sql(new Property<>("{{sql}}"))
-            .location(Property.of("EU"))
+            .sql(Property.ofExpression("{{sql}}"))
+            .location(Property.ofValue("EU"))
             .fetch(true)
             .build();
 
