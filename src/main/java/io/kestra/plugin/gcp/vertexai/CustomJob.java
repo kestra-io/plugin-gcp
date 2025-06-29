@@ -92,14 +92,14 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     )
     @NotNull
     @Builder.Default
-    private Property<Boolean> wait = Property.of(true);
+    private Property<Boolean> wait = Property.ofValue(true);
 
     @Schema(
         title = "Delete the job at the end."
     )
     @NotNull
     @Builder.Default
-    private Property<Boolean> delete = Property.of(true);
+    private Property<Boolean> delete = Property.ofValue(true);
 
     @JsonIgnore
     @Getter(AccessLevel.NONE)

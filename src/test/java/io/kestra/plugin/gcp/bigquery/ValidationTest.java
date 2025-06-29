@@ -22,7 +22,7 @@ class ValidationTest {
         Query.QueryBuilder<?, ?> builder = Query.builder()
             .id("test")
             .type(Query.class.getName())
-            .sql(Property.of("SELECT 1"));
+            .sql(Property.ofValue("SELECT 1"));
 
         Query task = builder
             .store(false)
@@ -54,11 +54,11 @@ class ValidationTest {
         Query.QueryBuilder<?, ?> builder = Query.builder()
             .id("test")
             .type(Query.class.getName())
-            .sql(Property.of("SELECT 1"));
+            .sql(Property.ofValue("SELECT 1"));
 
         Query task = builder
             .store(false)
-            .destinationTable(Property.of("project.dataset.table"))
+            .destinationTable(Property.ofValue("project.dataset.table"))
             .build();
 
         Optional<ConstraintViolationException> valid = modelValidator.isValid(task);
@@ -66,7 +66,7 @@ class ValidationTest {
 
         task = builder
             .store(true)
-            .destinationTable(Property.of("project.dataset.table"))
+            .destinationTable(Property.ofValue("project.dataset.table"))
             .build();
 
         valid = modelValidator.isValid(task);

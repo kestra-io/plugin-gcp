@@ -30,10 +30,10 @@ class GCloudCLITest {
         GCloudCLI execute = GCloudCLI.builder()
                 .id(IdUtils.create())
                 .type(GCloudCLI.class.getName())
-                .projectId(Property.of(projectId))
-                .serviceAccount(Property.of(serviceAccount))
+                .projectId(Property.ofValue(projectId))
+                .serviceAccount(Property.ofValue(serviceAccount))
                 .env(new Property<>(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
-                .commands(Property.of(List.of(
+                .commands(Property.ofValue(List.of(
                         "echo \"::{\\\"outputs\\\":{" +
                                 "\\\"appCredentials\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\"," +
                                 "\\\"cliCredentials\\\":\\\"$(cat $CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE)\\\"," +

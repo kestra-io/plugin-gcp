@@ -61,12 +61,12 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     protected Property<String> projectId;
     protected Property<String> serviceAccount;
     @Builder.Default
-    protected Property<java.util.List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
+    protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private Property<String> sql;
 
     @Builder.Default
-    private Property<Boolean> legacySql = Property.of(false);
+    private Property<Boolean> legacySql = Property.ofValue(false);
 
     @Builder.Default
     @Deprecated
@@ -81,7 +81,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private boolean fetchOne = false;
 
     @Builder.Default
-    private Property<FetchType> fetchType = Property.of(FetchType.NONE);
+    private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {

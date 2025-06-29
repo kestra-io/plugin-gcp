@@ -71,7 +71,7 @@ import java.util.concurrent.atomic.AtomicReference;
             code = """
                 id: pubsub_realtime_trigger
                 namespace: company.team
-                
+
                 tasks:
                   - id: insert_into_firestore
                     type: io.kestra.plugin.gcp.firestore.Set
@@ -85,7 +85,7 @@ import java.util.concurrent.atomic.AtomicReference;
                       price: "{{ trigger.data | jq('.price') | first }}"
                       quantity: "{{ trigger.data | jq('.quantity') | first }}"
                       total: "{{ trigger.data | jq('.total') | first }}"
-                
+
                 triggers:
                   - id: realtime_trigger
                     type: io.kestra.plugin.gcp.pubsub.RealtimeTrigger
@@ -106,7 +106,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
     private Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    private Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
+    private Property<List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private Property<String> topic;
 
@@ -120,10 +120,10 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
         title = "Whether the Pub/Sub subscription should be created if not exist"
     )
     @Builder.Default
-    private Property<Boolean> autoCreateSubscription = Property.of(true);
+    private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
     @Builder.Default
-    private final Property<Duration> interval = Property.of(Duration.ofSeconds(60));
+    private final Property<Duration> interval = Property.ofValue(Duration.ofSeconds(60));
 
     @Schema(title = "Max number of records, when reached the task will end.")
     private Property<Integer> maxRecords;
@@ -134,7 +134,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
     @Builder.Default
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
+    private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Builder.Default
     @Getter(AccessLevel.NONE)

@@ -68,7 +68,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             + "NONE do nothing."
     )
     @Builder.Default
-    private Property<FetchType> fetchType = Property.of(FetchType.STORE);
+    private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Schema(
         title = "List of query filters that will be added as a where clause."
@@ -85,7 +85,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         title = "Field name for the order by clause."
     )
     @Builder.Default
-    private Property<Direction> orderDirection = Property.of(Direction.ASCENDING);
+    private Property<Direction> orderDirection = Property.ofValue(Direction.ASCENDING);
 
     @Schema(
         title = "Start offset for pagination of the query results."
@@ -276,7 +276,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             title = "The operator for the filter, by default EQUAL_TO that will call 'collection.whereEqualTo(name, value)'"
         )
         @Builder.Default
-        private Property<QueryOperator> operator = Property.of(QueryOperator.EQUAL_TO);
+        private Property<QueryOperator> operator = Property.ofValue(QueryOperator.EQUAL_TO);
     }
 
     public enum QueryOperator {

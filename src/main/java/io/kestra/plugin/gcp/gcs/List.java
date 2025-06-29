@@ -48,7 +48,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
         title = "The filter for files or a directory"
     )
     @Builder.Default
-    protected final Property<Filter> filter = Property.of(Filter.BOTH);
+    protected final Property<Filter> filter = Property.ofValue(Filter.BOTH);
 
     @Override
     public Output run(RunContext runContext) throws Exception {

@@ -63,7 +63,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    private Property<List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
+    private Property<List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private Property<String> topic;
 
@@ -77,7 +77,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Whether the Pub/Sub subscription should be created if not exist"
     )
     @Builder.Default
-    private Property<Boolean> autoCreateSubscription = Property.of(true);
+    private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
@@ -91,7 +91,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
+    private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {

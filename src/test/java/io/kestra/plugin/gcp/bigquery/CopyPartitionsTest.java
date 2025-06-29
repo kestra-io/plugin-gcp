@@ -33,7 +33,7 @@ class CopyPartitionsTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+            .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
                     "PARTITION BY DATE(transaction_date)\n" +
                     "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')\n" +
                     "UNION ALL\n" +
@@ -54,13 +54,13 @@ class CopyPartitionsTest {
         CopyPartitions task = CopyPartitions.builder()
             .id(QueryTest.class.getSimpleName())
             .type(CopyPartitions.class.getName())
-            .projectId(Property.of(this.project))
-            .dataset(Property.of(this.dataset))
-            .partitionType(Property.of(AbstractPartition.PartitionType.DAY))
-            .table(Property.of(table))
-            .from(new Property<>("{{ '2020-04-02' | date() }}"))
-            .to(new Property<>("{{ '2020-04-04' | date() }}"))
-            .destinationTable(Property.of(this.project + "." + this.dataset + "." + destinationTable))
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .partitionType(Property.ofValue(AbstractPartition.PartitionType.DAY))
+            .table(Property.ofValue(table))
+            .from(Property.ofExpression("{{ '2020-04-02' | date() }}"))
+            .to(Property.ofExpression("{{ '2020-04-04' | date() }}"))
+            .destinationTable(Property.ofValue(this.project + "." + this.dataset + "." + destinationTable))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         CopyPartitions.Output run = task.run(runContext);
@@ -71,7 +71,7 @@ class CopyPartitionsTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .fetchOne(true)
-            .sql(Property.of("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + destinationTable + "`;"))
+            .sql(Property.ofValue("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + destinationTable + "`;"))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, query, ImmutableMap.of());
         Query.Output queryRun = query.run(runContext);

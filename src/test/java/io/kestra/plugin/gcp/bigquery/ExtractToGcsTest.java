@@ -68,11 +68,11 @@ public class ExtractToGcsTest extends AbstractBigquery {
         ExtractToGcs task = ExtractToGcs.builder()
             .id(ExtractToGcsTest.class.getSimpleName())
             .type(ExtractToGcs.class.getName())
-            .destinationUris(Property.of(Collections.singletonList(
+            .destinationUris(Property.ofValue(Collections.singletonList(
                 "gs://" + this.bucket + "/" + this.filename
             )))
-            .sourceTable(Property.of(this.project + "." + this.dataset + "." + this.table))
-            .printHeader(Property.of(printHeader))
+            .sourceTable(Property.ofValue(this.project + "." + this.dataset + "." + this.table))
+            .printHeader(Property.ofValue(printHeader))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -96,7 +96,7 @@ public class ExtractToGcsTest extends AbstractBigquery {
         Download downloadTask = Download.builder()
             .id(ExtractToGcsTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(Property.of(extractOutput.getDestinationUris().get(0)))
+            .from(Property.ofValue(extractOutput.getDestinationUris().get(0)))
             .build();
 
         Download.Output downloadOutput = downloadTask.run(runContext(downloadTask));

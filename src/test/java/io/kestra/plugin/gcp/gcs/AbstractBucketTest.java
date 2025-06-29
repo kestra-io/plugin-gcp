@@ -61,8 +61,8 @@ abstract class AbstractBucketTest {
         return CreateBucket.builder()
             .id(AbstractBucketTest.class.getSimpleName())
             .type(CreateBucket.class.getName())
-            .name(new Property<>("{{bucket}}"))
-            .projectId(inferProjectId() ? null : new Property<>("{{project}}"));
+            .name(Property.ofExpression("{{bucket}}"))
+            .projectId(inferProjectId() ? null : Property.ofExpression("{{project}}"));
     }
 
     @Test
@@ -88,8 +88,8 @@ abstract class AbstractBucketTest {
     @Order(3)
     void createNoException() throws Exception {
         CreateBucket task = createBuilder()
-            .indexPage(Property.of("createUpdate"))
-            .ifExists(Property.of(CreateBucket.IfExists.SKIP))
+            .indexPage(Property.ofValue("createUpdate"))
+            .ifExists(Property.ofValue(CreateBucket.IfExists.SKIP))
             .build();
 
         AbstractBucket.Output run = task.run(runContext());
@@ -101,8 +101,8 @@ abstract class AbstractBucketTest {
     @Order(4)
     void createUpdate() throws Exception {
         CreateBucket task = createBuilder()
-            .indexPage(Property.of("createUpdate"))
-            .ifExists(Property.of(CreateBucket.IfExists.UPDATE))
+            .indexPage(Property.ofValue("createUpdate"))
+            .ifExists(Property.ofValue(CreateBucket.IfExists.UPDATE))
             .build();
 
         AbstractBucket.Output run = task.run(runContext());
@@ -117,9 +117,9 @@ abstract class AbstractBucketTest {
         UpdateBucket task = UpdateBucket.builder()
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
-            .name(new Property<>("{{bucket}}"))
-            .projectId(new Property<>("{{project}}"))
-            .indexPage(Property.of("update"))
+            .name(Property.ofExpression("{{bucket}}"))
+            .projectId(Property.ofExpression("{{project}}"))
+            .indexPage(Property.ofValue("update"))
             .build();
 
         AbstractBucket.Output run = task.run(runContext());
@@ -132,16 +132,16 @@ abstract class AbstractBucketTest {
     @Order(6)
     void acl() throws Exception {
         CreateBucket task = createBuilder()
-            .indexPage(Property.of("createUpdate"))
+            .indexPage(Property.ofValue("createUpdate"))
             .acl(Collections.singletonList(
                 AccessControl.builder()
                     .entity(Entity.builder()
-                        .type(Property.of(Entity.Type.USER))
-                        .value(Property.of("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com")).build())
-                    .role(Property.of(AccessControl.Role.OWNER))
+                        .type(Property.ofValue(Entity.Type.USER))
+                        .value(Property.ofValue("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com")).build())
+                    .role(Property.ofValue(AccessControl.Role.OWNER))
                     .build()
             ))
-            .ifExists(Property.of(CreateBucket.IfExists.UPDATE))
+            .ifExists(Property.ofValue(CreateBucket.IfExists.UPDATE))
             .build();
 
         RunContext rc = runContext(RANDOM_ID_2);
@@ -167,19 +167,19 @@ abstract class AbstractBucketTest {
         CreateBucketIamPolicy.CreateBucketIamPolicyBuilder<?, ?> builder = CreateBucketIamPolicy.builder()
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
-            .name(new Property<>("{{bucket}}"))
-            .projectId(new Property<>("{{project}}"))
-            .member(Property.of("domain:kestra.io"))
-            .role(Property.of("roles/storage.objectViewer"));
+            .name(Property.ofExpression("{{bucket}}"))
+            .projectId(Property.ofExpression("{{project}}"))
+            .member(Property.ofValue("domain:kestra.io"))
+            .role(Property.ofValue("roles/storage.objectViewer"));
 
         CreateBucketIamPolicy.Output run = builder.build().run(runContext());
         assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
 
         assertThrows(Exception.class, () -> {
-            builder.ifExists(Property.of(CreateBucketIamPolicy.IfExists.ERROR)).build().run(runContext());
+            builder.ifExists(Property.ofValue(CreateBucketIamPolicy.IfExists.ERROR)).build().run(runContext());
         });
 
-        run = builder.ifExists(Property.of(CreateBucketIamPolicy.IfExists.SKIP)).build().run(runContext());
+        run = builder.ifExists(Property.ofValue(CreateBucketIamPolicy.IfExists.SKIP)).build().run(runContext());
         assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
     }
 
@@ -191,8 +191,8 @@ abstract class AbstractBucketTest {
         DeleteBucket task = DeleteBucket.builder()
             .id(AbstractBucketTest.class.getSimpleName())
             .type(DeleteBucket.class.getName())
-            .name(new Property<>("{{bucket}}"))
-            .projectId(new Property<>("{{project}}"))
+            .name(Property.ofExpression("{{bucket}}"))
+            .projectId(Property.ofExpression("{{project}}"))
             .build();
 
         DeleteBucket.Output run = task.run(runContext);
@@ -203,8 +203,8 @@ abstract class AbstractBucketTest {
         task = DeleteBucket.builder()
             .id(AbstractBucketTest.class.getSimpleName())
             .type(DeleteBucket.class.getName())
-            .name(new Property<>("{{bucket}}"))
-            .projectId(new Property<>("{{project}}"))
+            .name(Property.ofExpression("{{bucket}}"))
+            .projectId(Property.ofExpression("{{project}}"))
             .build();
 
         run = task.run(runContext);
@@ -215,7 +215,7 @@ abstract class AbstractBucketTest {
     private void createBucketWithLifecycleRule(RunContext rc, java.util.List<BucketLifecycleRule> rules) throws Exception {
         CreateBucket task = createBuilder()
             .lifecycleRules(rules)
-            .ifExists(Property.of(CreateBucket.IfExists.ERROR))
+            .ifExists(Property.ofValue(CreateBucket.IfExists.ERROR))
             .build();
 
         AbstractBucket.Output run = task.run(rc);
@@ -262,9 +262,9 @@ abstract class AbstractBucketTest {
             rc,
             Collections.singletonList(
                 BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(Property.of(1)).build())
+                    .condition(BucketLifecycleRule.Condition.builder().age(Property.ofValue(1)).build())
                     .action(BucketLifecycleRule.Action.builder()
-                        .type(Property.of(BucketLifecycleRule.Action.Type.DELETE))
+                        .type(Property.ofValue(BucketLifecycleRule.Action.Type.DELETE))
                         .build())
                     .build()
             ));
@@ -279,33 +279,33 @@ abstract class AbstractBucketTest {
             rc,
             List.of(
                 BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(Property.of(30)).build())
+                    .condition(BucketLifecycleRule.Condition.builder().age(Property.ofValue(30)).build())
                     .action(BucketLifecycleRule.Action.builder()
-                        .type(Property.of(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS))
-                        .value(Property.of(io.kestra.plugin.gcp.gcs.models.StorageClass.NEARLINE.name()))
+                        .type(Property.ofValue(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS))
+                        .value(Property.ofValue(io.kestra.plugin.gcp.gcs.models.StorageClass.NEARLINE.name()))
                         .build())
                     .build(),
 
                 BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(Property.of(60)).build())
+                    .condition(BucketLifecycleRule.Condition.builder().age(Property.ofValue(60)).build())
                     .action(BucketLifecycleRule.Action.builder()
-                        .type(Property.of(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS))
-                        .value(Property.of(io.kestra.plugin.gcp.gcs.models.StorageClass.COLDLINE.name()))
+                        .type(Property.ofValue(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS))
+                        .value(Property.ofValue(io.kestra.plugin.gcp.gcs.models.StorageClass.COLDLINE.name()))
                         .build())
                     .build(),
 
                 BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(Property.of(90)).build())
+                    .condition(BucketLifecycleRule.Condition.builder().age(Property.ofValue(90)).build())
                     .action(BucketLifecycleRule.Action.builder()
-                        .type(Property.of(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS))
-                        .value(Property.of(io.kestra.plugin.gcp.gcs.models.StorageClass.ARCHIVE.name()))
+                        .type(Property.ofValue(BucketLifecycleRule.Action.Type.SET_STORAGE_CLASS))
+                        .value(Property.ofValue(io.kestra.plugin.gcp.gcs.models.StorageClass.ARCHIVE.name()))
                         .build())
                     .build(),
 
                 BucketLifecycleRule.builder()
-                    .condition(BucketLifecycleRule.Condition.builder().age(Property.of(1)).build())
+                    .condition(BucketLifecycleRule.Condition.builder().age(Property.ofValue(1)).build())
                     .action(BucketLifecycleRule.Action.builder()
-                        .type(Property.of(BucketLifecycleRule.Action.Type.DELETE))
+                        .type(Property.ofValue(BucketLifecycleRule.Action.Type.DELETE))
                         .build())
                     .build()
             ));

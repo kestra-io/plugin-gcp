@@ -115,9 +115,9 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from(Property.of("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
-            .action(Property.of(ActionInterface.Action.MOVE))
-            .moveDirectory(Property.of("gs://" + bucket + "/test/move"))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
+            .action(Property.ofValue(ActionInterface.Action.MOVE))
+            .moveDirectory(Property.ofValue("gs://" + bucket + "/test/move"))
             .build();
 
         String out = FriendlyId.createFriendlyId();
@@ -136,7 +136,7 @@ class TriggerTest {
             Download task = Download.builder()
                 .id(DownloadTest.class.getSimpleName())
                 .type(Download.class.getName())
-                .from(Property.of(upload.getUri().toString()))
+                .from(Property.ofValue(upload.getUri().toString()))
                 .build();
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
@@ -146,7 +146,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(Property.of("gs://" + bucket + "/test/move/" + out + ".yml"))
+            .from(Property.ofValue("gs://" + bucket + "/test/move/" + out + ".yml"))
             .build();
 
         Download.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
@@ -158,8 +158,8 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from(Property.of("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
-            .action(Property.of(ActionInterface.Action.NONE))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
             .build();
 
         String out = FriendlyId.createFriendlyId();
@@ -177,7 +177,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(Property.of(upload.getUri().toString()))
+            .from(Property.ofValue(upload.getUri().toString()))
             .build();
 
         Assertions.assertDoesNotThrow(() -> task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of())));
@@ -185,7 +185,7 @@ class TriggerTest {
         Delete delete = Delete.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .uri(Property.of(upload.getUri().toString()))
+            .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
     }

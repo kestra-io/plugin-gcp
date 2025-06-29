@@ -123,7 +123,7 @@ class DeletePartitionsTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+            .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
                 "PARTITION BY " + partition + "\n" +
                 "AS " + insert
             ))
@@ -135,12 +135,12 @@ class DeletePartitionsTest {
         DeletePartitions task = DeletePartitions.builder()
             .id(QueryTest.class.getSimpleName())
             .type(DeleteTable.class.getName())
-            .projectId(Property.of(this.project))
-            .dataset(Property.of(this.dataset))
-            .partitionType(Property.of(partitionType))
-            .table(Property.of(table))
-            .from(Property.of(from))
-            .to(Property.of(to))
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .partitionType(Property.ofValue(partitionType))
+            .table(Property.ofValue(table))
+            .from(Property.ofValue(from))
+            .to(Property.ofValue(to))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         DeletePartitions.Output run = task.run(runContext);
@@ -151,7 +151,7 @@ class DeletePartitionsTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .fetchOne(true)
-            .sql(Property.of("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;"))
+            .sql(Property.ofValue("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;"))
             .build();
         runContext = TestsUtils.mockRunContext(runContextFactory, query, ImmutableMap.of());
         Query.Output queryRun = query.run(runContext);

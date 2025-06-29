@@ -49,11 +49,11 @@ class ComposeTest {
             .id(ComposeTest.class.getSimpleName())
             .type(Compose.class.getName())
             .list(Compose.List.builder()
-                .from(Property.of("gs://" +  bucket + "/tasks/gcp/upload/compose-" + dir + "/"))
-                .listingType(Property.of(ListInterface.ListingType.RECURSIVE))
+                .from(Property.ofValue("gs://" +  bucket + "/tasks/gcp/upload/compose-" + dir + "/"))
+                .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
                 .build()
             )
-            .to(Property.of("gs://" +  bucket + "/tasks/gcp/compose-result/compose.txt"))
+            .to(Property.ofValue("gs://" +  bucket + "/tasks/gcp/compose-result/compose.txt"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
@@ -62,7 +62,7 @@ class ComposeTest {
         Download download = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(Property.of(run.getUri().toString()))
+            .from(Property.ofValue(run.getUri().toString()))
             .build();
 
         InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, download.run(runContext).getUri());
@@ -87,10 +87,10 @@ class ComposeTest {
             .id("compose-default-listingType")
             .type(Compose.class.getName())
             .list(Compose.List.builder()
-                .from(Property.of("gs://" + bucket + "/tasks/gcp/upload/" + basePath))
+                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + basePath))
                 .build()
             )
-            .to(Property.of("gs://" + bucket + "/tasks/gcp/compose-result/compose-default.txt"))
+            .to(Property.ofValue("gs://" + bucket + "/tasks/gcp/compose-result/compose-default.txt"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
@@ -99,7 +99,7 @@ class ComposeTest {
         Download download = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(Property.of(run.getUri().toString()))
+            .from(Property.ofValue(run.getUri().toString()))
             .build();
 
         InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, download.run(runContext).getUri());

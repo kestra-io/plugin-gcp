@@ -58,7 +58,7 @@ abstract public class AbstractBigquery extends AbstractTask {
     @Schema(
         title = "The reasons which would trigger an automatic retry."
     )
-    protected Property<List<String>> retryReasons = Property.of(Arrays.asList(
+    protected Property<List<String>> retryReasons = Property.ofValue(Arrays.asList(
         "rateLimitExceeded",
         "jobBackendError",
         "backendError",
@@ -71,7 +71,7 @@ abstract public class AbstractBigquery extends AbstractTask {
         title = "The messages which would trigger an automatic retry.",
         description = "Message is tested as a substring of the full message, and is case insensitive."
     )
-    protected Property<List<String>> retryMessages = Property.of(Arrays.asList(
+    protected Property<List<String>> retryMessages = Property.ofValue(Arrays.asList(
         "due to concurrent update",
         "Retrying the job may solve the problem",
         "Retrying may solve the problem"

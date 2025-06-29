@@ -26,9 +26,9 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
-            .childPath(Property.of("1"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
+            .childPath(Property.ofValue("1"))
             .document(Map.of("firstname", "John",
                 "lastname", "Doe"
             ))
@@ -49,9 +49,9 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
-            .childPath(Property.of("2"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
+            .childPath(Property.ofValue("2"))
             .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
             .build();
 
@@ -70,9 +70,9 @@ class SetTest {
         var runContext = runContextFactory.of();
 
         var set = Set.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
-            .childPath(Property.of("3"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
+            .childPath(Property.ofValue("3"))
             .document(null)
             .build();
 

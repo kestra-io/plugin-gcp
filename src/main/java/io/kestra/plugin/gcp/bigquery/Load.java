@@ -73,7 +73,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         title = "Does the task will failed for an empty file"
     )
     @Builder.Default
-    private Property<Boolean> failedOnEmpty = Property.of(true);
+    private Property<Boolean> failedOnEmpty = Property.ofValue(true);
 
     @Override
     public Output run(RunContext runContext) throws Exception {

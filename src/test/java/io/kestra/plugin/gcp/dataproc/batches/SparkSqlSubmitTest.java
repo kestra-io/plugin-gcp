@@ -33,9 +33,9 @@ class SparkSqlSubmitTest {
             // The file can be found in src/main/resources/dataproc and must be uploaded to the GCS bucket before running the test
             .id(SparkSqlSubmit.class.getSimpleName())
             .type(SparkSqlSubmit.class.getName())
-            .queryFileUri(Property.of("gs://spark-jobs-kestra/foobar.sql"))
-            .projectId(Property.of(project))
-            .name(Property.of("test-sparksql"))
+            .queryFileUri(Property.ofValue("gs://spark-jobs-kestra/foobar.sql"))
+            .projectId(Property.ofValue(project))
+            .name(Property.ofValue("test-sparksql"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, submit, ImmutableMap.of());

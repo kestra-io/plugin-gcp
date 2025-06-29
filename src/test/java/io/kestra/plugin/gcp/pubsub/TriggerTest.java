@@ -83,8 +83,8 @@ class TriggerTest {
             Publish task = Publish.builder()
                 .id(Publish.class.getSimpleName())
                 .type(Publish.class.getName())
-                .topic(Property.of("test-topic"))
-                .projectId(Property.of(this.project))
+                .topic(Property.ofValue("test-topic"))
+                .projectId(Property.ofValue(this.project))
                 .from(
                     List.of(
                         Message.builder().data("Hello World".getBytes()).build(),

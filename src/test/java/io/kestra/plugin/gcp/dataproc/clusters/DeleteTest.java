@@ -35,7 +35,7 @@ public class DeleteTest {
         Delete create = Delete.builder()
             .id(Delete.class.getSimpleName())
             .type(Delete.class.getName())
-            .projectId(Property.of(project))
+            .projectId(Property.ofValue(project))
             .clusterName("test-cluster")
 	        .region(region)
             .build();

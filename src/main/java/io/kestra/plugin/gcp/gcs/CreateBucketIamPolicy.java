@@ -67,7 +67,7 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
     @Schema(
         title = "Policy to apply if a policy already exists."
     )
-    private Property<IfExists> ifExists = Property.of(IfExists.SKIP);
+    private Property<IfExists> ifExists = Property.ofValue(IfExists.SKIP);
 
     @Override
     public CreateBucketIamPolicy.Output run(RunContext runContext) throws Exception {

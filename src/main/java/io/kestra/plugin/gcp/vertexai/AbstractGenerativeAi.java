@@ -49,7 +49,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     )
     @PluginProperty(dynamic = true)
     @Builder.Default
-    private Property<String> modelId = Property.of("gemini-pro");
+    private Property<String> modelId = Property.ofValue("gemini-pro");
 
     protected GenerativeModel buildModel(String modelName, VertexAI vertexAI) {
         GenerativeModel model = new GenerativeModel(modelName, vertexAI);

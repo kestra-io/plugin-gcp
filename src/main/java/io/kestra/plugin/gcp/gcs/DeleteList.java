@@ -56,7 +56,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         title = "raise an error if the file is not found"
     )
     @Builder.Default
-    private final Property<Boolean> errorOnEmpty = Property.of(false);
+    private final Property<Boolean> errorOnEmpty = Property.ofValue(false);
 
     @Min(2)
     @Schema(
