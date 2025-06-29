@@ -125,7 +125,7 @@ public class BucketLifecycleRule {
                     .convert(this.getCondition(), runContext);
             case SET_STORAGE_CLASS:
                 return SetStorageAction.builder()
-                    .storageClass(Property.of(
+                    .storageClass(Property.ofValue(
                         StorageClass.valueOf(runContext.render(this.getAction().getValue()).as(String.class).orElse(null)))
                     )
                     .build()

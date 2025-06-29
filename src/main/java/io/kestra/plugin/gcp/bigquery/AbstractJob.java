@@ -25,5 +25,5 @@ public abstract class AbstractJob extends AbstractBigquery implements AbstractJo
     protected Property<Map<String, String>> labels;
 
     @Builder.Default
-    protected Property<Boolean> dryRun = Property.of(false);
+    protected Property<Boolean> dryRun = Property.ofValue(false);
 }

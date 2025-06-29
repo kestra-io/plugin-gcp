@@ -35,11 +35,11 @@ class SparkSubmitTest {
             // The example can be retrieved from the Spark site (version Scala 2.13) and must be uploaded to the GCS bucket before running the test
             .id(SparkSubmit.class.getSimpleName())
             .type(SparkSubmit.class.getName())
-            .jarFileUris(Property.of(List.of("gs://spark-jobs-kestra/spark-examples.jar")))
-            .mainClass(Property.of("org.apache.spark.examples.SparkPi"))
-            .args(Property.of(List.of("1000")))
-            .projectId(Property.of(project))
-            .name(Property.of("test-spark"))
+            .jarFileUris(Property.ofValue(List.of("gs://spark-jobs-kestra/spark-examples.jar")))
+            .mainClass(Property.ofValue("org.apache.spark.examples.SparkPi"))
+            .args(Property.ofValue(List.of("1000")))
+            .projectId(Property.ofValue(project))
+            .name(Property.ofValue("test-spark"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, submit, ImmutableMap.of());

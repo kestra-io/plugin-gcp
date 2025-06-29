@@ -94,14 +94,14 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Schema(
         title = "The type of write stream to use"
     )
-    private final Property<WriteStreamType> writeStreamType = Property.of(WriteStreamType.DEFAULT);
+    private final Property<WriteStreamType> writeStreamType = Property.ofValue(WriteStreamType.DEFAULT);
 
     @NotNull
     @Builder.Default
     @Schema(
         title = "The number of records to send on each query"
     )
-    protected final Property<Integer> bufferSize = Property.of(1000);
+    protected final Property<Integer> bufferSize = Property.ofValue(1000);
 
     @Schema(
         title = "The geographic location where the dataset should reside",

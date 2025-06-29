@@ -64,7 +64,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     @Builder.Default
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
+    private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override
     public Publish.Output run(RunContext runContext) throws Exception {

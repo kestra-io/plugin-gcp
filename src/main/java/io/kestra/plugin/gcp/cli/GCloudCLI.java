@@ -95,7 +95,7 @@ import java.util.Map;
                     code = """
                         id: gcloud_cli_flow
                         namespace: company.team
-                        
+
                         tasks:
                           - id: gcloud_cli
                             type: io.kestra.plugin.gcp.cli.GCloudCLI
@@ -154,7 +154,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
 
     @Schema(title = "The task runner container image, only used if the task runner is container-based.")
     @Builder.Default
-    private Property<String> containerImage = Property.of(DEFAULT_IMAGE);
+    private Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
     private NamespaceFiles namespaceFiles;
 
@@ -172,7 +172,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
             .withDockerOptions(injectDefaults(getDocker()))
             .withTaskRunner(this.taskRunner)
             .withContainerImage(runContext.render(this.containerImage).as(String.class).orElseThrow())
-            .withInterpreter(Property.of(List.of("/bin/sh", "-c")))
+            .withInterpreter(Property.ofValue(List.of("/bin/sh", "-c")))
             .withCommands(this.commands)
             .withEnv(this.getEnv(runContext))
             .withNamespaceFiles(namespaceFiles)

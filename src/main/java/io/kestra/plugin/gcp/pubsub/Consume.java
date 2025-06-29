@@ -68,7 +68,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         title = "Whether the Pub/Sub subscription should be created if not exists."
     )
     @Builder.Default
-    private Property<Boolean> autoCreateSubscription = Property.of(true);
+    private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
     @Schema(title = "Max number of records, when reached the task will end.")
     private Property<Integer> maxRecords;
@@ -79,7 +79,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @Builder.Default
     @NotNull
     @Schema(title = "The serializer/deserializer to use.")
-    private Property<SerdeType> serdeType = Property.of(SerdeType.STRING);
+    private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
