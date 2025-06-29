@@ -39,8 +39,8 @@ class CopyTest {
         Query create = Query.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of(QueryTest.sql()))
-            .destinationTable(Property.of(tableValue))
+            .sql(Property.ofValue(QueryTest.sql()))
+            .destinationTable(Property.ofValue(tableValue))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
@@ -50,8 +50,8 @@ class CopyTest {
         Copy copy = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
-            .sourceTables(Property.of(List.of(tableValue)))
-            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
+            .sourceTables(Property.ofValue(List.of(tableValue)))
+            .destinationTable(Property.ofValue(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .build();
 
         runContext = TestsUtils.mockRunContext(runContextFactory, copy, ImmutableMap.of());
@@ -62,7 +62,7 @@ class CopyTest {
         Query fetch = Query.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of("SELECT * FROM " + create.getDestinationTable()))
+            .sql(Property.ofValue("SELECT * FROM " + create.getDestinationTable()))
             .fetchOne(true)
             .build();
 
@@ -82,9 +82,9 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(Copy.class.getSimpleName())
             .type(Copy.class.getName())
-            .sourceTables(Property.of(List.of(tableValue)))
-            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
-            .labels(Property.of(initialLabels))
+            .sourceTables(Property.ofValue(List.of(tableValue)))
+            .destinationTable(Property.ofValue(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
+            .labels(Property.ofValue(initialLabels))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());

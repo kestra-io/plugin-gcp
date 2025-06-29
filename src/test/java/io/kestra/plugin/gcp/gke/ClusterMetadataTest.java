@@ -28,9 +28,9 @@ class ClusterMetadataTest {
         ClusterMetadata task = spy(ClusterMetadata.builder()
             .id(ClusterMetadataTest.class.getSimpleName())
             .type(Load.class.getName())
-            .clusterZone(Property.of("my-zone"))
-            .clusterId(Property.of("my-cluster"))
-            .clusterProjectId(Property.of("my-project"))
+            .clusterZone(Property.ofValue("my-zone"))
+            .clusterId(Property.ofValue("my-cluster"))
+            .clusterProjectId(Property.ofValue("my-project"))
             .build());
 
         doReturn(Cluster.newBuilder().setName("my-cluster").build())

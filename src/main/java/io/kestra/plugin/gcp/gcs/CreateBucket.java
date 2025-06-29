@@ -46,7 +46,7 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
     @Schema(
         title = "Policy to apply if a bucket already exists."
     )
-    private Property<IfExists> ifExists = Property.of(IfExists.ERROR);
+    private Property<IfExists> ifExists = Property.ofValue(IfExists.ERROR);
 
     @Override
     public AbstractBucket.Output run(RunContext runContext) throws Exception {

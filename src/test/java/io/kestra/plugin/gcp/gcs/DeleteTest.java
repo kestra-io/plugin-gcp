@@ -51,8 +51,8 @@ class DeleteTest {
         Upload upload = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(Property.of(source.toString()))
-            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
+            .from(Property.ofValue(source.toString()))
+            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
             .build();
 
         Upload.Output uploadOutput = upload.run(runContext(upload));
@@ -60,7 +60,7 @@ class DeleteTest {
         Delete task = Delete.builder()
             .id(DeleteTest.class.getSimpleName())
             .type(Download.class.getName())
-            .uri(Property.of(uploadOutput.getUri().toString()))
+            .uri(Property.ofValue(uploadOutput.getUri().toString()))
             .build();
 
 

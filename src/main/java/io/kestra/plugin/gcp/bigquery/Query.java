@@ -117,7 +117,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<String> sql;
 
     @Builder.Default
-    private Property<Boolean> legacySql = Property.of(false);
+    private Property<Boolean> legacySql = Property.ofValue(false);
 
     @Builder.Default
     @Deprecated
@@ -132,7 +132,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private boolean fetchOne = false;
 
     @Builder.Default
-    private Property<FetchType> fetchType = Property.of(FetchType.NONE);
+    private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     // private List<String> positionalParameters;
 
@@ -164,7 +164,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         title = "The time partitioning type specification."
     )
     @Builder.Default
-    private Property<TimePartitioning.Type> timePartitioningType = Property.of(TimePartitioning.Type.DAY);
+    private Property<TimePartitioning.Type> timePartitioningType = Property.ofValue(TimePartitioning.Type.DAY);
 
     @Schema(
         title = "Range partitioning field for the destination table."
@@ -196,7 +196,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         title = "Sets a priority for the query."
     )
     @Builder.Default
-    private Property<QueryJobConfiguration.Priority> priority = Property.of(QueryJobConfiguration.Priority.INTERACTIVE);
+    private Property<QueryJobConfiguration.Priority> priority = Property.ofValue(QueryJobConfiguration.Priority.INTERACTIVE);
 
     @Schema(
         title = "Sets whether the job is enabled to create arbitrarily large results.",
@@ -217,7 +217,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "If set to `false`, allowLargeResults must be `true`."
     )
     @Builder.Default
-    private Property<Boolean> flattenResults = Property.of(true);
+    private Property<Boolean> flattenResults = Property.ofValue(true);
 
     @Schema(
         title = "Sets whether to use BigQuery's legacy SQL dialect for this query.",
@@ -225,7 +225,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             "while an invalid query will return the same error it would if it wasn't a dry run."
     )
     @Builder.Default
-    private Property<Boolean> useLegacySql = Property.of(false);
+    private Property<Boolean> useLegacySql = Property.ofValue(false);
 
     @Schema(
         title = "Limits the billing tier for this job.",

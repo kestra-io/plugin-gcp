@@ -39,7 +39,7 @@ class DeleteListTest {
             .id(DeleteList.class.getSimpleName())
             .type(DeleteList.class.getName())
             .concurrent(8)
-            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+            .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .build();
         DeleteList.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
 

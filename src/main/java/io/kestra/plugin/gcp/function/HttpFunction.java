@@ -78,14 +78,14 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         description = "JSON body of the Azure function"
     )
     @Builder.Default
-    protected Property<Map<String, Object>> httpBody = Property.of(new HashMap<>());
+    protected Property<Map<String, Object>> httpBody = Property.ofValue(new HashMap<>());
 
     @Schema(
         title = "Max duration",
         description = "The maximum duration the task should wait until the Azure Function completion."
     )
     @Builder.Default
-    protected Property<Duration> maxDuration = Property.of(Duration.ofMinutes(60));
+    protected Property<Duration> maxDuration = Property.ofValue(Duration.ofMinutes(60));
 
     @Override
     public Output run(RunContext runContext) throws Exception {

@@ -60,7 +60,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
     private Property<Boolean> allVersions;
 
     @Builder.Default
-    private final Property<List.ListingType> listingType = Property.of(ListingType.DIRECTORY);
+    private final Property<List.ListingType> listingType = Property.ofValue(ListingType.DIRECTORY);
 
     private Property<String> regExp;
 
@@ -82,7 +82,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 Delete delete = Delete.builder()
                     .id("archive")
                     .type(Delete.class.getName())
-                    .uri(Property.of(blob.getUri().toString()))
+                    .uri(Property.ofValue(blob.getUri().toString()))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
                     .scopes(scopes)
@@ -94,11 +94,11 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 Copy copy = Copy.builder()
                     .id("archive")
                     .type(Copy.class.getName())
-                    .from(Property.of(blob.getUri().toString()))
-                    .to(Property.of(StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")
+                    .from(Property.ofValue(blob.getUri().toString()))
+                    .to(Property.ofValue(StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")
                         + "/" + FilenameUtils.getName(blob.getName())
                     ))
-                    .delete(Property.of(true))
+                    .delete(Property.ofValue(true))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
                     .scopes(scopes)
@@ -117,7 +117,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.from)
-            .filter(Property.of(Filter.FILES))
+            .filter(Property.ofValue(Filter.FILES))
             .listingType(this.listingType)
             .regExp(this.regExp)
             .allVersions(this.allVersions)

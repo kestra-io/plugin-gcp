@@ -68,7 +68,7 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
     protected Property<Map<String, String>> labels;
 
     @Builder.Default
-    protected Property<Boolean> dryRun = Property.of(false);
+    protected Property<Boolean> dryRun = Property.ofValue(false);
 
     @Override
     public CopyPartitions.Output run(RunContext runContext) throws Exception {
@@ -83,7 +83,7 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         runContext.metric(Counter.of("size", partitionToCopy.size()));
 
         Copy task = Copy.builder()
-            .sourceTables(Property.of(partitionToCopy
+            .sourceTables(Property.ofValue(partitionToCopy
                 .stream()
                 .map(throwFunction(s -> {
                     TableId current = this.tableId(runContext, s);
