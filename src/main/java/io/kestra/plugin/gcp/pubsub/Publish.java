@@ -15,6 +15,8 @@ import lombok.experimental.SuperBuilder;
 
 import jakarta.validation.constraints.NotNull;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @SuperBuilder
@@ -66,9 +68,17 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
     @Override
     public Publish.Output run(RunContext runContext) throws Exception {
-        var publisher = this.createPublisher(runContext);
+        boolean hasOrderingKeys = checkForOrderingKeys(runContext);
+
+        var publisher = this.createPublisher(
+            AbstractPubSub.PublisherOptions.builder()
+                .runContext(runContext)
+                .enableMessageOrdering(hasOrderingKeys)
+                .build()
+        );
+
         Integer count = io.kestra.core.models.property.Data.from(from)
-            .readAs(runContext, Message.class, msg -> JacksonMapper.toMap(this.from, Message.class))
+            .readAs(runContext, Message.class, map -> JacksonMapper.toMap(map, Message.class))
             .map(throwFunction(message -> {
                 publisher.publish(message.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow()));
                 return 1;
@@ -85,6 +95,19 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
         return Output.builder()
             .messagesCount(count)
         .build();
+    }
+
+    private boolean checkForOrderingKeys(RunContext runContext) {
+        try {
+            return io.kestra.core.models.property.Data.from(from)
+                .readAs(runContext, Message.class, map -> JacksonMapper.toMap(map, Message.class))
+                .any(message -> message.getOrderingKey() != null && !message.getOrderingKey().trim().isEmpty())
+                .blockOptional()
+                .orElse(false);
+        } catch (Exception e) {
+            runContext.logger().info("Failed to parse messages while checking for ordering keys. ",e);
+            return false;
+        }
     }
 
     @Builder
