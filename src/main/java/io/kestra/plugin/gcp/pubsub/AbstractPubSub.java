@@ -10,10 +10,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 import jakarta.validation.constraints.NotNull;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.IOException;
@@ -30,13 +27,19 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
     @NotNull
     private Property<String> topic;
 
-    Publisher createPublisher(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
-
+    Publisher createPublisher(PublisherOptions options) throws IOException, IllegalVariableEvaluationException {
+        RunContext runContext = options.getRunContext();
         TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic).as(String.class).orElseThrow());
-        return Publisher.newBuilder(topicName)
+
+        Publisher.Builder builder = Publisher.newBuilder(topicName)
             .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
-            .build();
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()));
+
+        if (options.isEnableMessageOrdering()) {
+            builder.setEnableMessageOrdering(true);
+        }
+
+        return builder.build();
     }
 
     public ProjectSubscriptionName createSubscription(RunContext runContext, String subscription, boolean autoCreateSubscription) throws IOException, IllegalVariableEvaluationException {
@@ -64,5 +67,15 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
         }
 
         return subscriptionName;
+    }
+
+    @Getter
+    @Builder
+    public static class PublisherOptions {
+        @NonNull
+        private final RunContext runContext;
+
+        @Builder.Default
+        private final boolean enableMessageOrdering = false;
     }
 }

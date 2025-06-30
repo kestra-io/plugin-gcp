@@ -122,6 +122,51 @@ class PublishThenConsumeTest {
         assertThat(consumeOutput.getCount(), is(2));
     }
 
+    @Test
+    void runWithMessagesWithOrderingKey() throws Exception {
+        var runContext = runContextFactory.of();
+
+        var publish = Publish.builder()
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
+            .from(
+                List.of(
+                    Message.builder()
+                        .data("first message")
+                        .orderingKey("key-1")
+                        .attributes(Map.of("sequence", "1"))
+                        .build(),
+                    Message.builder()
+                        .data("second message")
+                        .orderingKey("key-1")
+                        .attributes(Map.of("sequence", "2"))
+                        .build(),
+                    Message.builder()
+                        .orderingKey("key-2")
+                        .attributes(Map.of("sequence", "3"))
+                        .build(),
+                    Message.builder()
+                        .data("message without ordering key")
+                        .attributes(Map.of("sequence", "4"))
+                        .build()
+                )
+            )
+            .build();
+
+        var publishOutput = publish.run(runContext);
+        assertThat(publishOutput.getMessagesCount(), is(4));
+
+        var consume = Consume.builder()
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
+            .subscription(Property.ofValue("test-subscription"))
+            .maxRecords(Property.ofValue(4))
+            .build();
+
+        var consumeOutput = consume.run(runContextFactory.of());
+        assertThat(consumeOutput.getCount(), is(4));
+    }
+
     private URI createTestFile(RunContext runContext) throws Exception {
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         OutputStream output = new FileOutputStream(tempFile);
