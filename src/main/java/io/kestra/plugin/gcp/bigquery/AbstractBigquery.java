@@ -108,7 +108,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                     .interval(Duration.ofSeconds(5))
                     .maxInterval(Duration.ofMinutes(60))
                     .maxDuration(Duration.ofMinutes(15))
-                    .maxAttempt(10)
+                    .maxAttempts(10)
                     .build()
                 )
                 .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
