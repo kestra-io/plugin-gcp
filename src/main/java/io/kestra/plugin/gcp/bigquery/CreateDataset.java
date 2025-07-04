@@ -47,7 +47,7 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
     @Schema(
         title = "Policy to apply if a dataset already exists."
     )
-    private final Property<IfExists> ifExists = Property.of(IfExists.ERROR);
+    private final Property<IfExists> ifExists = Property.ofValue(IfExists.ERROR);
 
     @Override
     public AbstractDataset.Output run(RunContext runContext) throws Exception {

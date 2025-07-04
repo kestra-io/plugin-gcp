@@ -51,8 +51,8 @@ class CopyTest {
         Upload upload = Upload.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(Property.of(source.toString()))
-            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+            .from(Property.ofValue(source.toString()))
+            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .build();
 
         upload.run(runContext(upload));
@@ -60,8 +60,8 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
-            .from(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml"))
+            .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml"))
             .build();
 
         Copy.Output run = task.run(runContext(task));
@@ -76,8 +76,8 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
-            .from(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .to(Property.of("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+            .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> {

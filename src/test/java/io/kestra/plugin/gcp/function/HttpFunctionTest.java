@@ -24,8 +24,8 @@ class HttpFunctionTest {
     @Test
     void testAzureFunctionWithStringOutput() throws Exception {
         HttpFunction httpTrigger = HttpFunction.builder()
-            .url(Property.of(GCP_FUNCTION_TEST_URL + "?firstName=Bryan&name=Smith"))
-            .httpMethod(Property.of("GET"))
+            .url(Property.ofValue(GCP_FUNCTION_TEST_URL + "?firstName=Bryan&name=Smith"))
+            .httpMethod(Property.ofValue("GET"))
             .build();
 
         RunContext runContext = runContextFactory.of(Collections.emptyMap());

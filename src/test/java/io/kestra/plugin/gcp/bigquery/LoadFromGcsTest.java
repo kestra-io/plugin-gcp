@@ -58,8 +58,8 @@ class LoadFromGcsTest {
         Upload upload = Upload.builder()
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(Property.of(put.toString()))
-            .to(Property.of("gs://" + this.bucket + "/" + FriendlyId.createFriendlyId() + ".json"))
+            .from(Property.ofValue(put.toString()))
+            .to(Property.ofValue("gs://" + this.bucket + "/" + FriendlyId.createFriendlyId() + ".json"))
             .build();
 
         upload.run(TestsUtils.mockRunContext(this.runContextFactory, upload, ImmutableMap.of()));
@@ -67,12 +67,12 @@ class LoadFromGcsTest {
         LoadFromGcs task = LoadFromGcs.builder()
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(LoadFromGcs.class.getName())
-            .from(Property.of(Collections.singletonList(
+            .from(Property.ofValue(Collections.singletonList(
                 upload.getTo().toString()
             )))
-            .destinationTable(Property.of(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
+            .destinationTable(Property.ofValue(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .format(AbstractLoad.Format.JSON)
-            .schema(Property.of(ImmutableMap.of(
+            .schema(Property.ofValue(ImmutableMap.of(
                 "fields", Arrays.asList(
                     ImmutableMap.of("name", "name", "type", "STRING"),
                     ImmutableMap.of("name", "post_abbr", "type", "STRING")

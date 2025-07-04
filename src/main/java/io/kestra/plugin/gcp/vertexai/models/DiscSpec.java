@@ -20,13 +20,13 @@ public class DiscSpec {
         title = "Type of the boot disk."
     )
     @Builder.Default
-    private Property<DiskType> bootDiskType = Property.of(DiskType.PD_SSD);
+    private Property<DiskType> bootDiskType = Property.ofValue(DiskType.PD_SSD);
 
     @Schema(
         title = "Size in GB of the boot disk."
     )
     @Builder.Default
-    private Property<Integer> bootDiskSizeGb = Property.of(100);
+    private Property<Integer> bootDiskSizeGb = Property.ofValue(100);
 
     public  com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
         return DiskSpec.newBuilder()

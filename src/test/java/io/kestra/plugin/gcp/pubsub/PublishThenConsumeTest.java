@@ -41,8 +41,8 @@ class PublishThenConsumeTest {
         var runContext = runContextFactory.of();
 
         var publish = Publish.builder()
-            .projectId(Property.of(project))
-            .topic(Property.of("test-topic"))
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
             .from(
                 List.of(
                     Message.builder().data("Hello World").build(),
@@ -55,10 +55,10 @@ class PublishThenConsumeTest {
         assertThat(publishOutput.getMessagesCount(), is(2));
 
         var consume = Consume.builder()
-            .projectId(Property.of(project))
-            .topic(Property.of("test-topic"))
-            .subscription(Property.of("test-subscription"))
-            .maxRecords(Property.of(2))
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
+            .subscription(Property.ofValue("test-subscription"))
+            .maxRecords(Property.ofValue(2))
             .build();
 
         var consumeOutput = consume.run(runContextFactory.of());
@@ -70,9 +70,9 @@ class PublishThenConsumeTest {
         var runContext = runContextFactory.of();
 
         var publish = Publish.builder()
-            .projectId(Property.of(project))
-            .topic(Property.of("test-topic"))
-            .serdeType(Property.of(SerdeType.JSON))
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
+            .serdeType(Property.ofValue(SerdeType.JSON))
             .from(
                 List.of(
                     Message.builder().data("""
@@ -85,11 +85,11 @@ class PublishThenConsumeTest {
         assertThat(publishOutput.getMessagesCount(), is(1));
 
         var consume = Consume.builder()
-            .projectId(Property.of(project))
-            .topic(Property.of("test-topic"))
-            .serdeType(Property.of(SerdeType.JSON))
-            .subscription(Property.of("test-subscription"))
-            .maxRecords(Property.of(1))
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
+            .serdeType(Property.ofValue(SerdeType.JSON))
+            .subscription(Property.ofValue("test-subscription"))
+            .maxRecords(Property.ofValue(1))
             .build();
 
         var consumeOutput = consume.run(runContextFactory.of());
@@ -102,8 +102,8 @@ class PublishThenConsumeTest {
         var uri = createTestFile(runContext);
 
         var publish = Publish.builder()
-            .projectId(Property.of(project))
-            .topic(Property.of("test-topic"))
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
             .from(uri.toString())
             .build();
 
@@ -112,10 +112,10 @@ class PublishThenConsumeTest {
 
 
         var consume = Consume.builder()
-            .projectId(Property.of(project))
-            .topic(Property.of("test-topic"))
-            .subscription(Property.of("test-subscription"))
-            .maxRecords(Property.of(2))
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("test-topic"))
+            .subscription(Property.ofValue("test-subscription"))
+            .maxRecords(Property.ofValue(2))
             .build();
 
         var consumeOutput = consume.run(runContextFactory.of());

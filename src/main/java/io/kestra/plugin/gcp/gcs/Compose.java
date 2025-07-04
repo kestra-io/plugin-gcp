@@ -65,7 +65,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     )
     @PluginProperty
     @Builder.Default
-    private Property<Boolean> allowEmpty = Property.of(false);
+    private Property<Boolean> allowEmpty = Property.ofValue(false);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -89,8 +89,8 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.list.getFrom())
-            .filter(Property.of(ListInterface.Filter.FILES))
-            .listingType(this.list.getListingType() != null ? this.list.getListingType() : Property.of(ListInterface.ListingType.DIRECTORY))
+            .filter(Property.ofValue(ListInterface.Filter.FILES))
+            .listingType(this.list.getListingType() != null ? this.list.getListingType() : Property.ofValue(ListInterface.ListingType.DIRECTORY))
             .regExp(this.list.getRegExp())
             .build();
 
@@ -131,10 +131,10 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
         private Property<String> from;
 
         @Builder.Default
-        private final Property<io.kestra.plugin.gcp.gcs.List.Filter> filter = Property.of(Filter.BOTH);
+        private final Property<io.kestra.plugin.gcp.gcs.List.Filter> filter = Property.ofValue(Filter.BOTH);
 
         @Builder.Default
-        private final Property<io.kestra.plugin.gcp.gcs.List.ListingType> listingType = Property.of(ListingType.DIRECTORY);
+        private final Property<io.kestra.plugin.gcp.gcs.List.ListingType> listingType = Property.ofValue(ListingType.DIRECTORY);
 
         private Property<String> regExp;
     }

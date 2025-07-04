@@ -37,10 +37,10 @@ public class CreateTest {
         Create create = Create.builder()
             .id(Create.class.getSimpleName())
             .type(Create.class.getName())
-            .projectId(Property.of(project))
+            .projectId(Property.ofValue(project))
             .clusterName("test-cluster")
 	        .region(region)
-	        .bucket(Property.of(bucket))
+	        .bucket(Property.ofValue(bucket))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());

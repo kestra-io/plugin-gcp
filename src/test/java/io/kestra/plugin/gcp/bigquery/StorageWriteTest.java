@@ -51,7 +51,7 @@ class StorageWriteTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of("CREATE TABLE " + table + " AS " + "SELECT \n" +
+            .sql(Property.ofValue("CREATE TABLE " + table + " AS " + "SELECT \n" +
                 "  \"hello\" as string,\n" +
                 "  CAST(NULL AS INT) AS `nullable`,\n" +
                 "  TRUE AS `bool`,\n" +
@@ -96,9 +96,9 @@ class StorageWriteTest {
         StorageWrite task = StorageWrite.builder()
             .id("test-unit")
             .type(StorageWrite.class.getName())
-            .destinationTable(Property.of(table))
-            .location(Property.of("EU"))
-            .from(Property.of(put.toString()))
+            .destinationTable(Property.ofValue(table))
+            .location(Property.ofValue("EU"))
+            .from(Property.ofValue(put.toString()))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());

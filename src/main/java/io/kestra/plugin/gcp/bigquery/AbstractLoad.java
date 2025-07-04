@@ -54,7 +54,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         title = "The time partitioning type specification for the destination table."
     )
     @Builder.Default
-    private Property<TimePartitioning.Type> timePartitioningType = Property.of(TimePartitioning.Type.DAY);
+    private Property<TimePartitioning.Type> timePartitioningType = Property.ofValue(TimePartitioning.Type.DAY);
 
 
     @Schema(

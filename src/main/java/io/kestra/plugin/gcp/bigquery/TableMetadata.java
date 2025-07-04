@@ -48,7 +48,7 @@ public class TableMetadata extends AbstractTable implements RunnableTask<Abstrac
         title = "Policy to apply if a table don't exists.",
         description = "If the policy is `SKIP`, the output will contain only null value, otherwise an error is raised."
     )
-    private final Property<IfNotExists> ifNotExists = Property.of(IfNotExists.ERROR);
+    private final Property<IfNotExists> ifNotExists = Property.ofValue(IfNotExists.ERROR);
 
     @Override
     public Output run(RunContext runContext) throws Exception {

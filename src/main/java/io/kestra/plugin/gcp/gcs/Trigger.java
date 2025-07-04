@@ -102,7 +102,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     protected Property<String> impersonatedServiceAccount;
 
     @Builder.Default
-    protected Property<java.util.List<String>> scopes = Property.of(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
+    protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     private Property<String> from;
 
@@ -111,7 +111,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private Property<String> moveDirectory;
 
     @Builder.Default
-    private final Property<List.ListingType> listingType = Property.of(ListingType.DIRECTORY);
+    private final Property<List.ListingType> listingType = Property.ofValue(ListingType.DIRECTORY);
 
     private Property<String> regExp;
 
@@ -125,7 +125,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .serviceAccount(this.serviceAccount)
             .scopes(this.scopes)
             .from(this.from)
-            .filter(Property.of(Filter.FILES))
+            .filter(Property.ofValue(Filter.FILES))
             .listingType(this.listingType)
             .regExp(this.regExp)
             .build();

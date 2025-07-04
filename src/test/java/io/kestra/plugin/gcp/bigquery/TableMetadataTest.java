@@ -48,9 +48,9 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(Property.of(this.project))
-            .dataset(Property.of(this.dataset))
-            .table(Property.of(friendlyId))
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .table(Property.ofValue(friendlyId))
             .build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -85,9 +85,9 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(Property.of(this.project))
-            .dataset(Property.of(this.dataset))
-            .table(Property.of(friendlyId))
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .table(Property.ofValue(friendlyId))
             .build();
 
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -121,9 +121,9 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(Property.of(this.project))
-            .dataset(Property.of(this.dataset))
-            .table(Property.of(friendlyId))
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .table(Property.ofValue(friendlyId))
             .build();
 
         // flow is not created
@@ -137,10 +137,10 @@ class TableMetadataTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         TableMetadata task = TableMetadata.builder()
-            .projectId(Property.of(this.project))
-            .dataset(Property.of(this.dataset))
-            .table(Property.of(friendlyId))
-            .ifNotExists(Property.of(TableMetadata.IfNotExists.SKIP))
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .table(Property.ofValue(friendlyId))
+            .ifNotExists(Property.ofValue(TableMetadata.IfNotExists.SKIP))
             .build();
 
         TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));

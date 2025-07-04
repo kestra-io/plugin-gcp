@@ -32,9 +32,9 @@ class PySparkSubmitTest {
             // The file can be found in src/main/resources/dataproc and must be uploaded to the GCS bucket before running the test
             .id(PySparkSubmitTest.class.getSimpleName())
             .type(PySparkSubmit.class.getName())
-            .mainPythonFileUri(Property.of("gs://spark-jobs-kestra/pi.py"))
-            .projectId(Property.of(project))
-            .name(Property.of("test-pyspark"))
+            .mainPythonFileUri(Property.ofValue("gs://spark-jobs-kestra/pi.py"))
+            .projectId(Property.ofValue(project))
+            .name(Property.ofValue("test-pyspark"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());

@@ -79,7 +79,7 @@ class QueryTest {
     private static Stream<Arguments> provideFetchOrFetchType() {
         return Stream.of(
             Arguments.of(true, null),
-            Arguments.of(false, Property.of(FetchType.FETCH))
+            Arguments.of(false, Property.ofValue(FetchType.FETCH))
         );
     }
 
@@ -95,8 +95,8 @@ class QueryTest {
         ));
 
         Query task = Query.builder()
-            .sql(new Property<>("{{sql}}"))
-            .location(Property.of("EU"))
+            .sql(Property.ofExpression("{{sql}}"))
+            .location(Property.ofValue("EU"))
             .fetch(fetch)
             .fetchType(fetchType)
             .build();
@@ -130,7 +130,7 @@ class QueryTest {
     private static Stream<Arguments> provideStoreOrFetchType() {
         return Stream.of(
             Arguments.of(true, null),
-            Arguments.of(false, Property.of(FetchType.STORE))
+            Arguments.of(false, Property.ofValue(FetchType.STORE))
         );
     }
 
@@ -140,7 +140,7 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of(sql() + "\n UNION ALL \n " + sql()))
+            .sql(Property.ofValue(sql() + "\n UNION ALL \n " + sql()))
             .store(store)
             .fetchType(fetchType)
             .build();
@@ -160,7 +160,7 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of("SELECT repository_forks FROM `bigquery-public-data.samples.github_timeline` LIMIT 100000"))
+            .sql(Property.ofValue("SELECT repository_forks FROM `bigquery-public-data.samples.github_timeline` LIMIT 100000"))
             .fetch(fetch)
             .fetchType(fetchType)
             .build();
@@ -177,7 +177,7 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(new Property<>("{% for input in inputs.loop %}" +
+            .sql(Property.ofExpression("{% for input in inputs.loop %}" +
                 "SELECT" +
                 "  \"{{execution.id}}\" as execution_id," +
                 "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\")}}\" as execution_date," +
@@ -185,11 +185,11 @@ class QueryTest {
                 "{{ loop.last  == false ? '\nUNION ALL\n' : '\n' }}" +
                 "{% endfor %}"
             ))
-            .destinationTable(Property.of(project + "." + dataset + "." + friendlyId))
-            .timePartitioningField(Property.of("execution_date"))
-            .clusteringFields(Property.of(Arrays.asList("execution_id", "counter")))
-            .schemaUpdateOptions(Property.of(Collections.singletonList(JobInfo.SchemaUpdateOption.ALLOW_FIELD_ADDITION)))
-            .writeDisposition(Property.of(JobInfo.WriteDisposition.WRITE_APPEND))
+            .destinationTable(Property.ofValue(project + "." + dataset + "." + friendlyId))
+            .timePartitioningField(Property.ofValue("execution_date"))
+            .clusteringFields(Property.ofValue(Arrays.asList("execution_id", "counter")))
+            .schemaUpdateOptions(Property.ofValue(Collections.singletonList(JobInfo.SchemaUpdateOption.ALLOW_FIELD_ADDITION)))
+            .writeDisposition(Property.ofValue(JobInfo.WriteDisposition.WRITE_APPEND))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
@@ -208,7 +208,7 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(new Property<>("SELECT * from `{{execution.id}}`"))
+            .sql(Property.ofExpression("SELECT * from `{{execution.id}}`"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -225,7 +225,7 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(new Property<>("{% for input in inputs.loop %}" +
+            .sql(Property.ofExpression("{% for input in inputs.loop %}" +
                 "SELECT" +
                 "  \"{{execution.id}}\" as execution_id," +
                 "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\") }}\" as execution_date," +
@@ -253,10 +253,10 @@ class QueryTest {
             Query task = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
-                .sql(Property.of("SELECT \"" + i + "\" as value"))
-                .destinationTable(Property.of(table))
-                .createDisposition(Property.of(JobInfo.CreateDisposition.CREATE_IF_NEEDED))
-                .writeDisposition(Property.of(JobInfo.WriteDisposition.WRITE_TRUNCATE))
+                .sql(Property.ofValue("SELECT \"" + i + "\" as value"))
+                .destinationTable(Property.ofValue(table))
+                .createDisposition(Property.ofValue(JobInfo.CreateDisposition.CREATE_IF_NEEDED))
+                .writeDisposition(Property.ofValue(JobInfo.WriteDisposition.WRITE_TRUNCATE))
                 .build();
 
             RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -288,7 +288,7 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(new Property<>("{% for input in  inputs.loop %}" +
+            .sql(Property.ofExpression("{% for input in  inputs.loop %}" +
                 "SELECT * from `{{execution.id}}`;" +
                 "{% endfor %}"
             ))
@@ -310,7 +310,7 @@ class QueryTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of("DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".not`;" +
+            .sql(Property.ofValue("DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".not`;" +
                 "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".exist`;"
             ))
             .build();
@@ -330,7 +330,7 @@ class QueryTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .sql(Property.of("CREATE TABLE " + table + " AS SELECT 1 AS number"))
+            .sql(Property.ofValue("CREATE TABLE " + table + " AS SELECT 1 AS number"))
             .build();
 
         create.run(TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of()));
@@ -344,7 +344,7 @@ class QueryTest {
         Query task = Query.builder()
             .id("test")
             .type(Query.class.getName())
-            .sql(Property.of("SELECT * FROM " + table + ";"))
+            .sql(Property.ofValue("SELECT * FROM " + table + ";"))
             .fetchOne(true)
             .build();
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -370,8 +370,8 @@ class QueryTest {
         Query task = Query.builder()
                 .id("query")
                 .type(Query.class.getName())
-                .sql(Property.of("SELECT 1"))
-                .labels(Property.of(initialLabels))
+                .sql(Property.ofValue("SELECT 1"))
+                .labels(Property.ofValue(initialLabels))
                 .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());

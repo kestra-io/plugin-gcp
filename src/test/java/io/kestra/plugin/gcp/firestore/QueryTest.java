@@ -27,12 +27,12 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
             .filters(List.of(
-                Query.Filter.builder().field(Property.of("lastname")).value(Property.of("Doe")).build())
+                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build())
             )
-            .fetchType(Property.of(FetchType.FETCH))
+            .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
 
         // create something to list
@@ -60,13 +60,13 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
             .filters(List.of(
-                Query.Filter.builder().field(Property.of("lastname")).value(Property.of("Doe")).build(),
-                Query.Filter.builder().field(Property.of("firstname")).value(Property.of("Jane")).build())
+                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build(),
+                Query.Filter.builder().field(Property.ofValue("firstname")).value(Property.ofValue("Jane")).build())
             )
-            .fetchType(Property.of(FetchType.FETCH))
+            .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
 
         // create something to list
@@ -94,9 +94,9 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
-            .fetchType(Property.of(FetchType.FETCH))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
+            .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
 
         // create something to list
@@ -124,13 +124,13 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
             .filters(List.of(
-                Query.Filter.builder().field(Property.of("lastname")).value(Property.of("Doe")).operator(Property.of(Query.QueryOperator.NOT_EQUAL_TO)).build())
+                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).operator(Property.ofValue(Query.QueryOperator.NOT_EQUAL_TO)).build())
             )
-            .orderBy(Property.of("firstname"))
-            .fetchType(Property.of(FetchType.FETCH))
+            .orderBy(Property.ofValue("firstname"))
+            .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
 
         // create something to list
@@ -158,12 +158,12 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var query = Query.builder()
-            .projectId(Property.of(project))
-            .collection(Property.of("persons"))
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue("persons"))
             .filters(List.of(
-                Query.Filter.builder().field(Property.of("lastname")).value(Property.of("Doe")).build())
+                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build())
             )
-            .fetchType(Property.of(FetchType.STORE))
+            .fetchType(Property.ofValue(FetchType.STORE))
             .build();
 
         // create something to list

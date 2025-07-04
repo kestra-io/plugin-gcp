@@ -44,7 +44,7 @@ class ListTest {
 
         // directory listing
         List task = task()
-            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+            .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .build();
         List.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(11));
@@ -52,9 +52,9 @@ class ListTest {
 
         // only dir
         task = task()
-            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-            .filter(Property.of(ListInterface.Filter.DIRECTORY))
-            .listingType(Property.of(ListInterface.ListingType.DIRECTORY))
+            .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+            .filter(Property.ofValue(ListInterface.Filter.DIRECTORY))
+            .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(1));
@@ -62,16 +62,16 @@ class ListTest {
 
         // files only
         task = task()
-            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-            .filter(Property.of(ListInterface.Filter.FILES))
+            .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+            .filter(Property.ofValue(ListInterface.Filter.FILES))
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(10));
 
         // recursive
         task = task()
-            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-            .listingType(Property.of(ListInterface.ListingType.RECURSIVE))
+            .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+            .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(11));
@@ -79,20 +79,20 @@ class ListTest {
 
         // regexp
         task = task()
-            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-            .filter(Property.of(ListInterface.Filter.FILES))
-            .listingType(Property.of(ListInterface.ListingType.DIRECTORY))
-            .regExp(Property.of(".*\\/" + dir + "\\/.*"))
+            .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+            .filter(Property.ofValue(ListInterface.Filter.FILES))
+            .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
+            .regExp(Property.ofValue(".*\\/" + dir + "\\/.*"))
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(10));
 
         // regexp on file
         task = task()
-            .from(Property.of("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-            .filter(Property.of(ListInterface.Filter.FILES))
-            .listingType(Property.of(ListInterface.ListingType.DIRECTORY))
-            .regExp(Property.of(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)"))
+            .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+            .filter(Property.ofValue(ListInterface.Filter.FILES))
+            .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
+            .regExp(Property.ofValue(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)"))
             .build();
         run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBlobs().size(), is(1));
@@ -119,8 +119,8 @@ class ListTest {
         Upload task = Upload.builder()
             .id(ListTest.class.getSimpleName())
             .type(Upload.class.getName())
-            .from(Property.of(source.toString()))
-            .to(Property.of("gs://" + bucket +  dir + "/" + out + " (1).yml"))
+            .from(Property.ofValue(source.toString()))
+            .to(Property.ofValue("gs://" + bucket +  dir + "/" + out + " (1).yml"))
             .build();
 
         task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
