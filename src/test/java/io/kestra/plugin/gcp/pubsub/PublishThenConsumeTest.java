@@ -12,6 +12,7 @@ import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -176,5 +177,18 @@ class PublishThenConsumeTest {
         FileSerde.write(output,
             Message.builder().attributes(Map.of("key", "value")).build());
         return storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+    }
+
+    @BeforeEach
+    void cleanTopic() {
+        try {
+            Consume.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .subscription(Property.ofValue("test-subscription"))
+                .maxRecords(Property.ofValue(50))
+                .build()
+                .run(runContextFactory.of());
+        } catch (Exception ignored) {}
     }
 }
