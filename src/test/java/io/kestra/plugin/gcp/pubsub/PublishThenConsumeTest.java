@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -187,6 +188,7 @@ class PublishThenConsumeTest {
                 .topic(Property.ofValue("test-topic"))
                 .subscription(Property.ofValue("test-subscription"))
                 .maxRecords(Property.ofValue(50))
+                .maxDuration(Property.ofValue(Duration.ofSeconds(5)))
                 .build()
                 .run(runContextFactory.of());
         } catch (Exception ignored) {}
