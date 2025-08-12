@@ -1,4 +1,5 @@
 @PluginSubGroup(
+    title = "CLI",
     description = "This sub-group of plugins contains tasks to interact with GCP CLI. ",
     categories = { PluginSubGroup.PluginCategory.CLOUD }
 )
