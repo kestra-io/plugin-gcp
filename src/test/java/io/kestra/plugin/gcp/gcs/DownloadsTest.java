@@ -4,6 +4,7 @@ import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.gcp.gcs.Upload.Output;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class DownloadsTest {
     @Test
     void run() throws Exception {
         String out1 = FriendlyId.createFriendlyId();
-        testUtils.upload(random + "/" + out1 + " (1).yml");
+        Output output = testUtils.upload(random + "/" + out1 + " (1).yml");
         String out2 = FriendlyId.createFriendlyId();
         testUtils.upload(random + "/" + out2);
 
@@ -46,7 +47,7 @@ class DownloadsTest {
 
         Downloads.Output run = task.run(runContext(task));
 
-        assertThat(run.getBlobs().size(), is(2));
+        assertThat(output.getUri().toString(), run.getBlobs().size(), is(2));
         assertThat(run.getOutputFiles().size(), is(2));
     }
 

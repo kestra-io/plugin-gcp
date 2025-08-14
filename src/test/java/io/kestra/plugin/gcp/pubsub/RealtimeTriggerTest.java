@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -78,7 +79,7 @@ class RealtimeTriggerTest {
             worker.run();
             scheduler.run();
 
-            repositoryLoader.load(null, Objects.requireNonNull(RealtimeTriggerTest.class.getClassLoader().getResource("flows/pubsub/realtime.yaml")));
+            repositoryLoader.load(MAIN_TENANT, Objects.requireNonNull(RealtimeTriggerTest.class.getClassLoader().getResource("flows/pubsub/realtime.yaml")));
 
             // publish message to trigger the flow
             Publish task = Publish.builder()
