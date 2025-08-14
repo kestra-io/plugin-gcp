@@ -66,7 +66,7 @@ class CopyTest {
 
         Copy.Output run = task.run(runContext(task));
 
-        assertThat(run.getUri(), is(new URI("gs://" + bucket + "/main/tasks/gcp/copy/" + out + ".yml")));
+        assertThat(run.getUri(), is(new URI("gs://" + bucket + "/tasks/gcp/copy/" + out + ".yml")));
     }
 
     @Test
