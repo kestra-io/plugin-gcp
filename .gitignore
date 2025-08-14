@@ -14,4 +14,4 @@ out/
 .classpath
 .attach*
 src/test/resources/application-test.yml
-src/test/java/io/kestra/plugin/gcp/vertexai/
+src/test/java/io/kestra/plugin/gcp/vertexai/bin/
