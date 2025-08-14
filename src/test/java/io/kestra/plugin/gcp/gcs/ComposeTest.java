@@ -87,7 +87,7 @@ class ComposeTest {
             .id("compose-default-listingType")
             .type(Compose.class.getName())
             .list(Compose.List.builder()
-                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/main" + basePath))
+                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload" + basePath))
                 .build()
             )
             .to(Property.ofValue("gs://" + bucket + "/tasks/gcp/compose-result/compose-default.txt"))

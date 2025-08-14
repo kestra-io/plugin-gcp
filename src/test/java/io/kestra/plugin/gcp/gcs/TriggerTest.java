@@ -116,9 +116,9 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/main/tasks/gcp/upload/trigger/"))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
             .action(Property.ofValue(ActionInterface.Action.MOVE))
-            .moveDirectory(Property.ofValue("gs://" + bucket + "/main/test/move"))
+            .moveDirectory(Property.ofValue("gs://" + bucket + "/test/move"))
             .build();
 
         String out = FriendlyId.createFriendlyId();
@@ -147,7 +147,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/main/test/move/" + out + ".yml"))
+            .from(Property.ofValue("gs://" + bucket + "/test/move/" + out + ".yml"))
             .build();
 
         Download.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
@@ -159,7 +159,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/main/tasks/gcp/upload/trigger/"))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .build();
 
