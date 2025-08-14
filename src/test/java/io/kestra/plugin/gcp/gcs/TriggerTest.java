@@ -33,6 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,7 +94,7 @@ class TriggerTest {
 
             worker.run();
             scheduler.run();
-            repositoryLoader.load(null, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
+            repositoryLoader.load(MAIN_TENANT, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
 
             boolean await = queueCount.await(10, TimeUnit.SECONDS);
             try {
