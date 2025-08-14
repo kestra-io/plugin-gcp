@@ -87,10 +87,10 @@ class ComposeTest {
             .id("compose-default-listingType")
             .type(Compose.class.getName())
             .list(Compose.List.builder()
-                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + basePath))
+                .from(Property.ofValue("gs://" + bucket + "/main/tasks/gcp/upload/" + basePath))
                 .build()
             )
-            .to(Property.ofValue("gs://" + bucket + "/tasks/gcp/compose-result/compose-default.txt"))
+            .to(Property.ofValue("gs://" + bucket + "/main/tasks/gcp/compose-result/compose-default.txt"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());

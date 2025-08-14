@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -85,7 +86,7 @@ class TriggerTest {
             worker.run();
             scheduler.run();
 
-            repositoryLoader.load(null, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
+            repositoryLoader.load(MAIN_TENANT, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/bigquery")));
 
             createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
 
