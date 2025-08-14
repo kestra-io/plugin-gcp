@@ -41,7 +41,7 @@ class DownloadsTest {
         Downloads task = Downloads.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Downloads.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + random + "/"))
+            .from(Property.ofValue("gs://" + bucket + "/main/tasks/gcp/upload/" + random + "/"))
             .action(Property.ofValue(ActionInterface.Action.DELETE))
             .build();
 
