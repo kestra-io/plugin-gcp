@@ -9,11 +9,12 @@ import io.kestra.core.repositories.LocalFlowRepositoryLoader;
 import io.kestra.core.runners.FlowListeners;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.runners.Worker;
-import io.kestra.core.schedulers.AbstractScheduler;
+import io.kestra.scheduler.AbstractScheduler;
 import io.kestra.jdbc.runner.JdbcScheduler;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.gcs.models.Blob;
+import io.kestra.worker.DefaultWorker;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -63,7 +64,7 @@ class TriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        Worker worker = applicationContext.createBean(Worker.class, IdUtils.create(), 8, null);
+        DefaultWorker worker = applicationContext.createBean(DefaultWorker.class, IdUtils.create(), 8, null);
         try (
             AbstractScheduler scheduler = new JdbcScheduler(
                 this.applicationContext,
