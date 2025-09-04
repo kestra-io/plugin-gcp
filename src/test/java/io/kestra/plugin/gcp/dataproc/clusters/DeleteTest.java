@@ -1,6 +1,6 @@
 package io.kestra.plugin.gcp.dataproc.clusters;
 
-import autovalue.shaded.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
