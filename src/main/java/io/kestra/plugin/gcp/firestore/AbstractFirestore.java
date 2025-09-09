@@ -8,6 +8,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +28,8 @@ abstract class AbstractFirestore extends AbstractTask {
         title = "The Firestore database ID to use with this client",
         description = "If you don't specify a database, the Firestore client libraries and the Google Cloud CLI connect to the (default) database by default."
     )
-    protected Property<String> databaseId;
+    @Builder.Default
+    protected Property<String> databaseId = Property.ofValue("default");
 
     @Schema(
         title = "The Firestore collection"
