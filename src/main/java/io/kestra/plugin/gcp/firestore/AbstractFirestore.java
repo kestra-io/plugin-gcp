@@ -29,7 +29,7 @@ abstract class AbstractFirestore extends AbstractTask {
         description = "If you don't specify a database, the Firestore client libraries and the Google Cloud CLI connect to the (default) database by default."
     )
     @Builder.Default
-    protected Property<String> databaseId = Property.ofValue("default");
+    protected Property<String> databaseId = Property.ofValue("(default)");
 
     @Schema(
         title = "The Firestore collection"
