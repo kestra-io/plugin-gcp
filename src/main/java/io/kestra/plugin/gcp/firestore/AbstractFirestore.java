@@ -4,11 +4,11 @@ import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreOptions;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,10 +29,18 @@ abstract class AbstractFirestore extends AbstractTask {
     )
     protected Property<String> collection;
 
+    @Schema(
+        title = "The Firestore database ID to use with this client",
+        description = "If you don't specify a database, the Firestore client libraries and the Google Cloud CLI connect to the (default) database by default."
+    )
+    @Builder.Default
+    protected Property<String> databaseId = Property.ofValue("(default)");
+
     Firestore connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return FirestoreOptions.newBuilder()
             .setCredentials(this.credentials(runContext))
             .setProjectId(runContext.render(projectId).as(String.class).orElse(null))
+            .setDatabaseId(runContext.render(databaseId).as(String.class).orElse("(default)"))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();
