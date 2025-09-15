@@ -4,6 +4,8 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,38 +14,28 @@ class InvokeWorkflowTest {
     @Inject
     private DataformTestUtils testUtils;
 
-    @Test
-    void shouldInvokeWorkflowSuccessfullyWithWaitTrue() throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+        "true, SUCCEEDED",
+        "false, RUNNING"
+    })
+    void shouldInvokeWorkflowWithDifferentWaitValues(boolean wait, String expectedState) throws Exception {
         String repositoryId = "my-repo";
         String workflowConfigId = "my-workflow";
-        boolean wait = true;
 
         var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, wait);
         RunContext runContext = testUtils.runContext(task);
         var output = task.run(runContext);
 
         assertNotNull(output, "Output should not be null");
-        assertTrue(output.getWorkflowInvocationName().contains("projects/"), "Invocation name should contain GCP path");
-        assertEquals("SUCCEEDED", output.getWorkflowInvocationState(), "Expected SUCCEEDED when wait is true");
-        System.out.println("Workflow invoked: " + output.getWorkflowInvocationName());
-        System.out.println("Final state: " + output.getWorkflowInvocationState());
-    }
+        assertTrue(output.getWorkflowInvocationName().contains("projects/"),
+            "Invocation name should contain GCP path");
+        assertEquals(expectedState, output.getWorkflowInvocationState(),
+            "Unexpected workflow state for wait=" + wait);
 
-    @Test
-    void shouldInvokeWorkflowWithWaitFalse() throws Exception {
-        String repositoryId = "my-repo";
-        String workflowConfigId = "my-workflow";
-        boolean wait = false;
-
-        var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, wait);
-        RunContext runContext = testUtils.runContext(task);
-        var output = task.run(runContext);
-
-        assertNotNull(output, "Output should not be null");
-        assertTrue(output.getWorkflowInvocationName().contains("projects/"), "Invocation name should contain GCP path");
-        assertEquals("RUNNING", output.getWorkflowInvocationState(), "Expected RUNNING when wait is false");
-        System.out.println("Workflow invoked (no wait): " + output.getWorkflowInvocationName());
-        System.out.println("Initial state: " + output.getWorkflowInvocationState());
+        System.out.println("Workflow invoked" + (wait ? " (wait)" : " (no wait)") + ": "
+            + output.getWorkflowInvocationName());
+        System.out.println("State: " + output.getWorkflowInvocationState());
     }
 
     @Test
