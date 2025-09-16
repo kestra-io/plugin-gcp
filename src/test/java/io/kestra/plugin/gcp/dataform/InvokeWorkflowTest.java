@@ -32,10 +32,6 @@ class InvokeWorkflowTest {
             "Invocation name should contain GCP path");
         assertEquals(expectedState, output.getWorkflowInvocationState(),
             "Unexpected workflow state for wait=" + wait);
-
-        System.out.println("Workflow invoked" + (wait ? " (wait)" : " (no wait)") + ": "
-            + output.getWorkflowInvocationName());
-        System.out.println("State: " + output.getWorkflowInvocationState());
     }
 
     @Test
@@ -49,7 +45,6 @@ class InvokeWorkflowTest {
 
         Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
         assertTrue(exception.getMessage().contains("not found") || exception.getMessage().contains("404"), "Expected failure for invalid repository");
-        System.out.println("Expected failure: " + exception.getMessage());
     }
 
     @Test
@@ -63,7 +58,6 @@ class InvokeWorkflowTest {
 
         Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
         assertTrue(exception.getMessage().contains("not found") || exception.getMessage().contains("404"), "Expected failure for invalid config");
-        System.out.println("Expected failure: " + exception.getMessage());
     }
 
     @Test
