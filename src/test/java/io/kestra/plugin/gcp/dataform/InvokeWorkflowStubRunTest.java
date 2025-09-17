@@ -27,6 +27,7 @@ class InvokeWorkflowStubRunTest {
                 .build());
 
         InvokeWorkflow task = spy(InvokeWorkflow.builder()
+            .id(InvokeWorkflowStubRunTest.class.getSimpleName())
             .projectId(Property.ofValue("fake-project"))
             .location(Property.ofValue("us-central1"))
             .repositoryId(Property.ofValue("my-repo"))
