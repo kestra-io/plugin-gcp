@@ -73,6 +73,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-batch'
     api 'com.google.cloud:google-cloud-logging'
     api 'com.google.cloud:google-cloud-run'
+    api 'com.google.cloud:google-cloud-dataform'
 }
 
 
