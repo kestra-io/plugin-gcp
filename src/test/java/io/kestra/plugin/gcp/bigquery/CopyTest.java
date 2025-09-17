@@ -39,6 +39,7 @@ class CopyTest {
         Query create = Query.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
             .sql(Property.ofValue(QueryTest.sql()))
             .destinationTable(Property.ofValue(tableValue))
             .build();
@@ -50,6 +51,7 @@ class CopyTest {
         Copy copy = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
+            .projectId(Property.ofValue(project))
             .sourceTables(Property.ofValue(List.of(tableValue)))
             .destinationTable(Property.ofValue(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .build();
@@ -62,6 +64,7 @@ class CopyTest {
         Query fetch = Query.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
             .sql(Property.ofValue("SELECT * FROM " + create.getDestinationTable()))
             .fetchOne(true)
             .build();
@@ -82,6 +85,7 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(Copy.class.getSimpleName())
             .type(Copy.class.getName())
+            .projectId(Property.ofValue(project))
             .sourceTables(Property.ofValue(List.of(tableValue)))
             .destinationTable(Property.ofValue(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .labels(Property.ofValue(initialLabels))

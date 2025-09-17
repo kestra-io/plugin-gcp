@@ -123,6 +123,7 @@ class DeletePartitionsTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
             .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
                 "PARTITION BY " + partition + "\n" +
                 "AS " + insert
@@ -150,6 +151,7 @@ class DeletePartitionsTest {
         Query query = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
             .fetchOne(true)
             .sql(Property.ofValue("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;"))
             .build();
