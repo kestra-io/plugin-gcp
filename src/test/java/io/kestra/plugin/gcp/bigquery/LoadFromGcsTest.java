@@ -67,6 +67,7 @@ class LoadFromGcsTest {
         LoadFromGcs task = LoadFromGcs.builder()
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(LoadFromGcs.class.getName())
+            .projectId(Property.ofValue(project))
             .from(Property.ofValue(Collections.singletonList(
                 upload.getTo().toString()
             )))

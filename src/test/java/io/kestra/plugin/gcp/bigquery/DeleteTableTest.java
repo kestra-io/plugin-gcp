@@ -39,6 +39,7 @@ class DeleteTableTest {
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
             .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
                 "PARTITION BY DATE(transaction_date)\n" +
                 "AS (SELECT 1, DATETIME '" + today.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n" +
@@ -64,6 +65,7 @@ class DeleteTableTest {
         Query query = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
             .fetchOne(true)
             .sql(Property.ofValue("SELECT COUNT(*) as cnt FROM `" + project + "." + dataset + "." + table + "`;"))
             .build();

@@ -77,11 +77,12 @@ class TriggerTest {
                 assertThat(execution.getLeft().getFlowId(), is("bigquery-listen"));
             });
 
-
+            String tableName = table.contains(".") ? table : project + "." + dataset + "." + table;
             Query createTable = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
-                .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"))
+                .projectId(Property.ofValue(project))
+                .sql(Property.ofValue("CREATE OR REPLACE TABLE `" + tableName + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"))
                 .build();
 
             worker.run();
@@ -102,6 +103,7 @@ class TriggerTest {
             Query deleteTable = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
+                .projectId(Property.ofValue(project))
                 .sql(Property.ofValue("DROP TABLE `" + project + "." + dataset + "." + table + "`"))
                 .build();
             deleteTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
