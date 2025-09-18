@@ -4,6 +4,7 @@ namespace: io.kestra.tests
 triggers:
   - id: watch
     type: io.kestra.plugin.gcp.bigquery.Trigger
+    projectId: "{{globals.project}}"
     sql: "SELECT * FROM `{{globals.project}}.{{globals.dataset}}.{{globals.table}}`"
     fetch: true
     interval: PT10S

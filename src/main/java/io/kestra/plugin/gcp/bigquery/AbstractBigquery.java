@@ -1,26 +1,18 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.BigQueryError;
-import com.google.cloud.bigquery.BigQueryOptions;
-import com.google.cloud.bigquery.Job;
-import com.google.cloud.bigquery.JobException;
+import com.google.cloud.bigquery.*;
 import dev.failsafe.Failsafe;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.retrys.AbstractRetry;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -90,8 +82,8 @@ abstract public class AbstractBigquery extends AbstractTask {
         return BigQueryOptions
             .newBuilder()
             .setCredentials(googleCredentials)
-            .setProjectId(runContext.render(projectId))
-            .setLocation(runContext.render(location))
+            .setProjectId(projectId)
+            .setLocation(location)
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();
@@ -104,27 +96,27 @@ abstract public class AbstractBigquery extends AbstractTask {
     protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun, RunContext runContext) {
         return Failsafe
             .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
-                    .type("exponential")
-                    .interval(Duration.ofSeconds(5))
-                    .maxInterval(Duration.ofMinutes(60))
-                    .maxDuration(Duration.ofMinutes(15))
-                    .maxAttempts(10)
-                    .build()
-                )
-                .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
-                .onFailure(event -> logger.error(
-                    "Stop retry, attempts {} elapsed {} seconds",
-                    event.getAttemptCount(),
-                    event.getElapsedTime().getSeconds(),
-                    event.getException()
-                ))
-                .onRetry(event -> {
-                    logger.warn(
-                        "Retrying, attempts {} elapsed {} seconds",
+                        .type("exponential")
+                        .interval(Duration.ofSeconds(5))
+                        .maxInterval(Duration.ofMinutes(60))
+                        .maxDuration(Duration.ofMinutes(15))
+                        .maxAttempts(10)
+                        .build()
+                    )
+                    .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
+                    .onFailure(event -> logger.error(
+                        "Stop retry, attempts {} elapsed {} seconds",
                         event.getAttemptCount(),
-                        event.getElapsedTime().getSeconds()
-                    );
-                }).build()
+                        event.getElapsedTime().getSeconds(),
+                        event.getException()
+                    ))
+                    .onRetry(event -> {
+                        logger.warn(
+                            "Retrying, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds()
+                        );
+                    }).build()
             )
             .get(() -> {
                 Job job = null;
@@ -182,7 +174,7 @@ abstract public class AbstractBigquery extends AbstractTask {
             }
 
             if (this.retryMessages != null) {
-                for (String message: runContext.render(this.retryMessages).asList(String.class)) {
+                for (String message : runContext.render(this.retryMessages).asList(String.class)) {
                     if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
                         return true;
                     }

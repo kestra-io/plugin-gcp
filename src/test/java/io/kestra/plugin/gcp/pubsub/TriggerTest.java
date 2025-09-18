@@ -74,7 +74,6 @@ class TriggerTest {
                 assertThat(execution.getLeft().getFlowId(), is("pubsub-listen"));
             });
 
-
             worker.run();
             scheduler.run();
 
