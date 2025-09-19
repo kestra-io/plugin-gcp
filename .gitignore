@@ -16,3 +16,4 @@ out/
 src/test/resources/application-test.yml
 src/test/java/io/kestra/plugin/gcp/vertexai/bin/
 .gcp-service-account.json
+

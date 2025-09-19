@@ -14,6 +14,11 @@ kestra:
       project: "kestra-unit-test"
       bucket: "kestra-unit-test"
       filename: "${random.shortuuid}"
+    dataform:
+      project: "kestra-unit-test"
+      region: "us-central1"
+      repositoryId: "kestra-unit-test"
+      workflowConfigId: "kestra_unit_test"
     bigquery:
       project: "kestra-unit-test"
       dataset: "kestra_unit_test"
