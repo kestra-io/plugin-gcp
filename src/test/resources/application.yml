@@ -17,6 +17,8 @@ kestra:
     dataform:
       project: "kestra-unit-test"
       region: "us-central1"
+      repositoryId: "kestra-unit-test"
+      workflowConfigId: "kestra_workflow_test"
     bigquery:
       project: "kestra-unit-test"
       dataset: "kestra_unit_test"

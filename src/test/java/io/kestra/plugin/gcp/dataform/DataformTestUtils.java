@@ -8,7 +8,9 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
+@Singleton
 class DataformTestUtils {
     @Inject
     private RunContextFactory runContextFactory;
@@ -20,10 +22,7 @@ class DataformTestUtils {
     private String region;
 
     RunContext runContext(Task task) {
-        return TestsUtils.mockRunContext(
-            runContextFactory,
-            task,
-            ImmutableMap.of()
+        return TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()
         );
     }
 
