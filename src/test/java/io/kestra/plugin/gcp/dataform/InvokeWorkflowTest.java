@@ -15,12 +15,6 @@ class InvokeWorkflowTest {
     @Inject
     private DataformTestUtils testUtils;
 
-    @Value("${kestra.tasks.dataform.project}")
-    String project;
-
-    @Value("${kestra.tasks.dataform.region}")
-    String region;
-
     @Value("${kestra.tasks.dataform.repositoryId}")
     String repositoryId;
 
@@ -34,7 +28,7 @@ class InvokeWorkflowTest {
     })
     void shouldInvokeWorkflowWithDifferentWaitValues(boolean wait, String expectedState) throws Exception {
         var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, wait);
-        RunContext runContext = testUtils.runContext(task);
+        RunContext runContext = testUtils.runContext(task);;
         var output = task.run(runContext);
 
         assertNotNull(output, "Output should not be null");

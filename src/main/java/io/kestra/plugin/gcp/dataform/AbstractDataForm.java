@@ -58,8 +58,8 @@ protected String buildRepositoryPath(RunContext runContext) throws IllegalVariab
     return String.format(
         "projects/%s/locations/%s/repositories/%s",
         runContext.render(this.projectId).as(String.class).orElse(null),
-        runContext.render(this.repositoryId).as(String.class).orElse(null),
-        runContext.render(this.location).as(String.class).orElse(null)
+        runContext.render(this.location).as(String.class).orElse(null),
+        runContext.render(this.repositoryId).as(String.class).orElse(null)
     );
 }
 }

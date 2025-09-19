@@ -22,8 +22,7 @@ class DataformTestUtils {
     private String region;
 
     RunContext runContext(Task task) {
-        return TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()
-        );
+        return TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
     }
 
     InvokeWorkflow defaultInvokeWorkflowTask(String repositoryId, String workflowConfigId, boolean wait) {
