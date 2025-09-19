@@ -45,7 +45,6 @@ class InvokeWorkflowTest {
     @Test
     void shouldFailWithInvalidRepositoryId() {
         String repositoryId = "nonexistent-repo";
-        String workflowConfigId = "my-workflow";
         boolean wait = true;
 
         var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, wait);
@@ -57,7 +56,6 @@ class InvokeWorkflowTest {
 
     @Test
     void shouldFailWithInvalidWorkflowConfigId() {
-        String repositoryId = "my-repo";
         String workflowConfigId = "nonexistent-config";
         boolean wait = true;
 
@@ -71,8 +69,6 @@ class InvokeWorkflowTest {
     @Test
     void shouldReturnNullStateIfWaitFalseAndStateUnfetched() throws Exception {
         // Simulate scenario where wait=false and the backend doesn't return state yet
-        String repositoryId = "my-repo";
-        String workflowConfigId = "my-workflow";
         boolean wait = false;
 
         var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, wait);
