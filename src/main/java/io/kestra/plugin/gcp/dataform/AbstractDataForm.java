@@ -54,12 +54,13 @@ public abstract class AbstractDataForm extends AbstractTask {
         return DataformClient.create(settings);
 
     }
-protected String buildRepositoryPath(RunContext runContext) throws IllegalVariableEvaluationException {
-    return String.format(
-        "projects/%s/locations/%s/repositories/%s",
-        runContext.render(this.projectId).as(String.class).orElse(null),
-        runContext.render(this.location).as(String.class).orElse(null),
-        runContext.render(this.repositoryId).as(String.class).orElse(null)
-    );
-}
+
+    protected String buildRepositoryPath(RunContext runContext) throws IllegalVariableEvaluationException {
+        return String.format(
+            "projects/%s/locations/%s/repositories/%s",
+            runContext.render(this.projectId).as(String.class).orElse(null),
+            runContext.render(this.location).as(String.class).orElseThrow(),
+            runContext.render(this.repositoryId).as(String.class).orElseThrow()
+        );
+    }
 }
