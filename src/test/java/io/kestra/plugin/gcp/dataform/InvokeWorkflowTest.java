@@ -57,7 +57,7 @@ class InvokeWorkflowTest {
         RunContext runContext = testUtils.runContext(task);
 
         Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
-        assertTrue(exception.getMessage().contains("not found") || exception.getMessage().contains("404"), "Expected failure for invalid config");
+        assertTrue(exception.getMessage().contains("nonexistent-config does not exist") || exception.getMessage().contains("NOT_FOUND"), "Expected failure for invalid config");
     }
 
     @Test
