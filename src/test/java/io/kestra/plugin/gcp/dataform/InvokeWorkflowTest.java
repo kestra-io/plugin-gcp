@@ -4,12 +4,14 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @KestraTest
 class InvokeWorkflowTest {
     @Inject
@@ -21,19 +23,28 @@ class InvokeWorkflowTest {
     @Value("${kestra.tasks.dataform.workflowConfigId}")
     String workflowConfigId;
 
-    @ParameterizedTest
-    @CsvSource({
-        "true, SUCCEEDED",
-        "false, RUNNING"
-    })
-    void shouldInvokeWorkflowWithDifferentWaitValues(boolean wait, String expectedState) throws Exception {
-        var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, wait);
-        RunContext runContext = testUtils.runContext(task);;
+    @Test
+    @Order(1)
+    void shouldInvokeWorkflowWithWaitTrue() throws Exception {
+        var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, true);
+        RunContext runContext = testUtils.runContext(task);
         var output = task.run(runContext);
 
         assertNotNull(output, "Output should not be null");
         assertTrue(output.getWorkflowInvocationName().contains("projects/"), "Invocation name should contain GCP path");
-        assertEquals(expectedState, output.getWorkflowInvocationState(), "Unexpected workflow state for wait=" + wait);
+        assertEquals("SUCCEEDED", output.getWorkflowInvocationState(), "Unexpected workflow state for wait=true");
+    }
+
+    @Test
+    @Order(2)
+    void shouldInvokeWorkflowWithWaitFalse() throws Exception {
+        var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, false);
+        RunContext runContext = testUtils.runContext(task);
+        var output = task.run(runContext);
+
+        assertNotNull(output, "Output should not be null");
+        assertTrue(output.getWorkflowInvocationName().contains("projects/"), "Invocation name should contain GCP path");
+        assertEquals("RUNNING", output.getWorkflowInvocationState(), "Unexpected workflow state for wait=false");
     }
 
     @Test
