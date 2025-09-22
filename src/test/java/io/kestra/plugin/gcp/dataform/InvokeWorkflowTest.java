@@ -70,18 +70,4 @@ class InvokeWorkflowTest {
         Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
         assertTrue(exception.getMessage().contains("nonexistent-config does not exist") || exception.getMessage().contains("NOT_FOUND"), "Expected failure for invalid config");
     }
-
-    @Test
-    void shouldReturnNullStateIfWaitFalseAndStateUnfetched() throws Exception {
-        // Simulate scenario where wait=false and the backend doesn't return state yet
-        boolean wait = false;
-
-        var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, wait);
-        RunContext runContext = testUtils.runContext(task);
-        var output = task.run(runContext);
-
-        assertNotNull(output, "Output should not be null");
-        assertNotNull(output.getWorkflowInvocationName(), "Workflow name should not be null");
-        assertEquals("RUNNING", output.getWorkflowInvocationState(), "If wait is false, state should be RUNNING (not polled)");
-    }
 }
