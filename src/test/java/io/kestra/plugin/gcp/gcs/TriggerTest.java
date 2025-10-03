@@ -30,11 +30,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
@@ -188,5 +189,39 @@ class TriggerTest {
             .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+    }
+
+    @Test
+    void shouldExecuteOnCreate() throws Exception {
+        CountDownLatch queueCount = new CountDownLatch(1);
+        DefaultWorker worker = applicationContext.createBean(DefaultWorker.class, IdUtils.create(), 8, null);
+
+        try (AbstractScheduler scheduler = new JdbcScheduler(applicationContext, flowListenersService)) {
+            AtomicReference<Execution> last = new AtomicReference<>();
+
+            Flux<Execution> receive = TestsUtils.receive(executionQueue, executionWithError -> {
+                Execution execution = executionWithError.getLeft();
+
+                if (execution.getFlowId().equals("gcs-listen-on-create")) {
+                    last.set(execution);
+                    queueCount.countDown();
+                }
+            });
+
+            String file = "trigger/on-create/" + FriendlyId.createFriendlyId();
+            testUtils.upload(file);
+
+            worker.run();
+            scheduler.run();
+            repositoryLoader.load(MAIN_TENANT, Objects.requireNonNull(
+                TriggerTest.class.getClassLoader().getResource("flows/gcs/gcs-listen-on-create.yaml")
+            ));
+
+            boolean fired = queueCount.await(15, TimeUnit.SECONDS);
+            assertThat(fired, is(true));
+
+            worker.shutdown();
+            receive.blockLast();
+        }
     }
 }

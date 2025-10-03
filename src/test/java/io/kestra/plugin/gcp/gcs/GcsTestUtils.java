@@ -12,9 +12,14 @@ import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Map;
 import java.util.Objects;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -53,6 +58,29 @@ class GcsTestUtils {
 
         return task.run(runContext(task));
     }
+
+    Upload.Output update(String out) throws Exception {
+        String content = "updated=" + System.nanoTime();
+
+        InputStream input = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            new URI("/" + FriendlyId.createFriendlyId()),
+            input
+        );
+
+        Upload task = Upload.builder()
+            .id(UploadTest.class.getSimpleName())
+            .type(Upload.class.getName())
+            .from(Property.ofValue(source.toString()))
+            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
+            .build();
+
+        return task.run(runContext(task));
+    }
+
 
     RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(

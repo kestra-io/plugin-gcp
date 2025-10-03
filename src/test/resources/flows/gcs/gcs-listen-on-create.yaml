@@ -1,0 +1,15 @@
+id: gcs-listen-on-create
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.gcp.gcs.Trigger
+    from: "gs://{{ globals.bucket }}/tasks/gcp/upload/trigger/create-test/"
+    interval: PT10S
+    action: NONE
+    on: CREATE
+
+tasks:
+  - id: log
+    type: io.kestra.plugin.core.log.Log
+    message: "Triggered with: {{ trigger.blobs | jq('.[].uri') }}"
