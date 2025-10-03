@@ -299,12 +299,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         }
     }
 
-
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         private final java.util.List<TriggeredBlob> blobs;
     }
-
-
 }
