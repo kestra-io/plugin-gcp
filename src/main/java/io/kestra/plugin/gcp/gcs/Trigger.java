@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.gcs;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.storage.BlobId;
@@ -98,7 +99,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
         )
     }
 )
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Downloads.Output>, GcpInterface, ListInterface, ActionInterface {
+public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, GcpInterface, ListInterface, ActionInterface {
     private static final ObjectMapper MAPPER = JacksonMapper.ofJson();
 
     @Builder.Default
@@ -178,7 +179,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             Map<String, StateEntry> state = readStatePruned(runContext, stateContext);
 
 
-            java.util.List<Blob> toFire = blobs.stream()
+            java.util.List<TriggeredBlob> toFire = blobs.stream()
                 .flatMap(throwFunction(blob -> {
                     var uri = "gs://" + blob.getBucket() + "/" + blob.getName();
                     var meta = connection.get(BlobId.of(blob.getBucket(), blob.getName()));
@@ -199,8 +200,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                         .build());
 
                     if (fire) {
-                        runContext.storage().putFile(Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName())));
-                        return Stream.of(blob.withUri(URI.create(uri)));
+                        var changeType = (prev == null) ? ChangeType.CREATE : ChangeType.UPDATE;
+                        return Stream.of(TriggeredBlob.builder().blob(blob.withUri(URI.create(uri))).changeType(changeType).build());
                     }
                     return Stream.empty();
                 }))
@@ -212,9 +213,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                 return Optional.empty();
             }
 
-            Downloads.performAction(toFire, runContext.render(action).as(Action.class).orElseThrow(), moveDirectory, runContext, projectId, serviceAccount, scopes);
+            Downloads.performAction(toFire.stream().map(TriggeredBlob::toBlob).toList(), runContext.render(action).as(Action.class).orElseThrow(), moveDirectory, runContext, projectId, serviceAccount, scopes);
 
-            var output = Downloads.Output.builder().blobs(toFire).build();
+            var output = Output.builder().blobs(toFire).build();
             return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
         }
     }
@@ -267,6 +268,11 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         CREATE_OR_UPDATE
     }
 
+    public enum ChangeType {
+        CREATE,
+        UPDATE
+    }
+
     record StateContext(boolean flowScoped, String stateName, String stateSubName, String taskRunValue, Optional<Duration> ttl) { }
 
     @Getter
@@ -279,4 +285,26 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         private Instant modifiedAt;
         private Instant lastSeenAt;
     }
+
+    @Getter
+    @AllArgsConstructor
+    @Builder
+    public static class TriggeredBlob {
+        @JsonUnwrapped
+        private final Blob blob;
+        private final Trigger.ChangeType changeType;
+
+        public Blob toBlob() {
+            return blob;
+        }
+    }
+
+
+    @Builder
+    @Getter
+    public static class Output implements io.kestra.core.models.tasks.Output {
+        private final java.util.List<TriggeredBlob> blobs;
+    }
+
+
 }
