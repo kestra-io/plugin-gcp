@@ -13,6 +13,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.core.storages.kv.KVMetadata;
+import io.kestra.core.storages.kv.KVValueAndMetadata;
 import io.kestra.plugin.gcp.GcpInterface;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -196,7 +198,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                         .uri(uri)
                         .version(version)
                         .modifiedAt(modifiedAt)
-                        .lastSeenAt(Instant.now())
+                        .lastSeenAt((fire || prev == null) ? Instant.now() : (prev != null ? prev.getLastSeenAt() : Instant.now()))
                         .build());
 
                     if (fire) {
@@ -206,6 +208,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                     return Stream.empty();
                 }))
                 .toList();
+
 
             writeState(runContext, stateContext, state);
 
@@ -221,12 +224,15 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     }
 
     private Map<String, StateEntry> readStatePruned(RunContext runContext, StateContext stateContext) {
-        try (var in = runContext.stateStore().getState(stateContext.flowScoped(), stateContext.stateName(), stateContext.stateSubName(), stateContext.taskRunValue())) {
-            var entries = MAPPER.readValue(in, new TypeReference<java.util.List<StateEntry>>() {});
+        var flowInfo = runContext.flowInfo();
 
-            var cutoff = stateContext.ttl()
-                .map(d -> Instant.now().minus(d))
-                .orElse(Instant.MIN);
+        try {
+            var kvOpt = runContext.namespaceKv(flowInfo.namespace()).getValue(stateContext.taskRunValue());
+
+            if (kvOpt.isEmpty()) return new HashMap<>();
+
+            var entries = MAPPER.readValue((byte[]) kvOpt.get().value(), new TypeReference<java.util.List<StateEntry>>() {});
+            var cutoff = stateContext.ttl().map(d -> Instant.now().minus(d)).orElse(Instant.MIN);
 
             return entries.stream()
                 .filter(e -> e.getLastSeenAt() == null || !e.getLastSeenAt().isBefore(cutoff))
@@ -238,10 +244,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         }
     }
 
-    private void writeState(RunContext runContext, StateContext stateCtx, Map<String, StateEntry> state) {
+    private void writeState(RunContext runContext, StateContext stateContext, Map<String, StateEntry> state) {
         try {
             var bytes = MAPPER.writeValueAsBytes(new ArrayList<>(state.values()));
-            runContext.stateStore().putState(stateCtx.flowScoped(), stateCtx.stateName(), stateCtx.stateSubName(), stateCtx.taskRunValue(), bytes);
+            var flowInfo = runContext.flowInfo();
+
+            KVMetadata metadata = new KVMetadata("GCS Trigger State", stateContext.ttl().orElse(null));
+
+            runContext.namespaceKv(flowInfo.namespace()).put(stateContext.taskRunValue(), new KVValueAndMetadata(metadata, bytes));
         } catch (Exception e) {
             runContext.logger().error("Unable to write state: {}", e.toString());
         }
