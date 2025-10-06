@@ -154,8 +154,6 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
-
-        System.out.println("running");
         var runContext = conditionContext.getRunContext();
 
         var listTask = List.builder()
