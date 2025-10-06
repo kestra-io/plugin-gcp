@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.io.File;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -186,7 +187,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                     var uri = "gs://" + blob.getBucket() + "/" + blob.getName();
                     var meta = connection.get(BlobId.of(blob.getBucket(), blob.getName()));
                     var version = "generation:" + Objects.requireNonNullElse(meta.getGeneration(), 0L) + "_metageneration:" + Objects.requireNonNullElse(meta.getMetageneration(), 0L);
-                    
+
                     Instant modifiedAt = Optional.ofNullable(meta.getUpdateTimeOffsetDateTime())
                         .map(OffsetDateTime::toInstant)
                         .orElse(Instant.now());
@@ -201,9 +202,12 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                         .lastSeenAt((fire || prev == null) ? Instant.now() : (prev != null ? prev.getLastSeenAt() : Instant.now()))
                         .build());
 
+                    File downloaded = Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName()));
+                    URI kestraUri = runContext.storage().putFile(downloaded);
+
                     if (fire) {
                         var changeType = (prev == null) ? ChangeType.CREATE : ChangeType.UPDATE;
-                        return Stream.of(TriggeredBlob.builder().blob(blob.withUri(URI.create(uri))).changeType(changeType).build());
+                        return Stream.of(TriggeredBlob.builder().blob(blob.withUri((kestraUri))).changeType(changeType).build());
                     }
                     return Stream.empty();
                 }))
