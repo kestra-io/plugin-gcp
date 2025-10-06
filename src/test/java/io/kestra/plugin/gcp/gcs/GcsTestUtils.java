@@ -8,6 +8,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import org.apache.commons.io.FilenameUtils;
@@ -60,7 +61,7 @@ class GcsTestUtils {
     }
 
     Upload.Output update(String out) throws Exception {
-        String content = "updated=" + System.nanoTime();
+        String content = "updated file: " + IdUtils.create();
 
         InputStream input = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
 

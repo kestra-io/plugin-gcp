@@ -25,12 +25,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
@@ -193,35 +193,76 @@ class TriggerTest {
 
     @Test
     void shouldExecuteOnCreate() throws Exception {
-        CountDownLatch queueCount = new CountDownLatch(1);
-        DefaultWorker worker = applicationContext.createBean(DefaultWorker.class, IdUtils.create(), 8, null);
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-create/"))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(Trigger.OnEvent.UPDATE))
+            .interval(Duration.ofSeconds(10))
+            .build();
 
-        try (AbstractScheduler scheduler = new JdbcScheduler(applicationContext, flowListenersService)) {
-            AtomicReference<Execution> last = new AtomicReference<>();
+        String file = "trigger/on-create/" + FriendlyId.createFriendlyId();
+        testUtils.upload(file);
 
-            Flux<Execution> receive = TestsUtils.receive(executionQueue, executionWithError -> {
-                Execution execution = executionWithError.getLeft();
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
 
-                if (execution.getFlowId().equals("gcs-listen-on-create")) {
-                    last.set(execution);
-                    queueCount.countDown();
-                }
-            });
+        assertThat(execution.isPresent(), is(true));
+    }
 
-            String file = "trigger/on-create/" + FriendlyId.createFriendlyId();
-            testUtils.upload(file);
+    @Test
+    void shouldExecuteOnUpdate() throws Exception {
+        String file = "trigger/on-update/" + FriendlyId.createFriendlyId();
+        testUtils.upload(file);
 
-            worker.run();
-            scheduler.run();
-            repositoryLoader.load(MAIN_TENANT, Objects.requireNonNull(
-                TriggerTest.class.getClassLoader().getResource("flows/gcs/gcs-listen-on-create.yaml")
-            ));
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-update/"))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(Trigger.OnEvent.UPDATE))
+            .interval(Duration.ofSeconds(10))
+            .build();
 
-            boolean fired = queueCount.await(20, TimeUnit.SECONDS);
-            assertThat(fired, is(true));
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-            worker.shutdown();
-            receive.blockLast();
-        }
+        trigger.evaluate(context.getKey(), context.getValue());
+
+        // we update the file to trigger the update event
+        testUtils.update(file);
+        Thread.sleep(3000);
+
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+
+        assertThat(execution.isPresent(), is(true));
+    }
+
+    @Test
+    void shouldExecuteOnCreateOrUpdate() throws Exception {
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-create_or_update/"))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(Trigger.OnEvent.CREATE_OR_UPDATE))
+            .interval(Duration.ofSeconds(10))
+            .build();
+
+        String file = "trigger/on-create_or_update/" + FriendlyId.createFriendlyId();
+        testUtils.upload(file);
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> createExecution = trigger.evaluate(context.getKey(), context.getValue());
+
+        assertThat(createExecution.isPresent(), is(true));
+
+        // we update the file to trigger the update event
+        testUtils.update(file);
+        Thread.sleep(3000);
+
+        var updateExecution = trigger.evaluate(context.getKey(), context.getValue());
+        assertThat(updateExecution.isPresent(), is(true));
+
     }
 }

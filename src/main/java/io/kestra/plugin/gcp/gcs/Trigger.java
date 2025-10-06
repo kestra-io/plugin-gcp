@@ -154,6 +154,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
+
+        System.out.println("running");
         var runContext = conditionContext.getRunContext();
 
         var listTask = List.builder()
@@ -294,9 +296,25 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @AllArgsConstructor
     @NoArgsConstructor
     public static class StateEntry {
+        @Schema(
+            title = "Canonical identifier",
+            description = "Unique URI identifying the object (e.g., gs://bucket/path/file.csv)."
+        )
         private String uri;
+
+        @Schema(
+            title = "Version indicator (generation:<n>_metageneration:<n>)"
+        )
         private String version;
+
+        @Schema(
+            title = "Last-modified timestamp from provider."
+        )
         private Instant modifiedAt;
+
+        @Schema(
+            title = "Time the trigger last recorded the object (used for TTL and auditing)."
+        )
         private Instant lastSeenAt;
     }
 
@@ -316,6 +334,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(
+            title = "List of blobs that triggered the flow, each with its change type."
+        )
         private final java.util.List<TriggeredBlob> blobs;
     }
 }
