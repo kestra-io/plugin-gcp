@@ -4,7 +4,7 @@ namespace: io.kestra.tests
 triggers:
   - id: watch
     type: io.kestra.plugin.gcp.gcs.Trigger
-    from: "gs://{{ globals.bucket }}/tasks/gcp/upload/trigger/create-test/"
+    from: "gs://{{ globals.bucket }}/tasks/gcp/upload/trigger/on-create/"
     interval: PT10S
     action: NONE
     on: CREATE

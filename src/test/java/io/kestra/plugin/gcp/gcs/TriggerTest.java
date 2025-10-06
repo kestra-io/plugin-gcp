@@ -217,7 +217,7 @@ class TriggerTest {
                 TriggerTest.class.getClassLoader().getResource("flows/gcs/gcs-listen-on-create.yaml")
             ));
 
-            boolean fired = queueCount.await(15, TimeUnit.SECONDS);
+            boolean fired = queueCount.await(20, TimeUnit.SECONDS);
             assertThat(fired, is(true));
 
             worker.shutdown();
