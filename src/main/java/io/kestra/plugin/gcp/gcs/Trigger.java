@@ -185,8 +185,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                 .flatMap(throwFunction(blob -> {
                     var uri = "gs://" + blob.getBucket() + "/" + blob.getName();
                     var meta = connection.get(BlobId.of(blob.getBucket(), blob.getName()));
-                    var version = "metageneration:" + Objects.requireNonNullElse(meta.getMetageneration(), 0L);
-
+                    var version = "generation:" + Objects.requireNonNullElse(meta.getGeneration(), 0L) + "_metageneration:" + Objects.requireNonNullElse(meta.getMetageneration(), 0L);
+                    
                     Instant modifiedAt = Optional.ofNullable(meta.getUpdateTimeOffsetDateTime())
                         .map(OffsetDateTime::toInstant)
                         .orElse(Instant.now());
