@@ -136,7 +136,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             """
     )
     @Builder.Default
-    private Property<OnEvent> on = Property.ofValue(OnEvent.CREATE);
+    private Property<OnEvent> on = Property.ofValue(OnEvent.CREATE_OR_UPDATE);
 
     @Schema(
         title = "State key",
