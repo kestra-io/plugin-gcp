@@ -159,13 +159,13 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/none"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .on(Property.ofValue(Trigger.OnEvent.CREATE))
             .build();
 
         String out = FriendlyId.createFriendlyId();
-        Upload.Output upload = testUtils.upload("trigger/" + out);
+        Upload.Output upload = testUtils.upload("trigger/none" + out);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
