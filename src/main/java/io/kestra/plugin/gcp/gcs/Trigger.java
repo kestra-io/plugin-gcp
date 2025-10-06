@@ -176,7 +176,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         }
 
         try (Storage connection = listTask.connection(runContext)) {
-            var rOn = runContext.render(on).as(OnEvent.class).orElse(OnEvent.CREATE);
+            var rOn = runContext.render(on).as(OnEvent.class).orElse(OnEvent.CREATE_OR_UPDATE);
             var rStateKey = runContext.render(stateKey).as(String.class).orElse(defaultStateKey(context));
             var rStateTtl = runContext.render(stateTtl).as(Duration.class);
 

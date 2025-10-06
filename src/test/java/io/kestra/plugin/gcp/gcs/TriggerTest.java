@@ -114,7 +114,7 @@ class TriggerTest {
     @Test
     void move() throws Exception {
         Trigger trigger = Trigger.builder()
-            .id(TriggerTest.class.getSimpleName())
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
             .action(Property.ofValue(ActionInterface.Action.MOVE))
@@ -157,7 +157,7 @@ class TriggerTest {
     @Test
     void none() throws Exception {
         Trigger trigger = Trigger.builder()
-            .id(TriggerTest.class.getSimpleName())
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
