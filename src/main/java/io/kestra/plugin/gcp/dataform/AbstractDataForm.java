@@ -26,7 +26,7 @@ import java.util.Map;
 @NoArgsConstructor
 public abstract class AbstractDataForm extends AbstractTask {
     @Schema(
-        title = "The GCP location where your Dataform repository is hosted.",
+        title = "The GCP location where your Dataform repository is hosted",
         example = "us-central1"
     )
     @NotNull
@@ -34,7 +34,7 @@ public abstract class AbstractDataForm extends AbstractTask {
     protected Property<String> location;
 
     @Schema(
-        title = "The Dataform repository ID (not the full path).",
+        title = "The Dataform repository ID (not the full path)",
         description = "Used to construct `projects/{projectId}/locations/{location}/repositories/{repositoryId}`"
     )
     @NotNull
