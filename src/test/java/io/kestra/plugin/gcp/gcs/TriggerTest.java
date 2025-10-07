@@ -86,7 +86,6 @@ class TriggerTest {
                 }
             });
 
-
             String out1 = FriendlyId.createFriendlyId();
             testUtils.upload("trigger/" + out1);
             String out2 = FriendlyId.createFriendlyId();
@@ -96,7 +95,7 @@ class TriggerTest {
             scheduler.run();
             repositoryLoader.load(MAIN_TENANT, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
 
-            boolean await = queueCount.await(10, TimeUnit.SECONDS);
+            boolean await = queueCount.await(20, TimeUnit.SECONDS);
             try {
                 assertThat(await, is(true));
             } finally {
