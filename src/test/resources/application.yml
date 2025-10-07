@@ -25,6 +25,9 @@ kestra:
       table: "${random.shortuuid}"
     firestore:
       project: "kestra-unit-test"
+    monitoring:
+      project: "kestra-unit-test"
+      resourceType: "global"
     pubsub:
       project: "kestra-unit-test"
     dataproc:
