@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
@@ -113,7 +114,7 @@ class TriggerTest {
     @Test
     void move() throws Exception {
         Trigger trigger = Trigger.builder()
-            .id(TriggerTest.class.getSimpleName())
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
             .action(Property.ofValue(ActionInterface.Action.MOVE))
@@ -156,14 +157,15 @@ class TriggerTest {
     @Test
     void none() throws Exception {
         Trigger trigger = Trigger.builder()
-            .id(TriggerTest.class.getSimpleName())
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/none"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(Trigger.OnEvent.CREATE))
             .build();
 
         String out = FriendlyId.createFriendlyId();
-        Upload.Output upload = testUtils.upload("trigger/" + out);
+        Upload.Output upload = testUtils.upload("trigger/none" + out);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
@@ -188,5 +190,100 @@ class TriggerTest {
             .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+    }
+
+    @Test
+    void shouldExecuteOnCreate() throws Exception {
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-create/"))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(Trigger.OnEvent.CREATE))
+            .interval(Duration.ofSeconds(10))
+            .build();
+
+        String file = "trigger/on-create/" + FriendlyId.createFriendlyId();
+        var upload = testUtils.upload(file);
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+
+        assertThat(execution.isPresent(), is(true));
+
+        Delete delete = Delete.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .uri(Property.ofValue(upload.getUri().toString()))
+            .build();
+        delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
+    }
+
+    @Test
+    void shouldExecuteOnUpdate() throws Exception {
+        String file = "trigger/on-update/" + FriendlyId.createFriendlyId();
+        var upload = testUtils.upload(file);
+
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-update/"))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(Trigger.OnEvent.UPDATE))
+            .interval(Duration.ofSeconds(10))
+            .build();
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+
+        trigger.evaluate(context.getKey(), context.getValue());
+
+        // we update the file to trigger the update event
+        testUtils.update(file);
+        Thread.sleep(3000);
+
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+
+        assertThat(execution.isPresent(), is(true));
+
+        Delete delete = Delete.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .uri(Property.ofValue(upload.getUri().toString()))
+            .build();
+        delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
+    }
+
+    @Test
+    void shouldExecuteOnCreateOrUpdate() throws Exception {
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-create_or_update/"))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(Trigger.OnEvent.CREATE_OR_UPDATE))
+            .interval(Duration.ofSeconds(10))
+            .build();
+
+        String file = "trigger/on-create_or_update/" + FriendlyId.createFriendlyId();
+        var upload = testUtils.upload(file);
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> createExecution = trigger.evaluate(context.getKey(), context.getValue());
+
+        assertThat(createExecution.isPresent(), is(true));
+
+        // we update the file to trigger the update event
+        testUtils.update(file);
+        Thread.sleep(3000);
+
+        var updateExecution = trigger.evaluate(context.getKey(), context.getValue());
+        assertThat(updateExecution.isPresent(), is(true));
+
+        Delete delete = Delete.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .uri(Property.ofValue(upload.getUri().toString()))
+            .build();
+        delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
     }
 }
