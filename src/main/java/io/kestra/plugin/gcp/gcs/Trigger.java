@@ -181,6 +181,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             var stateContext = new StateContext(true, "gcs_trigger_state", id, rStateKey, rStateTtl);
             Map<String, StateEntry> state = readStatePruned(runContext, stateContext);
 
+            java.util.List<Blob> actionBlobs = new ArrayList<>();
 
             java.util.List<TriggeredBlob> toFire = blobs.stream()
                 .flatMap(throwFunction(blob -> {
@@ -207,6 +208,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
                     if (fire) {
                         var changeType = (prev == null) ? ChangeType.CREATE : ChangeType.UPDATE;
+
+                        // we add in a separate list, since now we cant just rely on list task blobs to perform action
+                        actionBlobs.add(blob);
+
                         return Stream.of(TriggeredBlob.builder().blob(blob.withUri((kestraUri))).changeType(changeType).build());
                     }
                     return Stream.empty();
@@ -220,7 +225,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                 return Optional.empty();
             }
 
-            Downloads.performAction(toFire.stream().map(TriggeredBlob::toBlob).toList(), runContext.render(action).as(Action.class).orElseThrow(), moveDirectory, runContext, projectId, serviceAccount, scopes);
+            Downloads.performAction(actionBlobs, runContext.render(action).as(Action.class).orElseThrow(), moveDirectory, runContext, projectId, serviceAccount, scopes);
 
             var output = Output.builder().blobs(toFire).build();
             return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
