@@ -5,6 +5,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 class PushTest {
     private static final String PROJECT_ID = "kestra-unit-test";
-    private static final String METRIC_TYPE = "custom.googleapis.com/kestra_unit_test/";
+    private static final String METRIC_TYPE = "custom.googleapis.com/" + IdUtils.create() + "/";
 
     @Inject
     private RunContextFactory runContextFactory;
