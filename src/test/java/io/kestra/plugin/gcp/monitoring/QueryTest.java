@@ -16,7 +16,7 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 class QueryTest {
     private static final String PROJECT_ID = "kestra-unit-test";
-    private static final String METRIC_TYPE = "custom.googleapis.com/kestra_unit_test/unit_test_metric";
+    private static final String METRIC_TYPE = "custom.googleapis.com/kestra_unit_test/query_test_metric";
 
     @Inject
     private RunContextFactory runContextFactory;
