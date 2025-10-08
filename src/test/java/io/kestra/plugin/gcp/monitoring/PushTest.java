@@ -42,14 +42,5 @@ class PushTest {
         var output = push.run(runContext);
 
         assertThat(output.getCount(), is(1));
-
-        // we clean the metrics pushed
-        try (var client = push.connection(runContext)) {
-            metrics.forEach(metricValue -> {
-                try {
-                    client.deleteMetricDescriptor(MetricDescriptorName.of(PROJECT_ID, runContext.render(metricValue.getMetricType()).as(String.class).get()));
-                } catch (Exception ignored) {}
-            });
-        }
     }
 }

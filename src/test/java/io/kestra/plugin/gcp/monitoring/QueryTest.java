@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 class QueryTest {
     private static final String PROJECT_ID = "kestra-unit-test";
-    private static final String METRIC_TYPE = "custom.googleapis.com/" + IdUtils.create() + "/query_test_metric";
+    private static final String METRIC_TYPE = "custom.googleapis.com/kestra_unit_test/query_test_metric";
 
     @Inject
     private RunContextFactory runContextFactory;
@@ -48,10 +48,5 @@ class QueryTest {
         var output = query.run(runContext);
 
         assertThat(output.getCount(), greaterThanOrEqualTo(0));
-
-        // we clean the metrics pushed
-        try (var client = push.connection(runContext)) {
-            client.deleteMetricDescriptor(MetricDescriptorName.of(PROJECT_ID, METRIC_TYPE));
-        }
     }
 }

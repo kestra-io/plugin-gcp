@@ -34,7 +34,7 @@ public class TriggerTest {
         );
 
         var push = Push.builder()
-            .projectId(Property.ofValue("kestra-unit-test"))
+            .projectId(Property.ofValue(PROJECT_ID))
             .metrics(Property.ofValue(metrics))
             .build();
 
@@ -57,13 +57,5 @@ public class TriggerTest {
         var execution = trigger.evaluate(context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
-
-        try (var client = push.connection(runContext)) {
-            metrics.forEach(metricValue -> {
-                try {
-                    client.deleteMetricDescriptor(MetricDescriptorName.of(PROJECT_ID, runContext.render(metricValue.getMetricType()).as(String.class).get()));
-                } catch (Exception ignored) {}
-            });
-        }
     }
 }
