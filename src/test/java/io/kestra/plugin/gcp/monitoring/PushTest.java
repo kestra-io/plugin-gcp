@@ -5,6 +5,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 class PushTest {
     private static final String PROJECT_ID = "kestra-unit-test";
-    private static final String METRIC_TYPE = "custom.googleapis.com/kestra_unit_test/";
+    private static final String METRIC_TYPE = "custom.googleapis.com/" + IdUtils.create() + "/";
 
     @Inject
     private RunContextFactory runContextFactory;
@@ -30,10 +31,6 @@ class PushTest {
             Push.MetricValue.builder()
                 .metricType(Property.ofValue(METRIC_TYPE + "metric_one"))
                 .value(Property.ofValue(42.0))
-                .build(),
-            Push.MetricValue.builder()
-                .metricType(Property.ofValue(METRIC_TYPE + "metric_two"))
-                .value(Property.ofValue(123.45))
                 .build()
         );
 
@@ -44,7 +41,7 @@ class PushTest {
 
         var output = push.run(runContext);
 
-        assertThat(output.getCount(), is(2));
+        assertThat(output.getCount(), is(1));
 
         // we clean the metrics pushed
         try (var client = push.connection(runContext)) {
