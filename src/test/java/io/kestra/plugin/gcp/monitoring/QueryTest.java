@@ -26,8 +26,8 @@ class QueryTest {
         var runContext = runContextFactory.of();
 
         var metric = Push.MetricValue.builder()
-            .metricType(METRIC_TYPE)
-            .value(123.45)
+            .metricType(Property.ofValue(METRIC_TYPE))
+            .value(Property.ofValue(123.45))
             .build();
 
         var push = Push.builder()

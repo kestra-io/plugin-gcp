@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.monitoring;
 
 import com.google.monitoring.v3.MetricDescriptorName;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
@@ -22,6 +23,8 @@ import static org.hamcrest.Matchers.is;
 
 @KestraTest
 public class TriggerTest {
+    private static final String PROJECT_ID = "kestra-unit-test";
+
     @Inject
     RunContextFactory runContextFactory;
 
@@ -31,8 +34,8 @@ public class TriggerTest {
 
         var metrics = List.of(
             Push.MetricValue.builder()
-                .metricType("custom.googleapis.com/kestra_unit_test/kestra_unit_test_metric")
-                .value(99.9)
+                .metricType(Property.ofValue("custom.googleapis.com/kestra_unit_test/kestra_unit_test_metric"))
+                .value(Property.ofValue(99.9))
                 .build()
         );
 
@@ -62,7 +65,11 @@ public class TriggerTest {
         assertThat(execution.isPresent(), is(true));
 
         try (var client = push.connection(runContext)) {
-            metrics.forEach(metricValue -> client.deleteMetricDescriptor(MetricDescriptorName.of("kestra-unit-test", metricValue.getMetricType())));
+            metrics.forEach(metricValue -> {
+                try {
+                    client.deleteMetricDescriptor(MetricDescriptorName.of(PROJECT_ID, runContext.render(metricValue.getMetricType()).as(String.class).get()));
+                } catch (Exception ignored) {}
+            });
         }
     }
 }

@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.monitoring;
 
 import com.google.monitoring.v3.MetricDescriptorName;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
@@ -27,12 +28,12 @@ class PushTest {
 
         var metrics = List.of(
             Push.MetricValue.builder()
-                .metricType(METRIC_TYPE + "metric_one")
-                .value(42.0)
+                .metricType(Property.ofValue(METRIC_TYPE + "metric_one"))
+                .value(Property.ofValue(42.0))
                 .build(),
             Push.MetricValue.builder()
-                .metricType(METRIC_TYPE + "metric_two")
-                .value(123.45)
+                .metricType(Property.ofValue(METRIC_TYPE + "metric_two"))
+                .value(Property.ofValue(123.45))
                 .build()
         );
 
@@ -47,7 +48,11 @@ class PushTest {
 
         // we clean the metrics pushed
         try (var client = push.connection(runContext)) {
-            metrics.forEach(metricValue -> client.deleteMetricDescriptor(MetricDescriptorName.of(PROJECT_ID, metricValue.getMetricType())));
+            metrics.forEach(metricValue -> {
+                try {
+                    client.deleteMetricDescriptor(MetricDescriptorName.of(PROJECT_ID, runContext.render(metricValue.getMetricType()).as(String.class).get()));
+                } catch (Exception ignored) {}
+            });
         }
     }
 }
