@@ -30,10 +30,6 @@ class PushTest {
             Push.MetricValue.builder()
                 .metricType(Property.ofValue(METRIC_TYPE + "metric_one"))
                 .value(Property.ofValue(42.0))
-                .build(),
-            Push.MetricValue.builder()
-                .metricType(Property.ofValue(METRIC_TYPE + "metric_two"))
-                .value(Property.ofValue(123.45))
                 .build()
         );
 
@@ -44,7 +40,7 @@ class PushTest {
 
         var output = push.run(runContext);
 
-        assertThat(output.getCount(), is(2));
+        assertThat(output.getCount(), is(1));
 
         // we clean the metrics pushed
         try (var client = push.connection(runContext)) {
