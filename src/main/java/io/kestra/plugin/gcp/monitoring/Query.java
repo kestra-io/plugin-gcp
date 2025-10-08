@@ -63,12 +63,11 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
     @Override
     public Output run(RunContext runContext) throws Exception {
         var rFilter = runContext.render(this.filter).as(String.class).orElseThrow();
-        var rWindow = runContext.render(this.window).as(Duration.class).orElse(Duration.ofMinutes(5));
 
         try (MetricServiceClient client = this.connection(runContext)) {
             var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
 
-            Duration duration = runContext.render(this.window)
+            var rWindow = runContext.render(this.window)
                 .as(Duration.class)
                 .orElse(Duration.ofMinutes(5));
 
@@ -78,7 +77,7 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
                 .setName("projects/" + rProjectId)
                 .setFilter(rFilter)
                 .setInterval(TimeInterval.newBuilder()
-                    .setStartTime(Timestamp.newBuilder().setSeconds(now - duration.getSeconds()))
+                    .setStartTime(Timestamp.newBuilder().setSeconds(now - rWindow.getSeconds()))
                     .setEndTime(Timestamp.newBuilder().setSeconds(now)))
                 .setView(ListTimeSeriesRequest.TimeSeriesView.FULL)
                 .build();

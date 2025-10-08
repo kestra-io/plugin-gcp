@@ -14,6 +14,7 @@ import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Optional;
 
 @SuperBuilder
@@ -61,6 +62,11 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     )
     private Property<String> projectId;
 
+    protected Property<String> serviceAccount;
+
+    @Builder.Default
+    protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
+
     @NotNull
     @Schema(
         title = "Filter expression",
@@ -79,6 +85,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         var output = Query.builder()
             .id(this.id)
             .type(Query.class.getName())
+            .serviceAccount(this.serviceAccount)
+            .scopes(this.scopes)
             .projectId(this.projectId)
             .filter(this.filter)
             .window(this.window)

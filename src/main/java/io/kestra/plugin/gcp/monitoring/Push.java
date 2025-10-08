@@ -58,6 +58,7 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
     private Property<List<MetricValue>> metrics;
 
     @Schema(title = "The duration window for the metric interval.")
+    @Builder.Default
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(1));
 
     @Override
