@@ -1,22 +1,16 @@
 package io.kestra.plugin.gcp.monitoring;
 
 import com.google.monitoring.v3.MetricDescriptorName;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
-import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
-import io.kestra.core.utils.TestsUtils;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -34,7 +28,7 @@ public class TriggerTest {
 
         var metrics = List.of(
             Push.MetricValue.builder()
-                .metricType(Property.ofValue("custom.googleapis.com/kestra_unit_test/kestra_unit_test_metric"))
+                .metricType(Property.ofValue("custom.googleapis.com/kestra_unit_test/trigger_test_metric"))
                 .value(Property.ofValue(99.9))
                 .build()
         );
@@ -54,7 +48,7 @@ public class TriggerTest {
             .type(TriggerTest.class.getName())
             .projectId(Property.ofValue("kestra-unit-test"))
             .filter(Property.ofValue(
-                "metric.type=\"custom.googleapis.com/kestra_unit_test/kestra_unit_test_metric\""
+                "metric.type=\"custom.googleapis.com/kestra_unit_test/trigger_test_metric\""
             ))
             .window(Property.ofValue(java.time.Duration.ofMinutes(10)))
             .build();
