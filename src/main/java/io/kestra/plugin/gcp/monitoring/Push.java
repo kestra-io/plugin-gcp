@@ -16,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
@@ -74,8 +75,13 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
                     var rMetricType = runContext.render(mv.getMetricType()).as(String.class).orElseThrow();
                     var rValue = runContext.render(mv.getValue()).as(Double.class).orElseThrow();
                     var rMetricKind = runContext.render(mv.getMetricKind()).as(MetricKind.class).orElse(MetricKind.GAUGE);
+                    var rLabels = runContext.render(mv.getLabels()).asMap(String.class, String.class);
 
-                    var metric = Metric.newBuilder().setType(rMetricType).build();
+                    var metric = Metric.newBuilder()
+                        .setType(rMetricType)
+                        .putAllLabels(rLabels)
+                        .build();
+
                     var resource = MonitoredResource.newBuilder()
                         .setType("global")
                         .putLabels("project_id", rProjectId)
@@ -145,6 +151,12 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
             description = "The kind of metric to push."
         )
         private Property<MetricKind> metricKind = Property.ofValue(MetricKind.GAUGE);
+
+        @Schema(
+            title = "Metric labels.",
+            description = "Optional key/value labels attached to the metric."
+        )
+        private Property<Map<String, String>> labels;
     }
 
     public enum MetricKind {

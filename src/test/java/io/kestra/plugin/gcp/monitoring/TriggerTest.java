@@ -29,6 +29,7 @@ public class TriggerTest {
             Push.MetricValue.builder()
                 .metricType(Property.ofValue("custom.googleapis.com/kestra_unit_test/test_metric"))
                 .value(Property.ofValue(99.9))
+                .labels(Property.ofValue(Map.of("test_id", IdUtils.create())))
                 .build()
         );
 

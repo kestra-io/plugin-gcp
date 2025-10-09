@@ -3,11 +3,13 @@ package io.kestra.plugin.gcp.monitoring;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -27,6 +29,7 @@ class QueryTest {
         var metric = Push.MetricValue.builder()
             .metricType(Property.ofValue(METRIC_TYPE))
             .value(Property.ofValue(123.45))
+            .labels(Property.ofValue(Map.of("test_id", IdUtils.create())))
             .build();
 
         var push = Push.builder()

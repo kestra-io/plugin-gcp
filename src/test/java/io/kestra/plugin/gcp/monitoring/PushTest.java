@@ -5,11 +5,13 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -29,6 +31,7 @@ class PushTest {
         var metrics = List.of(
             Push.MetricValue.builder()
                 .metricType(Property.ofValue(METRIC_TYPE + "test_metric"))
+                .labels(Property.ofValue(Map.of("test_id", IdUtils.create())))
                 .value(Property.ofValue(42.0))
                 .build()
         );
