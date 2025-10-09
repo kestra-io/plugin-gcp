@@ -28,7 +28,7 @@ class PushTest {
 
         var metrics = List.of(
             Push.MetricValue.builder()
-                .metricType(Property.ofValue(METRIC_TYPE + "metric_one"))
+                .metricType(Property.ofValue(METRIC_TYPE + "test_metric"))
                 .value(Property.ofValue(42.0))
                 .build()
         );

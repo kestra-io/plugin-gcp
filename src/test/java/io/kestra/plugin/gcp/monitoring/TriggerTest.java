@@ -1,6 +1,5 @@
 package io.kestra.plugin.gcp.monitoring;
 
-import com.google.monitoring.v3.MetricDescriptorName;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.property.Property;
@@ -28,7 +27,7 @@ public class TriggerTest {
 
         var metrics = List.of(
             Push.MetricValue.builder()
-                .metricType(Property.ofValue("custom.googleapis.com/kestra_unit_test/trigger_test_metric"))
+                .metricType(Property.ofValue("custom.googleapis.com/kestra_unit_test/test_metric"))
                 .value(Property.ofValue(99.9))
                 .build()
         );
@@ -48,7 +47,7 @@ public class TriggerTest {
             .type(TriggerTest.class.getName())
             .projectId(Property.ofValue("kestra-unit-test"))
             .filter(Property.ofValue(
-                "metric.type=\"custom.googleapis.com/kestra_unit_test/trigger_test_metric\""
+                "metric.type=\"custom.googleapis.com/kestra_unit_test/test_metric\""
             ))
             .window(Property.ofValue(java.time.Duration.ofMinutes(10)))
             .build();
