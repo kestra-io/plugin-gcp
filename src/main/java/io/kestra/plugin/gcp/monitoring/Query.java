@@ -55,7 +55,7 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
     private Property<String> filter;
 
     @Schema(
-        title = "Query window size. Default to 5 minutes"
+        title = "Query window size – default to 5 minutes"
     )
     @Builder.Default
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(5));
@@ -109,12 +109,12 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "Total number of time series fetched."
+            title = "Total number of time series fetched"
         )
         private final Integer count;
 
         @Schema(
-            title = "List of time series."
+            title = "List of time series"
         )
         private final List<Map<String, Object>> series;
     }

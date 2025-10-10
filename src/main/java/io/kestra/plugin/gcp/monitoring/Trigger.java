@@ -23,7 +23,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for a Cloud Monitoring metric query to return results."
+    title = "Trigger a flow when a Cloud Monitoring query returns non-empty results."
 )
 @Plugin(
     examples = {
@@ -70,7 +70,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @NotNull
     @Schema(
         title = "Filter expression",
-        description = "Cloud Monitoring filter query to match metrics."
+        description = "Cloud Monitoring filter query to match metrics"
     )
     private Property<String> filter;
 

@@ -27,7 +27,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Push metrics to Cloud Monitoring"
+    title = "Push metrics to Cloud Monitoring."
 )
 @Plugin(
     examples = {
@@ -54,11 +54,11 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Output> {
     @Schema(
         title = "List of metrics to push",
-        description = "Each entry includes a metricType and value."
+        description = "Each entry includes a `metricType` and `value`."
     )
     private Property<List<MetricValue>> metrics;
 
-    @Schema(title = "The duration window for the metric interval.")
+    @Schema(title = "The duration window for the metric interval")
     @Builder.Default
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(1));
 
@@ -134,27 +134,27 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
     @Getter
     public static class MetricValue {
         @Schema(
-            title = "The metric type name.",
-            description = "Fully qualified Cloud Monitoring metric type, for example `custom.googleapis.com/demo/requests_count`."
+            title = "The metric type name",
+            description = "Fully qualified Cloud Monitoring metric type – for example `custom.googleapis.com/demo/requests_count`"
         )
         private final Property<String> metricType;
 
         @Schema(
-            title = "The metric value.",
-            description = "Value to push for the metric."
+            title = "The metric value",
+            description = "Value to push for the metric"
         )
         private Property<Double> value;
 
         @Builder.Default
         @Schema(
-            title = "The metric kind.",
-            description = "The kind of metric to push."
+            title = "The metric kind",
+            description = "The kind of metric to push"
         )
         private Property<MetricKind> metricKind = Property.ofValue(MetricKind.GAUGE);
 
         @Schema(
-            title = "Metric labels.",
-            description = "Optional key/value labels attached to the metric."
+            title = "Metric labels",
+            description = "Optional key/value labels attached to the metric"
         )
         private Property<Map<String, String>> labels;
     }
@@ -169,7 +169,7 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "Total number of metrics pushed."
+            title = "Total number of metrics pushed"
         )
         private final Integer count;
     }
