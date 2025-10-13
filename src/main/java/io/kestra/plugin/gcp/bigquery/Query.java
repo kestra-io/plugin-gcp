@@ -134,10 +134,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     @Builder.Default
     private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
-    // private List<String> positionalParameters;
-
-    // private Map<String, String> namedParameters;
-
     @Schema(
         title = "The clustering specification for the destination table."
     )
@@ -145,12 +141,13 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     @Schema(
         title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job.",
-        description = " Schema update options are supported in two cases: " +
-            "* when writeDisposition is WRITE_APPEND; \n" +
-            "* when writeDisposition is WRITE_TRUNCATE and the destination" +
-            " table is a partition of a table, specified by partition decorators. " +
-            "\n" +
-            " For normal tables, WRITE_TRUNCATE will always overwrite the schema."
+        description = """
+             Schema update options are supported in two cases: \
+            * when writeDisposition is WRITE_APPEND;\s
+            * when writeDisposition is WRITE_TRUNCATE and the destination\
+             table is a partition of a table, specified by partition decorators. \
+
+             For normal tables, WRITE_TRUNCATE will always overwrite the schema."""
     )
     @PluginProperty
     private Property<List<JobInfo.SchemaUpdateOption>> schemaUpdateOptions;
@@ -313,7 +310,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 if (FetchType.FETCH.equals(fetchTypeRendered)) {
                     output.rows(fetch);
                 } else {
-                    output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
+                    output.row(!fetch.isEmpty() ? fetch.getFirst() : ImmutableMap.of());
                 }
             }
         }

@@ -34,7 +34,7 @@ public abstract class AbstractTask extends Task implements GcpInterface {
         //Infer projectID from credentials if projectId is null
         if (credentials instanceof ServiceAccountCredentials serviceAccountCredentials) {
             String projectIdFromServiceAccount = serviceAccountCredentials.getProjectId();
-            projectId = projectId != null ? projectId : new Property<>(projectIdFromServiceAccount);
+            projectId = projectId != null ? projectId : Property.ofValue(projectIdFromServiceAccount);
         }
         return credentials;
     }
