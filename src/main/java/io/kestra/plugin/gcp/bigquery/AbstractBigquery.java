@@ -30,10 +30,11 @@ import java.util.concurrent.Callable;
 abstract public class AbstractBigquery extends AbstractTask {
     @Schema(
         title = "The geographic location where the dataset should reside.",
-        description = "This property is experimental" +
-            " and might be subject to change or removed.\n" +
-            " \n" +
-            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
+        description = """
+            This property is experimental\
+             and might be subject to change or removed.
+            \s
+             See <a href="https://cloud.google.com/bigquery/docs/reference/v2/datasets#location">Dataset Location</a>"""
     )
     protected Property<String> location;
 
@@ -69,13 +70,28 @@ abstract public class AbstractBigquery extends AbstractTask {
         "Retrying may solve the problem"
     ));
 
-    BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        return connection(
+    @Builder.Default
+    protected transient BigQueryFactory bigQueryFactory = AbstractBigquery::createBigQueryClient;
+
+    protected BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        return bigQueryFactory.create(
             runContext,
             this.credentials(runContext),
             runContext.render(this.projectId).as(String.class).orElse(null),
             runContext.render(this.location).as(String.class).orElse(null)
         );
+    }
+
+    private static BigQuery createBigQueryClient(RunContext runContext, GoogleCredentials googleCredentials,
+                                                 String projectId, String location) {
+        return BigQueryOptions
+            .newBuilder()
+            .setCredentials(googleCredentials)
+            .setProjectId(projectId)
+            .setLocation(location)
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
+            .build()
+            .getService();
     }
 
     static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
@@ -110,13 +126,11 @@ abstract public class AbstractBigquery extends AbstractTask {
                         event.getElapsedTime().getSeconds(),
                         event.getException()
                     ))
-                    .onRetry(event -> {
-                        logger.warn(
-                            "Retrying, attempts {} elapsed {} seconds",
-                            event.getAttemptCount(),
-                            event.getElapsedTime().getSeconds()
-                        );
-                    }).build()
+                    .onRetry(event -> logger.warn(
+                        "Retrying, attempts {} elapsed {} seconds",
+                        event.getAttemptCount(),
+                        event.getElapsedTime().getSeconds()
+                    )).build()
             )
             .get(() -> {
                 Job job = null;
@@ -135,19 +149,15 @@ abstract public class AbstractBigquery extends AbstractTask {
 
                     return job;
                 } catch (Exception exception) {
-                    if (exception instanceof com.google.cloud.bigquery.BigQueryException) {
-                        com.google.cloud.bigquery.BigQueryException bqException = (com.google.cloud.bigquery.BigQueryException) exception;
-
+                    if (exception instanceof com.google.cloud.bigquery.BigQueryException bqException) {
                         logger.warn(
                             "Error query on {} with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
                             bqException.getErrors() == null ? "" : String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
                         );
 
-                        throw new BigQueryException(bqException.getErrors());
-                    } else if (exception instanceof JobException) {
-                        JobException bqException = (JobException) exception;
-
+                        throw new BigQueryException(bqException.getErrors() != null ? bqException.getErrors() : List.of());
+                    } else if (exception instanceof JobException bqException) {
                         logger.warn(
                             "Error query on job '{}' with errors:\n[\n - {}\n]",
                             job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
