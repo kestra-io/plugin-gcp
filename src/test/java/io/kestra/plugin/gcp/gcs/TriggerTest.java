@@ -6,6 +6,7 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.triggers.StatefulTriggerInterface;
 import io.kestra.core.queues.QueueFactoryInterface;
 import io.kestra.core.queues.QueueInterface;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
@@ -33,6 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.kestra.core.models.triggers.StatefulTriggerService.*;
 import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -160,7 +162,7 @@ class TriggerTest {
             .type(Trigger.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/none"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
-            .on(Property.ofValue(Trigger.OnEvent.CREATE))
+            .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
             .build();
 
         String out = FriendlyId.createFriendlyId();
@@ -198,7 +200,7 @@ class TriggerTest {
             .type(Trigger.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-create/"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
-            .on(Property.ofValue(Trigger.OnEvent.CREATE))
+            .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
             .interval(Duration.ofSeconds(10))
             .build();
 
@@ -228,7 +230,7 @@ class TriggerTest {
             .type(Trigger.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-update/"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
-            .on(Property.ofValue(Trigger.OnEvent.UPDATE))
+            .on(Property.ofValue(StatefulTriggerInterface.On.UPDATE))
             .interval(Duration.ofSeconds(10))
             .build();
 
@@ -259,7 +261,6 @@ class TriggerTest {
             .type(Trigger.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/on-create_or_update/"))
             .action(Property.ofValue(ActionInterface.Action.NONE))
-            .on(Property.ofValue(Trigger.OnEvent.CREATE_OR_UPDATE))
             .interval(Duration.ofSeconds(10))
             .build();
 
