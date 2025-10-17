@@ -131,8 +131,9 @@ dependencies {
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id'
     testImplementation 'org.mockito:mockito-junit-jupiter'
-}
 
+    testImplementation group: 'org.wiremock', name: 'wiremock-jetty12', version: '3.13.1'
+}
 /**********************************************************************************************************************\
  * Allure Reports
  **********************************************************************************************************************/
