@@ -83,7 +83,7 @@ import java.util.Optional;
             name = "candidate.token.count",
             type = Counter.TYPE,
             description = "Number of tokens in the candidate response."
-            ),
+        ),
         @Metric(
             name = "prompt.token.count",
             type = Counter.TYPE,
