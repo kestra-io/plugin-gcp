@@ -69,6 +69,7 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
                 .serviceAccount(this.serviceAccount)
                 .scopes(this.scopes)
                 .from(Property.ofValue("gs://" + name))
+                .concurrent(8)
                 .build();
 
             deleteListTask.run(runContext);
