@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -37,6 +38,14 @@ import java.util.stream.StreamSupport;
                     type: io.kestra.plugin.gcp.gcs.List
                     from: "gs://my_bucket/dir/"
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "size",
+            type = Counter.TYPE,
+            unit = "files",
+            description = "Number of blobs listed."
         )
     }
 )

@@ -8,8 +8,10 @@ import com.google.cloud.vertexai.generativeai.PartMaker;
 import com.google.cloud.vertexai.generativeai.ResponseHandler;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -74,6 +76,29 @@ import java.util.Optional;
                       - mimeType: image/jpeg
                         content: "{{ inputs.image }}"
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "candidate.token.count",
+            type = Counter.TYPE,
+            description = "Number of tokens in the candidate response."
+        ),
+        @Metric(
+            name = "prompt.token.count",
+            type = Counter.TYPE,
+            description = "Number of tokens in the prompt."
+        ),
+        @Metric(
+            name = "total.token.count",
+            type = Counter.TYPE,
+            description = "Total number of tokens (prompt + candidate)."
+        ),
+        @Metric(
+            name = "serialized.size",
+            type = Counter.TYPE,
+            unit = "bytes",
+            description = "Size of the serialized metadata."
         )
     }
 )

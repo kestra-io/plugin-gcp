@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.pubsub;
 
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
@@ -49,6 +50,14 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                       - attributes:
                              testAttribute: KestraTest
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "records",
+            type = Counter.TYPE,
+            unit = "records",
+            description = "Number of records published to the Pub/Sub topic."
         )
     }
 )
