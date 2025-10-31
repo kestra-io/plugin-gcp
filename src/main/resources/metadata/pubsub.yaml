@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.pubsub
+name: "pubsub"
+title: "Pub/Sub"
+description: "This sub-group of plugins contains tasks for accessing Google Cloud Pub/Sub."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
