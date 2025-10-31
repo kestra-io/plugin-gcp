@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.gke
+name: "gke"
+title: "Kubernetes Engine (GKE)"
+description: "This sub-group of plugins contains tasks for accessing Google Kubernetes Engine (GKE)."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

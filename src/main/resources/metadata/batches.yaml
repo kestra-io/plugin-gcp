@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.dataproc.batches
+name: "batches"
+title: "Dataproc Batches"
+description: "This sub-group of plugins contains tasks for submitting batches on Google Cloud Dataproc."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
