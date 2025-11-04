@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.monitoring
+name: "monitoring"
+title: "Cloud Monitoring (Observability)"
+description: "This sub-group of plugins contains tasks and triggers for interacting with Google Cloud Monitoring (formerly Stackdriver)."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

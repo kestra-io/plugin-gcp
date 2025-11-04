@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.dataform
+name: "dataform"
+title: "DataForm"
+description: "This sub-group of plugins contains tasks for accessing Google Cloud DataForm. DataForm is an orchestration tool for data warehouse."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.function
+name: "function"
+title: "Google Cloud Function"
+description: "This sub-group of plugins contains tasks for triggering Google Cloud Function. Cloud Run functions automatically manages and scales underlying infrastructure with the size of workload. Deploy your code and let Google run and scale it for you."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
