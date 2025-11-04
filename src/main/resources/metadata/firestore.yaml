@@ -1,7 +1,7 @@
 group: io.kestra.plugin.gcp.firestore
 name: "firestore"
 title: "Firestore"
-description: "This sub-group of plugins contains tasks for accessing Google Cloud Firestore."
+description: "This sub-group of plugins contains tasks for accessing Google Cloud Firestore. Firestore is a flexible, scalable NoSQL cloud database."
 body: ""
 videos: []
 createdBy: "Kestra Core Team"
