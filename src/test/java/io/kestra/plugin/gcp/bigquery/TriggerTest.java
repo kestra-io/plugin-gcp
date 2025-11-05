@@ -43,19 +43,6 @@ import static org.hamcrest.Matchers.notNullValue;
 @KestraTest
 class TriggerTest {
     @Inject
-    private ApplicationContext applicationContext;
-
-    @Inject
-    private FlowListeners flowListenersService;
-
-    @Inject
-    @Named(QueueFactoryInterface.EXECUTION_NAMED)
-    private QueueInterface<Execution> executionQueue;
-
-    @Inject
-    protected LocalFlowRepositoryLoader repositoryLoader;
-
-    @Inject
     private RunContextFactory runContextFactory;
 
     @Value("${kestra.variables.globals.project}")
