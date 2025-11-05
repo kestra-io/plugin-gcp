@@ -57,12 +57,11 @@ class TriggerTest {
 
     @Test
     void moveFromFlow() throws Exception {
-        var bucket = "kestra-unit-test";
         var fromDir = "tasks/gcp/upload/trigger/";
         var moveDir = "tasks/gcp/move/";
 
         testUtils.upload(fromDir + IdUtils.create());
-        testUtils.upload(fromDir + IdUtils.create()).toString();
+        testUtils.upload(fromDir + IdUtils.create());
 
         io.kestra.plugin.gcp.gcs.Trigger trigger = io.kestra.plugin.gcp.gcs.Trigger.builder()
             .id("watch")
