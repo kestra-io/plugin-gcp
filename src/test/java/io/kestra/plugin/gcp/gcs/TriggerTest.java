@@ -7,18 +7,12 @@ import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.StatefulTriggerInterface;
-import io.kestra.core.queues.QueueFactoryInterface;
-import io.kestra.core.queues.QueueInterface;
-import io.kestra.core.repositories.LocalFlowRepositoryLoader;
-import io.kestra.core.runners.FlowListeners;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.gcs.models.Blob;
-import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -33,19 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 class TriggerTest {
-    @Inject
-    private ApplicationContext applicationContext;
-
-    @Inject
-    private FlowListeners flowListenersService;
-
-    @Inject
-    @Named(QueueFactoryInterface.EXECUTION_NAMED)
-    private QueueInterface<Execution> executionQueue;
-
-    @Inject
-    protected LocalFlowRepositoryLoader repositoryLoader;
-
     @Inject
     private RunContextFactory runContextFactory;
 
