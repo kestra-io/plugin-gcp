@@ -67,6 +67,17 @@ class TriggerTest {
     void flow() throws Exception {
         var tableName = "bigquery-trigger" + IdUtils.create();
 
+        Query createTable = Query.builder()
+            .id("create-" + IdUtils.create())
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
+            .sql(Property.ofValue(
+                "CREATE OR REPLACE TABLE `" + tableName + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"
+            ))
+            .build();
+
+        createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, Map.of()));
+
         Trigger trigger = Trigger.builder()
             .id("watch")
             .type(io.kestra.plugin.gcp.bigquery.Trigger.class.getName())
@@ -80,14 +91,6 @@ class TriggerTest {
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
-
-        Query createTable = Query.builder()
-            .id(QueryTest.class.getSimpleName() + IdUtils.create())
-            .type(Query.class.getName())
-            .projectId(Property.ofValue(project))
-            .sql(Property.ofValue("CREATE OR REPLACE TABLE `" + tableName + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"))
-            .build();
-
 
         @SuppressWarnings("unchecked")
         java.util.List<Blob> blobs = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("rows");
