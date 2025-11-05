@@ -60,8 +60,8 @@ class TriggerTest {
         var fromDir = "tasks/gcp/upload/trigger/";
         var moveDir = "tasks/gcp/move/";
 
-        testUtils.upload(fromDir + IdUtils.create());
-        testUtils.upload(fromDir + IdUtils.create());
+        testUtils.upload("trigger/" + IdUtils.create());
+        testUtils.upload("trigger/" + IdUtils.create());
 
         io.kestra.plugin.gcp.gcs.Trigger trigger = io.kestra.plugin.gcp.gcs.Trigger.builder()
             .id("watch")
