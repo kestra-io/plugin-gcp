@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
 class TriggerTest {
@@ -65,7 +66,7 @@ class TriggerTest {
 
     @Test
     void flow() throws Exception {
-        var tableName = "bigquery-trigger" + IdUtils.create();
+        var tableName = String.format("%s.%s.%s", project, dataset, IdUtils.create());
 
         Query createTable = Query.builder()
             .id("create-" + IdUtils.create())
@@ -76,14 +77,15 @@ class TriggerTest {
             ))
             .build();
 
-        createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, Map.of()));
+        var output  = createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, Map.of()));
+        assertThat(output, notNullValue());
 
         Trigger trigger = Trigger.builder()
             .id("watch")
             .type(io.kestra.plugin.gcp.bigquery.Trigger.class.getName())
             .projectId(Property.ofValue(project))
             .sql(Property.ofValue(
-                "SELECT * FROM `" + project + "." + dataset + "." + tableName + "`"
+                "SELECT * FROM `" + tableName + "`"
             ))
             .fetchType(Property.ofValue(FetchType.FETCH))
             .interval(Duration.ofSeconds(10))
@@ -101,7 +103,7 @@ class TriggerTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue("DROP TABLE `" + project + "." + dataset + "." + tableName + "`"))
+            .sql(Property.ofValue("DROP TABLE `" + tableName + "`"))
             .build();
         deleteTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
     }
