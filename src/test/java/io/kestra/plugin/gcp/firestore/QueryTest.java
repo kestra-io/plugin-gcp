@@ -3,14 +3,18 @@ package io.kestra.plugin.gcp.firestore;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.Await;
+import io.kestra.core.utils.Rethrow;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static io.kestra.core.utils.Rethrow.throwSupplier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -42,6 +46,16 @@ class QueryTest {
             collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
             collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
         }
+
+        Await.until(
+            throwSupplier(() -> {
+                try (var firestore = query.connection(runContext)) {
+                    return firestore.collection("persons").get().get().size() == 3;
+                }
+            }),
+            Duration.ofMillis(100),
+            Duration.ofSeconds(3)
+        );
 
         var output = query.run(runContext);
 

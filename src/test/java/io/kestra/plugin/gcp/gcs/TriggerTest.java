@@ -7,54 +7,26 @@ import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.StatefulTriggerInterface;
-import io.kestra.core.queues.QueueFactoryInterface;
-import io.kestra.core.queues.QueueInterface;
-import io.kestra.core.repositories.LocalFlowRepositoryLoader;
-import io.kestra.core.runners.FlowListeners;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.jdbc.runner.JdbcScheduler;
 import io.kestra.plugin.gcp.gcs.models.Blob;
-import io.kestra.scheduler.AbstractScheduler;
-import io.kestra.worker.DefaultWorker;
-import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static io.kestra.core.models.triggers.StatefulTriggerService.*;
-import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 class TriggerTest {
-    @Inject
-    private ApplicationContext applicationContext;
-
-    @Inject
-    private FlowListeners flowListenersService;
-
-    @Inject
-    @Named(QueueFactoryInterface.EXECUTION_NAMED)
-    private QueueInterface<Execution> executionQueue;
-
-    @Inject
-    protected LocalFlowRepositoryLoader repositoryLoader;
-
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -66,50 +38,31 @@ class TriggerTest {
 
     @Test
     void moveFromFlow() throws Exception {
-        // mock flow listeners
-        CountDownLatch queueCount = new CountDownLatch(1);
+        var fromDir = "tasks/gcp/upload/trigger/";
+        var moveDir = "tasks/gcp/move/";
 
-        // scheduler
-        DefaultWorker worker = applicationContext.createBean(DefaultWorker.class, IdUtils.create(), 8, null);
-        try (
-            AbstractScheduler scheduler = new JdbcScheduler(
-                this.applicationContext,
-                this.flowListenersService
-            );
-        ) {
-            AtomicReference<Execution> last = new AtomicReference<>();
+        testUtils.upload("trigger/" + IdUtils.create());
+        testUtils.upload("trigger/" + IdUtils.create());
 
-            // wait for execution
-            Flux<Execution> receive = TestsUtils.receive(executionQueue, executionWithError -> {
-                Execution execution = executionWithError.getLeft();
-                if (execution.getFlowId().equals("gcs-listen")) {
-                    last.set(execution);
-                    queueCount.countDown();
-                }
-            });
+        io.kestra.plugin.gcp.gcs.Trigger trigger = io.kestra.plugin.gcp.gcs.Trigger.builder()
+            .id("watch")
+            .type(io.kestra.plugin.gcp.gcs.Trigger.class.getName())
+            .from(Property.ofValue(String.format("gs://%s/%s", bucket, fromDir)))
+            .interval(java.time.Duration.ofSeconds(10))
+            .action(Property.ofValue(io.kestra.plugin.gcp.gcs.Trigger.Action.MOVE))
+            .moveDirectory(Property.ofValue(String.format("gs://%s/%s", bucket, moveDir)))
+            .build();
 
-            String out1 = FriendlyId.createFriendlyId();
-            testUtils.upload("trigger/" + out1);
-            String out2 = FriendlyId.createFriendlyId();
-            testUtils.upload("trigger/" + out2);
 
-            worker.run();
-            scheduler.run();
-            repositoryLoader.load(MAIN_TENANT, Objects.requireNonNull(TriggerTest.class.getClassLoader().getResource("flows/gcs")));
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-            boolean await = queueCount.await(20, TimeUnit.SECONDS);
-            try {
-                assertThat(await, is(true));
-            } finally {
-                worker.shutdown();
-                receive.blockLast();
-            }
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
 
-            @SuppressWarnings("unchecked")
-            java.util.List<Blob> trigger = (java.util.List<Blob>) last.get().getTrigger().getVariables().get("blobs");
+        assertThat(execution.isPresent(), is(true));
 
-            assertThat(trigger.size(), is(2));
-        }
+        @SuppressWarnings("unchecked")
+        java.util.List<Blob> blobs = (List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
+        assertThat(blobs.size(), is(2));
     }
 
     @Test
