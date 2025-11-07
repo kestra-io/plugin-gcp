@@ -3,18 +3,15 @@ package io.kestra.plugin.gcp.bigquery;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
-import io.kestra.core.models.property.Property;
-import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -22,7 +19,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@Slf4j
 class TableMetadataTest {
     @Inject
     private RunContextFactory runContextFactory;
