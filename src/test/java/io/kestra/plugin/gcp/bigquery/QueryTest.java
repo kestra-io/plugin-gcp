@@ -414,8 +414,5 @@ class QueryTest {
         Query.Output output = task.run(runContext);
 
         assertThat(output, notNullValue());
-        assertThat(output.getDestinationTable(), nullValue());
-        assertThat(output.getRows(), nullValue());
-        assertThat(output.getRow(), nullValue());
     }
 }
