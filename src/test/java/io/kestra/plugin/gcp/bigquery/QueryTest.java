@@ -16,6 +16,7 @@ import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -414,5 +415,6 @@ class QueryTest {
         Query.Output output = task.run(runContext);
 
         assertThat(output, notNullValue());
+        assertThat(output.getJobId(), nullValue());
     }
 }
