@@ -397,4 +397,25 @@ class QueryTest {
         assertThat(labels.get("kestra_execution_id"), notNullValue());
         assertThat(labels.get("kestra_task_id"), is("query"));
     }
+
+    @Test
+    void dryRunQuery() throws Exception {
+        Query task = Query.builder()
+            .id("dryRunQuery")
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
+            .sql(Property.ofValue("SELECT 1"))
+            .fetchType(Property.ofValue(FetchType.NONE))
+            .dryRun(Property.ofValue(true))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        Query.Output output = task.run(runContext);
+
+        assertThat(output, notNullValue());
+        assertThat(output.getDestinationTable(), nullValue());
+        assertThat(output.getRows(), nullValue());
+        assertThat(output.getRow(), nullValue());
+    }
 }
