@@ -1,7 +1,7 @@
 group: io.kestra.plugin.gcp.gcs
 name: "gcs"
 title: "Cloud Storage (GCS)"
-description: "This sub-group of plugins contains tasks for accessing Google Cloud Storage (GCS). Cloud Storage is a managed service for storing unstructured data."
+description: "Store, manage, and access files in Google Cloud Storage. Move data reliably between systems with simple file operations."
 body: ""
 videos: []
 createdBy: "Kestra Core Team"
