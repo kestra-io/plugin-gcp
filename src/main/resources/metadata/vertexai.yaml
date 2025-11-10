@@ -1,7 +1,7 @@
 group: io.kestra.plugin.gcp.vertexai
 name: "vertexai"
 title: "Vertex AI"
-description: "This sub-group of plugins contains tasks for accessing Google Cloud Vertex AI. Vertex AI allows to build, deploy, and scale machine learning (ML) models faster, with fully managed ML tools for any use case."
+description: "Integrate machine learning models into your workflows. Train, deploy, and invoke ML models with Vertex AI."
 body: ""
 videos: []
 createdBy: "Kestra Core Team"
