@@ -3,6 +3,7 @@ name: "vertexai"
 title: "Vertex AI"
 description: "Integrate machine learning models into your workflows. Train, deploy, and invoke ML models with Vertex AI."
 body: ""
-videos: []
+videos:
+  - "https://www.youtube.com/watch?v=s9XtqTs4A6o"
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

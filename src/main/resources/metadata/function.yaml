@@ -3,6 +3,7 @@ name: "function"
 title: "Google Cloud Function"
 description: "Trigger serverless functions and orchestrate event-driven computing. Execute code without provisioning or managing servers."
 body: ""
-videos: []
+videos:
+  - "https://www.youtube.com/watch?v=pxN8sCreUAA"
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
