@@ -40,7 +40,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@Slf4j
 class QueryTest {
     @Inject
     private RunContextFactory runContextFactory;
@@ -279,7 +278,7 @@ class QueryTest {
                 try {
                     return outputFuture.get();
                 } catch (InterruptedException | ExecutionException e) {
-                    log.error("Failed on ", e);
+                    runContextFactory.of().logger().error("Failed on ", e);
                     return null;
                 }
             })
