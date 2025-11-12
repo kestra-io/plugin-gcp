@@ -16,6 +16,7 @@ import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -395,5 +396,24 @@ class QueryTest {
         assertThat(labels.get("kestra_flow_id"), is("labelsarenotoverwritten"));
         assertThat(labels.get("kestra_execution_id"), notNullValue());
         assertThat(labels.get("kestra_task_id"), is("query"));
+    }
+
+    @Test
+    void dryRunQuery() throws Exception {
+        Query task = Query.builder()
+            .id("dryRunQuery")
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
+            .sql(Property.ofValue("SELECT 1"))
+            .fetchType(Property.ofValue(FetchType.NONE))
+            .dryRun(Property.ofValue(true))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        Query.Output output = task.run(runContext);
+
+        assertThat(output, notNullValue());
+        assertThat(output.getJobId(), nullValue());
     }
 }

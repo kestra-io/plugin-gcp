@@ -547,7 +547,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             runContext.metric(Counter.of("cache.hit", stats.getCacheHit() ? 1 : 0, tags));
         }
 
-        runContext.metric(Timer.of("duration", Duration.ofMillis(stats.getEndTime() - stats.getStartTime()), tags));
+        if (stats.getStartTime() != null && stats.getEndTime() != null) {
+            runContext.metric(Timer.of("duration", Duration.ofMillis(stats.getEndTime() - stats.getStartTime()), tags));
+        }
     }
 
     private List<Map<String, Object>> fetchResult(TableResult result) {
