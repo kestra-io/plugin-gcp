@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.cli
+name: "cli"
+title: "CLI"
+description: "Execute any Google Cloud CLI command directly from your workflows. Automate GCP operations using the full power of the gcloud CLI."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

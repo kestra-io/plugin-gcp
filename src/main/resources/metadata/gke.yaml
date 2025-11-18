@@ -1,0 +1,9 @@
+group: io.kestra.plugin.gcp.gke
+name: "gke"
+title: "Kubernetes Engine (GKE)"
+description: "Deploy and manage containerized applications on GKE. Orchestrate Kubernetes workloads alongside your data pipelines."
+body: ""
+videos:
+  - "https://www.youtube.com/watch?v=vZU3Hh4RBoY"
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

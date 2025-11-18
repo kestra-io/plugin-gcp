@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.pubsub
+name: "pubsub"
+title: "Pub/Sub"
+description: "Process real-time data streams with Google Cloud Pub/Sub. Build event-driven workflows that respond instantly to your data."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

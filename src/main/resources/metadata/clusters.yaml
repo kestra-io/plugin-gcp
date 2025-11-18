@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.dataproc.clusters
+name: "clusters"
+title: "Dataproc Clusters"
+description: "Create and manage Dataproc clusters for distributed data processing. Orchestrate complex analytics workloads at scale."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
