@@ -55,13 +55,17 @@ class RealtimeTriggerTest {
             .build();
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Mono<Execution> executionMono = Mono.from(trigger.evaluate(context.getKey(), context.getValue()));
+        try {
+            Mono<Execution> executionMono = Mono.from(trigger.evaluate(context.getKey(), context.getValue()));
 
-        Execution execution = executionMono.timeout(Duration.ofSeconds(30)).block();
+            Execution execution = executionMono.timeout(Duration.ofSeconds(30)).block();
 
-        assertThat(execution, notNullValue());
+            assertThat(execution, notNullValue());
 
-        Map<String, Object> variables = execution.getTrigger().getVariables();
-        assertThat(new String((byte[]) variables.get("data"), StandardCharsets.UTF_8), is("Hello World"));
+            Map<String, Object> variables = execution.getTrigger().getVariables();
+            assertThat(new String((byte[]) variables.get("data"), StandardCharsets.UTF_8), is("Hello World"));
+        } finally {
+            trigger.kill();
+        }
     }
 }
