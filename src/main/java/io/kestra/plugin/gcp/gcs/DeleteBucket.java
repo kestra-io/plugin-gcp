@@ -2,19 +2,18 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 import java.net.URI;
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -46,7 +45,15 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
     @Schema(
         title = "Bucket's unique name"
     )
-    protected Property<String> name;
+    private Property<String> name;
+
+    @Schema(
+        title = "If set to true, any blobs in the bucket will be deleted prior to bucket deletion. The default is false"
+    )
+    @Builder.Default
+    private Property<Boolean> force = Property.ofValue(false);
+
+    public static final int CONCURRENT_DELETIONS = 8;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -54,6 +61,21 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
 
         Logger logger = runContext.logger();
         String name = runContext.render(this.name).as(String.class).orElseThrow();
+        boolean rForce = runContext.render(this.force).as(Boolean.class).orElse(false);
+
+        if (rForce) {
+            DeleteList deleteListTask = DeleteList.builder()
+                .id(this.id)
+                .type(DeleteList.class.getName())
+                .projectId(this.projectId)
+                .serviceAccount(this.serviceAccount)
+                .scopes(this.scopes)
+                .from(Property.ofValue("gs://" + name))
+                .concurrent(CONCURRENT_DELETIONS)
+                .build();
+
+            deleteListTask.run(runContext);
+        }
 
         logger.debug("Deleting bucket '{}'", name);
 
