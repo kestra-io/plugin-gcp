@@ -90,10 +90,15 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
     }
 
     protected boolean filter(com.google.cloud.storage.Blob blob, String regExp, Filter filter) {
-        boolean b = filter == Filter.DIRECTORY ? blob.isDirectory() :
-            (filter != Filter.FILES || !blob.isDirectory());
+        var isDir = blob.isDirectory() || blob.getName().endsWith("/");
 
-        if (!b) {
+        var typeMatch = switch (filter) {
+            case DIRECTORY -> isDir;
+            case FILES     -> !isDir;
+            case BOTH      -> true;
+        };
+
+        if (!typeMatch) {
             return false;
         }
 

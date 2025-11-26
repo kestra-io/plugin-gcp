@@ -12,6 +12,7 @@ import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
@@ -98,10 +99,48 @@ class ListTest {
         assertThat(run.getBlobs().size(), is(1));
     }
 
+    @Test
+    void shouldListOnlyFilesWithFilesFilter() throws Exception {
+        var dir = FriendlyId.createFriendlyId();
+
+        uploadFolderMarker(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+
+        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+
+        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub");
+
+        var task = task()
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
+            .filter(Property.ofValue(ListInterface.Filter.FILES))
+            .build();
+
+        var run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
+
+        assertThat(run.getBlobs().size(), is(1));
+    }
+
     private static List.ListBuilder<?, ?> task() {
         return List.builder()
             .id(ListTest.class.getSimpleName())
             .type(List.class.getName());
+    }
+
+    static void uploadFolderMarker(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
+        var source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            new URI("/" + FriendlyId.createFriendlyId()),
+            new ByteArrayInputStream(new byte[0])
+        );
+
+        var task = Upload.builder()
+            .id("folder-marker")
+            .type(Upload.class.getName())
+            .from(Property.ofValue(source.toString()))
+            .to(Property.ofValue("gs://" + bucket + dir + "/"))
+            .build();
+
+        task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
     }
 
     static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
