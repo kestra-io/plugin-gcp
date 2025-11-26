@@ -2,18 +2,18 @@ package io.kestra.plugin.gcp.gcs;
 
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 import java.net.URI;
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -53,6 +53,8 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
     @Builder.Default
     private Property<Boolean> force = Property.ofValue(false);
 
+    public static final int CONCURRENT_DELETIONS = 8;
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
@@ -69,7 +71,7 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
                 .serviceAccount(this.serviceAccount)
                 .scopes(this.scopes)
                 .from(Property.ofValue("gs://" + name))
-                .concurrent(8)
+                .concurrent(CONCURRENT_DELETIONS)
                 .build();
 
             deleteListTask.run(runContext);
