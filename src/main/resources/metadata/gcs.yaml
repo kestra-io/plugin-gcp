@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.gcs
+name: "gcs"
+title: "Cloud Storage (GCS)"
+description: "Store, manage, and access files in Google Cloud Storage. Move data reliably between systems with simple file operations."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

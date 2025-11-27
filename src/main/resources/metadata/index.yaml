@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp
+name: "gcp"
+title: "Google Cloud"
+description: "Execute tasks and orchestrate workflows across Google Cloud Platform services. Centralize authentication and resource management for seamless GCP integration."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

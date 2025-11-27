@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.monitoring
+name: "monitoring"
+title: "Cloud Monitoring (Observability)"
+description: "Integrate Google Cloud Monitoring metrics and logs into your workflows. Build monitoring and alerting directly into your orchestration."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
