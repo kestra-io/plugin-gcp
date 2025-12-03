@@ -3,6 +3,8 @@ package io.kestra.plugin.gcp.function;
 import com.google.auth.oauth2.IdTokenCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.http.client.configurations.TimeoutConfiguration;
+import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -81,12 +83,19 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
             .build();
         String token = idTokenCredentials.refreshAccessToken().getTokenValue();
 
-        //resolving dynamic properties
         String rMethod = runContext.render(this.httpMethod).as(String.class).orElseThrow();
         String rUrl = runContext.render(this.url).as(String.class).orElseThrow();
         Map<String, Object> rBodyMap = runContext.render(this.httpBody).asMap(String.class, Object.class);
 
-        try(HttpClient client = new HttpClient(runContext, null)) {
+        try(var client = new HttpClient(
+                 runContext,
+                 HttpConfiguration.builder()
+                    .timeout(
+                        TimeoutConfiguration.builder()
+                            .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
+                            .build()
+                    ).build()
+        )) {
             HttpRequest.HttpRequestBuilder requestBuilder = HttpRequest.builder()
                 .uri(new URI(rUrl))
                 .method(rMethod)
@@ -133,7 +142,6 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         private Object responseBody;
     }
 
-    //helper function to the new HttpClientResponseException handler to use
     private HttpClientResponseException wrapResponseException(HttpClientResponseException e) {
         HttpResponse<?> resp = e.getResponse();
         int code = -1;
