@@ -1,6 +1,5 @@
 package io.kestra.plugin.gcp.function;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.IdTokenCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -15,6 +14,7 @@ import io.kestra.core.http.HttpRequest;
 import io.kestra.core.http.HttpResponse;
 import io.kestra.core.http.client.HttpClient;
 import io.kestra.core.http.client.HttpClientResponseException;
+import io.kestra.core.serializers.JacksonMapper;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -82,28 +82,31 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         String token = idTokenCredentials.refreshAccessToken().getTokenValue();
 
         //resolving dynamic properties
-        String method = runContext.render(this.httpMethod).as(String.class).orElseThrow();
-        String url = runContext.render(this.url).as(String.class).orElseThrow();
-        Map<String, Object> bodyMap = runContext.render(this.httpBody).asMap(String.class, Object.class);
+        String rMethod = runContext.render(this.httpMethod).as(String.class).orElseThrow();
+        String rUrl = runContext.render(this.url).as(String.class).orElseThrow();
+        Map<String, Object> rBodyMap = runContext.render(this.httpBody).asMap(String.class, Object.class);
 
         try(HttpClient client = new HttpClient(runContext, null)) {
             HttpRequest.HttpRequestBuilder requestBuilder = HttpRequest.builder()
-                .uri(new URI(url))
-                .method(method)
+                .uri(new URI(rUrl))
+                .method(rMethod)
                 .addHeader("Authorization", "Bearer " + token);
-            if(!bodyMap.isEmpty()){
+
+            runContext.logger().info("Invoking GCP HttpFunction with method='{}' url='{}'", rMethod, rUrl);
+
+            if(!rBodyMap.isEmpty()){
                 requestBuilder.body(
                     HttpRequest.JsonRequestBody.builder()
-                        .content(bodyMap)
+                        .content(rBodyMap)
                         .build()
                 );
             }
             HttpResponse<String> response = client.request(requestBuilder.build(), String.class);
+            runContext.logger().info("HttpFunction response status: {}", response.getStatus().getCode());
             String responseBody = response.getBody() == null ? "" : response.getBody();
             try{
-                ObjectMapper mapper = new ObjectMapper();
                 return Output.builder()
-                    .responseBody(mapper.readTree(responseBody))
+                    .responseBody(JacksonMapper.ofJson().readTree(responseBody))
                     .build();
             } catch (Exception e) {
                 return Output.builder()
@@ -111,8 +114,13 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
                     .build();
             }
         } catch (HttpClientResponseException e) {
+            runContext.logger().error("HttpFunction failed: status={}, body={}",
+                e.getResponse() != null ? e.getResponse().getStatus().getCode() : -1,
+                e.getResponse() != null ? e.getResponse().getBody() : "null"
+            );
             throw wrapResponseException(e);
         }  catch (IllegalVariableEvaluationException e){
+            runContext.logger().error("Variable evaluation error: {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
