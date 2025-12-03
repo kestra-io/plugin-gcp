@@ -6,34 +6,23 @@ import com.google.auth.oauth2.ServiceAccountCredentials;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.DefaultRunContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
-import io.micronaut.core.type.Argument;
-import io.micronaut.http.HttpHeaders;
-import io.micronaut.http.HttpMethod;
-import io.micronaut.http.HttpRequest;
-import io.micronaut.http.HttpResponse;
-import io.micronaut.http.client.DefaultHttpClientConfiguration;
-import io.micronaut.http.client.HttpClient;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
-import io.micronaut.http.client.netty.DefaultHttpClient;
-import io.micronaut.http.client.netty.NettyHttpClientFactory;
-import io.micronaut.http.codec.MediaTypeCodecRegistry;
+
+import io.kestra.core.http.HttpRequest;
+import io.kestra.core.http.HttpResponse;
+import io.kestra.core.http.client.HttpClient;
+import io.kestra.core.http.client.HttpClientResponseException;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import reactor.core.publisher.Mono;
 
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,9 +51,6 @@ import java.util.Map;
     )
 })
 public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunction.Output> {
-    private static final Duration HTTP_READ_TIMEOUT = Duration.ofSeconds(60);
-    private static final NettyHttpClientFactory FACTORY = new NettyHttpClientFactory();
-
     @Schema(title = "HTTP method")
     @NotNull
     protected Property<String> httpMethod;
@@ -93,39 +79,43 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
             .setIdTokenProvider((ServiceAccountCredentials) this.credentials(runContext).createScoped(runContext.render(this.scopes).asList(String.class)))
             .setTargetAudience(runContext.render(this.url).as(String.class).orElseThrow())
             .build();
-
         String token = idTokenCredentials.refreshAccessToken().getTokenValue();
 
-        try (HttpClient client = this.client(runContext)) {
-            Mono<HttpResponse> mono = Mono.from(client.exchange(HttpRequest
-                    .create(
-                        HttpMethod.valueOf(runContext.render(this.httpMethod).as(String.class).orElseThrow()),
-                        runContext.render(this.url).as(String.class).orElseThrow()
-                    ).body(runContext.render(this.httpBody).asMap(String.class, Object.class))
-                    .headers(Map.of(HttpHeaders.AUTHORIZATION, "Bearer " + token)),
-                Argument.of(String.class))
-            );
-            HttpResponse result =  maxDuration != null ? mono.block(runContext.render(maxDuration).as(Duration.class).orElseThrow()) : mono.block();
-            String body = result != null &&  result.getBody().isPresent() ? (String) result.getBody().get() : "";
-            try {
+        //resolving dynamic properties
+        String method = runContext.render(this.httpMethod).as(String.class).orElseThrow();
+        String url = runContext.render(this.url).as(String.class).orElseThrow();
+        Map<String, Object> bodyMap = runContext.render(this.httpBody).asMap(String.class, Object.class);
+
+        try(HttpClient client = new HttpClient(runContext, null)) {
+            HttpRequest.HttpRequestBuilder requestBuilder = HttpRequest.builder()
+                .uri(new URI(url))
+                .method(method)
+                .addHeader("Authorization", "Bearer " + token);
+            if(!bodyMap.isEmpty()){
+                requestBuilder.body(
+                    HttpRequest.JsonRequestBody.builder()
+                        .content(bodyMap)
+                        .build()
+                );
+            }
+            HttpResponse<String> response = client.request(requestBuilder.build(), String.class);
+            String responseBody = response.getBody() == null ? "" : response.getBody();
+            try{
                 ObjectMapper mapper = new ObjectMapper();
                 return Output.builder()
-                    .responseBody(mapper.readTree(body))
+                    .responseBody(mapper.readTree(responseBody))
                     .build();
             } catch (Exception e) {
                 return Output.builder()
-                    .responseBody(body)
+                    .responseBody(responseBody)
                     .build();
             }
         } catch (HttpClientResponseException e) {
-            throw new HttpClientResponseException(
-                "Request failed '" + e.getStatus().getCode() + "' and body '" + e.getResponse().getBody(String.class).orElse("null") + "'",
-                e,
-                e.getResponse()
-            );
-        } catch (IllegalVariableEvaluationException | MalformedURLException | URISyntaxException e) {
+            throw wrapResponseException(e);
+        }  catch (IllegalVariableEvaluationException e){
             throw new RuntimeException(e);
         }
+
     }
 
     @Getter
@@ -135,16 +125,21 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         private Object responseBody;
     }
 
-    protected HttpClient client(RunContext runContext) throws IllegalVariableEvaluationException, MalformedURLException, URISyntaxException {
-        MediaTypeCodecRegistry mediaTypeCodecRegistry = ((DefaultRunContext)runContext).getApplicationContext().getBean(MediaTypeCodecRegistry.class);
-
-        var httpConfig = new DefaultHttpClientConfiguration();
-        httpConfig.setMaxContentLength(Integer.MAX_VALUE);
-        httpConfig.setReadTimeout(HTTP_READ_TIMEOUT);
-
-        DefaultHttpClient client = (DefaultHttpClient) FACTORY.createClient(URI.create(runContext.render(this.url).as(String.class).orElseThrow()).toURL(), httpConfig);
-        client.setMediaTypeCodecRegistry(mediaTypeCodecRegistry);
-
-        return client;
+    //helper function to the new HttpClientResponseException handler to use
+    private HttpClientResponseException wrapResponseException(HttpClientResponseException e) {
+        HttpResponse<?> resp = e.getResponse();
+        int code = -1;
+        String body = "null";
+        if (resp != null) {
+            if (resp.getStatus() != null) {
+                code = resp.getStatus().getCode();
+            }
+            if (resp.getBody() != null) {
+                body = resp.getBody().toString();
+            }
+        }
+        String message = "Request failed '" + code + "' and body '" + body + "'";
+        return new HttpClientResponseException(message, resp, e);
     }
+
 }
