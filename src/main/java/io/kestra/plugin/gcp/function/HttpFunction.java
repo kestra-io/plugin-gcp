@@ -3,25 +3,24 @@ package io.kestra.plugin.gcp.function;
 import com.google.auth.oauth2.IdTokenCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.http.client.configurations.TimeoutConfiguration;
+import io.kestra.core.http.HttpRequest;
+import io.kestra.core.http.HttpResponse;
+import io.kestra.core.http.client.HttpClient;
+import io.kestra.core.http.client.HttpClientResponseException;
 import io.kestra.core.http.client.configurations.HttpConfiguration;
+import io.kestra.core.http.client.configurations.TimeoutConfiguration;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
-
-import io.kestra.core.http.HttpRequest;
-import io.kestra.core.http.HttpResponse;
-import io.kestra.core.http.client.HttpClient;
-import io.kestra.core.http.client.HttpClientResponseException;
 import io.kestra.core.serializers.JacksonMapper;
-
+import io.kestra.plugin.gcp.AbstractTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.slf4j.Logger;
 
 import java.net.URI;
 import java.time.Duration;
@@ -53,6 +52,7 @@ import java.util.Map;
     )
 })
 public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunction.Output> {
+
     @Schema(title = "HTTP method")
     @NotNull
     protected Property<String> httpMethod;
@@ -87,23 +87,25 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         String rUrl = runContext.render(this.url).as(String.class).orElseThrow();
         Map<String, Object> rBodyMap = runContext.render(this.httpBody).asMap(String.class, Object.class);
 
-        try(var client = new HttpClient(
-                 runContext,
-                 HttpConfiguration.builder()
-                    .timeout(
-                        TimeoutConfiguration.builder()
-                            .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
-                            .build()
-                    ).build()
+        Logger logger = runContext.logger();
+
+        try (var client = new HttpClient(
+            runContext,
+            HttpConfiguration.builder()
+                .timeout(
+                    TimeoutConfiguration.builder()
+                        .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
+                        .build()
+                ).build()
         )) {
             HttpRequest.HttpRequestBuilder requestBuilder = HttpRequest.builder()
                 .uri(new URI(rUrl))
                 .method(rMethod)
                 .addHeader("Authorization", "Bearer " + token);
 
-            runContext.logger().info("Invoking GCP HttpFunction with method='{}' url='{}'", rMethod, rUrl);
+            logger.info("Invoking GCP HttpFunction with method='{}' url='{}'", rMethod, rUrl);
 
-            if(!rBodyMap.isEmpty()){
+            if (!rBodyMap.isEmpty()) {
                 requestBuilder.body(
                     HttpRequest.JsonRequestBody.builder()
                         .content(rBodyMap)
@@ -111,9 +113,9 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
                 );
             }
             HttpResponse<String> response = client.request(requestBuilder.build(), String.class);
-            runContext.logger().info("HttpFunction response status: {}", response.getStatus().getCode());
+            logger.info("HttpFunction response status: {}", response.getStatus().getCode());
             String responseBody = response.getBody() == null ? "" : response.getBody();
-            try{
+            try {
                 return Output.builder()
                     .responseBody(JacksonMapper.ofJson().readTree(responseBody))
                     .build();
@@ -123,39 +125,34 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
                     .build();
             }
         } catch (HttpClientResponseException e) {
-            runContext.logger().error("HttpFunction failed: status={}, body={}",
+            logger.error("HttpFunction failed: status={}, body={}",
                 e.getResponse() != null ? e.getResponse().getStatus().getCode() : -1,
                 e.getResponse() != null ? e.getResponse().getBody() : "null"
             );
             throw wrapResponseException(e);
-        }  catch (IllegalVariableEvaluationException e){
-            runContext.logger().error("Variable evaluation error: {}", e.getMessage());
+        } catch (IllegalVariableEvaluationException e) {
+            logger.error("Variable evaluation error: {}", e.getMessage());
             throw new RuntimeException(e);
         }
-
     }
 
     @Getter
     @Builder
-    static class Output implements io.kestra.core.models.tasks.Output {
+    public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(title = "GCP Function response body")
         private Object responseBody;
     }
 
     private HttpClientResponseException wrapResponseException(HttpClientResponseException e) {
         HttpResponse<?> resp = e.getResponse();
-        int code = -1;
-        String body = "null";
-        if (resp != null) {
-            if (resp.getStatus() != null) {
-                code = resp.getStatus().getCode();
-            }
-            if (resp.getBody() != null) {
-                body = resp.getBody().toString();
-            }
+        if (resp == null) {
+            return e;
         }
-        String message = "Request failed '" + code + "' and body '" + body + "'";
+
+        int code = resp.getStatus() != null ? resp.getStatus().getCode() : -1;
+        String body = resp.getBody() != null ? String.valueOf(resp.getBody()) : "<empty>";
+
+        String message = String.format("Request failed '%d' and body '%s'", code, body);
         return new HttpClientResponseException(message, resp, e);
     }
-
 }
