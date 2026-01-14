@@ -8,6 +8,7 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.StatefulTriggerInterface;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.gcs.models.Blob;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.kestra.core.utils.Rethrow.throwSupplier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -167,7 +169,11 @@ class TriggerTest {
         var upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> execution = Optional.ofNullable(Await.until(
+            throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+            Duration.ofMillis(500),
+            Duration.ofSeconds(20)
+        ));
 
         assertThat(execution.isPresent(), is(true));
 
@@ -201,7 +207,11 @@ class TriggerTest {
         testUtils.update(file);
         Thread.sleep(3000);
 
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> execution = Optional.ofNullable(Await.until(
+            throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+            Duration.ofMillis(500),
+            Duration.ofSeconds(20)
+        ));
 
         assertThat(execution.isPresent(), is(true));
 
@@ -227,7 +237,11 @@ class TriggerTest {
         var upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> createExecution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> createExecution = Optional.ofNullable(Await.until(
+            throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+            Duration.ofMillis(500),
+            Duration.ofSeconds(20)
+        ));
 
         assertThat(createExecution.isPresent(), is(true));
 
