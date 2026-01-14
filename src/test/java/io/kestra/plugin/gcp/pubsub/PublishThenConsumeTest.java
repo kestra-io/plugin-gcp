@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.pubsub;
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
+import com.google.cloud.pubsub.v1.TopicAdminClient;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PushConfig;
@@ -47,12 +48,13 @@ class PublishThenConsumeTest {
     @Test
     void runWithList() throws Exception {
         var runContext = runContextFactory.of();
-        String subscription = createSubscription("test-topic");
+        String topic = createTopic();
+        String subscription = createSubscription(topic);
 
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .from(
                     List.of(
                         Message.builder().data("Hello World").build(),
@@ -66,27 +68,29 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(2))
+
                 .build();
 
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(2));
         } finally {
-            deleteSubscription(subscription);
+           deleteTopic(topic);
         }
     }
 
     @Test
     void runWithJson() throws Exception {
         var runContext = runContextFactory.of();
-        String subscription = createSubscription("test-topic");
+        String topic = createTopic();
+        String subscription = createSubscription(topic);
 
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .serdeType(Property.ofValue(SerdeType.JSON))
                 .from(
                     List.of(
@@ -101,7 +105,7 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .serdeType(Property.ofValue(SerdeType.JSON))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(1))
@@ -110,20 +114,22 @@ class PublishThenConsumeTest {
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(1));
         } finally {
-            deleteSubscription(subscription);
+            deleteTopic(topic);
         }
     }
 
     @Test
     void runWithFile() throws Exception {
         var runContext = runContextFactory.of();
-        String subscription = createSubscription("test-topic");
+        String topic = createTopic();
+        String subscription = createSubscription(topic);
+
         var uri = createTestFile(runContext);
 
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .from(uri.toString())
                 .build();
 
@@ -132,7 +138,7 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(2))
                 .build();
@@ -140,19 +146,20 @@ class PublishThenConsumeTest {
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(2));
         } finally {
-            deleteSubscription(subscription);
+           deleteTopic(topic);
         }
     }
 
     @Test
     void runWithMessagesWithOrderingKey() throws Exception {
         var runContext = runContextFactory.of();
-        String subscription = createSubscription("test-topic");
+        String topic = createTopic();
+        String subscription = createSubscription(topic);
 
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .from(
                     List.of(
                         Message.builder()
@@ -183,7 +190,7 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(4))
                 .build();
@@ -191,7 +198,7 @@ class PublishThenConsumeTest {
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(4));
         } finally {
-            deleteSubscription(subscription);
+           deleteTopic(topic);
         }
     }
 
@@ -223,9 +230,17 @@ class PublishThenConsumeTest {
         return subId;
     }
 
-    private void deleteSubscription(String subscriptionId) {
-        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
-            subAdmin.deleteSubscription(ProjectSubscriptionName.of(project, subscriptionId));
-        } catch (Exception ignored) {}
+    private String createTopic() throws Exception {
+        String topicId = "test-topic-" + IdUtils.create();
+        try (TopicAdminClient client = TopicAdminClient.create()) {
+            client.createTopic(ProjectTopicName.of(project, topicId));
+        }
+        return topicId;
+    }
+
+    private void deleteTopic(String topic) throws Exception {
+        try (TopicAdminClient client = TopicAdminClient.create()) {
+            client.deleteTopic(ProjectTopicName.of(project, topic));
+        }
     }
 }

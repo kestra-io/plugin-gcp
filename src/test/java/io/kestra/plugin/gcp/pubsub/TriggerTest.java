@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.pubsub;
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
+import com.google.cloud.pubsub.v1.TopicAdminClient;
 import com.google.common.collect.ImmutableMap;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
@@ -18,6 +19,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,13 +39,14 @@ class TriggerTest {
 
     @Test
     void flow() throws Exception {
-        var subscription = createSubscription("test-topic");
+        String topic = createTopic();
+        String subscription = createSubscription(topic);
 
         try {
             var task = Publish.builder()
                 .id(Publish.class.getSimpleName())
                 .type(Publish.class.getName())
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .projectId(Property.ofValue(project))
                 .from(
                     List.of(
@@ -60,7 +63,7 @@ class TriggerTest {
                 .type(io.kestra.plugin.gcp.pubsub.Trigger.class.getName())
                 .projectId(Property.ofValue(project))
                 .subscription(Property.ofValue(subscription))
-                .topic(Property.ofValue("test-topic"))
+                .topic(Property.ofValue(topic))
                 .interval(java.time.Duration.ofSeconds(10))
                 .maxRecords(Property.ofValue(2))
                 .build();
@@ -76,7 +79,7 @@ class TriggerTest {
             assertThat(count, is(2));
             assertThat(uri, is(notNullValue()));
         } finally {
-            deleteSubscription(subscription);
+            deleteTopic(topic);
         }
     }
 
@@ -97,9 +100,17 @@ class TriggerTest {
         return subId;
     }
 
-    private void deleteSubscription(String subscriptionId) {
-        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
-            subAdmin.deleteSubscription(ProjectSubscriptionName.of(project, subscriptionId));
-        } catch (Exception ignored) {}
+    private void deleteTopic(String topic) {
+        try (TopicAdminClient client = TopicAdminClient.create()) {
+            client.deleteTopic(ProjectTopicName.of(project, topic));
+        } catch (IOException e) {}
+    }
+
+    private String createTopic() throws Exception {
+        String topicId = "test-topic-" + IdUtils.create();
+        try (TopicAdminClient client = TopicAdminClient.create()) {
+            client.createTopic(ProjectTopicName.of(project, topicId));
+        }
+        return topicId;
     }
 }
