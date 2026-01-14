@@ -1,5 +1,7 @@
 package io.kestra.plugin.gcp.dataform;
 
+import com.google.cloud.dataform.v1.CancelWorkflowInvocationRequest;
+import com.google.cloud.dataform.v1.DataformClient;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import io.micronaut.context.annotation.Value;
@@ -47,6 +49,8 @@ class InvokeWorkflowTest {
         assertNotNull(output, "Output should not be null");
         assertTrue(output.getWorkflowInvocationName().contains("projects/"), "Invocation name should contain GCP path");
         assertEquals("RUNNING", output.getWorkflowInvocationState(), "Unexpected workflow state for wait=false");
+
+        cancel(output.getWorkflowInvocationName());
     }
 
     @Test
@@ -72,4 +76,15 @@ class InvokeWorkflowTest {
         Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
         assertTrue(exception.getMessage().contains("nonexistent-config does not exist") || exception.getMessage().contains("NOT_FOUND"), "Expected failure for invalid config");
     }
+
+    private void cancel(String workflowInvocationName) throws Exception {
+        try (DataformClient client = DataformClient.create()) {
+            client.cancelWorkflowInvocation(
+                CancelWorkflowInvocationRequest.newBuilder()
+                    .setName(workflowInvocationName)
+                    .build()
+            );
+        }
+    }
+
 }

@@ -1,5 +1,9 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
+import com.google.pubsub.v1.ProjectSubscriptionName;
+import com.google.pubsub.v1.ProjectTopicName;
+import com.google.pubsub.v1.PushConfig;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
@@ -43,132 +47,152 @@ class PublishThenConsumeTest {
     @Test
     void runWithList() throws Exception {
         var runContext = runContextFactory.of();
+        String subscription = createSubscription("test-topic");
 
-        var publish = Publish.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .from(
-                List.of(
-                    Message.builder().data("Hello World").build(),
-                    Message.builder().attributes(Map.of("key", "value")).build()
+        try {
+            var publish = Publish.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .from(
+                    List.of(
+                        Message.builder().data("Hello World").build(),
+                        Message.builder().attributes(Map.of("key", "value")).build()
+                    )
                 )
-            )
-            .build();
+                .build();
 
-        var publishOutput = publish.run(runContext);
-        assertThat(publishOutput.getMessagesCount(), is(2));
+            var publishOutput = publish.run(runContext);
+            assertThat(publishOutput.getMessagesCount(), is(2));
 
-        var consume = Consume.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .subscription(Property.ofValue("test-subscription"))
-            .maxRecords(Property.ofValue(2))
-            .build();
+            var consume = Consume.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .subscription(Property.ofValue(subscription))
+                .maxRecords(Property.ofValue(2))
+                .build();
 
-        var consumeOutput = consume.run(runContextFactory.of());
-        assertThat(consumeOutput.getCount(), is(2));
+            var consumeOutput = consume.run(runContextFactory.of());
+            assertThat(consumeOutput.getCount(), is(2));
+        } finally {
+            deleteSubscription(subscription);
+        }
     }
 
     @Test
     void runWithJson() throws Exception {
         var runContext = runContextFactory.of();
+        String subscription = createSubscription("test-topic");
 
-        var publish = Publish.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .serdeType(Property.ofValue(SerdeType.JSON))
-            .from(
-                List.of(
-                    Message.builder().data("""
-                        {"hello": "world"}""").build()
+        try {
+            var publish = Publish.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .serdeType(Property.ofValue(SerdeType.JSON))
+                .from(
+                    List.of(
+                        Message.builder().data("""
+                            {"hello": "world"}""").build()
+                    )
                 )
-            )
-            .build();
+                .build();
 
-        var publishOutput = publish.run(runContext);
-        assertThat(publishOutput.getMessagesCount(), is(1));
+            var publishOutput = publish.run(runContext);
+            assertThat(publishOutput.getMessagesCount(), is(1));
 
-        var consume = Consume.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .serdeType(Property.ofValue(SerdeType.JSON))
-            .subscription(Property.ofValue("test-subscription"))
-            .maxRecords(Property.ofValue(1))
-            .build();
+            var consume = Consume.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .serdeType(Property.ofValue(SerdeType.JSON))
+                .subscription(Property.ofValue(subscription))
+                .maxRecords(Property.ofValue(1))
+                .build();
 
-        var consumeOutput = consume.run(runContextFactory.of());
-        assertThat(consumeOutput.getCount(), is(1));
+            var consumeOutput = consume.run(runContextFactory.of());
+            assertThat(consumeOutput.getCount(), is(1));
+        } finally {
+            deleteSubscription(subscription);
+        }
     }
 
     @Test
     void runWithFile() throws Exception {
         var runContext = runContextFactory.of();
+        String subscription = createSubscription("test-topic");
         var uri = createTestFile(runContext);
 
-        var publish = Publish.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .from(uri.toString())
-            .build();
+        try {
+            var publish = Publish.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .from(uri.toString())
+                .build();
 
-        var publishOutput = publish.run(runContext);
-        assertThat(publishOutput.getMessagesCount(), is(2));
+            var publishOutput = publish.run(runContext);
+            assertThat(publishOutput.getMessagesCount(), is(2));
 
+            var consume = Consume.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .subscription(Property.ofValue(subscription))
+                .maxRecords(Property.ofValue(2))
+                .build();
 
-        var consume = Consume.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .subscription(Property.ofValue("test-subscription"))
-            .maxRecords(Property.ofValue(2))
-            .build();
-
-        var consumeOutput = consume.run(runContextFactory.of());
-        assertThat(consumeOutput.getCount(), is(2));
+            var consumeOutput = consume.run(runContextFactory.of());
+            assertThat(consumeOutput.getCount(), is(2));
+        } finally {
+            deleteSubscription(subscription);
+        }
     }
 
     @Test
     void runWithMessagesWithOrderingKey() throws Exception {
         var runContext = runContextFactory.of();
+        String subscription = createSubscription("test-topic");
 
-        var publish = Publish.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .from(
-                List.of(
-                    Message.builder()
-                        .data("first message")
-                        .orderingKey("key-1")
-                        .attributes(Map.of("sequence", "1"))
-                        .build(),
-                    Message.builder()
-                        .data("second message")
-                        .orderingKey("key-1")
-                        .attributes(Map.of("sequence", "2"))
-                        .build(),
-                    Message.builder()
-                        .orderingKey("key-2")
-                        .attributes(Map.of("sequence", "3"))
-                        .build(),
-                    Message.builder()
-                        .data("message without ordering key")
-                        .attributes(Map.of("sequence", "4"))
-                        .build()
+        try {
+            var publish = Publish.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .from(
+                    List.of(
+                        Message.builder()
+                            .data("first message")
+                            .orderingKey("key-1")
+                            .attributes(Map.of("sequence", "1"))
+                            .build(),
+                        Message.builder()
+                            .data("second message")
+                            .orderingKey("key-1")
+                            .attributes(Map.of("sequence", "2"))
+                            .build(),
+                        Message.builder()
+                            .orderingKey("key-2")
+                            .attributes(Map.of("sequence", "3"))
+                            .build(),
+                        Message.builder()
+                            .data("message without ordering key")
+                            .attributes(Map.of("sequence", "4"))
+                            .build()
+                    )
                 )
-            )
-            .build();
+                .build();
 
-        var publishOutput = publish.run(runContext);
-        assertThat(publishOutput.getMessagesCount(), is(4));
 
-        var consume = Consume.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("test-topic"))
-            .subscription(Property.ofValue("test-subscription"))
-            .maxRecords(Property.ofValue(4))
-            .build();
+            var publishOutput = publish.run(runContext);
+            assertThat(publishOutput.getMessagesCount(), is(4));
 
-        var consumeOutput = consume.run(runContextFactory.of());
-        assertThat(consumeOutput.getCount(), is(4));
+            var consume = Consume.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue("test-topic"))
+                .subscription(Property.ofValue(subscription))
+                .maxRecords(Property.ofValue(4))
+                .build();
+
+            var consumeOutput = consume.run(runContextFactory.of());
+            assertThat(consumeOutput.getCount(), is(4));
+        } finally {
+            deleteSubscription(subscription);
+        }
     }
 
     private URI createTestFile(RunContext runContext) throws Exception {
@@ -182,17 +206,26 @@ class PublishThenConsumeTest {
         return storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
     }
 
-    @BeforeEach
-    void cleanTopic() {
-        try {
-            Consume.builder()
-                .projectId(Property.ofValue(project))
-                .topic(Property.ofValue("test-topic"))
-                .subscription(Property.ofValue("test-subscription"))
-                .maxRecords(Property.ofValue(50))
-                .maxDuration(Property.ofValue(Duration.ofSeconds(5)))
-                .build()
-                .run(runContextFactory.of());
+    private String createSubscription(String topicId) throws Exception {
+        String subId = "test-subscription-" + IdUtils.create();
+
+        ProjectTopicName topicName = ProjectTopicName.of(project, topicId);
+        ProjectSubscriptionName subName = ProjectSubscriptionName.of(project, subId);
+
+        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
+            subAdmin.createSubscription(
+                subName,
+                topicName,
+                PushConfig.getDefaultInstance(),
+                10
+            );
+        }
+        return subId;
+    }
+
+    private void deleteSubscription(String subscriptionId) {
+        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
+            subAdmin.deleteSubscription(ProjectSubscriptionName.of(project, subscriptionId));
         } catch (Exception ignored) {}
     }
 }

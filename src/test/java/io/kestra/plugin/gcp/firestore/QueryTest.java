@@ -4,6 +4,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.Rethrow;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -31,10 +32,11 @@ class QueryTest {
     @Test
     void runFetch() throws Exception {
         var runContext = runContextFactory.of();
+        String collectionName = "persons_" + IdUtils.create();
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
-            .collection(Property.ofValue("persons"))
+            .collection(Property.ofValue(collectionName))
             .filters(List.of(
                 Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build())
             )
@@ -43,7 +45,7 @@ class QueryTest {
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
-            var collection = firestore.collection("persons");
+            var collection = firestore.collection(collectionName);
             collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
             collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
             collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
@@ -67,17 +69,18 @@ class QueryTest {
 
         // clear the collection
         try (var firestore = query.connection(runContext)) {
-            FirestoreTestUtil.clearCollection(firestore, "persons");
+            FirestoreTestUtil.clearCollection(firestore, collectionName);
         }
     }
 
     @Test
     void runFetchMultipleWhere() throws Exception {
         var runContext = runContextFactory.of();
+        String collectionName = "persons_" + IdUtils.create();
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
-            .collection(Property.ofValue("persons"))
+            .collection(Property.ofValue(collectionName))
             .filters(List.of(
                 Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build(),
                 Query.Filter.builder().field(Property.ofValue("firstname")).value(Property.ofValue("Jane")).build())
@@ -87,7 +90,7 @@ class QueryTest {
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
-            var collection = firestore.collection("persons");
+            var collection = firestore.collection(collectionName);
             collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
             collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
             collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
@@ -101,23 +104,24 @@ class QueryTest {
 
         // clear the collection
         try (var firestore = query.connection(runContext)) {
-            FirestoreTestUtil.clearCollection(firestore, "persons");
+            FirestoreTestUtil.clearCollection(firestore, collectionName);
         }
     }
 
     @Test
     void runFetchNoWhere() throws Exception {
         var runContext = runContextFactory.of();
+        String collectionName = "persons_" + IdUtils.create();
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
-            .collection(Property.ofValue("persons"))
+            .collection(Property.ofValue(collectionName))
             .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
-            var collection = firestore.collection("persons");
+            var collection = firestore.collection(collectionName);
             collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
             collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
             collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
@@ -131,17 +135,18 @@ class QueryTest {
 
         // clear the collection
         try (var firestore = query.connection(runContext)) {
-            FirestoreTestUtil.clearCollection(firestore, "persons");
+            FirestoreTestUtil.clearCollection(firestore, collectionName);
         }
     }
 
     @Test
     void runFetchNotEqualToWithOrderBy() throws Exception {
         var runContext = runContextFactory.of();
+        String collectionName = "persons_" + IdUtils.create();
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
-            .collection(Property.ofValue("persons"))
+            .collection(Property.ofValue(collectionName))
             .filters(List.of(
                 Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).operator(Property.ofValue(Query.QueryOperator.NOT_EQUAL_TO)).build())
             )
@@ -151,7 +156,7 @@ class QueryTest {
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
-            var collection = firestore.collection("persons");
+            var collection = firestore.collection(collectionName);
             collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
             collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
             collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
@@ -165,17 +170,18 @@ class QueryTest {
 
         // clear the collection
         try (var firestore = query.connection(runContext)) {
-            FirestoreTestUtil.clearCollection(firestore, "persons");
+            FirestoreTestUtil.clearCollection(firestore, collectionName);
         }
     }
 
     @Test
     void runStored() throws Exception {
         var runContext = runContextFactory.of();
+        String collectionName = "persons_" + IdUtils.create();
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
-            .collection(Property.ofValue("persons"))
+            .collection(Property.ofValue(collectionName))
             .filters(List.of(
                 Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build())
             )
@@ -184,7 +190,7 @@ class QueryTest {
 
         // create something to list
         try (var firestore = query.connection(runContext)) {
-            var collection = firestore.collection("persons");
+            var collection = firestore.collection(collectionName);
             collection.document("1").set(Map.of("firstname", "John", "lastname", "Doe")).get();
             collection.document("2").set(Map.of("firstname", "Jane", "lastname", "Doe")).get();
             collection.document("3").set(Map.of("firstname", "Charles", "lastname", "Baudelaire")).get();
