@@ -40,11 +40,13 @@ class TriggerTest {
 
     @Test
     void moveFromFlow() throws Exception {
-        var fromDir = "tasks/gcp/upload/trigger/";
-        var moveDir = "tasks/gcp/move/";
+        String folderId = IdUtils.create();
 
-        testUtils.upload("trigger/" + IdUtils.create());
-        testUtils.upload("trigger/" + IdUtils.create());
+        var fromDir = "tasks/gcp/upload/trigger/move-from/" + folderId + "/";
+        var moveDir = "tasks/gcp/move-to/" + folderId + "/";
+
+        testUtils.upload("trigger/move-from/" + folderId + "/" + IdUtils.create());
+        testUtils.upload("trigger/move-from/" + folderId + "/" + IdUtils.create());
 
         io.kestra.plugin.gcp.gcs.Trigger trigger = io.kestra.plugin.gcp.gcs.Trigger.builder()
             .id("watch")
@@ -69,16 +71,17 @@ class TriggerTest {
 
     @Test
     void move() throws Exception {
+        String out = FriendlyId.createFriendlyId();
+
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/"))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/" + out + "/"))
             .action(Property.ofValue(ActionInterface.Action.MOVE))
             .moveDirectory(Property.ofValue("gs://" + bucket + "/test/move"))
             .build();
 
-        String out = FriendlyId.createFriendlyId();
-        Upload.Output upload = testUtils.upload( "trigger/" + out);
+        Upload.Output upload = testUtils.upload("trigger/" + out + "/" + IdUtils.create());
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
