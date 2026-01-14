@@ -72,6 +72,7 @@ class TriggerTest {
     @Test
     void move() throws Exception {
         String out = FriendlyId.createFriendlyId();
+        String fileId = IdUtils.create();
 
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
@@ -81,7 +82,7 @@ class TriggerTest {
             .moveDirectory(Property.ofValue("gs://" + bucket + "/test/move"))
             .build();
 
-        Upload.Output upload = testUtils.upload("trigger/" + out + "/" + IdUtils.create());
+        Upload.Output upload = testUtils.upload("trigger/" + out + "/" + fileId);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
@@ -106,7 +107,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/test/move/" + out + ".yml"))
+            .from(Property.ofValue("gs://" + bucket + "/test/move/" + fileId + ".yml"))
             .build();
 
         Download.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
