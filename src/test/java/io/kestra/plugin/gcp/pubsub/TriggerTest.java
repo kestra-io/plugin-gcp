@@ -11,6 +11,7 @@ import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class TriggerTest {
     @Inject
     private RunContextFactory runContextFactory;

@@ -14,11 +14,13 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class DownloadsTest {
     @Inject
     private RunContextFactory runContextFactory;
