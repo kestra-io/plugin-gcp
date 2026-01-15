@@ -124,11 +124,11 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/" + base))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
             .build();
-        
+
         Upload.Output upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
@@ -164,7 +164,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/" + base))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
             .interval(Duration.ofSeconds(10))
@@ -193,17 +193,17 @@ class TriggerTest {
     void shouldExecuteOnUpdate() throws Exception {
         String base = "trigger/on-update/" + IdUtils.create() + "/";
         String file = base + FriendlyId.createFriendlyId();
+        var upload = testUtils.upload(file);
 
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/" + base))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .on(Property.ofValue(StatefulTriggerInterface.On.UPDATE))
             .interval(Duration.ofSeconds(10))
             .build();
 
-        var upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
@@ -211,6 +211,7 @@ class TriggerTest {
 
         // we update the file to trigger the update event
         testUtils.update(file);
+        Thread.sleep(3000);
 
         Optional<Execution> execution = Optional.ofNullable(Await.until(
             throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
@@ -236,7 +237,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/" + base))
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .interval(Duration.ofSeconds(10))
             .build();
@@ -244,11 +245,7 @@ class TriggerTest {
         var upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> createExecution = Optional.ofNullable(Await.until(
-            throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
-            Duration.ofMillis(500),
-            Duration.ofSeconds(20)
-        ));
+        Optional<Execution> createExecution = trigger.evaluate(context.getKey(), context.getValue());
 
         assertThat(createExecution.isPresent(), is(true));
 
