@@ -1,22 +1,22 @@
 package io.kestra.plugin.gcp.dataform;
 
-import com.google.cloud.dataform.v1.CancelWorkflowInvocationRequest;
 import com.google.cloud.dataform.v1.DataformClient;
+import com.google.cloud.dataform.v1.WorkflowInvocation;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class InvokeWorkflowTest {
     @Inject
     private DataformTestUtils testUtils;
@@ -28,32 +28,56 @@ class InvokeWorkflowTest {
     String workflowConfigId;
 
     @Test
-    @Order(1)
     void shouldInvokeWorkflowWithWaitTrue() throws Exception {
-        var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, true);
-        RunContext runContext = testUtils.runContext(task);
-        var output = task.run(runContext);
+        DataformClient client = mock(DataformClient.class);
 
-        assertNotNull(output, "Output should not be null");
-        assertTrue(output.getWorkflowInvocationName().contains("projects/"), "Invocation name should contain GCP path");
-        assertEquals("SUCCEEDED", output.getWorkflowInvocationState(), "Unexpected workflow state for wait=true");
+        WorkflowInvocation running = WorkflowInvocation.newBuilder()
+            .setName("projects/test/locations/us/repositories/repo/workflowInvocations/123")
+            .setState(WorkflowInvocation.State.RUNNING)
+            .build();
+
+        WorkflowInvocation succeeded = WorkflowInvocation.newBuilder()
+            .setName(running.getName())
+            .setState(WorkflowInvocation.State.SUCCEEDED)
+            .build();
+
+        when(client.createWorkflowInvocation(any())).thenReturn(running);
+
+        when(client.getWorkflowInvocation(running.getName())).thenReturn(succeeded);
+
+        InvokeWorkflow task = spy(testUtils.defaultInvokeWorkflowTask("repo", "config", true));
+
+        doReturn(client).when(task).createClient(any());
+
+        RunContext runContext = testUtils.runContext(task);
+        InvokeWorkflow.Output output = task.run(runContext);
+
+        assertEquals("SUCCEEDED", output.getWorkflowInvocationState());
     }
 
     @Test
-    @Order(2)
     void shouldInvokeWorkflowWithWaitFalse() throws Exception {
-        var task = testUtils.defaultInvokeWorkflowTask(repositoryId, workflowConfigId, false);
+        DataformClient client = mock(DataformClient.class);
+
+        WorkflowInvocation running = WorkflowInvocation.newBuilder()
+            .setName("projects/test/locations/us/repositories/repo/workflowInvocations/123")
+            .setState(WorkflowInvocation.State.RUNNING)
+            .build();
+
+        when(client.createWorkflowInvocation(any())).thenReturn(running);
+
+        InvokeWorkflow task = spy(testUtils.defaultInvokeWorkflowTask("repo", "config", false));
+
+        doReturn(client).when(task).createClient(any());
+
         RunContext runContext = testUtils.runContext(task);
-        var output = task.run(runContext);
+        InvokeWorkflow.Output output = task.run(runContext);
 
-        assertNotNull(output, "Output should not be null");
-        assertTrue(output.getWorkflowInvocationName().contains("projects/"), "Invocation name should contain GCP path");
-        assertEquals("RUNNING", output.getWorkflowInvocationState(), "Unexpected workflow state for wait=false");
-
-        cancel(output.getWorkflowInvocationName());
+        assertEquals("RUNNING", output.getWorkflowInvocationState());
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
     void shouldFailWithInvalidRepositoryId() {
         String repositoryId = "nonexistent-repo";
         boolean wait = true;
@@ -66,6 +90,7 @@ class InvokeWorkflowTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
     void shouldFailWithInvalidWorkflowConfigId() {
         String workflowConfigId = "nonexistent-config";
         boolean wait = true;
@@ -76,15 +101,4 @@ class InvokeWorkflowTest {
         Exception exception = assertThrows(Exception.class, () -> task.run(runContext));
         assertTrue(exception.getMessage().contains("nonexistent-config does not exist") || exception.getMessage().contains("NOT_FOUND"), "Expected failure for invalid config");
     }
-
-    private void cancel(String workflowInvocationName) throws Exception {
-        try (DataformClient client = DataformClient.create()) {
-            client.cancelWorkflowInvocation(
-                CancelWorkflowInvocationRequest.newBuilder()
-                    .setName(workflowInvocationName)
-                    .build()
-            );
-        }
-    }
-
 }
