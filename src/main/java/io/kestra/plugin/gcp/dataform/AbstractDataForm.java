@@ -41,10 +41,16 @@ public abstract class AbstractDataForm extends AbstractTask {
     @PluginProperty
     protected Property<String> repositoryId;
 
+    protected DataformClient dataformClient(RunContext runContext) throws Exception {
+        return createClient(runContext);
+    }
+
     /**
      * Creates a DataformClient with the current run context credentials.
      */
-    protected DataformClient dataformClient(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
+    protected DataformClient createClient(RunContext runContext)
+        throws IOException, IllegalVariableEvaluationException {
+
         GoogleCredentials credentials = this.credentials(runContext);
         DataformSettings settings = DataformSettings.newBuilder()
             .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
@@ -52,7 +58,6 @@ public abstract class AbstractDataForm extends AbstractTask {
             .build();
 
         return DataformClient.create(settings);
-
     }
 
     protected String buildRepositoryPath(RunContext runContext) throws IllegalVariableEvaluationException {

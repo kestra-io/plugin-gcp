@@ -20,11 +20,13 @@ import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.UUID;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 public class ExtractToGcsTest extends AbstractBigquery {
     @Inject
     private RunContextFactory runContextFactory;
