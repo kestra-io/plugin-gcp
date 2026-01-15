@@ -14,6 +14,7 @@ import io.kestra.plugin.gcp.bigquery.models.TableDefinition;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -22,7 +23,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-class CreateUpdateTableTest {
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
+public class CreateUpdateTableTest {
     @Inject
     private RunContextFactory runContextFactory;
 

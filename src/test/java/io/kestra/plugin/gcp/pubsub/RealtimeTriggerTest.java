@@ -1,16 +1,22 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.common.collect.ImmutableMap;
+import com.google.pubsub.v1.ProjectSubscriptionName;
+import com.google.pubsub.v1.ProjectTopicName;
+import com.google.pubsub.v1.PushConfig;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
@@ -23,6 +29,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class RealtimeTriggerTest {
     @Inject
     private RunContextFactory runContextFactory;
@@ -32,6 +39,8 @@ class RealtimeTriggerTest {
 
     @Test
     void flow() throws Exception {
+        var subscription = createSubscription("test-topic");
+
         var task = Publish.builder()
             .id(Publish.class.getSimpleName())
             .type(Publish.class.getName())
@@ -50,7 +59,7 @@ class RealtimeTriggerTest {
             .id("watch")
             .type(RealtimeTrigger.class.getName())
             .projectId(Property.ofValue(project))
-            .subscription(Property.ofValue("test-subscription"))
+            .subscription(Property.ofValue(subscription))
             .topic(Property.ofValue("test-topic"))
             .build();
 
@@ -67,5 +76,28 @@ class RealtimeTriggerTest {
         } finally {
             trigger.kill();
         }
+    }
+
+    private String createSubscription(String topicId) throws Exception {
+        String subId = "test-subscription-" + IdUtils.create();
+
+        ProjectTopicName topicName = ProjectTopicName.of(project, topicId);
+        ProjectSubscriptionName subName = ProjectSubscriptionName.of(project, subId);
+
+        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
+            subAdmin.createSubscription(
+                subName,
+                topicName,
+                PushConfig.getDefaultInstance(),
+                10
+            );
+        }
+        return subId;
+    }
+
+    private void deleteSubscription(String subscriptionId) {
+        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
+            subAdmin.deleteSubscription(ProjectSubscriptionName.of(project, subscriptionId));
+        } catch (Exception ignored) {}
     }
 }
