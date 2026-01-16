@@ -14,11 +14,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class DeleteTableTest {
     @Inject
     private RunContextFactory runContextFactory;

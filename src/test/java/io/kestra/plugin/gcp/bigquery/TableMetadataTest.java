@@ -10,6 +10,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.util.UUID;
 
@@ -19,6 +20,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class TableMetadataTest {
     @Inject
     private RunContextFactory runContextFactory;

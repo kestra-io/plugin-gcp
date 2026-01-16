@@ -5,6 +5,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.time.Duration;
 
@@ -12,6 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class QueryTest {
     private static final String PROJECT_ID = "kestra-unit-test";
 

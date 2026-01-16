@@ -24,6 +24,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BucketTest {
     private static final String RANDOM_ID = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
