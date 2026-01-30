@@ -33,8 +33,8 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run a Google Cloud Run function.",
-    description = "Use this task to trigger an Cloud Run Function and collect the result."
+    title = "Invoke an authenticated Cloud Run function",
+    description = "Calls an HTTP-triggered Cloud Run service using an ID token from the provided service account and returns the response body."
 )
 @Plugin(examples = {
     @Example(
@@ -53,24 +53,30 @@ import java.util.Map;
 })
 public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunction.Output> {
 
-    @Schema(title = "HTTP method")
+    @Schema(
+        title = "HTTP method",
+        description = "Rendered verb used for the request (e.g., GET, POST)"
+    )
     @NotNull
     protected Property<String> httpMethod;
 
-    @Schema(title = "GCP Function URL")
+    @Schema(
+        title = "Cloud Run URL",
+        description = "Fully qualified HTTPS URL of the Cloud Run service"
+    )
     @NotNull
     protected Property<String> url;
 
     @Schema(
         title = "HTTP body",
-        description = "JSON body of the Azure function"
+        description = "JSON request payload sent to the function; empty by default"
     )
     @Builder.Default
     protected Property<Map<String, Object>> httpBody = Property.ofValue(new HashMap<>());
 
     @Schema(
         title = "Max duration",
-        description = "The maximum duration the task should wait until the Azure Function completion."
+        description = "Maximum wait time for the HTTP call; defaults to 60 minutes"
     )
     @Builder.Default
     protected Property<Duration> maxDuration = Property.ofValue(Duration.ofMinutes(60));

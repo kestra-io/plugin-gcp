@@ -9,6 +9,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -25,6 +26,10 @@ import java.util.stream.StreamSupport;
 @NoArgsConstructor
 abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionInterface {
     @NotNull
+    @Schema(
+        title = "Topic name",
+        description = "Pub/Sub topic ID (without project prefix)"
+    )
     private Property<String> topic;
 
     Publisher createPublisher(PublisherOptions options) throws IOException, IllegalVariableEvaluationException {

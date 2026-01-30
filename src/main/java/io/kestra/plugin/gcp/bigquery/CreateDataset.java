@@ -21,7 +21,8 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a BigQuery dataset or update if it already exists."
+    title = "Create or update a BigQuery dataset",
+    description = "Creates a dataset with optional location, labels, ACLs, and defaults. If it exists, behavior follows `ifExists` (default ERROR; UPDATE replaces metadata, SKIP returns existing)."
 )
 @Plugin(
     examples = {
@@ -45,7 +46,8 @@ import org.slf4j.Logger;
 public class CreateDataset extends AbstractDataset implements RunnableTask<AbstractDataset.Output> {
     @Builder.Default
     @Schema(
-        title = "Policy to apply if a dataset already exists."
+        title = "Existing dataset policy",
+        description = "`ERROR` by default. Use `UPDATE` to apply new metadata or `SKIP` to leave the dataset unchanged."
     )
     private final Property<IfExists> ifExists = Property.ofValue(IfExists.ERROR);
 

@@ -50,11 +50,13 @@ import java.util.stream.StreamSupport;
     }
 )
 @Schema(
-    title = "List files from a GCS bucket."
+    title = "List GCS objects",
+    description = "Lists blobs under a gs:// prefix with optional regex filtering and directory/file selection."
 )
 public class List extends AbstractList implements RunnableTask<List.Output>, ListInterface {
     @Schema(
-        title = "The filter for files or a directory"
+        title = "Listing filter",
+        description = "Choose FILES, DIRECTORY, or BOTH; defaults to BOTH"
     )
     @Builder.Default
     protected final Property<Filter> filter = Property.ofValue(Filter.BOTH);
@@ -109,7 +111,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The list of blobs"
+            title = "Blobs"
         )
         private final java.util.List<Blob> blobs;
     }

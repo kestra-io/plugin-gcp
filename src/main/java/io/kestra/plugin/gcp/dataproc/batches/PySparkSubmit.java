@@ -23,8 +23,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Submit an Apache PySpark batch workload to a Google Cloud Dataproc cluster.",
-    description = "To get started, check out the [Apache PySpark API documentation](https://spark.apache.org/docs/latest/api/python/getting_started/)."
+    title = "Submit a PySpark batch to Dataproc",
+    description = "Runs a PySpark batch from a main Python file; supports extra JARs, files, archives, and args."
 )
 @Plugin(
     examples = @Example(
@@ -44,8 +44,8 @@ import jakarta.validation.constraints.NotNull;
 public class PySparkSubmit extends AbstractSparkSubmit {
     //Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix
     @Schema(
-        title = "The HCFS URI of the main Python file to use as the Spark driver. Must be a .py file.",
-        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
+        title = "Main Python file URI",
+        description = "HCFS URI to the driver .py file (gs://, hdfs://, or file://)"
     )
     @NotNull
     protected Property<String> mainPythonFileUri;

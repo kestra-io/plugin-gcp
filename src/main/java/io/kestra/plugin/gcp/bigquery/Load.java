@@ -60,17 +60,20 @@ import java.nio.channels.Channels;
     }
 )
 @Schema(
-    title = "Load data from a local file to BigQuery."
+    title = "Load an internal file into BigQuery",
+    description = "Streams a file from Kestra internal storage to a BigQuery load job. Fails on empty files by default (`failedOnEmpty` true)."
 )
 public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     @Schema(
-        title = "The fully-qualified URIs that point to source data"
+        title = "Source file URI",
+        description = "Kestra internal storage URI for the file to load"
     )
     @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @Schema(
-        title = "Does the task will failed for an empty file"
+        title = "Fail on empty file",
+        description = "If true (default), raises an error when the input file has zero bytes"
     )
     @Builder.Default
     private Property<Boolean> failedOnEmpty = Property.ofValue(true);

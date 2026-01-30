@@ -23,8 +23,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Submit Apache Spark SQL queries as a batch workload to a Google Cloud Dataproc cluster.",
-    description = "For more details, check out the [Apache Spark SQL documentation](https://spark.apache.org/sql/)."
+    title = "Submit Spark SQL batch to Dataproc",
+    description = "Executes Spark SQL from a script file; supports extra JARs for UDFs."
 )
 @Plugin(
     examples = @Example(
@@ -43,8 +43,8 @@ import jakarta.validation.constraints.NotNull;
 )
 public class SparkSqlSubmit extends AbstractSparkSubmit {
     @Schema(
-        title = "The HCFS URI of the script that contains Spark SQL queries to execute.",
-        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
+        title = "Query file URI",
+        description = "HCFS URI to the Spark SQL script (gs://, hdfs://, or file://)"
     )
     @NotNull
     protected Property<String> queryFileUri;

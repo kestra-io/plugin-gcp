@@ -23,8 +23,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Submit an Apache Spark batch workload to a Google Cloud Dataproc cluster.",
-    description = "For more details, check out the [Apache Spark documentation](https://spark.apache.org/)."
+    title = "Submit a Spark batch to Dataproc",
+    description = "Runs a Spark batch using Dataproc Serverless or clusters. Provide main class and supporting JARs/files; args are passed to the driver."
 )
 @Plugin(
     examples = @Example(
@@ -47,8 +47,8 @@ import jakarta.validation.constraints.NotNull;
 )
 public class SparkSubmit extends AbstractSparkSubmit {
     @Schema(
-        title = "The name of the driver main class.",
-        description = "The jar file that contains the class must be in the classpath or specified in `jarFileUris`"
+        title = "Driver main class",
+        description = "Fully qualified class name; its JAR must be on the classpath or in jarFileUris"
     )
     @NotNull
     private Property<String> mainClass;

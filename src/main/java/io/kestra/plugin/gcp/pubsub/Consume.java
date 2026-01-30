@@ -34,8 +34,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Consume messages from a Google Pub/Sub topic.",
-    description = "Requires a maxDuration or a maxRecords."
+    title = "Consume messages from Pub/Sub",
+    description = "Pulls messages from a subscription until `maxRecords` or `maxDuration` is reached. Writes messages to a Kestra storage file and acks them."
 )
 @Plugin(
     examples = {
@@ -67,27 +67,37 @@ import jakarta.validation.constraints.NotNull;
 public class Consume extends AbstractPubSub implements RunnableTask<Consume.Output> {
 
     @Schema(
-        title = "The Pub/Sub subscription.",
-        description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
+        title = "Subscription",
+        description = "Subscription name; auto-created when `autoCreateSubscription` is true"
     )
     @NotNull
     private Property<String> subscription;
 
     @Schema(
-        title = "Whether the Pub/Sub subscription should be created if not exists."
+        title = "Auto-create subscription",
+        description = "Create the subscription if missing; default true"
     )
     @Builder.Default
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
-    @Schema(title = "Max number of records, when reached the task will end.")
+    @Schema(
+        title = "Max records",
+        description = "Stop after this many messages"
+    )
     private Property<Integer> maxRecords;
 
-    @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
+    @Schema(
+        title = "Max duration",
+        description = "Duration limit (ISO-8601); stop when reached"
+    )
     private Property<Duration> maxDuration;
 
     @Builder.Default
     @NotNull
-    @Schema(title = "The serializer/deserializer to use.")
+    @Schema(
+        title = "Serde type",
+        description = "Serializer/deserializer for message payloads; defaults to STRING"
+    )
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override
@@ -155,11 +165,12 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "Number of consumed rows."
+            title = "Consumed message count"
         )
         private final Integer count;
         @Schema(
-            title = "File URI containing consumed messages."
+            title = "Messages file URI",
+            description = "Kestra storage URI of the file containing consumed messages"
         )
         private final URI uri;
     }

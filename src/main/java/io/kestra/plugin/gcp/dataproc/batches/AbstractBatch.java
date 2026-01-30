@@ -29,31 +29,36 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @NoArgsConstructor
 public abstract class AbstractBatch extends AbstractTask implements RunnableTask<AbstractBatch.Output> {
     @Schema(
-        title = "The region"
+        title = "Dataproc region",
+        description = "Region endpoint used for the batch controller"
     )
     @NotNull
     private Property<String> region;
 
     @Schema(
-        title = "The batch name"
+        title = "Batch name",
+        description = "Base name; a slugified suffix with execution id is appended and truncated to 63 chars"
     )
     @NotNull
     private Property<String> name;
 
     @Schema(
-        title = "Execution configuration for a workload."
+        title = "Execution configuration",
+        description = "Network, service account, and KMS settings for the workload"
     )
     @PluginProperty(dynamic = true)
     private AbstractBatch.ExecutionConfiguration execution;
 
     @Schema(
-        title = "Peripherals configuration for a workload."
+        title = "Peripherals configuration",
+        description = "Optional Metastore and Spark History Server settings"
     )
     @PluginProperty(dynamic = true)
     private AbstractBatch.PeripheralsConfiguration peripherals;
 
     @Schema(
-        title = "Runtime configuration for a workload."
+        title = "Runtime configuration",
+        description = "Container image, runtime version, and properties"
     )
     @PluginProperty(dynamic = true)
     private AbstractBatch.RuntimeConfiguration runtime;
@@ -176,27 +181,32 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     @Getter
     public static class ExecutionConfiguration {
         @Schema(
-            title = "Network URI to connect workload to."
+            title = "Network URI",
+            description = "VPC network URI for the workload"
         )
         private Property<String> networkUri;
 
         @Schema(
-            title = "Subnetwork URI to connect workload to."
+            title = "Subnetwork URI",
+            description = "Optional subnetwork URI for the workload"
         )
         private Property<String> subnetworkUri;
 
         @Schema(
-            title = "Tags used for network traffic control."
+            title = "Network tags",
+            description = "Applied to workload for network control"
         )
         private Property<List<String>> networkTags;
 
         @Schema(
-            title = "Service account used to execute workload."
+            title = "Service account",
+            description = "Email of the service account used to run the batch"
         )
         private Property<String> serviceAccountEmail;
 
         @Schema(
-            title = "The Cloud KMS key to use for encryption."
+            title = "KMS key",
+            description = "Cloud KMS key for encryption"
         )
         private Property<String> kmsKey;
     }
@@ -205,14 +215,14 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     @Getter
     public static class PeripheralsConfiguration {
         @Schema(
-            title = "Resource name of an existing Dataproc Metastore service.",
-            description = "Example: `projects/[project_id]/locations/[region]/services/[service_id]`"
+            title = "Metastore service",
+            description = "Resource name of an existing Dataproc Metastore service (projects/{project}/locations/{region}/services/{id})"
         )
         private Property<String> metastoreService;
 
         @Schema(
-            title = "Resource name of an existing Dataproc Metastore service.",
-            description = "Example: `projects/[project_id]/locations/[region]/services/[service_id]`"
+            title = "Spark History Server",
+            description = "Optional Dataproc cluster to serve Spark History for the workload"
         )
         @PluginProperty(dynamic = true)
         private SparkHistoryServerConfiguration sparkHistoryServer;
@@ -222,8 +232,8 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     @Getter
     public static class SparkHistoryServerConfiguration {
         @Schema(
-            title = "Resource name of an existing Dataproc Cluster to act as a Spark History Server for the workload.",
-            description = "Example: `projects/[project_id]/regions/[region]/clusters/[cluster_name]`"
+            title = "Spark History Server cluster",
+            description = "Dataproc cluster resource name (projects/{project}/regions/{region}/clusters/{name})"
         )
         private Property<String> dataprocCluster;
     }
@@ -232,18 +242,20 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     @Getter
     public static class RuntimeConfiguration {
         @Schema(
-            title = "Optional custom container image for the job runtime environment.",
-            description = "If not specified, a default container image will be used."
+            title = "Container image",
+            description = "Optional custom runtime image; defaults to Dataproc image when unset"
         )
         private Property<String> containerImage;
 
         @Schema(
-            title = "Version of the batch runtime."
+            title = "Runtime version",
+            description = "Optional Dataproc runtime version string"
         )
         private Property<String> version;
 
         @Schema(
-            title = "properties used to configure the workload execution (map of key/value pairs)."
+            title = "Runtime properties",
+            description = "Key/value pairs passed to the runtime"
         )
         private Property<Map<String, String>> properties;
     }
@@ -252,7 +264,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The state of the batch."
+            title = "Batch state"
         )
         private final com.google.cloud.dataproc.v1.Batch.State state;
     }

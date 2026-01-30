@@ -21,7 +21,8 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Update a BigQuery dataset."
+    title = "Update BigQuery dataset metadata",
+    description = "Updates dataset properties such as friendly name, description, ACLs, labels, location, defaults, and encryption configuration."
 )
 @Plugin(
     examples = {

@@ -9,32 +9,35 @@ import io.kestra.core.models.annotations.PluginProperty;
 
 public interface QueryInterface {
     @Schema(
-        title = "The sql query to run"
+        title = "SQL query"
     )
     Property<String> getSql();
 
     @Schema(
-        title = "Whether to use BigQuery's legacy SQL dialect for this query",
-        description = "By default this property is set to false."
+        title = "Use legacy SQL",
+        description = "Default false; when true, runs the query with the legacy dialect"
     )
     Property<Boolean> getLegacySql();
 
     @Schema(
-        title = "Whether to Fetch the data from the query result to the task output. This is deprecated, use fetchType: FETCH instead"
+        title = "Fetch output (deprecated)",
+        description = "Deprecated. Use fetchType=FETCH instead."
     )
     @PluginProperty
     @Deprecated
     boolean isFetch();
 
     @Schema(
-        title = "Whether to store the data from the query result into an ion serialized data file. This is deprecated, use fetchType: STORE instead"
+        title = "Store output (deprecated)",
+        description = "Deprecated. Use fetchType=STORE instead."
     )
     @PluginProperty
     @Deprecated
     boolean isStore();
 
     @Schema(
-        title = "Whether to Fetch only one data row from the query result to the task output. This is deprecated, use fetchType: FETCH_ONE instead"
+        title = "Fetch one row (deprecated)",
+        description = "Deprecated. Use fetchType=FETCH_ONE instead."
     )
     @PluginProperty
     @Deprecated
@@ -42,13 +45,7 @@ public interface QueryInterface {
 
     @Schema(
         title = "Fetch type",
-        description = """
-            The way you want to store data :
-              - FETCH_ONE - output the first row
-              - FETCH - output all rows as output variable
-              - STORE - store all rows to a file
-              - NONE - do nothing
-            """
+        description = "Controls result handling: FETCH_ONE, FETCH, STORE, or NONE."
     )
     Property<FetchType> getFetchType();
 

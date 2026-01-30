@@ -32,7 +32,8 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Execute gcloud commands."
+        title = "Run gcloud commands in a task runner",
+        description = "Executes one or more `gcloud` commands via the configured task runner (Docker by default with image `google/cloud-sdk`). Supports injecting a service account key and project ID into env vars and collecting output files."
 )
 @Plugin(
         examples = {
@@ -116,43 +117,51 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     private static final String DEFAULT_IMAGE = "google/cloud-sdk";
 
     @Schema(
-        title = "The full service account JSON key to use to authenticate to gcloud."
+        title = "Service account key",
+        description = "Full JSON key content written to a temp file and wired to `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE`"
     )
     protected Property<String> serviceAccount;
 
     @Schema(
-        title = "The GCP project ID to scope the commands to."
+        title = "Project ID",
+        description = "Optional default project exported as CLOUDSDK_CORE_PROJECT"
     )
     protected Property<String> projectId;
 
     @Schema(
-        title = "The commands to run."
+        title = "Commands",
+        description = "Shell commands executed with `/bin/sh -c`; rendered before execution"
     )
     @NotNull
     protected Property<List<String>> commands;
 
     @Schema(
-        title = "Additional environment variables for the current process."
+        title = "Additional environment variables",
+        description = "Merged into the task environment after project/service account vars"
     )
     protected Property<Map<String, String>> env;
 
     @Schema(
-        title = "Deprecated, use 'taskRunner' instead"
+        title = "Docker options (deprecated)",
+        description = "Deprecated; use `taskRunner` instead"
     )
     @PluginProperty
     @Deprecated
     private DockerOptions docker;
 
     @Schema(
-        title = "The task runner to use.",
-        description = "Task runners are provided by plugins, each have their own properties."
+        title = "Task runner",
+        description = "Runner plugin configuration; defaults to Docker"
     )
     @PluginProperty
     @Builder.Default
     @Valid
     private TaskRunner<?> taskRunner = Docker.instance();
 
-    @Schema(title = "The task runner container image, only used if the task runner is container-based.")
+    @Schema(
+        title = "Container image",
+        description = "Used when the task runner is container-based; defaults to google/cloud-sdk"
+    )
     @Builder.Default
     private Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
@@ -160,6 +169,10 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
 
     private Object inputFiles;
 
+    @Schema(
+        title = "Output files",
+        description = "Paths to copy from the task runtime back to internal storage after execution"
+    )
     private Property<List<String>> outputFiles;
 
     @Override

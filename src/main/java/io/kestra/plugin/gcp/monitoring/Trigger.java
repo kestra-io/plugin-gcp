@@ -23,7 +23,8 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow when a Cloud Monitoring query returns non-empty results."
+    title = "Trigger on Cloud Monitoring results",
+    description = "Polls Cloud Monitoring every `interval` (default 60s) with the filter over `window` (default 5m). Starts a Flow execution when at least one time series is found and exposes `series` and `count` in the trigger output. Requires Monitoring access on the target project; supports custom service accounts and scopes."
 )
 @Plugin(
     examples = {
@@ -54,26 +55,43 @@ import java.util.Optional;
     }
 )
 public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Query.Output> {
+    @Schema(
+        title = "Polling interval",
+        description = "Duration between query runs; defaults to 60 seconds"
+    )
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
     @Schema(
-        title = "Project ID"
+        title = "Project ID",
+        description = "Google Cloud project that holds the monitored metrics"
     )
     private Property<String> projectId;
 
+    @Schema(
+        title = "Service account",
+        description = "Optional service account email to authenticate the Monitoring client; falls back to application default credentials"
+    )
     protected Property<String> serviceAccount;
 
+    @Schema(
+        title = "OAuth scopes",
+        description = "Scopes used when building credentials; defaults to `https://www.googleapis.com/auth/cloud-platform`"
+    )
     @Builder.Default
     protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
     @NotNull
     @Schema(
         title = "Filter expression",
-        description = "Cloud Monitoring filter query to match metrics"
+        description = "Cloud Monitoring filter string evaluated each poll; the trigger fires only when it returns at least one time series"
     )
     private Property<String> filter;
 
+    @Schema(
+        title = "Query window",
+        description = "Lookback duration for the filter; defaults to 5 minutes"
+    )
     @Builder.Default
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(5));
 

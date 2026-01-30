@@ -27,40 +27,42 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 abstract public class AbstractTableCreateUpdate extends AbstractTable {
     @Schema(
-        title = "The table definition."
+        title = "Table definition",
+        description = "Required table definition (standard, external, view, etc.)"
     )
     protected TableDefinition tableDefinition;
 
     @Schema(
-        title = "The user-friendly name for the table."
+        title = "Table display name"
     )
     protected Property<String> friendlyName;
 
     @Schema(
-        title = "The user-friendly description for the table."
+        title = "Table description"
     )
     @PluginProperty(dynamic = true)
     protected String description;
 
     @Schema(
-        title = "Return a map for labels applied to the table."
+        title = "Table labels"
     )
     Property<Map<String, String>> labels;
 
     @Schema(
-        title = "Return true if a partition filter (that can be used for partition elimination) " +
-            "is required for queries over this table."
+        title = "Require partition filter",
+        description = "If true, queries must include a partition filter for partitioned tables"
     )
     protected Property<Boolean> requirePartitionFilter;
 
     @Schema(
-        title = "The encryption configuration."
+        title = "Encryption configuration",
+        description = "Optional CMEK for the table"
     )
     protected EncryptionConfiguration encryptionConfiguration;
 
     @Schema(
-        title = "Sets the duration, since now, when this table expires.",
-        description = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
+        title = "Expiration duration",
+        description = "Duration from now until table expiration; if unset, table persists"
     )
     protected Property<Duration> expirationDuration;
 

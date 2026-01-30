@@ -21,7 +21,8 @@ import java.net.URI;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a GCS bucket."
+    title = "Delete a GCS bucket",
+    description = "Deletes the specified bucket. If `force` is true, deletes contained objects first."
 )
 @Plugin(
     examples = {
@@ -43,12 +44,14 @@ import java.net.URI;
 public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBucket.Output> {
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+        title = "Bucket name",
+        description = "Name of the bucket to delete"
     )
     private Property<String> name;
 
     @Schema(
-        title = "If set to true, any blobs in the bucket will be deleted prior to bucket deletion. The default is false"
+        title = "Force delete",
+        description = "If true, deletes all objects before deleting the bucket; default false"
     )
     @Builder.Default
     private Property<Boolean> force = Property.ofValue(false);
@@ -96,12 +99,12 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The bucket's unique name"
+            title = "Bucket name"
         )
         private String bucket;
 
         @Schema(
-            title = "The bucket's URI"
+            title = "Bucket URI"
         )
         private URI bucketUri;
     }
