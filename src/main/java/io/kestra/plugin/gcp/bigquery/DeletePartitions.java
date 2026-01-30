@@ -23,7 +23,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete BigQuery partitions between intervals."
+    title = "Delete BigQuery partitions in a range",
+    description = "Lists partitions in the given date or range interval and deletes them. Fails if any targeted partition is missing."
 )
 @Plugin(
     examples = {
@@ -80,17 +81,17 @@ public class DeletePartitions extends AbstractPartition implements RunnableTask<
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The project's id"
+            title = "Project ID"
         )
         private final String projectId;
 
         @Schema(
-            title = "The dataset's id"
+            title = "Dataset ID"
         )
         private final String datasetId;
 
         @Schema(
-            title = "The table name"
+            title = "Table name"
         )
         private final String table;
 

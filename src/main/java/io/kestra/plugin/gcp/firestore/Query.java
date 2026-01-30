@@ -39,7 +39,8 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query documents from a Google Cloud Firestore collection."
+    title = "Query documents from Firestore",
+    description = "Executes a Firestore query with optional filters, ordering, pagination, and fetch mode. Supports fetching first/all rows or storing results to a file."
 )
 @Plugin(
     examples = {
@@ -70,39 +71,40 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 )
 public class Query extends AbstractFirestore implements RunnableTask<FetchOutput> {
     @Schema(
-        title = "The way you want to store the data",
-        description = "FETCH_ONE output the first row, "
-            + "FETCH output all the rows, "
-            + "STORE store all rows in a file, "
-            + "NONE do nothing."
+        title = "Fetch type",
+        description = "FETCH_ONE returns first row; FETCH returns all rows in output; STORE writes rows to a file; NONE returns nothing."
     )
     @Builder.Default
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Schema(
-        title = "List of query filters that will be added as a where clause."
+        title = "Filters",
+        description = "List of field/operator/value filters applied as where clauses"
     )
     @PluginProperty
     private List<Filter> filters;
 
     @Schema(
-        title = "Field name for the order by clause."
+        title = "Order by field"
     )
     private Property<String> orderBy;
 
     @Schema(
-        title = "Field name for the order by clause."
+        title = "Order direction",
+        description = "ASCENDING by default"
     )
     @Builder.Default
     private Property<Direction> orderDirection = Property.ofValue(Direction.ASCENDING);
 
     @Schema(
-        title = "Start offset for pagination of the query results."
+        title = "Offset",
+        description = "Start offset for paginating results"
     )
     private Property<Integer> offset;
 
     @Schema(
-        title = "Maximum numbers of returned results."
+        title = "Limit",
+        description = "Maximum number of results"
     )
     private Property<Integer> limit;
 

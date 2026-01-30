@@ -34,12 +34,8 @@
     @Getter
     @NoArgsConstructor
     @Schema(
-        title = "Trigger a flow on a new file arrival in a Google Cloud Storage bucket.",
-        description = "This trigger will poll every `interval` a GCS bucket. " +
-            "You can search for all files in a bucket or directory in `from` or you can filter the files with a `regExp`." +
-            "The detection is atomic, internally we do a list and interact only with files listed.\n" +
-            "Once a file is detected, we download the file on internal storage and processed with declared `action` " +
-            "in order to move or delete the files from the bucket (to avoid double detection on new poll)."
+        title = "Trigger on new or updated GCS objects",
+        description = "Polls GCS every `interval` (default 60s) under `from` with optional regex. Detects CREATE or UPDATE (configurable), downloads matching files to internal storage, and can MOVE or DELETE them to avoid retriggering."
     )
     @Plugin(
         examples = {
@@ -110,10 +106,22 @@
         @Builder.Default
         protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
+        @Schema(
+            title = "Source prefix",
+            description = "gs:// path to poll for new or updated objects"
+        )
         private Property<String> from;
 
+        @Schema(
+            title = "Post-detection action",
+            description = "NONE (default), MOVE (requires moveDirectory), or DELETE on source objects after download"
+        )
         private Property<ActionInterface.Action> action;
 
+        @Schema(
+            title = "Move destination",
+            description = "Target gs:// prefix when action is MOVE"
+        )
         private Property<String> moveDirectory;
 
         @Builder.Default
@@ -124,8 +132,16 @@
         @Builder.Default
         private final Property<On> on = Property.ofValue(On.CREATE_OR_UPDATE);
 
+        @Schema(
+            title = "State key",
+            description = "Override key used to persist trigger state; defaults to namespace/flow/id"
+        )
         private Property<String> stateKey;
 
+        @Schema(
+            title = "State TTL",
+            description = "Optional TTL for trigger state entries"
+        )
         private Property<Duration> stateTtl;
 
         @Override

@@ -19,27 +19,26 @@ import jakarta.validation.constraints.NotNull;
 @NoArgsConstructor
 public abstract class AbstractSparkSubmit extends AbstractBatch {
     @Schema(
-        title = "HCFS URIs of files to be placed in the working directory of each executor.",
-        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
+        title = "File URIs",
+        description = "HCFS URIs copied into each executor working dir (gs://, hdfs://, or file://)"
     )
     protected Property<List<String>> fileUris;
 
     @Schema(
-        title = "HCFS URIs of archives to be extracted into the working director of each executor. Supported file types: `.jar`, `.tar`, `.tar.gz`, `.tgz`, and `.zip`.",
-        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
+        title = "Archive URIs",
+        description = "HCFS URIs of archives extracted into each executor dir (.jar, .tar, .tar.gz, .tgz, .zip)"
     )
     protected Property<List<String>> archiveUris;
 
     @Schema(
-        title = "HCFS URIs of jar files to add to the classpath of the Spark driver and tasks.",
-        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
+        title = "Jar URIs",
+        description = "HCFS URIs of JARs added to driver and executor classpaths"
     )
     protected Property<List<String>> jarFileUris;
 
     @Schema(
-        title = "The arguments to pass to the driver.",
-        description = "Do not include arguments that can be set as batch properties, such as `--conf`, since a collision " +
-            "can occur that causes an incorrect batch submission."
+        title = "Driver arguments",
+        description = "Arguments passed to the driver; avoid options that belong in batch properties (e.g., --conf)"
     )
     protected Property<List<String>> args;
 }

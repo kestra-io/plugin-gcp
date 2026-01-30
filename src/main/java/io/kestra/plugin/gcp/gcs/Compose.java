@@ -59,24 +59,27 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Compose multiple objects in a GCS bucket into a single object.",
-    description = "This task allows you to concatenate up to 32 files in a given GCS bucket into a single file."
+    title = "Compose multiple GCS objects into one",
+    description = "Concatenates up to 32 source objects into a single destination object in GCS."
 )
 public class Compose extends AbstractGcs implements RunnableTask<Compose.Output> {
     @Schema(
-        title = "The directory to list"
+        title = "Source listing",
+        description = "Listing definition used to select source objects (files only)"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private List list;
 
     @Schema(
-        title = "The destination path"
+        title = "Destination object URI",
+        description = "gs:// path for the composed object"
     )
     private Property<String> to;
 
     @Schema(
-        title = "if `true`, don't failed if no result"
+        title = "Allow empty source",
+        description = "If true, succeed with empty sources; otherwise fail when no files are found"
     )
     @PluginProperty
     @Builder.Default

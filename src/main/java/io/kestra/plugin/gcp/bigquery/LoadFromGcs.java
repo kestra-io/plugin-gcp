@@ -117,7 +117,8 @@ import java.util.List;
     }
 )
 @Schema(
-    title = "Load data from GCS to BigQuery."
+    title = "Load GCS objects into BigQuery",
+    description = "Runs a BigQuery load job from one or more GCS URIs into the destination table. Supports wildcard paths, format-specific options, and standard load limits. Table must exist unless schema is supplied with a write disposition that creates it."
 )
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     @Schema(

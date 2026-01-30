@@ -52,30 +52,27 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Copy a BigQuery table or partition to another one."
+    title = "Copy or snapshot BigQuery tables",
+    description = "Runs a table copy job between tables or partitions. Supports COPY, SNAPSHOT, RESTORE, or CLONE operations and honors create/write dispositions."
 )
 public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Schema(
-        title = "The source tables.",
-        description = "Can be table or partitions."
+        title = "Source tables",
+        description = "Tables or partitions to copy; accepts partition decorators"
     )
     @NotNull
     private Property<List<String>> sourceTables;
 
     @Schema(
-        title = "The destination table.",
-        description = "If not provided a new table is created."
+        title = "Destination table",
+        description = "Target table for the operation; must match the selected operation type"
     )
     @NotNull
     private Property<String> destinationTable;
 
     @Schema(
-        title = "Sets the supported operation types in table copy job.",
-        description =
-            "* `COPY`: The source and destination table have the same table type.\n" +
-            "* `SNAPSHOT`: The source table type is TABLE and the destination table type is SNAPSHOT.\n" +
-            "* `RESTORE`: The source table type is SNAPSHOT and the destination table type is TABLE.\n" +
-            "* `CLONE`: The source and destination table have the same table type, but only bill for unique data."
+        title = "Copy operation type",
+        description = "`COPY` (default), `SNAPSHOT`, `RESTORE`, or `CLONE`"
     )
     private Property<OperationType> operationType;
 
@@ -144,7 +141,7 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The job id"
+            title = "Job ID"
         )
         private String jobId;
     }

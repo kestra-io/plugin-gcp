@@ -55,65 +55,61 @@ import java.util.Map;
     }
 )
 @Schema(
-    title = "Extract data from a BigQuery table to GCS."
+    title = "Export BigQuery table to GCS",
+    description = "Runs an extract job from a table or partition to one or more GCS URIs. Supports CSV/JSON/AVRO, optional compression, custom delimiter, and AVRO logical types. Prints a header row by default."
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
 
     @Schema(
-        title = "The table to export."
+        title = "Source table",
+        description = "Fully-qualified table (optionally partition) to export"
     )
     private Property<String> sourceTable;
 
     @Schema(
-        title = "The list of fully-qualified Google Cloud Storage URIs (e.g. gs://bucket/path) where " +
-            "the extracted table should be written."
+        title = "Destination URIs",
+        description = "One or more gs:// URIs to receive the export; wildcards allowed"
     )
     private Property<List<String>> destinationUris;
 
     @Schema(
-        title = "the compression value to use for exported files. If not set exported files " +
-            "are not compressed. "
+        title = "Compression",
+        description = "Optional compression; if unset, files are uncompressed"
     )
     private Property<String> compression;
 
     @Schema(
-        title = "The delimiter to use between fields in the exported data. By default \",\" is used."
+        title = "Field delimiter",
+        description = "Delimiter between fields; defaults to comma"
     )
     private Property<String> fieldDelimiter;
 
     @Schema(
-        title = "The exported file format. If not set table is exported in CSV format. "
+        title = "Export format",
+        description = "CSV by default; AVRO and other formats supported"
     )
     private Property<String> format;
 
     @Schema(
-        title = "[Optional] Flag if format is set to \"AVRO\".",
-        description = "[Optional] If destinationFormat is set to \"AVRO\", this flag indicates whether to enable extracting " +
-            "applicable column types (such as TIMESTAMP) to their corresponding AVRO logical " +
-            "types (timestamp-micros), instead of only using their raw types (avro-long)."
+        title = "Use AVRO logical types",
+        description = "For AVRO exports, map supported columns to AVRO logical types"
     )
     private Property<Boolean> useAvroLogicalTypes;
 
     @Schema(
-        title = "[Optional] Job timeout in milliseconds. If this time limit is exceeded, " +
-            "BigQuery may attempt to terminate the job."
+        title = "Job timeout (ms)",
+        description = "Optional timeout; BigQuery may terminate the job if exceeded"
     )
     private Property<Long> jobTimeoutMs;
 
     @Schema(
-        title = "The labels associated with this job.",
-        description = "The labels associated with this job. You can use these to organize and group your jobs. Label " +
-            "keys and values can be no longer than 63 characters, can only contain lowercase letters, " +
-            "numeric characters, underscores and dashes. International characters are allowed. Label " +
-            "values are optional. Label keys must start with a letter and each label in the list must have " +
-            "a different key.\n" +
-            "Parameters:\n" +
-            "    labels - labels or null for none "
+        title = "Job labels"
     )
     private Property<Map<String, String>> labels;
 
     @Schema(
-        title = "Whether to print out a header row in the results. By default an header is printed."
+        title = "Print header",
+        description = "If true (default), include a header row in the export"
     )
     private Property<Boolean> printHeader;
 
@@ -151,17 +147,17 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The job id"
+            title = "Job ID"
         )
         private final String jobId;
 
         @Schema(
-            title = "source Table"
+            title = "Source table"
         )
         private final String sourceTable;
 
         @Schema(
-            title = "The destination URI file"
+            title = "Destination URIs"
         )
         private final List<String> destinationUris;
 

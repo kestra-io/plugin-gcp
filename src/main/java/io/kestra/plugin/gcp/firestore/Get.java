@@ -19,7 +19,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get a document from a Google Cloud Firestore collection."
+    title = "Get a Firestore document",
+    description = "Fetches a single document by child path within the given collection and returns its fields."
 )
 @Plugin(
     examples = {
@@ -41,7 +42,8 @@ import jakarta.validation.constraints.NotNull;
 )
 public class Get extends AbstractFirestore implements RunnableTask<Get.Output> {
     @Schema(
-        title = "The Firestore document child path."
+        title = "Document path",
+        description = "Child path (relative to collection) of the document to fetch"
     )
     @NotNull
     private Property<String> childPath;
@@ -62,7 +64,8 @@ public class Get extends AbstractFirestore implements RunnableTask<Get.Output> {
     public static class Output implements io.kestra.core.models.tasks.Output {
 
         @Schema(
-            title = "Map containing the fetched document."
+            title = "Document fields",
+            description = "Map of the fetched document contents"
         )
         private Map<String, Object> row;
     }

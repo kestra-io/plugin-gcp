@@ -25,13 +25,15 @@ import jakarta.validation.constraints.NotNull;
 abstract public class AbstractTable extends AbstractBigquery {
     @NotNull
     @Schema(
-        title = "The dataset's user-defined ID."
+        title = "Dataset ID",
+        description = "Target dataset name"
     )
     protected Property<String> dataset;
 
     @NotNull
     @Schema(
-        title = "The table's user-defined ID."
+        title = "Table ID",
+        description = "Target table name"
     )
     protected Property<String> table;
 
@@ -50,94 +52,96 @@ abstract public class AbstractTable extends AbstractBigquery {
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The project's ID."
+            title = "Project ID"
         )
         private final String projectId;
 
         @Schema(
-            title = "The dataset's ID."
+            title = "Dataset ID"
         )
         private final String datasetId;
 
         @Schema(
-            title = "The table name."
+            title = "Table name"
         )
         private final String table;
 
         @Schema(
-            title = "The hash of the table resource."
+            title = "Table etag"
         )
         private final String etag;
 
         @Schema(
-            title = "The service-generated id for the table."
+            title = "Service-generated table id"
         )
         private final String generatedId;
 
         @Schema(
-            title = "The URL that can be used to access the resource again. The returned URL can be used for get or update requests."
+            title = "Self link URL",
+            description = "API URL for get or update requests"
         )
         private final String selfLink;
 
         @Schema(
-            title = "The user-friendly name for the table."
+            title = "Friendly name"
         )
         private final String friendlyName;
 
         @Schema(
-            title = "The user-friendly description for the table."
+            title = "Description"
         )
         private final String description;
 
         @Schema(
-            title = "The time when this table was created."
+            title = "Creation time"
         )
         private final Instant creationTime;
 
         @Schema(
-            title = "Returns the time when this table expires.",
-            description = "If not present, the table will persist indefinitely. Expired tables will be deleted and their storage reclaimed."
+            title = "Expiration time",
+            description = "If absent, the table persists indefinitely; expired tables are deleted"
         )
         private final Instant expirationTime;
 
         @Schema(
-            title = "The time when this table was last modified."
+            title = "Last modified time"
         )
         private final Instant lastModifiedTime;
 
         @Schema(
-            title = "The size of this table in bytes."
+            title = "Size in bytes"
         )
         private final Long numBytes;
 
         @Schema(
-            title = "The number of bytes considered \"long-term storage\" for reduced billing purposes."
+            title = "Long-term storage bytes",
+            description = "Bytes billed at long-term storage rates"
         )
         private final Long numLongTermBytes;
 
         @Schema(
-            title = "The number of rows of data in this table."
+            title = "Row count"
         )
         private final BigInteger numRows;
 
         @Schema(
-            title = "The table definition."
+            title = "Table definition"
         )
         private final TableDefinition.Output definition;
 
         @Schema(
-            title = "The encryption configuration."
+            title = "Encryption configuration"
         )
         private final EncryptionConfiguration.Output encryptionConfiguration;
 
         @Schema(
-            title = "Return a map for labels applied to the table."
+            title = "Labels"
         )
         private final Map<String, String> labels;
 
         @Schema(
-            title = "Return true if a partition filter (that can be used for partition elimination) " +
-                "is required for queries over this table."
+            title = "Require partition filter",
+            description = "True when queries must specify a partition filter for partition elimination"
         )
         private final Boolean requirePartitionFilter;
 

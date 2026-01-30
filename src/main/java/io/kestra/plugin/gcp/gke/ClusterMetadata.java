@@ -45,22 +45,26 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Get a GKE cluster's metadata."
+    title = "Fetch GKE cluster metadata",
+    description = "Retrieves metadata for a GKE cluster in the specified project and zone/region, including networking, auth certs, and node pool statuses."
 )
 public class ClusterMetadata extends AbstractTask implements RunnableTask<ClusterMetadata.Output> {
     @NotNull
     @Schema(
-        title = "Cluster ID whose metadata needs to be fetched."
+        title = "Cluster ID",
+        description = "Name of the cluster to query"
     )
     private Property<String> clusterId;
 
     @Schema(
-        title = "GCP zone or region in which the GKE cluster is present."
+        title = "Cluster location",
+        description = "Zone or region where the cluster resides"
     )
     private Property<String> clusterZone;
 
     @Schema(
-        title = "GCP project ID where the GKE cluster is present."
+        title = "Cluster project ID",
+        description = "Project that owns the cluster"
     )
     private Property<String> clusterProjectId;
 

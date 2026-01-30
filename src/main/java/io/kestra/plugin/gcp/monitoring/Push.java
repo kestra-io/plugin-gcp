@@ -27,7 +27,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Push metrics to Cloud Monitoring."
+    title = "Push metrics to Cloud Monitoring",
+    description = "Writes one or more data points to Cloud Monitoring. Supports GAUGE, DELTA, and CUMULATIVE kinds; default window 1 minute for interval-based kinds."
 )
 @Plugin(
     examples = {
@@ -53,12 +54,15 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 )
 public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Output> {
     @Schema(
-        title = "List of metrics to push",
-        description = "Each entry includes a `metricType` and `value`."
+        title = "Metrics",
+        description = "List of metric payloads, each with metricType, value, and optional labels/kind"
     )
     private Property<List<MetricValue>> metrics;
 
-    @Schema(title = "The duration window for the metric interval")
+    @Schema(
+        title = "Interval window",
+        description = "Lookback duration used for DELTA/CUMULATIVE intervals; default 1 minute"
+    )
     @Builder.Default
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(1));
 
@@ -134,27 +138,27 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
     @Getter
     public static class MetricValue {
         @Schema(
-            title = "The metric type name",
-            description = "Fully qualified Cloud Monitoring metric type – for example `custom.googleapis.com/demo/requests_count`"
+            title = "Metric type",
+            description = "Fully qualified metric type, e.g., custom.googleapis.com/demo/requests_count"
         )
         private final Property<String> metricType;
 
         @Schema(
-            title = "The metric value",
-            description = "Value to push for the metric"
+            title = "Metric value",
+            description = "Numeric value to push"
         )
         private Property<Double> value;
 
         @Builder.Default
         @Schema(
-            title = "The metric kind",
-            description = "The kind of metric to push"
+            title = "Metric kind",
+            description = "GAUGE (default), CUMULATIVE, or DELTA"
         )
         private Property<MetricKind> metricKind = Property.ofValue(MetricKind.GAUGE);
 
         @Schema(
-            title = "Metric labels",
-            description = "Optional key/value labels attached to the metric"
+            title = "Labels",
+            description = "Optional key/value labels"
         )
         private Property<Map<String, String>> labels;
     }

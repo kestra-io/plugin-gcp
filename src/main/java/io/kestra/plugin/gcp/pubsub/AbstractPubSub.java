@@ -25,6 +25,10 @@ import java.util.stream.StreamSupport;
 @NoArgsConstructor
 abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionInterface {
     @NotNull
+    @Schema(
+        title = "Topic name",
+        description = "Pub/Sub topic ID (without project prefix)"
+    )
     private Property<String> topic;
 
     Publisher createPublisher(PublisherOptions options) throws IOException, IllegalVariableEvaluationException {

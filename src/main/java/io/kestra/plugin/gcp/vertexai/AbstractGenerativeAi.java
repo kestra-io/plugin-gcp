@@ -31,21 +31,23 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     private static final String URI_PATTERN = "https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:predict";
 
     @Schema(
-        title = "The GCP region."
+        title = "Region",
+        description = "Vertex AI region used for the API endpoint"
     )
     @NotNull
     private Property<String> region;
 
     @Builder.Default
     @Schema(
-        title = "The model parameters."
+        title = "Model parameters",
+        description = "Temperature/topK/topP/maxOutputTokens generation settings"
     )
     @PluginProperty
     private ModelParameter parameters = ModelParameter.builder().build();
 
     @Schema(
-        title = "The identifier of the Vertex AI model to use.",
-        description = "Specifies which generative model (e.g., 'gemini-1.5-flash', 'gemini-1.0-pro') to use for the completion."
+        title = "Model ID",
+        description = "Vertex model name (e.g., gemini-1.5-flash); defaults to gemini-pro"
     )
     @PluginProperty(dynamic = true)
     @Builder.Default

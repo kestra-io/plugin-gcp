@@ -21,7 +21,8 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Update a BigQuery table’s metadata."
+    title = "Update BigQuery table metadata",
+    description = "Updates an existing table’s labels, description, friendly name, encryption, expiration, and partition filter requirement while preserving the current definition unless overridden."
 )
 @Plugin(
     examples = {

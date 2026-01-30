@@ -109,11 +109,16 @@ import java.util.stream.StreamSupport;
     }
 )
 @Schema(
-    title = "Run a SQL query in a specific BigQuery database."
+    title = "Execute a BigQuery SQL job",
+    description = "Runs a SQL statement with standard SQL by default, optionally writing into a destination table. Supports cache usage, priority selection, schema updates, and deprecated fetch/store outputs (superseded by `fetchType`). Uses task-level project, service account, and scopes."
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
 public class Query extends AbstractJob implements RunnableTask<Query.Output>, QueryInterface {
+    @Schema(
+        title = "SQL query",
+        description = "Rendered SQL string to execute; uses standard SQL unless `legacySql` is true"
+    )
     private Property<String> sql;
 
     @Builder.Default
@@ -132,6 +137,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private boolean fetchOne = false;
 
     @Builder.Default
+    @Schema(
+        title = "Result handling mode",
+        description = "`NONE` by default. Use `FETCH` or `STORE` to make results available to downstream tasks; prefer over deprecated `fetch`/`store` flags."
+    )
     private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     // private List<String> positionalParameters;
@@ -193,7 +202,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<String> defaultDataset;
 
     @Schema(
-        title = "Sets a priority for the query."
+        title = "Query priority",
+        description = "INTERACTIVE by default; choose BATCH to queue if slots are unavailable"
     )
     @Builder.Default
     private Property<QueryJobConfiguration.Priority> priority = Property.ofValue(QueryJobConfiguration.Priority.INTERACTIVE);

@@ -26,96 +26,83 @@ import java.util.stream.Collectors;
 @LoadCsvValidation
 abstract public class AbstractLoad extends AbstractBigquery implements RunnableTask<AbstractLoad.Output> {
     @Schema(
-        title = "The table where to put query results.",
-        description = "If not provided, a new table is created."
+        title = "Destination table",
+        description = "Target table for the load job; creation depends on createDisposition"
     )
     protected Property<String> destinationTable;
 
     @Schema(
-        title = "The clustering specification for the destination table."
+        title = "Clustering fields"
     )
     private Property<List<String>> clusteringFields;
 
     @Schema(
-        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job.",
-        description = "Schema update options are supported in two cases: when" +
-            " writeDisposition is WRITE_APPEND; when writeDisposition is WRITE_TRUNCATE and the destination" +
-            " table is a partition of a table, specified by partition decorators. For normal tables," +
-            " WRITE_TRUNCATE will always overwrite the schema."
+        title = "Schema update options",
+        description = "Experimental. Applies only with WRITE_APPEND or partitioned WRITE_TRUNCATE destinations."
     )
     private Property<List<JobInfo.SchemaUpdateOption>> schemaUpdateOptions;
 
     @Schema(
-        title = "The time partitioning field for the destination table."
+        title = "Time partitioning field"
     )
     private Property<String> timePartitioningField;
 
     @Schema(
-        title = "The time partitioning type specification for the destination table."
+        title = "Time partitioning type",
+        description = "Defaults to DAY when partitioning is configured"
     )
     @Builder.Default
     private Property<TimePartitioning.Type> timePartitioningType = Property.ofValue(TimePartitioning.Type.DAY);
 
 
     @Schema(
-        title = "The action that should occur if the destination table already exists."
+        title = "Write disposition",
+        description = "Action if destination exists (e.g., WRITE_APPEND, WRITE_TRUNCATE)"
     )
     private Property<JobInfo.WriteDisposition> writeDisposition;
 
     @Schema(
-        title = "[Experimental] Automatic inference of the options and schema for CSV and JSON sources."
+        title = "Autodetect source options",
+        description = "Experimental. Lets BigQuery infer schema/options for CSV or JSON sources."
     )
     private Property<Boolean> autodetect;
 
     @Schema(
-        title = "Whether the job is allowed to create tables."
+        title = "Create disposition",
+        description = "Whether the job may create the destination table"
     )
     private Property<JobInfo.CreateDisposition> createDisposition;
 
     @Schema(
-        title = "Whether BigQuery should allow extra values that are not represented in the table schema.",
-        description = " If true, the extra values are ignored. If false, records with extra columns" +
-            " are treated as bad records, and if there are too many bad records, an invalid error is" +
-            " returned in the job result. By default unknown values are not allowed."
+        title = "Ignore unknown values",
+        description = "If true, extra columns are skipped; if false, extra columns count as bad records. Default is false."
     )
     private Property<Boolean> ignoreUnknownValues;
 
     @Schema(
-        title = "The maximum number of bad records that BigQuery can ignore when running the job.",
-        description = " If the number of bad records exceeds this value, an invalid error is returned in the job result." +
-            " By default, no bad record is ignored."
+        title = "Max bad records",
+        description = "Number of bad records allowed before the job fails; default 0"
     )
     private Property<Integer> maxBadRecords;
 
     @Schema(
-        title = "The schema for the destination table.",
-        description = "The schema can be omitted if the destination table" +
-            " already exists, or if you're loading data from a Google Cloud Datastore backup (i.e. " +
-            " DATASTORE_BACKUP format option).\n" +
-            "```yaml\n" +
-            "schema:\n" +
-            "  fields:\n" +
-            "    - name: colA\n" +
-            "      type: STRING\n" +
-            "    - name: colB\n" +
-            "      type: NUMERIC\n"+
-            "```\n" +
-            "See type from [StandardSQLTypeName](https://javadoc.io/static/com.google.cloud/google-cloud-bigquery/1.88.0/com/google/cloud/bigquery/StandardSQLTypeName.html)"
+        title = "Destination schema",
+        description = "Table schema definition; may be omitted when loading into an existing table or supported backup formats"
     )
     private Property<Map<String, Object>> schema;
 
     @Schema(
-        title = "The source format, and possibly some parsing options, of the external data."
+        title = "Source format"
     )
     private Format format;
 
     @Schema(
-        title = "Csv parsing options."
+        title = "CSV parsing options"
     )
     private CsvOptions csvOptions;
 
     @Schema(
-        title = "Avro parsing options."
+        title = "Avro parsing options"
     )
     private AvroOptions avroOptions;
 

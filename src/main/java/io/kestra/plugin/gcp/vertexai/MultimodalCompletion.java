@@ -34,8 +34,8 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Use Multimodal completion using the Google Vertex AI Gemini LLM.",
-    description = "See [Overview of multimodal models](https://cloud.google.com/vertex-ai/docs/generative-ai/multimodal/overview) for more information."
+    title = "Generate multimodal completions with Vertex AI",
+    description = "Sends text and/or media parts to a Vertex multimodal model and returns the response."
 )
 @Plugin(
     examples = {
@@ -105,7 +105,8 @@ import java.util.Optional;
 public class MultimodalCompletion extends AbstractGenerativeAi implements RunnableTask<MultimodalCompletion.Output> {
 
     @Schema(
-        title = "The chat content prompt for the model to respond to"
+        title = "Prompt parts",
+        description = "Ordered list of text or media parts sent to the model"
     )
     @PluginProperty(dynamic = true)
     @NotEmpty

@@ -25,13 +25,14 @@ import java.util.Map;
 @NoArgsConstructor
 abstract class AbstractFirestore extends AbstractTask {
     @Schema(
-        title = "The Firestore collection"
+        title = "Collection path",
+        description = "Target collection name or path"
     )
     protected Property<String> collection;
 
     @Schema(
-        title = "The Firestore database ID to use with this client",
-        description = "If you don't specify a database, the Firestore client libraries and the Google Cloud CLI connect to the (default) database by default."
+        title = "Database ID",
+        description = "Defaults to `(default)` if not provided"
     )
     @Builder.Default
     protected Property<String> databaseId = Property.ofValue("(default)");

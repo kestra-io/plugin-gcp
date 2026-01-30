@@ -44,11 +44,13 @@ import java.nio.channels.FileChannel;
     }
 )
 @Schema(
-    title = "Download a file from a GCS bucket."
+    title = "Download a GCS object",
+    description = "Reads a gs:// object to a temp file and stores it in Kestra internal storage."
 )
 public class Download extends AbstractGcs implements RunnableTask<Download.Output> {
     @Schema(
-        title = "The file to copy"
+        title = "Source object URI",
+        description = "gs:// path to download"
     )
     private Property<String> from;
 
@@ -98,17 +100,18 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The bucket of the downloaded file"
+            title = "Bucket"
         )
         private final String bucket;
 
         @Schema(
-            title = "The path on the bucket of the downloaded file"
+            title = "Object path"
         )
         private final String path;
 
         @Schema(
-            title = "The url of the downloaded file on kestra storage "
+            title = "Kestra storage URI",
+            description = "Internal storage URI where the file was saved"
         )
         private final URI uri;
     }

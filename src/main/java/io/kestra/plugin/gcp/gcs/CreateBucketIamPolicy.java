@@ -42,30 +42,34 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Add role on an existing GCS bucket."
+    title = "Add IAM binding to a GCS bucket",
+    description = "Adds a role/member binding to a bucket policy. Can error or skip when the binding already exists."
 )
 public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<CreateBucketIamPolicy.Output> {
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+        title = "Bucket name"
     )
     protected Property<String> name;
 
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+        title = "Member",
+        description = "IAM member string, e.g., user:alice@example.com or serviceAccount:sa@project.iam.gserviceaccount.com"
     )
     protected Property<String> member;
 
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+        title = "Role",
+        description = "IAM role to grant (e.g., roles/storage.objectViewer)"
     )
     protected Property<String> role;
 
     @Builder.Default
     @Schema(
-        title = "Policy to apply if a policy already exists."
+        title = "Existing binding policy",
+        description = "`ERROR` or `SKIP` when the role/member already exists; default SKIP"
     )
     private Property<IfExists> ifExists = Property.ofValue(IfExists.SKIP);
 
@@ -122,22 +126,23 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The bucket uri"
+            title = "Bucket name"
         )
         private String bucket;
 
         @Schema(
-            title = "The bucket uri"
+            title = "Member"
         )
         private String member;
 
         @Schema(
-            title = "The bucket uri"
+            title = "Role"
         )
         private String role;
 
         @Schema(
-            title = "If the binding was added, or already exist"
+            title = "Created",
+            description = "True if the binding was added; false if it already existed"
         )
         private Boolean created;
     }
