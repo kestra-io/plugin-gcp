@@ -144,6 +144,14 @@
         )
         private Property<Duration> stateTtl;
 
+        @Schema(
+            title = "Max files",
+            description = """
+            The maximum number of files to retrieve at once
+            """
+        )
+        private Property<Integer> maxFiles;
+
         @Override
         public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
             var runContext = conditionContext.getRunContext();
@@ -158,6 +166,7 @@
                 .filter(Property.ofValue(Filter.FILES))
                 .listingType(listingType)
                 .regExp(regExp)
+                .maxFiles(maxFiles)
                 .build();
 
             var blobs = listTask.run(runContext).getBlobs();

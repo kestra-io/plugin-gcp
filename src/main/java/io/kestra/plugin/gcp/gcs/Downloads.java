@@ -85,6 +85,12 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
     )
     private Property<String> moveDirectory;
 
+    @Schema(
+        title = "Max files",
+        description = "Maximum number of files to list and download"
+    )
+    private Property<Integer> maxFiles;
+
     static void performAction(
         java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
         ActionInterface.Action action,
@@ -138,6 +144,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
             .listingType(this.listingType)
             .regExp(this.regExp)
             .allVersions(this.allVersions)
+            .maxFiles(this.maxFiles)
             .build();
         List.Output run = task.run(runContext);
 
