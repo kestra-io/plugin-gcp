@@ -105,7 +105,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
             logger.warn(
                 "Results for '{}' exceeded the maxFiles limit ({}); remaining items were skipped.", from, rMaxFiles
             );
-            
+
             blobs = blobs.subList(0, rMaxFiles);
         }
 
