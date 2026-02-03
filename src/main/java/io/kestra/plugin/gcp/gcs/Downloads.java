@@ -89,7 +89,8 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         title = "Max files",
         description = "Maximum number of files to list and download"
     )
-    private Property<Integer> maxFiles;
+    @Builder.Default
+    private Property<Integer> maxFiles = Property.ofValue(25);
 
     static void performAction(
         java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
