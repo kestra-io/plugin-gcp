@@ -102,10 +102,10 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
             .collect(Collectors.toList());
 
         if (rMaxFiles != null && blobs.size() > rMaxFiles) {
-            runContext.logger().warn(
-                "Listing returned more than {} files. Only the first {} files will be returned. Increase the maxFiles property if you need more files.", rMaxFiles, rMaxFiles
+            logger.warn(
+                "Results for '{}' exceeded the maxFiles limit ({}); remaining items were skipped.", from, rMaxFiles
             );
-
+            
             blobs = blobs.subList(0, rMaxFiles);
         }
 
