@@ -85,6 +85,15 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     @Builder.Default
     private Property<Boolean> allowEmpty = Property.ofValue(false);
 
+    @Schema(
+        title = "Max files",
+        description = """
+            The maximum number of files to process at once. Defaults to 25.
+            """
+    )
+    @Builder.Default
+    private Property<Integer> maxFiles = Property.ofValue(25);
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
@@ -110,6 +119,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .listingType(this.list.getListingType() != null ? this.list.getListingType() : Property.ofValue(ListInterface.ListingType.DIRECTORY))
             .regExp(this.list.getRegExp())
+            .maxFiles(this.maxFiles)
             .build();
 
         io.kestra.plugin.gcp.gcs.List.Output run = listActions.run(runContext);
