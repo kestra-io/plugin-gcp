@@ -150,7 +150,8 @@
             The maximum number of files to retrieve at once
             """
         )
-        private Property<Integer> maxFiles;
+        @Builder.Default
+        private Property<Integer> maxFiles = Property.ofValue(25);
 
         @Override
         public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {

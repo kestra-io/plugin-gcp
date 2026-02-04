@@ -65,10 +65,11 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
     @Schema(
         title = "Max files",
         description = """
-            The maximum number of files to retrieve at once
+            The maximum number of files to retrieve at once. Defaults to 25.
             """
     )
-    private Property<Integer> maxFiles;
+    @Builder.Default
+    private Property<Integer> maxFiles = Property.ofValue(25);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -77,9 +78,9 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
 
         URI from = encode(runContext, runContext.render(this.from).as(String.class).orElse(null));
         String regExp = runContext.render(this.regExp).as(String.class).orElse(null);
-        Integer rMaxFiles = runContext.render(this.maxFiles).as(Integer.class).orElse(null);
+        int rMaxFiles = runContext.render(this.maxFiles).as(Integer.class).orElse(25);
 
-        Stream<com.google.cloud.storage.Blob> stream = StreamSupport
+        java.util.List<Blob> blobs = StreamSupport
             .stream(this.iterator(connection, from, runContext), false)
             .filter(blob -> {
                 try {
@@ -91,21 +92,16 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
                 } catch (IllegalVariableEvaluationException e) {
                     throw new RuntimeException(e);
                 }
-            });
-
-        if (rMaxFiles != null) {
-            stream = stream.limit(rMaxFiles + 1L);
-        }
-
-        java.util.List<Blob> blobs = stream
+            })
+            .limit(rMaxFiles + 1L)
             .map(Blob::of)
             .collect(Collectors.toList());
 
-        if (rMaxFiles != null && blobs.size() > rMaxFiles) {
+        if (blobs.size() > rMaxFiles) {
             logger.warn(
                 "Results for '{}' exceeded the maxFiles limit ({}); remaining items were skipped.", from, rMaxFiles
             );
-            
+
             blobs = blobs.subList(0, rMaxFiles);
         }
 
