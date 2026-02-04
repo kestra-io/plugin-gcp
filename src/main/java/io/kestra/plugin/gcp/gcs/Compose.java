@@ -63,6 +63,17 @@ import jakarta.validation.constraints.NotNull;
     description = "Concatenates up to 32 source objects into a single destination object in GCS."
 )
 public class Compose extends AbstractGcs implements RunnableTask<Compose.Output> {
+    /**
+     * GCS Compose API limit.
+     *
+     * We do not use the List default (25) here because Compose only merges
+     * existing GCS objects and does not impact Kestra execution or storage.
+     * The only real limit is imposed by GCS itself: max 32 source objects.
+     *
+     * See: https://docs.cloud.google.com/storage/docs/json_api/v1/objects/compose
+     */
+    private static final int GCS_COMPOSE_MAX_SOURCE_OBJECTS = 32;
+
     @Schema(
         title = "Source listing",
         description = "Listing definition used to select source objects (files only)"
@@ -84,15 +95,6 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     @PluginProperty
     @Builder.Default
     private Property<Boolean> allowEmpty = Property.ofValue(false);
-
-    @Schema(
-        title = "Max files",
-        description = """
-            The maximum number of files to process at once. Defaults to 25.
-            """
-    )
-    @Builder.Default
-    private Property<Integer> maxFiles = Property.ofValue(25);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -119,7 +121,8 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .listingType(this.list.getListingType() != null ? this.list.getListingType() : Property.ofValue(ListInterface.ListingType.DIRECTORY))
             .regExp(this.list.getRegExp())
-            .maxFiles(this.maxFiles)
+            // we force the GCS Compose API limit (32) instead of the List default (25)
+            .maxFiles(Property.ofValue(GCS_COMPOSE_MAX_SOURCE_OBJECTS))
             .build();
 
         io.kestra.plugin.gcp.gcs.List.Output run = listActions.run(runContext);
