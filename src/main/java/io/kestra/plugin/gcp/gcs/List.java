@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 
 import java.net.URI;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @SuperBuilder
@@ -61,6 +62,14 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
     @Builder.Default
     protected final Property<Filter> filter = Property.ofValue(Filter.BOTH);
 
+    @Schema(
+        title = "Max files",
+        description = """
+            The maximum number of files to retrieve at once
+            """
+    )
+    private Property<Integer> maxFiles;
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
@@ -68,18 +77,37 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
 
         URI from = encode(runContext, runContext.render(this.from).as(String.class).orElse(null));
         String regExp = runContext.render(this.regExp).as(String.class).orElse(null);
+        Integer rMaxFiles = runContext.render(this.maxFiles).as(Integer.class).orElse(null);
 
-        java.util.List<Blob> blobs = StreamSupport
+        Stream<com.google.cloud.storage.Blob> stream = StreamSupport
             .stream(this.iterator(connection, from, runContext), false)
             .filter(blob -> {
                 try {
-                    return this.filter(blob, regExp, runContext.render(this.filter).as(Filter.class).orElseThrow());
+                    return this.filter(
+                        blob,
+                        regExp,
+                        runContext.render(this.filter).as(Filter.class).orElseThrow()
+                    );
                 } catch (IllegalVariableEvaluationException e) {
                     throw new RuntimeException(e);
                 }
-            })
+            });
+
+        if (rMaxFiles != null) {
+            stream = stream.limit(rMaxFiles + 1L);
+        }
+
+        java.util.List<Blob> blobs = stream
             .map(Blob::of)
             .collect(Collectors.toList());
+
+        if (rMaxFiles != null && blobs.size() > rMaxFiles) {
+            logger.warn(
+                "Results for '{}' exceeded the maxFiles limit ({}); remaining items were skipped.", from, rMaxFiles
+            );
+            
+            blobs = blobs.subList(0, rMaxFiles);
+        }
 
         runContext.metric(Counter.of("size", blobs.size()));
 
