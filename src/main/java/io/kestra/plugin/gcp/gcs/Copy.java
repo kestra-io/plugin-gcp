@@ -26,8 +26,8 @@ import java.net.URI;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy a file between bucket",
-    description = "Copy the file between Google Cloud Storage buckets"
+    title = "Copy an object between GCS buckets",
+    description = "Copies an object to a destination path; optionally deletes the source after a successful copy."
 )
 @Plugin(
     examples = {
@@ -61,17 +61,20 @@ import java.net.URI;
 )
 public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
     @Schema(
-        title = "The file to copy"
+        title = "Source object URI",
+        description = "Fully qualified gs:// path to copy from"
     )
     private Property<String> from;
 
     @Schema(
-        title = "The destination path"
+        title = "Destination object URI",
+        description = "Fully qualified gs:// path to copy to"
     )
     private Property<String> to;
 
     @Schema(
-        title = "Whether to delete the source files (from parameter) on success copy"
+        title = "Delete source on success",
+        description = "If true, removes the source object after a successful copy; default false"
     )
     @Builder.Default
     private final Property<Boolean> delete = Property.ofValue(false);
@@ -116,8 +119,8 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The destination full uri",
-            description = "The full url will be like `gs://{bucket}/{path}/{file}`"
+            title = "Destination URI",
+            description = "Final gs:// URI of the copied object"
         )
         private URI uri;
     }

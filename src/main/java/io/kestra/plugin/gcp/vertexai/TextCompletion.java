@@ -27,8 +27,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Complete text using the Google Vertex AI API for Google's Gemini LLM.",
-    description = "See [Generative AI quickstart using the Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) for more information."
+    title = "Generate text with Vertex AI",
+    description = "Creates text completions using the configured Vertex model and generation parameters."
 )
 @Plugin(
     examples = {

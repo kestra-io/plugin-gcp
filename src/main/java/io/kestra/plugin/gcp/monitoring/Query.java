@@ -45,17 +45,20 @@ import java.util.stream.StreamSupport;
     }
 )
 @Schema(
-    title = "Query Cloud Monitoring metrics."
+    title = "Query Cloud Monitoring time series",
+    description = "Fetches time series matching the rendered `filter` over the `window` lookback (default 5 minutes) using Cloud Monitoring. Returns the raw series list and the total count. Supports custom project, service account, and scopes."
 )
 public class Query extends AbstractMonitoringTask implements RunnableTask<Query.Output> {
     @Schema(
-        title = "Filter expression"
+        title = "Filter expression",
+        description = "Cloud Monitoring filter string rendered before execution; required"
     )
     @NotNull
     private Property<String> filter;
 
     @Schema(
-        title = "Query window size – default to 5 minutes"
+        title = "Query window",
+        description = "Lookback duration for the time interval; defaults to 5 minutes"
     )
     @Builder.Default
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(5));
@@ -109,12 +112,14 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "Total number of time series fetched"
+            title = "Total number of time series fetched",
+            description = "Count of time series returned by the Cloud Monitoring query"
         )
         private final Integer count;
 
         @Schema(
-            title = "List of time series"
+            title = "List of time series",
+            description = "Raw Cloud Monitoring time series in JSON form"
         )
         private final List<Map<String, Object>> series;
     }

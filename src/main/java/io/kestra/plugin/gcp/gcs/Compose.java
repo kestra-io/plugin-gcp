@@ -59,24 +59,38 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Compose multiple objects in a GCS bucket into a single object.",
-    description = "This task allows you to concatenate up to 32 files in a given GCS bucket into a single file."
+    title = "Compose multiple GCS objects into one",
+    description = "Concatenates up to 32 source objects into a single destination object in GCS."
 )
 public class Compose extends AbstractGcs implements RunnableTask<Compose.Output> {
+    /**
+     * GCS Compose API limit.
+     *
+     * We do not use the List default (25) here because Compose only merges
+     * existing GCS objects and does not impact Kestra execution or storage.
+     * The only real limit is imposed by GCS itself: max 32 source objects.
+     *
+     * See: https://docs.cloud.google.com/storage/docs/json_api/v1/objects/compose
+     */
+    private static final int GCS_COMPOSE_MAX_SOURCE_OBJECTS = 32;
+
     @Schema(
-        title = "The directory to list"
+        title = "Source listing",
+        description = "Listing definition used to select source objects (files only)"
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private List list;
 
     @Schema(
-        title = "The destination path"
+        title = "Destination object URI",
+        description = "gs:// path for the composed object"
     )
     private Property<String> to;
 
     @Schema(
-        title = "if `true`, don't failed if no result"
+        title = "Allow empty source",
+        description = "If true, succeed with empty sources; otherwise fail when no files are found"
     )
     @PluginProperty
     @Builder.Default
@@ -107,6 +121,8 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .listingType(this.list.getListingType() != null ? this.list.getListingType() : Property.ofValue(ListInterface.ListingType.DIRECTORY))
             .regExp(this.list.getRegExp())
+            // we force the GCS Compose API limit (32) instead of the List default (25)
+            .maxFiles(Property.ofValue(GCS_COMPOSE_MAX_SOURCE_OBJECTS))
             .build();
 
         io.kestra.plugin.gcp.gcs.List.Output run = listActions.run(runContext);

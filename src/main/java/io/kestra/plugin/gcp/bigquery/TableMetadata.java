@@ -22,7 +22,8 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get a BigQuery table’s metadata."
+    title = "Get BigQuery table metadata",
+    description = "Retrieves metadata for a table or partition. Can return empty output instead of failing when the table is missing."
 )
 @Plugin(
     examples = {
@@ -45,8 +46,8 @@ import java.util.Objects;
 public class TableMetadata extends AbstractTable implements RunnableTask<AbstractTable.Output> {
     @Builder.Default
     @Schema(
-        title = "Policy to apply if a table don't exists.",
-        description = "If the policy is `SKIP`, the output will contain only null value, otherwise an error is raised."
+        title = "Missing table policy",
+        description = "`ERROR` by default. Use `SKIP` to return an empty output when the table does not exist."
     )
     private final Property<IfNotExists> ifNotExists = Property.ofValue(IfNotExists.ERROR);
 

@@ -31,26 +31,22 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @NoArgsConstructor
 abstract public class AbstractBigquery extends AbstractTask {
     @Schema(
-        title = "The geographic location where the dataset should reside.",
-        description = "This property is experimental" +
-            " and might be subject to change or removed.\n" +
-            " \n" +
-            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
+        title = "Dataset location",
+        description = "Optional BigQuery location for created or targeted resources. Experimental and may change; see BigQuery dataset location documentation."
     )
     protected Property<String> location;
 
     @Schema(
-        title = "Automatic retry for retryable BigQuery exceptions.",
-        description = "Some exceptions (especially rate limit) are not retried by default by BigQuery client, we use by " +
-            "default a transparent retry (not the kestra one) to handle this case.\n" +
-            "The default values are exponential of 5 seconds for a maximum of 15 minutes and ten attempts"
+        title = "Automatic BigQuery retry policy",
+        description = "Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s, up to 15m, max 10 attempts."
     )
     @PluginProperty
     protected AbstractRetry retryAuto;
 
     @Builder.Default
     @Schema(
-        title = "The reasons which would trigger an automatic retry."
+        title = "Retry reasons",
+        description = "BigQuery error reasons that trigger an automatic retry; evaluated against error reason strings"
     )
     protected Property<List<String>> retryReasons = Property.ofValue(Arrays.asList(
         "rateLimitExceeded",
@@ -62,8 +58,8 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     @Builder.Default
     @Schema(
-        title = "The messages which would trigger an automatic retry.",
-        description = "Message is tested as a substring of the full message, and is case insensitive."
+        title = "Retry message substrings",
+        description = "Case-insensitive substrings that, if found in the error message, trigger an automatic retry"
     )
     protected Property<List<String>> retryMessages = Property.ofValue(Arrays.asList(
         "due to concurrent update",

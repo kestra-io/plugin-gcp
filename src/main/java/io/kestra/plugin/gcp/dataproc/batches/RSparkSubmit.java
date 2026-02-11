@@ -23,8 +23,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Submit an Apache SparkR batch workload to a Google Cloud Dataproc cluster.",
-    description = "For more details, check out the [Apache SparkR documentation](https://spark.apache.org/docs/latest/sparkr.html)."
+    title = "Submit a SparkR batch to Dataproc",
+    description = "Runs a SparkR batch from a main R script; supports extra files/archives and arguments."
 )
 @Plugin(
     examples = @Example(
@@ -43,8 +43,8 @@ import jakarta.validation.constraints.NotNull;
 )
 public class RSparkSubmit extends AbstractSparkSubmit {
     @Schema(
-        title = "The HCFS URI of the main R file to use as the driver. Must be a `.R` or `.r` file.",
-        description = "Hadoop Compatible File System (HCFS) URIs should be accessible from the cluster. Can be a GCS file with the gs:// prefix, an HDFS file on the cluster with the hdfs:// prefix, or a local file on the cluster with the file:// prefix"
+        title = "Main R file URI",
+        description = "HCFS URI to the driver R script (.R/.r) accessible by the cluster"
     )
     @NotNull
     protected Property<String> mainRFileUri;

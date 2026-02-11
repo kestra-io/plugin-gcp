@@ -121,6 +121,43 @@ class ListTest {
         assertThat(run.getBlobs().size(), is(1));
     }
 
+    @Test
+    void shouldLimitFilesWhenMaxFilesIsSet() throws Exception {
+        String dir = FriendlyId.createFriendlyId();
+
+        for (int i = 0; i < 5; i++) {
+            upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+        }
+
+        List task = task()
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
+            .filter(Property.ofValue(ListInterface.Filter.FILES))
+            .maxFiles(Property.ofValue(3))
+            .build();
+
+        List.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+
+        assertThat(run.getBlobs().size(), is(3));
+    }
+
+    @Test
+    void shouldNotLimitFilesWhenMaxFilesIsNotSet() throws Exception {
+        String dir = FriendlyId.createFriendlyId();
+
+        for (int i = 0; i < 5; i++) {
+            upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+        }
+
+        List task = task()
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
+            .filter(Property.ofValue(ListInterface.Filter.FILES))
+            .build();
+
+        List.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+
+        assertThat(run.getBlobs().size(), is(5));
+    }
+
     private static List.ListBuilder<?, ?> task() {
         return List.builder()
             .id(ListTest.class.getSimpleName())

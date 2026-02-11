@@ -39,12 +39,14 @@ import org.slf4j.Logger;
     }
 )
 @Schema(
-    title = "Create a GCS bucket or update if it already exists."
+    title = "Create or update a GCS bucket",
+    description = "Creates a new bucket with provided settings. If the bucket exists, behavior follows `ifExists` (default ERROR; UPDATE applies changes; SKIP leaves it)."
 )
 public class CreateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Builder.Default
     @Schema(
-        title = "Policy to apply if a bucket already exists."
+        title = "Existing bucket policy",
+        description = "`ERROR` by default; `UPDATE` to apply new settings; `SKIP` to leave as-is."
     )
     private Property<IfExists> ifExists = Property.ofValue(IfExists.ERROR);
 

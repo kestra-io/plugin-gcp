@@ -8,13 +8,15 @@ import jakarta.validation.constraints.NotNull;
 
 public interface ActionInterface {
     @Schema(
-        title = "The action to perform on the retrieved files. If using 'NONE' make sure to handle the files inside your flow to avoid infinite triggering."
+        title = "Post-processing action",
+        description = "MOVE (copy then delete), DELETE, or NONE (caller handles cleanup to avoid retriggers)"
     )
     @NotNull
     Property<Action> getAction();
 
     @Schema(
-        title = "The destination directory for `MOVE` action."
+        title = "Move destination",
+        description = "Required when action is MOVE; gs:// prefix"
     )
     Property<String> getMoveDirectory();
 

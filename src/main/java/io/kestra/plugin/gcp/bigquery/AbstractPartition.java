@@ -38,25 +38,22 @@ abstract public class AbstractPartition extends AbstractTable {
 
     @NotNull
     @Schema(
-        title = "The partition type of the table"
+        title = "Partition type",
+        description = "DAY, HOUR, MONTH, YEAR, or RANGE"
     )
     protected Property<PartitionType> partitionType;
 
     @NotNull
     @Schema(
-        title = "The inclusive starting date or integer.",
-        description = "If the partition :\n" +
-            "- is a numeric range, must be a valid integer\n" +
-            "- is a date, must a valid datetime like `{{ now() }}`"
+        title = "Partition start",
+        description = "Inclusive start value. Use an integer for RANGE partitions or an ISO datetime for date/time partitions."
     )
     protected Property<String> from;
 
     @NotNull
     @Schema(
-        title = "The inclusive ending date or integer.",
-        description = "If the partition :\n" +
-            "- is a numeric range, must be a valid integer\n" +
-            "- is a date, must a valid datetime like `{{ now() }}`"
+        title = "Partition end",
+        description = "Inclusive end value. Use an integer for RANGE partitions or an ISO datetime for date/time partitions."
     )
     protected Property<String> to;
 

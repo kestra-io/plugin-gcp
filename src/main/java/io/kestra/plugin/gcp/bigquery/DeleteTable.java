@@ -18,7 +18,8 @@ import org.slf4j.Logger;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a BigQuery table or a partition."
+    title = "Delete a BigQuery table or partition",
+    description = "Deletes the specified table or partition (using decorator syntax). Fails if the table does not exist."
 )
 @Plugin(
     examples = {
@@ -62,17 +63,17 @@ public class DeleteTable extends AbstractTable implements RunnableTask<DeleteTab
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The project's id"
+            title = "Project ID"
         )
         private final String projectId;
 
         @Schema(
-            title = "The dataset's id"
+            title = "Dataset ID"
         )
         private final String datasetId;
 
         @Schema(
-            title = "The table name"
+            title = "Table name"
         )
         private final String table;
 

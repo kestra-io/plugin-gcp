@@ -26,7 +26,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Publish a message to a Google Pub/Sub topic."
+    title = "Publish messages to Pub/Sub",
+    description = "Publishes one or more messages to a topic. Supports STRING/JSON/AVRO serde and optional ordering keys."
 )
 @Plugin(
     examples = {
@@ -72,7 +73,10 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
     @Builder.Default
     @NotNull
-    @Schema(title = "The serializer/deserializer to use.")
+    @Schema(
+        title = "Serde type",
+        description = "Serializer/deserializer for message payloads; defaults to STRING"
+    )
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override
@@ -122,7 +126,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Number of published messages.")
+        @Schema(title = "Published message count")
         private final Integer messagesCount;
     }
 }

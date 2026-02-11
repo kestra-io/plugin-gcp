@@ -23,7 +23,8 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Set a document in a Google Cloud Firestore collection."
+    title = "Create or replace a Firestore document",
+    description = "Writes a document in the target collection; generates an ID if `childPath` is not set. Accepts a map or JSON string payload."
 )
 @Plugin(
     examples = {
@@ -66,15 +67,16 @@ import java.util.Map;
 )
 public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     @Schema(
-        title = "The Firestore document.",
-        description = "Can be a JSON string, or a map.",
+        title = "Document payload",
+        description = "Map or JSON string to write",
         anyOf = {String.class, Map.class}
     )
     @PluginProperty(dynamic = true)
     private Object document;
 
     @Schema(
-        title = "The Firestore document child path."
+        title = "Document path",
+        description = "Optional child path; if absent, an ID is auto-generated"
     )
     private Property<String> childPath;
 
@@ -111,7 +113,7 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The document updated time"
+            title = "Updated time"
         )
         private Instant updatedTime;
     }
