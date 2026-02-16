@@ -94,6 +94,14 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
     )
     protected Property<Boolean> dryRun = Property.ofValue(false);
 
+    @Builder.Default
+    @Schema(
+        title = "Skip empty partitions",
+        description = "If true, the task completes successfully without running a copy job when no partitions are found in the specified range. " +
+            "If false (the default), the task will fail when there are no partitions to copy."
+    )
+    protected Property<Boolean> skipEmpty = Property.ofValue(false);
+
     @Override
     public CopyPartitions.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
@@ -105,6 +113,14 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
 
         logger.debug("Copying partitions '{}'", partitionToCopy);
         runContext.metric(Counter.of("size", partitionToCopy.size()));
+
+        if (partitionToCopy.isEmpty()) {
+            boolean skip = runContext.render(this.skipEmpty).as(Boolean.class).orElse(false);
+            if (skip) {
+                logger.info("No partitions found in the specified range, skipping copy (skipEmpty=true)");
+                return Output.of(tableId, partitionToCopy, null);
+            }
+        }
 
         Copy task = Copy.builder()
             .sourceTables(Property.ofValue(partitionToCopy
