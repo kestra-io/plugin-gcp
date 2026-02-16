@@ -40,8 +40,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow from message consumption in real-time from a Google Pub/Sub topic.",
-    description = "If you would like to consume multiple messages processed within a given time frame and process them in batch, you can use the [io.kestra.plugin.gcp.pubsub.Trigger](https://kestra.io/plugins/plugin-gcp/triggers/io.kestra.plugin.gcp.pubsub.trigger) instead."
+    title = "Realtime Pub/Sub trigger",
+    description = "Subscribes to a Pub/Sub subscription and creates one execution per received message. Use the batch Trigger for grouped consumption."
 )
 @Plugin(
     examples = {
@@ -111,13 +111,14 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
     private Property<String> topic;
 
     @Schema(
-        title = "The Pub/Sub subscription",
-        description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
+        title = "Subscription",
+        description = "Subscription name; auto-created when `autoCreateSubscription` is true"
     )
     private Property<String> subscription;
 
     @Schema(
-        title = "Whether the Pub/Sub subscription should be created if not exist"
+        title = "Auto-create subscription",
+        description = "Create the subscription if missing; default true"
     )
     @Builder.Default
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
@@ -125,15 +126,24 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
     @Builder.Default
     private final Property<Duration> interval = Property.ofValue(Duration.ofSeconds(60));
 
-    @Schema(title = "Max number of records, when reached the task will end.")
+    @Schema(
+        title = "Max records",
+        description = "Optional cap on messages before stopping"
+    )
     private Property<Integer> maxRecords;
 
-    @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
+    @Schema(
+        title = "Max duration",
+        description = "Optional run duration limit (ISO-8601)"
+    )
     private Property<Duration> maxDuration;
 
     @Builder.Default
     @NotNull
-    @Schema(title = "The serializer/deserializer to use.")
+    @Schema(
+        title = "Serde type",
+        description = "Serializer/deserializer for messages; defaults to STRING"
+    )
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Builder.Default

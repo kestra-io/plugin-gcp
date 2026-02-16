@@ -38,8 +38,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Start a custom job in Google Vertex AI.",
-    description = "For more details, check out the [custom job documentation](https://cloud.google.com/vertex-ai/docs/training/create-custom-job)."
+    title = "Run a Vertex AI custom job",
+    description = "Starts a custom training job in Vertex AI with the provided spec. Can stream logs, wait for completion, and optionally delete the job afterward."
 )
 @Plugin(
     examples = {
@@ -68,34 +68,38 @@ import jakarta.validation.constraints.NotNull;
 )
 public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Output> {
     @Schema(
-        title = "The GCP region."
+        title = "Region",
+        description = "Vertex AI region for the job endpoint"
     )
     @NotNull
     private Property<String> region;
 
     @Schema(
-        title = "The job display name."
+        title = "Display name",
+        description = "Human-friendly name for the job"
     )
     @NotNull
     private Property<String> displayName;
 
     @Schema(
-        title = "The job specification."
+        title = "Job spec",
+        description = "CustomJobSpec defining worker pools, container/package, scheduling, etc."
     )
     @PluginProperty
     @NotNull
     private CustomJobSpec spec;
 
     @Schema(
-        title = "Wait for the end of the job.",
-        description = "Allowing to capture job status & logs."
+        title = "Wait for completion",
+        description = "If true (default), waits for job end and captures status/logs"
     )
     @NotNull
     @Builder.Default
     private Property<Boolean> wait = Property.ofValue(true);
 
     @Schema(
-        title = "Delete the job at the end."
+        title = "Delete on completion",
+        description = "If true (default), deletes the job after completion"
     )
     @NotNull
     @Builder.Default

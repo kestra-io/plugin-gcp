@@ -23,7 +23,8 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow if a periodically executed BigQuery query returns a non-empty result set."
+    title = "Trigger on BigQuery query results",
+    description = "Polls BigQuery every `interval` (default 60s) by running the rendered SQL. Starts a Flow execution when at least one row is returned and exposes query outputs (rows/size). Supports project/service account override and both standard and legacy SQL."
 )
 @Plugin(
     examples = {
@@ -55,6 +56,10 @@ import java.util.Optional;
 )
 @StoreFetchValidation
 public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Query.Output>, QueryInterface {
+    @Schema(
+        title = "Polling interval",
+        description = "Duration between query runs; defaults to 60 seconds"
+    )
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
@@ -63,6 +68,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 
+    @Schema(
+        title = "SQL query",
+        description = "Rendered SQL string executed on each poll"
+    )
     private Property<String> sql;
 
     @Builder.Default
@@ -81,6 +90,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private boolean fetchOne = false;
 
     @Builder.Default
+    @Schema(
+        title = "Result handling mode",
+        description = "`NONE` by default. Use `FETCH` or `STORE` to expose rows to downstream tasks; supersedes deprecated flags."
+    )
     private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     @Override

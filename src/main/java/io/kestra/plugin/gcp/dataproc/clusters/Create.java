@@ -22,7 +22,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a Google Cloud Dataproc cluster."
+    title = "Create a Dataproc cluster",
+    description = "Creates a Dataproc cluster with optional zone, image, machine shapes, disk sizes, worker count, and staging bucket. Uses project credentials; endpoint derived from region."
 )
 @Plugin(
     examples = {
@@ -73,57 +74,60 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
     public static final String DATAPROC_GOOGLEAPIS = "-dataproc.googleapis.com:443";
 
     @Schema(
-        title = "The cluster name."
+        title = "Cluster name"
     )
     @NotBlank
     @PluginProperty(dynamic = true)
     private String clusterName;
 
     @Schema(
-        title = "The region."
+        title = "Region",
+        description = "Dataproc region endpoint (e.g., europe-west3)"
     )
     @NotBlank
     @PluginProperty(dynamic = true)
     private String region;
 
     @Schema(
-        title = "The zone."
+        title = "Zone",
+        description = "Optional compute zone URI"
     )
     private Property<String> zone;
 
     @Schema(
-        title = "The master machine type."
+        title = "Master machine type"
     )
     private Property<String> masterMachineType;
 
     @Schema(
-        title = "The disk size in GB for each master node."
+        title = "Master disk size (GB)"
     )
     private Property<Integer> masterDiskSizeGB;
 
     @Schema(
-        title = "The worker machine type."
+        title = "Worker machine type"
     )
     private Property<String> workerMachineType;
 
     @Schema(
-        title = "The disk size in GB for each worker node."
+        title = "Worker disk size (GB)"
     )
     private Property<Integer> workerDiskSizeGB;
 
     @Schema(
-        title = "The number of workers."
+        title = "Number of workers"
     )
     private Property<Integer> workers;
 
     @Schema(
-        title = "The GCS bucket name."
+        title = "Bucket",
+        description = "Optional GCS bucket for cluster staging"
     )
     private Property<String> bucket;
 
     @Schema(
-        title = "The Dataproc image URI.",
-        description = "The Compute Engine image resource used for cluster instances."
+        title = "Dataproc image version",
+        description = "Compute Engine image for instances (e.g., 2.1-debian12)"
     )
     private Property<String> imageVersion;
 

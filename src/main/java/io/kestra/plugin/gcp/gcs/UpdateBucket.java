@@ -39,7 +39,8 @@ import org.slf4j.Logger;
     }
 )
 @Schema(
-    title = "Update a GCS bucket."
+    title = "Update a GCS bucket",
+    description = "Updates bucket metadata such as labels, lifecycle, IAM config, logging, and defaults."
 )
 public class UpdateBucket extends AbstractBucket implements RunnableTask<AbstractBucket.Output> {
     @Override

@@ -1,11 +1,11 @@
 plugins {
-    id "com.vanniktech.maven.publish" version "0.35.0"
+    id "com.vanniktech.maven.publish" version "0.36.0"
     id "io.kestra.gradle.inject-bom-versions" version "1.0.0"
     id 'java-library'
     id "idea"
     id 'jacoco'
     id "com.adarshr.test-logger" version "4.0.0"
-    id "com.gradleup.shadow" version "9.2.2"
+    id "com.gradleup.shadow" version "9.3.1"
     id 'signing'
     id "com.github.ben-manes.versions" version "0.53.0"
     id 'net.researchgate.release' version '3.1.0'
@@ -74,9 +74,6 @@ dependencies {
     api 'com.google.cloud:google-cloud-pubsub'
     api 'com.google.cloud:google-cloud-dataproc'
     api 'com.google.cloud:google-cloud-vertexai'
-    api 'com.google.cloud:google-cloud-batch'
-    api 'com.google.cloud:google-cloud-logging'
-    api 'com.google.cloud:google-cloud-run'
     api 'com.google.cloud:google-cloud-dataform'
 }
 
@@ -149,7 +146,7 @@ configurations {
 }
 
 dependencies {
-    agent "org.aspectj:aspectjweaver:1.9.25"
+    agent "org.aspectj:aspectjweaver:1.9.25.1"
 }
 
 test {

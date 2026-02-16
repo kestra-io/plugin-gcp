@@ -23,122 +23,102 @@ import jakarta.validation.constraints.NotNull;
 public abstract class AbstractBucket extends AbstractGcs implements RunnableTask<AbstractBucket.Output> {
     @NotNull
     @Schema(
-        title = "Bucket's unique name"
+        title = "Bucket name",
+        description = "Globally unique bucket ID"
     )
     protected Property<String> name;
 
     @Schema(
-        title = "Whether the requester pays or not.",
-        description = "Whether a user accessing the bucket or an object it contains should assume the transit " +
-            " costs related to the access."
+        title = "Requester pays",
+        description = "If true, requester bears access egress charges"
     )
     protected Property<Boolean> requesterPays;
 
     @Schema(
-        title = "Whether versioning should be enabled for this bucket",
-        description = "When set to true, versioning is " +
-            " fully enabled."
+        title = "Versioning enabled",
+        description = "Enable object versioning; if true, previous versions are retained"
     )
     protected Property<Boolean> versioningEnabled;
 
     @Schema(
-        title = "The bucket's website index page",
-        description = "Behaves as the bucket's directory index where missing " +
-            " blobs are treated as potential directories."
+        title = "Website index page",
+        description = "Served as directory index for static website hosting"
     )
     protected Property<String> indexPage;
 
     @Schema(
-        title = "The custom object to return when a requested resource is not found"
+        title = "Website not-found page",
+        description = "Custom 404 page for static website hosting"
     )
     protected Property<String> notFoundPage;
 
     @Schema(
-        title = "The bucket's lifecycle configuration",
-        description = "This configuration is expressed as a number of lifecycle rules, consisting of an" +
-            " action and a condition." +
-            " \n" +
-            " See <a href=\"https://cloud.google.com/storage/docs/lifecycle\">Object Lifecycle Management </a>" +
-            " \n" +
-            " Only the age condition is supported. Only the delete and SetStorageClass actions are supported"
+        title = "Lifecycle rules",
+        description = "List of lifecycle actions and conditions (age/delete/storage class supported)"
     )
     protected List<BucketLifecycleRule> lifecycleRules;
 
     @Schema(
-        title = "The bucket's storage class",
-        description = "This defines how blobs in the bucket are stored and " +
-            " determines the SLA and the cost of storage. A list of supported values is available <a" +
-            " href=\"https://cloud.google.com/storage/docs/storage-classes\">here</a>."
+        title = "Storage class",
+        description = "Bucket storage class (cost/SLA); see Cloud Storage docs for values"
     )
     protected Property<StorageClass> storageClass;
 
     @Schema(
-        title = "The bucket's location",
-        description = "Data for blobs in the bucket resides in physical storage within" +
-            " this region. A list of supported values is available <a" +
-            " href=\"https://cloud.google.com/storage/docs/bucket-locations\">here</a>."
+        title = "Location",
+        description = "Bucket data location (region or dual-region)"
     )
     protected Property<String> location;
 
     @Schema(
-        title = "The bucket's Cross-Origin Resource Sharing (CORS) configuration",
-        description = " See <a href=\"https://cloud.google.com/storage/docs/cross-origin\">Cross-Origin Resource" +
-            "Sharing (CORS)</a>"
+        title = "CORS rules",
+        description = "Cross-Origin Resource Sharing configuration"
     )
     protected List<Cors> cors;
 
     @Schema(
-        title = "The bucket's access control configuration",
-        description = " See <a" +
-            " href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">" +
-            "About Access Control Lists</a>"
+        title = "ACL",
+        description = "Bucket-level access control list"
     )
     protected List<AccessControl> acl;
 
     @Schema(
-        title = "The default access control configuration",
-        description = "The access control configuration to apply to bucket's blobs when no other" +
-            " configuration is specified." +
-            "\n" +
-            " See <a" +
-            "     href=\"https://cloud.google.com/storage/docs/access-control#About-Access-Control-Lists\">" +
-            "About Access Control Lists</a>"
+        title = "Default object ACL",
+        description = "Default ACL applied to new objects"
     )
     protected List<AccessControl> defaultAcl;
 
     @Schema(
-        title = "The labels of this bucket"
+        title = "Labels"
     )
     protected Property<Map<String, String>> labels;
 
     @Schema(
-        title = "The default Cloud KMS key name for this bucket"
+        title = "Default KMS key"
     )
     protected Property<String> defaultKmsKeyName;
 
     @Schema(
-        title = "The default event-based hold for this bucket"
+        title = "Default event-based hold",
+        description = "If true, new objects are event-based held"
     )
     protected Property<Boolean> defaultEventBasedHold;
 
     @Schema(
-        title = "Retention period",
-        description = "If policy is not locked this value can be cleared, increased, and decreased. If policy is " +
-            " locked the retention period can only be increased."
+        title = "Retention period (seconds)",
+        description = "Bucket retention duration; can be reduced only if policy is unlocked"
     )
     protected Property<Long> retentionPeriod;
 
     @Schema(
-        title = "The Bucket's IAM Configuration",
-        description = " See <a href=\"https://cloud.google.com/storage/docs/uniform-bucket-level-access\">uniform " +
-            " bucket-level access</a>"
+        title = "IAM configuration",
+        description = "Uniform bucket-level access and related settings"
     )
     protected IamConfiguration iamConfiguration;
 
     @Schema(
-        title = "The bucket's logging configuration",
-        description = "This configuration defines the destination bucket and optional name" +
-            " prefix for the current bucket's logs."
+        title = "Logging",
+        description = "Destination bucket and prefix for access logs"
     )
     protected Logging logging;
 

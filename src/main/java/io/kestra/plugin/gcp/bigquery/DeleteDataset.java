@@ -39,19 +39,20 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 @Schema(
-    title = "Delete a BigQuery dataset."
+    title = "Delete a BigQuery dataset",
+    description = "Deletes the specified dataset. Fails on non-empty datasets unless `deleteContents` is true."
 )
 public class DeleteDataset extends AbstractBigquery implements RunnableTask<DeleteDataset.Output> {
     @NotNull
     @Schema(
-        title = "The dataset's user-defined id."
+        title = "Dataset ID",
+        description = "Required dataset name to delete"
     )
     private Property<String> name;
 
     @Schema(
-        title = "Whether to delete a dataset even if non-empty.",
-        description = "If not provided, attempting to" +
-            " delete a non-empty dataset will result in a exception being thrown."
+        title = "Delete non-empty dataset",
+        description = "If true, deletes contents before removing the dataset; default false"
     )
     private Property<Boolean> deleteContents;
 
@@ -86,7 +87,7 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
     public static class Output implements io.kestra.core.models.tasks.Output {
         @NotNull
         @Schema(
-            title = "The dataset's user-defined id"
+            title = "Dataset ID"
         )
         private String dataset;
     }

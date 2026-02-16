@@ -27,8 +27,8 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow on periodic message consumption from a Google Pub/Sub topic.",
-    description = "If you would like to consume each message from a Pub/Sub topic in real-time and create one execution per message, you can use the [io.kestra.plugin.gcp.pubsub.RealtimeTrigger](https://kestra.io/plugins/plugin-gcp/triggers/io.kestra.plugin.gcp.pubsub.realtimetrigger) instead."
+    title = "Trigger on periodic Pub/Sub pulls",
+    description = "Polls a subscription every `interval` (default 60s) via the Consume task and starts a Flow when messages are fetched. Use RealtimeTrigger for one-execution-per-message."
 )
 @Plugin(
     examples = {
@@ -68,13 +68,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private Property<String> topic;
 
     @Schema(
-        title = "The Pub/Sub subscription",
-        description = "The Pub/Sub subscription. It will be created automatically if it didn't exist and 'autoCreateSubscription' is enabled."
+        title = "Subscription",
+        description = "Subscription name; auto-created if `autoCreateSubscription` is true"
     )
     private Property<String> subscription;
 
     @Schema(
-        title = "Whether the Pub/Sub subscription should be created if not exist"
+        title = "Auto-create subscription",
+        description = "Create the subscription when missing; default true"
     )
     @Builder.Default
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
@@ -82,15 +83,24 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
-    @Schema(title = "Max number of records, when reached the task will end.")
+    @Schema(
+        title = "Max records",
+        description = "Stop polling iteration after this many messages"
+    )
     private Property<Integer> maxRecords;
 
-    @Schema(title = "Max duration in the Duration ISO format, after that the task will end.")
+    @Schema(
+        title = "Max duration",
+        description = "Duration limit for a polling run (ISO-8601); optional"
+    )
     private Property<Duration> maxDuration;
 
     @Builder.Default
     @NotNull
-    @Schema(title = "The serializer/deserializer to use.")
+    @Schema(
+        title = "Serde type",
+        description = "Serializer/deserializer for message payloads; defaults to STRING"
+    )
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override

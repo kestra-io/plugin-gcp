@@ -9,11 +9,13 @@ import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.bigquery.Load;
 
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
+@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 class OauthAccessTokenTest {
     @Inject
     private RunContextFactory runContextFactory;

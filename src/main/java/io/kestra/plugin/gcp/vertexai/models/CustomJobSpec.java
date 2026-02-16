@@ -20,8 +20,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Jacksonized
 public class CustomJobSpec {
     @Schema(
-        title = "The spec of the worker pools including machine type and Docker image.",
-        description = " All worker pools except the first one are optional and can be skipped"
+        title = "Worker pool specs",
+        description = "At least one worker pool; define machine type, replica count, and container/package."
     )
     @PluginProperty(dynamic = true)
     @NotNull
@@ -30,43 +30,39 @@ public class CustomJobSpec {
 
 
     @Schema(
-        title = "Specifies the service account for workload run-as account.",
-        description = "       Users submitting jobs must have act-as permission on this run-as account.\n" +
-            "       If unspecified, the [Vertex AI Custom Code Service\n" +
-            "       Agent](https://cloud.google.com/vertex-ai/docs/general/access-control#service-agents)\n" +
-            "       for the CustomJob's project is used."
+        title = "Service account",
+        description = "Run-as service account; submitters need act-as on this account. Defaults to Vertex AI Custom Code Service Agent."
     )
     private Property<String> serviceAccount;
 
     @Schema(
-        title = "The full name of the Compute Engine [network](https://cloud.google.com/compute/docs/networks-and-firewalls#networks) to which the Job should be peered.",
-        description = "For example, `projects/12345/global/networks/myVPC`.\n" +
-            "Format is of the form `projects/{project}/global/networks/{network}`. " +
-            "Where {project} is a project number, as in `12345`, and {network} is a network name.\n" +
-            "To specify this field, you must have already [configured VPC Network Peering for Vertex AI](https://cloud.google.com/vertex-ai/docs/general/vpc-peering).\n" +
-            "If this field is left unspecified, the job is not peered with any network."
+        title = "VPC network",
+        description = "Full network name (projects/{project}/global/networks/{network}); requires Vertex AI VPC peering"
     )
     private Property<String> network;
 
     @Schema(
-        title = "The name of a Vertex AI Tensorboard resource to which this CustomJob",
-        description = "will upload Tensorboard logs. Format:`projects/{project}/locations/{location}/tensorboards/{tensorboard}`"
+        title = "Tensorboard",
+        description = "Tensorboard resource for logs, format projects/{project}/locations/{location}/tensorboards/{tensorboard}"
     )
     private Property<String> tensorboard;
 
     @Schema(
-        title = "Whether you want Vertex AI to enable [interactive shell access](https://cloud.google.com/vertex-ai/docs/training/monitor-debug-interactive-shell) to training containers."
+        title = "Enable web access",
+        description = "Enable interactive shell access to training containers"
     )
     private Property<Boolean> enableWebAccess;
 
     @Schema(
-        title = "Scheduling options for a CustomJob."
+        title = "Scheduling",
+        description = "Optional scheduling options (timeout, restart, etc.)"
     )
     @PluginProperty(dynamic = false)
     private Scheduling scheduling;
 
     @Schema(
-        title = "The Cloud Storage location to store the output of this job."
+        title = "Base output directory",
+        description = "GCS location for job outputs"
     )
     @PluginProperty(dynamic = false)
     private GcsDestination baseOutputDirectory;

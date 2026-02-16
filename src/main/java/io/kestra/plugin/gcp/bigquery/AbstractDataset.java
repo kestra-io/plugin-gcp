@@ -29,77 +29,57 @@ import java.util.stream.Collectors;
 abstract public class AbstractDataset extends AbstractBigquery implements RunnableTask<AbstractDataset.Output> {
     @NotNull
     @Schema(
-        title = "The dataset's user-defined ID."
+        title = "Dataset ID",
+        description = "Required dataset identifier"
     )
     protected Property<String> name;
 
     @Schema(
-        title = "The dataset's access control configuration."
+        title = "Access controls",
+        description = "List of dataset ACL entries (see AccessControl)"
     )
     @PluginProperty
     protected List<AccessControl> acl;
 
     @Schema(
-        title = "The default lifetime of all tables in the dataset, in milliseconds.",
-        description = "The minimum value is" +
-            " 3600000 milliseconds (one hour). Once this property is set, all newly-created tables in the" +
-            " dataset will have an expirationTime property set to the creation time plus the value in this" +
-            " property, and changing the value will only affect new tables, not existing ones. When the" +
-            " expirationTime for a given table is reached, that table will be deleted automatically. If a" +
-            " table's expirationTime is modified or removed before the table expires, or if you provide an" +
-            " explicit expirationTime when creating a table, that value takes precedence over the default" +
-            " expiration time indicated by this property. This property is experimental and might be" +
-            " subject to change or removed."
+        title = "Default table expiration (ms)",
+        description = "Minimum 3,600,000 ms (1h). Applies to new tables only; existing tables keep their own expiration. Experimental."
     )
     protected Property<Long> defaultTableLifetime;
 
     @Schema(
-        title = "The dataset description.",
-        description = "A user-friendly description for the dataset."
+        title = "Dataset description",
+        description = "User-friendly description; supports templating"
     )
     @PluginProperty(dynamic = true)
     protected String description;
 
     @Schema(
-        title = "A user-friendly name for the dataset."
+        title = "Dataset display name"
     )
     protected Property<String> friendlyName;
 
     @Schema(
-        title = "The geographic location where the dataset should reside.",
-        description = "This property is experimental" +
-            " and might be subject to change or removed." +
-            " \n" +
-            " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset" +
-            "      Location</a>"
+        title = "Dataset location",
+        description = "Optional BigQuery location; experimental and may change. See BigQuery dataset location docs."
     )
     protected Property<String> location;
 
     @Schema(
-        title = "The default encryption key for all tables in the dataset.",
-        description = "Once this property is set, all" +
-            " newly-created partitioned tables in the dataset will have encryption key set to this value," +
-            " unless table creation request (or query) overrides the key."
+        title = "Default table encryption key",
+        description = "CMEK applied to newly created tables unless overridden"
     )
     @PluginProperty
     protected EncryptionConfiguration defaultEncryptionConfiguration;
 
     @Schema(
-        title = "[Optional] The default partition expiration time for all partitioned tables in the dataset, in milliseconds.",
-        description = " Once this property is set, all newly-created partitioned tables in the " +
-            " dataset will has an expirationMs property in the timePartitioning settings set to this value." +
-            " Changing the value only affect new tables, not existing ones. The storage in a partition will" +
-            " have an expiration time of its partition time plus this value. Setting this property" +
-            " overrides the use of defaultTableExpirationMs for partitioned tables: only one of" +
-            " defaultTableExpirationMs and defaultPartitionExpirationMs will be used for any new" +
-            " partitioned table. If you provide an explicit timePartitioning.expirationMs when creating or" +
-            " updating a partitioned table, that value takes precedence over the default partition" +
-            " expiration time indicated by this property. The value may be null."
+        title = "Default partition expiration (ms)",
+        description = "Applied to new partitioned tables only; overrides defaultTableLifetime for partitions"
     )
     protected Property<Long> defaultPartitionExpirationMs;
 
     @Schema(
-        title = "The dataset's labels."
+        title = "Dataset labels"
     )
     protected Property<Map<String, String>> labels;
 
@@ -184,36 +164,32 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
 
         @NotNull
         @Schema(
-            title = "The dataset's user-defined ID."
+            title = "Dataset ID"
         )
         private String dataset;
 
         @NotNull
         @Schema(
-            title = "The GCP project ID."
+            title = "GCP project ID"
         )
         private String project;
 
         @NotNull
         @Schema(
-            title = "A user-friendly name for the dataset."
+            title = "Dataset display name"
         )
         private String friendlyName;
 
         @NotNull
         @Schema(
-            title = "A user-friendly description for the dataset."
+            title = "Dataset description"
         )
         private String description;
 
         @NotNull
         @Schema(
-            title = "The geographic location where the dataset should reside.",
-            description = "This property is experimental" +
-                " and might be subject to change or removed." +
-                " \n" +
-                " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset" +
-                "      Location</a>"
+            title = "Dataset location",
+            description = "Optional BigQuery location; experimental and may change"
         )
         private String location;
 

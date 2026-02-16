@@ -26,7 +26,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
- title = "Delete a Google Cloud Dataproc cluster."
+ title = "Delete a Dataproc cluster",
+ description = "Deletes the specified cluster in a region using project credentials; waits for the delete operation to finish."
 )
 @Plugin(
     examples = @Example(
@@ -49,14 +50,15 @@ public class Delete extends AbstractTask implements RunnableTask<Delete.Output> 
     public static final String DATAPROC_GOOGLEAPIS = "-dataproc.googleapis.com:443";
 
     @Schema(
-        title = "The cluster name."
+        title = "Cluster name"
     )
     @NotBlank
     @PluginProperty(dynamic = true)
     private String clusterName;
 
     @Schema(
-        title = "The region."
+        title = "Region",
+        description = "Dataproc region endpoint (e.g., europe-west3)"
     )
     @NotBlank
     @PluginProperty(dynamic = true)
@@ -102,12 +104,12 @@ public class Delete extends AbstractTask implements RunnableTask<Delete.Output> 
     public static class Output implements io.kestra.core.models.tasks.Output {
 
         @Schema(
-            title = "The cluster name."
+            title = "Cluster name"
         )
         private String clusterName;
 
         @Schema(
-            title = "Whether cluster was deleted successfully."
+            title = "Deletion succeeded"
         )
         private boolean deleted;
 

@@ -19,7 +19,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a document from a Google Cloud Firestore collection."
+    title = "Delete a Firestore document",
+    description = "Deletes a document by child path in the target collection; returns the update timestamp."
 )
 @Plugin(
     examples = {
@@ -40,8 +41,8 @@ import jakarta.validation.constraints.NotNull;
 )
 public class Delete extends AbstractFirestore implements RunnableTask<Delete.Output> {
     @Schema(
-        title = "The Firestore document child path.",
-        description = "The Firestore document child path."
+        title = "Document path",
+        description = "Child path (relative to collection) of the document to delete"
     )
     @NotNull
     private Property<String> childPath;
@@ -63,7 +64,7 @@ public class Delete extends AbstractFirestore implements RunnableTask<Delete.Out
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The document updated time."
+            title = "Updated time"
         )
         private Instant updatedTime;
     }

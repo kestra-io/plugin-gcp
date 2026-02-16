@@ -33,8 +33,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Complete a chat using the Vertex AI for Google's Gemini LLM.",
-    description = "See [Generative AI quickstart using the Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) for more information."
+    title = "Generate chat completions with Vertex AI",
+    description = "Produces chat-style responses using the configured Vertex model and generation parameters."
 )
 @Plugin(
     examples = {

@@ -38,16 +38,19 @@ import java.util.NoSuchElementException;
     }
 )
 @Schema(
-    title = "Delete a file from a GCS bucket."
+    title = "Delete a GCS object",
+    description = "Deletes the specified gs:// object. Can error if missing when `errorOnMissing` is true."
 )
 public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Schema(
-        title = "The file to delete"
+        title = "Object URI",
+        description = "gs:// path to delete"
     )
     private Property<String> uri;
 
     @Schema(
-        title = "Raise an error if the file is not found"
+        title = "Error on missing",
+        description = "If true, throw when the object is not found; default false"
     )
     @Builder.Default
     private final Property<Boolean> errorOnMissing = Property.ofValue(false);
@@ -83,12 +86,13 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The deleted uri"
+            title = "Deleted URI"
         )
         private final URI uri;
 
         @Schema(
-            title = "If the files was really deleted"
+            title = "Deleted",
+            description = "True if the object was removed"
         )
         private final Boolean deleted;
     }

@@ -49,17 +49,24 @@ import lombok.Builder;
     }
 )
 @Schema(
-    title = "Invoke a Dataform workflow in GCP"
+    title = "Invoke a Dataform workflow in GCP",
+    description = "Creates a workflow invocation on a Dataform repository. Optionally waits for completion (default true) and returns the invocation name and final state."
 )
 public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<InvokeWorkflow.Output> {
 
     @NotNull
-    @Schema(title = "The workflow config ID to invoke")
+    @Schema(
+        title = "Workflow config ID",
+        description = "ID of the workflow config inside the repository"
+    )
     @PluginProperty
     protected Property<String> workflowConfigId;
 
     @Builder.Default
-    @Schema(title = "Whether to wait for the workflow to finish, default value is true")
+    @Schema(
+        title = "Wait for completion",
+        description = "If true (default), polls the invocation until it leaves RUNNING"
+    )
     @PluginProperty
     protected Boolean wait = true;;
 

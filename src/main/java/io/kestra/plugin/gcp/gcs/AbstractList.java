@@ -27,7 +27,8 @@ public abstract class AbstractList extends AbstractGcs implements ListInterface 
     protected Property<String> from;
 
     @Schema(
-        title = "If set to `true`, lists all versions of a blob. The default is `false`."
+        title = "Include all versions",
+        description = "If true, includes object versions; default false"
     )
     private Property<Boolean> allVersions;
 
