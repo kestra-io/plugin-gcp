@@ -82,4 +82,44 @@ class CopyPartitionsTest {
 
         assertThat(queryRun.getRow().get("cnt"), is(3L));
     }
+
+    @Test
+    void runSkipEmpty() throws Exception {
+        var table = "tbl_copy_skip_" + FriendlyId.createFriendlyId();
+        var destinationTable = "tbl_copydest_skip_" + FriendlyId.createFriendlyId();
+
+        var create = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(project))
+            .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+                "PARTITION BY DATE(transaction_date)\n" +
+                "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')"
+            ))
+            .build();
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
+        create.run(runContext);
+
+        var task = CopyPartitions.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(CopyPartitions.class.getName())
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .partitionType(Property.ofValue(AbstractPartition.PartitionType.DAY))
+            .table(Property.ofValue(table))
+            .from(Property.ofExpression("{{ '2020-05-02' | date() }}"))
+            .to(Property.ofExpression("{{ '2020-05-04' | date() }}"))
+            .destinationTable(Property.ofValue(this.project + "." + this.dataset + "." + destinationTable))
+            .skipEmpty(Property.ofValue(true))
+            .build();
+        runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var run = task.run(runContext);
+
+        assertThat(run.getProjectId(), is(this.project));
+        assertThat(run.getDatasetId(), is(this.dataset));
+        assertThat(run.getTable(), is(table));
+        assertThat(run.getPartitions().size(), is(0));
+    }
 }
