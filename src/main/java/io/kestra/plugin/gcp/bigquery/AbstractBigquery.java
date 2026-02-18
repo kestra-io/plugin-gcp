@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 @SuperBuilder
 @ToString
@@ -65,14 +67,39 @@ abstract public class AbstractBigquery extends AbstractTask {
         "Retrying may solve the problem"
     ));
 
-    BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        return connection(
-            runContext,
-            this.credentials(runContext),
-            runContext.render(this.projectId).as(String.class).orElse(null),
-            runContext.render(this.location).as(String.class).orElse(null)
-        );
+    @FunctionalInterface
+    public interface BigQueryFactory {
+        BigQuery create(
+            RunContext runContext,
+            GoogleCredentials credentials,
+            String projectId,
+            String location
+        ) throws IllegalVariableEvaluationException;
     }
+
+    @Builder.Default
+    @JsonIgnore
+    protected BigQueryFactory bigQueryFactory = AbstractBigquery::connection;
+
+
+//    BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+//        return connection(
+//            runContext,
+//            this.credentials(runContext),
+//            runContext.render(this.projectId).as(String.class).orElse(null),
+//            runContext.render(this.location).as(String.class).orElse(null)
+//        );
+//    }
+
+    BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+        GoogleCredentials credentials = this.credentials(runContext);
+        String projectId = runContext.render(this.projectId).as(String.class).orElse(null);
+        String location = runContext.render(this.location).as(String.class).orElse(null);
+
+        return bigQueryFactory.create(runContext, credentials, projectId, location);
+    }
+
+
 
     static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
         return BigQueryOptions
@@ -158,7 +185,7 @@ abstract public class AbstractBigquery extends AbstractTask {
             });
     }
 
-    private boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
+    boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
         if (!(failure instanceof BigQueryException)) {
             logger.warn("Cancelled retrying, unknown exception type {}", failure.getClass(), failure);
             return false;
