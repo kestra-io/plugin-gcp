@@ -1,5 +1,5 @@
 @PluginSubGroup(
-    title = "Authentication",
+    title = "GCP Authentication",
     description = "This sub-group of plugins contains tasks to manage authentication for Google Cloud.",
     categories = { PluginSubGroup.PluginCategory.CLOUD }
 )
