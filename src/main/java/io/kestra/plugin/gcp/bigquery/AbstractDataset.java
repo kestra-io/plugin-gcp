@@ -1,25 +1,27 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.cloud.bigquery.Acl;
-import com.google.cloud.bigquery.DatasetInfo;
-import com.google.cloud.bigquery.EncryptionConfiguration;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.property.Property;
-import io.kestra.plugin.gcp.bigquery.models.AccessControl;
-import io.kestra.plugin.gcp.bigquery.models.Entity;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.utils.Rethrow;
-
-import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.cloud.bigquery.Acl;
+import com.google.cloud.bigquery.DatasetInfo;
+import com.google.cloud.bigquery.EncryptionConfiguration;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.Rethrow;
+import io.kestra.plugin.gcp.bigquery.models.AccessControl;
+import io.kestra.plugin.gcp.bigquery.models.Entity;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -117,10 +119,12 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         if (this.labels != null) {
             builder.setLabels(
                 runContext.render(this.labels).asMap(String.class, String.class).entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
-                    ))
+                    .collect(
+                        Collectors.toMap(
+                            Map.Entry::getKey,
+                            Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                        )
+                    )
             );
         }
 

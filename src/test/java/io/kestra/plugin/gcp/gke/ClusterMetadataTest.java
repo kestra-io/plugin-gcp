@@ -1,10 +1,12 @@
 package io.kestra.plugin.gcp.gke;
 
+import org.junit.jupiter.api.Test;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.container.v1.Cluster;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
-import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
@@ -25,13 +27,15 @@ class ClusterMetadataTest {
 
     @Test
     void run() throws Exception {
-        ClusterMetadata task = spy(ClusterMetadata.builder()
-            .id(ClusterMetadataTest.class.getSimpleName())
-            .type(Load.class.getName())
-            .clusterZone(Property.ofValue("my-zone"))
-            .clusterId(Property.ofValue("my-cluster"))
-            .clusterProjectId(Property.ofValue("my-project"))
-            .build());
+        ClusterMetadata task = spy(
+            ClusterMetadata.builder()
+                .id(ClusterMetadataTest.class.getSimpleName())
+                .type(Load.class.getName())
+                .clusterZone(Property.ofValue("my-zone"))
+                .clusterId(Property.ofValue("my-cluster"))
+                .clusterProjectId(Property.ofValue("my-project"))
+                .build()
+        );
 
         doReturn(Cluster.newBuilder().setName("my-cluster").build())
             .when(task)

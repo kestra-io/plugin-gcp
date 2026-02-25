@@ -1,16 +1,15 @@
 package io.kestra.plugin.gcp.dataproc.batches;
 
-import io.kestra.core.models.annotations.PluginProperty;
+import java.util.List;
+
 import io.kestra.core.models.property.Property;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString

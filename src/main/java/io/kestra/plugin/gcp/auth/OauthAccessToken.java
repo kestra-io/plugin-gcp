@@ -1,18 +1,19 @@
 package io.kestra.plugin.gcp.auth;
 
+import java.util.Date;
+import java.util.List;
+
 import com.google.auth.oauth2.AccessToken;
-import io.kestra.core.models.tasks.common.EncryptedString;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.EncryptedString;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-
-import java.util.Date;
-import java.util.List;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString

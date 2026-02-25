@@ -1,16 +1,16 @@
 package io.kestra.plugin.gcp.vertexai.models;
 
+import java.time.Duration;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.time.Duration;
-import jakarta.validation.constraints.NotNull;
 
 @Getter
 @Builder
@@ -34,9 +34,11 @@ public class Scheduling {
 
         if (this.getTimeOut() != null) {
             var timeOutRendered = runContext.render(this.getTimeOut()).as(Duration.class).orElseThrow();
-            builder.setTimeout(com.google.protobuf.Duration.newBuilder()
-                .setSeconds(timeOutRendered.getSeconds())
-                .setNanos(timeOutRendered.getNano()).build());
+            builder.setTimeout(
+                com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(timeOutRendered.getSeconds())
+                    .setNanos(timeOutRendered.getNano()).build()
+            );
         }
 
         if (this.getRestartJobOnWorkerRestart() != null) {

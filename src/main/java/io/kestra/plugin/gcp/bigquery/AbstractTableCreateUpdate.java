@@ -1,24 +1,25 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.google.cloud.bigquery.TableInfo;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Rethrow;
 import io.kestra.plugin.gcp.bigquery.models.EncryptionConfiguration;
 import io.kestra.plugin.gcp.bigquery.models.TableDefinition;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @SuperBuilder
 @ToString
@@ -82,10 +83,12 @@ abstract public class AbstractTableCreateUpdate extends AbstractTable {
         if (this.labels != null) {
             builder.setLabels(
                 runContext.render(this.labels).asMap(String.class, String.class).entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
-                    ))
+                    .collect(
+                        Collectors.toMap(
+                            Map.Entry::getKey,
+                            Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                        )
+                    )
             );
         }
 

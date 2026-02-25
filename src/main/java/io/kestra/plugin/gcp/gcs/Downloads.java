@@ -1,26 +1,27 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.Storage;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.gcs.models.Blob;
-
 import java.io.File;
 import java.net.URI;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import jakarta.validation.constraints.NotNull;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.Storage;
+
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.gcp.gcs.models.Blob;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -99,8 +100,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         RunContext runContext,
         Property<String> projectId,
         Property<String> serviceAccount,
-        Property<java.util.List<String>> scopes
-    ) throws Exception {
+        Property<java.util.List<String>> scopes) throws Exception {
         if (action == ActionInterface.Action.DELETE) {
             for (Blob blob : blobList) {
                 Delete delete = Delete.builder()
@@ -119,9 +119,12 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                     .id("archive")
                     .type(Copy.class.getName())
                     .from(Property.ofValue(blob.getUri().toString()))
-                    .to(Property.ofValue(StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")
-                        + "/" + FilenameUtils.getName(blob.getName())
-                    ))
+                    .to(
+                        Property.ofValue(
+                            StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")
+                                + "/" + FilenameUtils.getName(blob.getName())
+                        )
+                    )
                     .delete(Property.ofValue(true))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
@@ -154,7 +157,8 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         java.util.List<Blob> list = run
             .getBlobs()
             .stream()
-            .map(throwFunction(blob -> {
+            .map(throwFunction(blob ->
+            {
                 BlobId source = BlobId.of(
                     blob.getBucket(),
                     blob.getName()
@@ -193,7 +197,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         @Schema(
             title = "Downloaded objects"
         )
-        private final java.util.List<Blob>  blobs;
+        private final java.util.List<Blob> blobs;
 
         @Schema(
             title = "Downloaded file map",

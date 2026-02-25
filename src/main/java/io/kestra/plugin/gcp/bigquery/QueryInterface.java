@@ -1,11 +1,12 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.kestra.core.models.annotations.PluginProperty;
 
 public interface QueryInterface {
     @Schema(
@@ -50,9 +51,12 @@ public interface QueryInterface {
     Property<FetchType> getFetchType();
 
     default FetchType computeFetchType(RunContext runContext) throws IllegalVariableEvaluationException {
-        if (this.isFetch()) return FetchType.FETCH;
-        if (this.isStore()) return FetchType.STORE;
-        if (this.isFetchOne()) return FetchType.FETCH_ONE;
+        if (this.isFetch())
+            return FetchType.FETCH;
+        if (this.isStore())
+            return FetchType.STORE;
+        if (this.isFetchOne())
+            return FetchType.FETCH_ONE;
 
         return runContext.render(this.getFetchType()).as(FetchType.class).orElseThrow();
     }

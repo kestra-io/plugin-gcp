@@ -1,28 +1,30 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.LoadJobConfiguration;
+
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.JacksonMapper;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Metric;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.JacksonMapper;
-import org.slf4j.Logger;
-
-import java.util.List;
 
 @SuperBuilder
 @ToString
@@ -108,7 +110,7 @@ import java.util.List;
         )
     },
     metrics = {
-        @Metric(name = "bad.records", type = Counter.TYPE, unit = "records", description= "the number of bad records reported in a job."),
+        @Metric(name = "bad.records", type = Counter.TYPE, unit = "records", description = "the number of bad records reported in a job."),
         @Metric(name = "duration", type = Timer.TYPE, description = "The time it took for the task to run."),
         @Metric(name = "input.bytes", type = Counter.TYPE, unit = "bytes", description = "The number of bytes of source data in a load job."),
         @Metric(name = "input.files", type = Counter.TYPE, unit = "files", description = "The number of source files in a load job."),
@@ -144,10 +146,13 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
         LoadJobConfiguration configuration = builder.build();
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
-        Job loadJob = this.waitForJob(logger, () -> connection.create(JobInfo.newBuilder(configuration)
-            .setJobId(BigQueryService.jobId(runContext, this))
-            .build()
-        ), runContext);
+        Job loadJob = this.waitForJob(
+            logger, () -> connection.create(
+                JobInfo.newBuilder(configuration)
+                    .setJobId(BigQueryService.jobId(runContext, this))
+                    .build()
+            ), runContext
+        );
 
         return this.outputs(runContext, configuration, loadJob);
     }

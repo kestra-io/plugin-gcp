@@ -1,7 +1,17 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
@@ -12,16 +22,9 @@ import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.gcs.models.Blob;
+
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static io.kestra.core.utils.Rethrow.throwSupplier;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,7 +62,6 @@ class TriggerTest {
             .moveDirectory(Property.ofValue(String.format("gs://%s/%s", bucket, moveDir)))
             .build();
 
-
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
         Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
@@ -95,7 +97,8 @@ class TriggerTest {
         java.util.List<Blob> urls = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
         assertThat(urls.size(), is(1));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () ->
+        {
             Download task = Download.builder()
                 .id(DownloadTest.class.getSimpleName())
                 .type(Download.class.getName())
@@ -104,7 +107,6 @@ class TriggerTest {
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         });
-
 
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
@@ -173,11 +175,13 @@ class TriggerTest {
         var upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = Optional.ofNullable(Await.until(
-            throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
-            Duration.ofMillis(500),
-            Duration.ofSeconds(20)
-        ));
+        Optional<Execution> execution = Optional.ofNullable(
+            Await.until(
+                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                Duration.ofMillis(500),
+                Duration.ofSeconds(20)
+            )
+        );
 
         assertThat(execution.isPresent(), is(true));
 
@@ -204,7 +208,6 @@ class TriggerTest {
             .interval(Duration.ofSeconds(10))
             .build();
 
-
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
         trigger.evaluate(context.getKey(), context.getValue());
@@ -213,11 +216,13 @@ class TriggerTest {
         testUtils.update(file);
         Thread.sleep(3000);
 
-        Optional<Execution> execution = Optional.ofNullable(Await.until(
-            throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
-            Duration.ofMillis(500),
-            Duration.ofSeconds(20)
-        ));
+        Optional<Execution> execution = Optional.ofNullable(
+            Await.until(
+                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                Duration.ofMillis(500),
+                Duration.ofSeconds(20)
+            )
+        );
 
         assertThat(execution.isPresent(), is(true));
 
@@ -252,11 +257,13 @@ class TriggerTest {
         // we update the file to trigger the update event
         testUtils.update(file);
 
-        Optional<Execution> updateExecution = Optional.ofNullable(Await.until(
-            throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
-            Duration.ofMillis(500),
-            Duration.ofSeconds(20)
-        ));
+        Optional<Execution> updateExecution = Optional.ofNullable(
+            Await.until(
+                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                Duration.ofMillis(500),
+                Duration.ofSeconds(20)
+            )
+        );
 
         assertThat(updateExecution.isPresent(), is(true));
 

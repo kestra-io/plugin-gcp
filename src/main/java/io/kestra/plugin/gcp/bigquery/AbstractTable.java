@@ -1,21 +1,22 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.Map;
+
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.bigquery.models.EncryptionConfiguration;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.plugin.gcp.bigquery.models.TableDefinition;
 
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.Map;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -38,14 +39,15 @@ abstract public class AbstractTable extends AbstractBigquery {
     protected Property<String> table;
 
     protected TableId tableId(RunContext runContext) throws IllegalVariableEvaluationException {
-        return this.projectId != null  ?
-            TableId.of(
-                runContext.render(this.projectId).as(String.class).orElseThrow(),
+        return this.projectId != null ? TableId.of(
+            runContext.render(this.projectId).as(String.class).orElseThrow(),
+            runContext.render(this.dataset).as(String.class).orElseThrow(),
+            runContext.render(this.table).as(String.class).orElseThrow()
+        )
+            : TableId.of(
                 runContext.render(this.dataset).as(String.class).orElseThrow(),
-                runContext.render(this.table).as(String.class).orElseThrow()) :
-            TableId.of(
-                runContext.render(this.dataset).as(String.class).orElseThrow(),
-                runContext.render(this.table).as(String.class).orElseThrow());
+                runContext.render(this.table).as(String.class).orElseThrow()
+            );
     }
 
     @Getter

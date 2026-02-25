@@ -1,29 +1,5 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.cloud.bigquery.*;
-import com.google.common.collect.ImmutableMap;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.serializers.JacksonMapper;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Metric;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import org.slf4j.Logger;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.Mono;
-
 import java.io.*;
 import java.net.URI;
 import java.time.Duration;
@@ -36,6 +12,33 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.cloud.bigquery.*;
+import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.serializers.JacksonMapper;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
 
 @SuperBuilder
 @ToString
@@ -96,16 +99,22 @@ import java.util.stream.StreamSupport;
         )
     },
     metrics = {
-        @Metric(name = "cache.hit", type = Counter.TYPE, description= "Whether the query result was fetched from the query cache."),
+        @Metric(name = "cache.hit", type = Counter.TYPE, description = "Whether the query result was fetched from the query cache."),
         @Metric(name = "duration", type = Timer.TYPE, description = "The time it took for the query to run."),
         @Metric(name = "estimated.bytes.processed", type = Counter.TYPE, unit = "bytes", description = "The original estimate of bytes processed for the query."),
         @Metric(name = "total.bytes.billed", type = Counter.TYPE, unit = "bytes", description = "The total number of bytes billed for the query."),
         @Metric(name = "total.bytes.processed", type = Counter.TYPE, unit = "bytes", description = "The total number of bytes processed by the query."),
-        @Metric(name = "total.partitions.processed", type = Counter.TYPE, unit = "partitions", description = "The totla number of partitions processed from all partitioned tables referenced in the job."),
+        @Metric(
+            name = "total.partitions.processed", type = Counter.TYPE, unit = "partitions",
+            description = "The totla number of partitions processed from all partitioned tables referenced in the job."
+        ),
         @Metric(name = "total.slot.ms", type = Counter.TYPE, description = "The slot-milliseconds consumed by the query."),
-        @Metric(name = "num.dml.affected.rows", type = Counter.TYPE, unit = "records", description="The number of rows affected by a DML statement. Present only for DML statements INSERT, UPDATE or DELETE."),
-        @Metric(name = "referenced.tables", type = Counter.TYPE, description="The number of tables referenced by the query."),
-        @Metric(name = "num.child.jobs", type = Counter.TYPE, description="The number of child jobs executed by the query."),
+        @Metric(
+            name = "num.dml.affected.rows", type = Counter.TYPE, unit = "records",
+            description = "The number of rows affected by a DML statement. Present only for DML statements INSERT, UPDATE or DELETE."
+        ),
+        @Metric(name = "referenced.tables", type = Counter.TYPE, description = "The number of tables referenced by the query."),
+        @Metric(name = "num.child.jobs", type = Counter.TYPE, description = "The number of child jobs executed by the query."),
     }
 )
 @Schema(
@@ -273,12 +282,14 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         Job queryJob = this.waitForJob(
             logger,
             () -> connection
-                .create(JobInfo.newBuilder(jobConfiguration)
-                    .setJobId(BigQueryService.jobId(runContext, this))
-                    .build()
+                .create(
+                    JobInfo.newBuilder(jobConfiguration)
+                        .setJobId(BigQueryService.jobId(runContext, this))
+                        .build()
                 ),
             runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
-            runContext);
+            runContext
+        );
         JobStatistics.QueryStatistics queryJobStatistics = queryJob.getStatistics();
 
         QueryJobConfiguration config = queryJob.getConfiguration();
@@ -294,7 +305,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         Output.OutputBuilder output = Output.builder()
             .jobId(queryJob.getJobId().getJob());
-
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
             TableResult result = queryJob.getQueryResults();
@@ -355,22 +365,25 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(runContext.render(this.timePartitioningType).as(TimePartitioning.Type.class).orElseThrow())
-                .setField(runContext.render(this.timePartitioningField).as(String.class).orElseThrow())
-                .build()
+            builder.setTimePartitioning(
+                TimePartitioning.newBuilder(runContext.render(this.timePartitioningType).as(TimePartitioning.Type.class).orElseThrow())
+                    .setField(runContext.render(this.timePartitioningField).as(String.class).orElseThrow())
+                    .build()
             );
         }
 
         if (this.rangePartitioningField != null) {
-            builder.setRangePartitioning(RangePartitioning.newBuilder()
-                .setField(runContext.render(this.rangePartitioningField).as(String.class).orElseThrow())
-                .setRange(RangePartitioning.Range.newBuilder()
-                    .setStart(runContext.render(this.rangePartitioningStart).as(Long.class).orElse(null))
-                    .setEnd(runContext.render(this.rangePartitioningEnd).as(Long.class).orElse(null))
-                    .setInterval(runContext.render(this.rangePartitioningInterval).as(Long.class).orElse(null))
+            builder.setRangePartitioning(
+                RangePartitioning.newBuilder()
+                    .setField(runContext.render(this.rangePartitioningField).as(String.class).orElseThrow())
+                    .setRange(
+                        RangePartitioning.Range.newBuilder()
+                            .setStart(runContext.render(this.rangePartitioningStart).as(Long.class).orElse(null))
+                            .setEnd(runContext.render(this.rangePartitioningEnd).as(Long.class).orElse(null))
+                            .setInterval(runContext.render(this.rangePartitioningInterval).as(Long.class).orElse(null))
+                            .build()
+                    )
                     .build()
-                )
-                .build()
             );
         }
 
@@ -474,7 +487,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     }
 
     private String[] tags(JobStatistics.QueryStatistics stats, Job queryJob, FetchType fetchType) {
-        return new String[]{
+        return new String[] {
             "statement_type", stats.getStatementType().name(),
             "fetch", FetchType.FETCH.equals(fetchType) || FetchType.FETCH_ONE.equals(fetchType) ? "true" : "false",
             "store", FetchType.STORE.equals(fetchType) ? "true" : "false",
@@ -485,20 +498,20 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     public class DestinationTable {
         @Schema(
-                title = "The project of the table"
+            title = "The project of the table"
         )
         private String project;
         @Schema(
-                title = "The dataset of the table"
+            title = "The dataset of the table"
         )
         private String dataset;
 
         @Schema(
-                title = "The table name"
+            title = "The table name"
         )
         private String table;
 
-        public DestinationTable(String project, String dataset, String table){
+        public DestinationTable(String project, String dataset, String table) {
             this.project = project;
             this.dataset = dataset;
             this.table = table;
@@ -544,7 +557,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             runContext.metric(Counter.of("referenced.tables", stats.getReferencedTables().size(), tags));
         }
 
-
         if (stats.getTotalSlotMs() != null) {
             runContext.metric(Counter.of("total.slot.ms", stats.getTotalSlotMs(), tags));
         }
@@ -578,10 +590,12 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         ) {
             Flux<Object> flowable = Flux
                 .create(
-                    s -> {
+                    s ->
+                    {
                         StreamSupport
                             .stream(result.iterateAll().spliterator(), false)
-                            .forEach(fieldValues -> {
+                            .forEach(fieldValues ->
+                            {
                                 s.next(this.convertRows(result, fieldValues));
                             });
 
@@ -608,7 +622,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         result
             .getSchema()
             .getFields()
-            .forEach(field -> {
+            .forEach(field ->
+            {
                 row.put(field.getName(), convertCell(field, fieldValues.get(field.getName()), false));
             });
 
@@ -681,10 +696,12 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             return field
                 .getSubFields()
                 .stream()
-                .map(sub -> new AbstractMap.SimpleEntry<>(
-                    sub.getName(),
-                    this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
-                ))
+                .map(
+                    sub -> new AbstractMap.SimpleEntry<>(
+                        sub.getName(),
+                        this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
+                    )
+                )
                 .peek(u -> counter.getAndIncrement())
                 // https://bugs.openjdk.java.net/browse/JDK-8148463
                 .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);

@@ -1,24 +1,27 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.devskiller.friendly_id.FriendlyId;
-import com.google.common.collect.ImmutableMap;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.tenant.TenantService;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Test;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.utils.TestsUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Objects;
-import jakarta.inject.Inject;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import com.devskiller.friendly_id.FriendlyId;
+import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.Task;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.core.utils.TestsUtils;
+
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,9 +40,13 @@ class DeleteTest {
 
     @Test
     void fromStorage() throws Exception {
-        File file = new File(Objects.requireNonNull(DeleteTest.class.getClassLoader()
-            .getResource("application.yml"))
-            .toURI());
+        File file = new File(
+            Objects.requireNonNull(
+                DeleteTest.class.getClassLoader()
+                    .getResource("application.yml")
+            )
+                .toURI()
+        );
 
         URI source = storageInterface.put(
             TenantService.MAIN_TENANT,
@@ -65,7 +72,6 @@ class DeleteTest {
             .uri(Property.ofValue(uploadOutput.getUri().toString()))
             .build();
 
-
         Delete.Output run = task.run(runContext(task));
 
         assertThat(run.getDeleted(), is(true));
@@ -74,7 +80,6 @@ class DeleteTest {
 
         assertThat(run.getDeleted(), is(false));
     }
-
 
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(

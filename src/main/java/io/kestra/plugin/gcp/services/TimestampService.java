@@ -1,8 +1,8 @@
 package io.kestra.plugin.gcp.services;
 
-import com.google.protobuf.Timestamp;
-
 import java.time.Instant;
+
+import com.google.protobuf.Timestamp;
 
 public abstract class TimestampService {
     public static Instant of(Timestamp timestamp) {

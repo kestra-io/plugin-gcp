@@ -9,6 +9,7 @@ plugins {
     id 'signing'
     id "com.github.ben-manes.versions" version "0.53.0"
     id 'net.researchgate.release' version '3.1.0'
+    id "com.diffplug.spotless" version "8.2.1"
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -253,5 +254,40 @@ idea {
     module {
         downloadJavadoc = true
         downloadSources = true
+    }
+}
+
+/**********************************************************************************************************************\
+ * Formatting
+ **********************************************************************************************************************/
+tasks.register('setupHooks', Exec) {
+    group = "development"
+    description = "Configure git hooks for the project"
+
+    commandLine 'sh', '-c', "chmod +x .hooks/setup_hooks.sh .hooks/pre-commit && ./.hooks/setup_hooks.sh"
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('setupHooks')
+}
+
+configure(allprojects.findAll { it.name != 'platform' }) {
+    apply plugin: "com.diffplug.spotless"
+
+    spotless {
+        enforceCheck false
+        java {
+            toggleOffOn()
+            // Ensure these files exist in the root directory
+            importOrderFile(rootProject.file('eclipse-kestra.importorder'))
+            eclipse().configFile(rootProject.file("eclipse-java-kestra-style.xml"))
+
+            removeUnusedImports()
+            suppressLintsFor { step = 'removeUnusedImports' }
+
+            if (project.hasProperty('targetFile')) {
+                target project.property('targetFile')
+            }
+        }
     }
 }

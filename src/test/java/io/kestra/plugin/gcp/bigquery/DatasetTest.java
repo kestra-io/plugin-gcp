@@ -1,27 +1,29 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.util.Collections;
+
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.Acl;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Dataset;
 import com.google.common.collect.ImmutableMap;
-import io.kestra.core.models.property.Property;
-import io.kestra.plugin.gcp.bigquery.models.AccessControl;
-import io.kestra.plugin.gcp.bigquery.models.Entity;
-import io.micronaut.context.annotation.Value;
+
 import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.plugin.gcp.bigquery.models.AccessControl;
+import io.kestra.plugin.gcp.bigquery.models.Entity;
 
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-
-import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -45,10 +47,12 @@ class DatasetTest {
     }
 
     private RunContext runContext(String datasetId) {
-        return runContextFactory.of(ImmutableMap.of(
-            "project", this.project,
-            "dataset", datasetId
-        ));
+        return runContextFactory.of(
+            ImmutableMap.of(
+                "project", this.project,
+                "dataset", datasetId
+            )
+        );
     }
 
     private CreateDataset.CreateDatasetBuilder<?, ?> createBuilder() {
@@ -73,7 +77,8 @@ class DatasetTest {
     void createException() {
         CreateDataset task = createBuilder().build();
 
-        assertThrows(BigQueryException.class, () -> {
+        assertThrows(BigQueryException.class, () ->
+        {
             task.run(runContext());
         });
     }
@@ -129,14 +134,18 @@ class DatasetTest {
         CreateDataset task = createBuilder()
             .description(RANDOM_ID_2)
             .ifExists(Property.ofValue(CreateDataset.IfExists.UPDATE))
-            .acl(Collections.singletonList(
-                AccessControl.builder()
-                    .entity(Entity.builder()
-                        .type(Property.ofValue(Entity.Type.USER))
-                        .value(Property.ofValue("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com")).build())
-                    .role(Property.ofValue(AccessControl.Role.OWNER))
-                    .build()
-            ))
+            .acl(
+                Collections.singletonList(
+                    AccessControl.builder()
+                        .entity(
+                            Entity.builder()
+                                .type(Property.ofValue(Entity.Type.USER))
+                                .value(Property.ofValue("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com")).build()
+                        )
+                        .role(Property.ofValue(AccessControl.Role.OWNER))
+                        .build()
+                )
+            )
             .build();
 
         RunContext rc = runContext(RANDOM_ID_2);
@@ -151,9 +160,11 @@ class DatasetTest {
         Dataset dataset = connection.getDataset(run.getDataset());
 
         assertThat(null, not(dataset.getAcl()));
-        assertThat(dataset.getAcl(), hasItems(
-            Acl.of(new Acl.User("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"), Acl.Role.OWNER)
-        ));
+        assertThat(
+            dataset.getAcl(), hasItems(
+                Acl.of(new Acl.User("kestra-unit-test@kestra-unit-test.iam.gserviceaccount.com"), Acl.Role.OWNER)
+            )
+        );
     }
 
     @Test

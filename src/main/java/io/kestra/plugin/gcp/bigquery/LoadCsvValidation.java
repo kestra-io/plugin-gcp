@@ -5,6 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 import io.kestra.plugin.gcp.LoadCsvValidator;
+
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
@@ -13,6 +14,8 @@ import jakarta.validation.Payload;
 @Inherited
 public @interface LoadCsvValidation {
     String message() default "missing csv option with CSV fileType";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }

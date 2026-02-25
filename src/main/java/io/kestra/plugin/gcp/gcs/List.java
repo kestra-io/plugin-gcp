@@ -1,24 +1,26 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.net.URI;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.storage.Storage;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.gcs.models.Blob;
-import org.slf4j.Logger;
 
-import java.net.URI;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -82,7 +84,8 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
 
         java.util.List<Blob> blobs = StreamSupport
             .stream(this.iterator(connection, from, runContext), false)
-            .filter(blob -> {
+            .filter(blob ->
+            {
                 try {
                     return this.filter(
                         blob,
@@ -120,8 +123,8 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
 
         var typeMatch = switch (filter) {
             case DIRECTORY -> isDir;
-            case FILES     -> !isDir;
-            case BOTH      -> true;
+            case FILES -> !isDir;
+            case BOTH -> true;
         };
 
         if (!typeMatch) {

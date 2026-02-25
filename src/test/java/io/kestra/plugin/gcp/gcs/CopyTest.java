@@ -1,24 +1,27 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.devskiller.friendly_id.FriendlyId;
-import com.google.common.collect.ImmutableMap;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.tenant.TenantService;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Test;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.utils.TestsUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Objects;
-import jakarta.inject.Inject;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import com.devskiller.friendly_id.FriendlyId;
+import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.Task;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.core.utils.TestsUtils;
+
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -45,9 +48,15 @@ class CopyTest {
             TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
-                .getResource("application.yml"))
-                .toURI()))
+            new FileInputStream(
+                new File(
+                    Objects.requireNonNull(
+                        UploadTest.class.getClassLoader()
+                            .getResource("application.yml")
+                    )
+                        .toURI()
+                )
+            )
         );
 
         Upload upload = Upload.builder()
@@ -82,7 +91,8 @@ class CopyTest {
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .build();
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () ->
+        {
             task.run(runContext(task));
         });
     }

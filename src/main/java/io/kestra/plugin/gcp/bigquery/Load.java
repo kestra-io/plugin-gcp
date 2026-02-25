@@ -1,29 +1,32 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.TableDataWriteChannel;
 import com.google.cloud.bigquery.WriteChannelConfiguration;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
-import org.slf4j.Logger;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -51,7 +54,7 @@ import java.nio.channels.Channels;
         )
     },
     metrics = {
-        @Metric(name = "bad.records", type = Counter.TYPE, unit = "records", description= "the number of bad records reported in a job."),
+        @Metric(name = "bad.records", type = Counter.TYPE, unit = "records", description = "the number of bad records reported in a job."),
         @Metric(name = "duration", type = Timer.TYPE, description = "The time it took for the task to run."),
         @Metric(name = "input.bytes", type = Counter.TYPE, unit = "bytes", description = "The number of bytes of source data in a load job."),
         @Metric(name = "input.files", type = Counter.TYPE, unit = "files", description = "The number of source files in a load job."),

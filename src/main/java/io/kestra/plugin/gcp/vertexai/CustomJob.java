@@ -1,5 +1,13 @@
 package io.kestra.plugin.gcp.vertexai;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.slf4j.Logger;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.rpc.ApiException;
@@ -8,6 +16,7 @@ import com.google.cloud.aiplatform.v1.JobServiceClient;
 import com.google.cloud.aiplatform.v1.JobServiceSettings;
 import com.google.cloud.aiplatform.v1.JobState;
 import com.google.cloud.aiplatform.v1.LocationName;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -16,21 +25,14 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
 import io.kestra.plugin.gcp.AbstractTask;
-import io.kestra.plugin.gcp.vertexai.models.CustomJobSpec;
 import io.kestra.plugin.gcp.services.LogTailService;
 import io.kestra.plugin.gcp.services.TimestampService;
+import io.kestra.plugin.gcp.vertexai.models.CustomJobSpec;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -174,7 +176,8 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
 
                 if (runContext.render(this.wait).as(Boolean.class).orElseThrow()) {
                     com.google.cloud.aiplatform.v1.CustomJob result = Await.until(
-                        () -> {
+                        () ->
+                        {
                             com.google.cloud.aiplatform.v1.CustomJob customJob = client.getCustomJob(response.getName());
 
                             if (!customJob.hasEndTime()) {
@@ -192,7 +195,8 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
                         .endDate(TimestampService.of(result.getEndTime()))
                         .state(result.getState());
 
-                    logger.info("Job {} ended in {} with status {}",
+                    logger.info(
+                        "Job {} ended in {} with status {}",
                         result.getName(),
                         Duration.between(TimestampService.of(result.getCreateTime()), TimestampService.of(result.getEndTime())),
                         result.getState()
@@ -252,7 +256,6 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
             title = "Time when the CustomJob was created."
         )
         private final Instant createDate;
-
 
         @NotNull
         @Schema(

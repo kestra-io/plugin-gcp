@@ -1,13 +1,14 @@
 package io.kestra.plugin.gcp.bigquery.models;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -22,10 +23,11 @@ public class Schema {
 
     public static Schema.Output of(com.google.cloud.bigquery.Schema schema) {
         return Schema.Output.builder()
-            .fields(schema.getFields()
-                .stream()
-                .map(Field::of)
-                .collect(Collectors.toList())
+            .fields(
+                schema.getFields()
+                    .stream()
+                    .map(Field::of)
+                    .collect(Collectors.toList())
             )
             .build();
     }

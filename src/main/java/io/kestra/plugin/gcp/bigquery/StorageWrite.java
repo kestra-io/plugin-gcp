@@ -1,29 +1,5 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.api.core.ApiFuture;
-import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.Table;
-import com.google.cloud.bigquery.TableId;
-import com.google.cloud.bigquery.storage.v1.*;
-import com.google.common.primitives.Primitives;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Metric;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.plugin.gcp.AbstractTask;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,7 +13,33 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+
+import com.google.api.core.ApiFuture;
+import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.Table;
+import com.google.cloud.bigquery.TableId;
+import com.google.cloud.bigquery.storage.v1.*;
+import com.google.common.primitives.Primitives;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.plugin.gcp.AbstractTask;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -134,13 +136,15 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
                 Integer count = FileSerde.readAll(inputStream)
                     .map(this::map)
                     .buffer(runContext.render(this.bufferSize).as(Integer.class).orElseThrow())
-                    .map(list -> {
+                    .map(list ->
+                    {
                         JSONArray result = new JSONArray();
                         list.forEach(result::put);
 
                         return result;
                     })
-                    .map(throwFunction(o -> {
+                    .map(throwFunction(o ->
+                    {
                         try {
                             ApiFuture<AppendRowsResponse> future = writer.append(o);
                             AppendRowsResponse response = future.get();
@@ -177,10 +181,12 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
                     if (!commitResponse.hasCommitTime()) {
                         // If the response does not have a commit time, it means the commit operation failed.
-                        throw new Exception("Error on commit with error: " + commitResponse.getStreamErrorsList()
-                            .stream()
-                            .map(StorageError::getErrorMessage)
-                            .collect(Collectors.joining("\n- ")));
+                        throw new Exception(
+                            "Error on commit with error: " + commitResponse.getStreamErrorsList()
+                                .stream()
+                                .map(StorageError::getErrorMessage)
+                                .collect(Collectors.joining("\n- "))
+                        );
                     } else {
                         builder.commitTime(Instant.ofEpochSecond(commitResponse.getCommitTime().getSeconds()));
                     }
@@ -222,20 +228,23 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             HashMap<Object, Object> map = value
                 .entrySet()
                 .stream()
-                .map(e -> new AbstractMap.SimpleEntry<>(
-                    e.getKey(),
-                    transform(e.getValue())
-                ))
+                .map(
+                    e -> new AbstractMap.SimpleEntry<>(
+                        e.getKey(),
+                        transform(e.getValue())
+                    )
+                )
                 // https://bugs.openjdk.java.net/browse/JDK-8148463
                 .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
 
             return new JSONObject(map);
         } else if (object instanceof Collection) {
             Collection<?> value = (Collection<?>) object;
-            return new JSONArray(value
-                .stream()
-                .map(this::transform)
-                .collect(Collectors.toList())
+            return new JSONArray(
+                value
+                    .stream()
+                    .map(this::transform)
+                    .collect(Collectors.toList())
             );
         } else if (object instanceof ZonedDateTime) {
             ZonedDateTime value = (ZonedDateTime) object;
@@ -279,7 +288,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     }
 
     private String[] tags(TableId tableId, RunContext runContext) throws IllegalVariableEvaluationException {
-        return new String[]{
+        return new String[] {
             "write_stream_type", runContext.render(this.writeStreamType).as(WriteStreamType.class).orElseThrow().name(),
             "project_id", tableId.getProject(),
             "dataset", tableId.getDataset(),
@@ -313,7 +322,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             TableSchema tableSchema = BigQueryToBigQueryStorageSchemaConverter.convertTableSchema(schema);
 
             return JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema);
-        } else  {
+        } else {
             // Write to a stream in pending mode: https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_pending_mode
             // Write to a stream in committed mode : https://cloud.google.com/bigquery/docs/write-api#write_to_a_stream_in_committed_mode
 

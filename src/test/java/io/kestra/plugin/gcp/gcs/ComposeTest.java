@@ -1,25 +1,27 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
+
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+
 import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Test;
-
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.List;
-
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -50,12 +52,13 @@ class ComposeTest {
         Compose task = Compose.builder()
             .id(ComposeTest.class.getSimpleName())
             .type(Compose.class.getName())
-            .list(Compose.List.builder()
-                .from(Property.ofValue("gs://" +  bucket + "/tasks/gcp/upload/compose-" + dir + "/"))
-                .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
-                .build()
+            .list(
+                Compose.List.builder()
+                    .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/compose-" + dir + "/"))
+                    .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
+                    .build()
             )
-            .to(Property.ofValue("gs://" +  bucket + "/tasks/gcp/compose-result/compose.txt"))
+            .to(Property.ofValue("gs://" + bucket + "/tasks/gcp/compose-result/compose.txt"))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
@@ -88,9 +91,10 @@ class ComposeTest {
         Compose task = Compose.builder()
             .id("compose-default-listingType")
             .type(Compose.class.getName())
-            .list(Compose.List.builder()
-                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + basePath))
-                .build()
+            .list(
+                Compose.List.builder()
+                    .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + basePath))
+                    .build()
             )
             .to(Property.ofValue("gs://" + bucket + "/tasks/gcp/compose-result/compose-default.txt"))
             .build();

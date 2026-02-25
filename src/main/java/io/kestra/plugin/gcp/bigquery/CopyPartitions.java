@@ -1,8 +1,17 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.TableId;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -10,16 +19,10 @@ import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -123,22 +126,26 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         }
 
         Copy task = Copy.builder()
-            .sourceTables(Property.ofValue(partitionToCopy
-                .stream()
-                .map(throwFunction(s -> {
-                    TableId current = this.tableId(runContext, s);
-                    List<String> source = new ArrayList<>();
-                    if (current.getProject() != null) {
-                        source.add(current.getProject());
-                    }
+            .sourceTables(
+                Property.ofValue(
+                    partitionToCopy
+                        .stream()
+                        .map(throwFunction(s ->
+                        {
+                            TableId current = this.tableId(runContext, s);
+                            List<String> source = new ArrayList<>();
+                            if (current.getProject() != null) {
+                                source.add(current.getProject());
+                            }
 
-                    source.add(current.getDataset());
-                    source.add(current.getTable());
+                            source.add(current.getDataset());
+                            source.add(current.getTable());
 
-                    return String.join(".", source);
-                }))
-                .collect(Collectors.toList())
-            ))
+                            return String.join(".", source);
+                        }))
+                        .collect(Collectors.toList())
+                )
+            )
             .destinationTable(this.destinationTable)
             .writeDisposition(this.writeDisposition)
             .createDisposition(this.createDisposition)

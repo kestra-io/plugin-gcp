@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp;
 
 import io.kestra.plugin.gcp.bigquery.QueryInterface;
 import io.kestra.plugin.gcp.bigquery.StoreFetchValidation;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 

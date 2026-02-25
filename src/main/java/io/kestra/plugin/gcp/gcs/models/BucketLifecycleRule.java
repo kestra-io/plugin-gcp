@@ -1,18 +1,20 @@
 package io.kestra.plugin.gcp.gcs.models;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.cloud.storage.BucketInfo;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import jakarta.validation.constraints.NotNull;
 
 @Getter
 @Builder
@@ -89,8 +91,11 @@ public class BucketLifecycleRule {
 
         public BucketInfo.LifecycleRule convert(Condition condition, RunContext runContext) throws IllegalVariableEvaluationException {
             return new BucketInfo.LifecycleRule(
-                BucketInfo.LifecycleRule.LifecycleAction.newSetStorageClassAction(com.google.cloud.storage.StorageClass.valueOf(
-                    runContext.render(this.storageClass).as(StorageClass.class).orElseThrow().name())),
+                BucketInfo.LifecycleRule.LifecycleAction.newSetStorageClassAction(
+                    com.google.cloud.storage.StorageClass.valueOf(
+                        runContext.render(this.storageClass).as(StorageClass.class).orElseThrow().name()
+                    )
+                ),
                 BucketInfo.LifecycleRule.LifecycleCondition.newBuilder().setAge(runContext.render(condition.getAge()).as(Integer.class).orElseThrow()).build()
             );
         }
@@ -103,7 +108,8 @@ public class BucketLifecycleRule {
     public static List<BucketInfo.LifecycleRule> convert(List<BucketLifecycleRule> rules, RunContext runContext) {
         return rules
             .stream()
-            .map(c -> {
+            .map(c ->
+            {
                 try {
                     return c.convert(runContext);
                 } catch (IllegalVariableEvaluationException e) {
@@ -125,8 +131,10 @@ public class BucketLifecycleRule {
                     .convert(this.getCondition(), runContext);
             case SET_STORAGE_CLASS:
                 return SetStorageAction.builder()
-                    .storageClass(Property.ofValue(
-                        StorageClass.valueOf(runContext.render(this.getAction().getValue()).as(String.class).orElse(null)))
+                    .storageClass(
+                        Property.ofValue(
+                            StorageClass.valueOf(runContext.render(this.getAction().getValue()).as(String.class).orElse(null))
+                        )
                     )
                     .build()
                     .convert(this.getCondition(), runContext);

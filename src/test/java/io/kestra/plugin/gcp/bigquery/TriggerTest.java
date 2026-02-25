@@ -1,6 +1,15 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -9,15 +18,9 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.gcs.models.Blob;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.Optional;
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -43,21 +46,25 @@ class TriggerTest {
             .id("create-" + IdUtils.create())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue(
-                "CREATE OR REPLACE TABLE `" + tableName + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"
-            ))
+            .sql(
+                Property.ofValue(
+                    "CREATE OR REPLACE TABLE `" + tableName + "` AS (SELECT 1 AS number UNION ALL SELECT 2 AS number)"
+                )
+            )
             .build();
 
-        var output  = createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, Map.of()));
+        var output = createTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, Map.of()));
         assertThat(output, notNullValue());
 
         Trigger trigger = Trigger.builder()
             .id("watch")
             .type(io.kestra.plugin.gcp.bigquery.Trigger.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue(
-                "SELECT * FROM `" + tableName + "`"
-            ))
+            .sql(
+                Property.ofValue(
+                    "SELECT * FROM `" + tableName + "`"
+                )
+            )
             .fetchType(Property.ofValue(FetchType.FETCH))
             .interval(Duration.ofSeconds(10))
             .build();
@@ -79,4 +86,3 @@ class TriggerTest {
         deleteTable.run(TestsUtils.mockRunContext(runContextFactory, createTable, ImmutableMap.of()));
     }
 }
-

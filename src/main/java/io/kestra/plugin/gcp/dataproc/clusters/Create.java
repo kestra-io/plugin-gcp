@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.dataproc.clusters;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.longrunning.OperationFuture;
 import com.google.cloud.dataproc.v1.*;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -11,6 +12,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -208,8 +210,7 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
         RunContext runContext,
         Property<String> machineType,
         Property<Integer> diskSizeGB,
-        Integer workers
-    ) throws IllegalVariableEvaluationException {
+        Integer workers) throws IllegalVariableEvaluationException {
         InstanceGroupConfig.Builder instanceGroupConfigBuilder = InstanceGroupConfig.newBuilder()
             .setMachineTypeUri(runContext.render(machineType).as(String.class).orElseThrow());
 

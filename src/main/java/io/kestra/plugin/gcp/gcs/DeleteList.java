@@ -1,8 +1,16 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.net.URI;
+import java.util.NoSuchElementException;
+import java.util.function.Function;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -11,17 +19,11 @@ import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-
-import java.net.URI;
-import java.util.NoSuchElementException;
-import java.util.function.Function;
-
-import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Schedulers;
@@ -91,9 +93,9 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         URI from = encode(runContext, runContext.render(this.from).as(String.class).orElseThrow());
         String regExp = runContext.render(this.regExp).as(String.class).orElse(null);
 
-
         Flux<Blob> flowable = Flux
-            .create(throwConsumer(emitter -> {
+            .create(throwConsumer(emitter ->
+            {
                 this.iterator(connection, from, runContext)
                     .forEachRemaining(emitter::next);
                 emitter.complete();
@@ -139,8 +141,9 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
     }
 
     private static Function<Blob, Long> delete(Logger logger, Storage connection) {
-        return o -> {
-            logger.debug("Deleting '{}'" , io.kestra.plugin.gcp.gcs.models.Blob.uri(o));
+        return o ->
+        {
+            logger.debug("Deleting '{}'", io.kestra.plugin.gcp.gcs.models.Blob.uri(o));
             if (connection.delete(BlobId.of(o.getBucket(), o.getName()))) {
                 return o.getSize();
             } else {

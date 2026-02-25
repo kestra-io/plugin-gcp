@@ -1,8 +1,8 @@
 package io.kestra.plugin.gcp.gcs;
 
 import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
 public interface ListInterface {

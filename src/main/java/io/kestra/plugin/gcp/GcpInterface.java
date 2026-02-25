@@ -1,10 +1,10 @@
 package io.kestra.plugin.gcp;
 
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.kestra.core.models.annotations.PluginProperty;
-
 import java.util.List;
+
+import io.kestra.core.models.property.Property;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public interface GcpInterface {
     @Schema(title = "The GCP project ID.")

@@ -1,13 +1,14 @@
 package io.kestra.plugin.gcp.services;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+
 import com.google.auth.Credentials;
 import com.google.cloud.logging.LogEntry;
 import com.google.cloud.logging.LogEntryServerStream;
 import com.google.cloud.logging.Logging;
 import com.google.cloud.logging.LoggingOptions;
-import org.slf4j.Logger;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.kestra.core.utils.Rethrow.throwRunnable;
 
@@ -19,7 +20,8 @@ public class LogTailService {
             .build();
 
         Thread thread = Thread.ofVirtual().name("gcp-log-tail").start(
-            throwRunnable(() -> {
+            throwRunnable(() ->
+            {
                 try (Logging logging = options.getService()) {
                     LogEntryServerStream stream = logging.tailLogEntries(
                         Logging.TailOption.project(projectId),
@@ -41,7 +43,8 @@ public class LogTailService {
             })
         );
 
-        thread.setUncaughtExceptionHandler((t, e) -> {
+        thread.setUncaughtExceptionHandler((t, e) ->
+        {
             if (!(e.getCause() instanceof InterruptedException)) {
                 logger.error("Failed to capture log", e);
             }

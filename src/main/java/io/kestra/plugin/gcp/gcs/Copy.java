@@ -1,24 +1,24 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.net.URI;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
-import org.slf4j.Logger;
 
-import java.net.URI;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -96,10 +96,11 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         logger.debug("Moving from '{}' to '{}'", from, to);
 
         Blob result = connection
-            .copy(Storage.CopyRequest.newBuilder()
-                .setSource(source)
-                .setTarget(BlobId.of(to.getAuthority(), blobPath(to.getPath().substring(1))))
-                .build()
+            .copy(
+                Storage.CopyRequest.newBuilder()
+                    .setSource(source)
+                    .setTarget(BlobId.of(to.getAuthority(), blobPath(to.getPath().substring(1))))
+                    .build()
             )
             .getResult();
 

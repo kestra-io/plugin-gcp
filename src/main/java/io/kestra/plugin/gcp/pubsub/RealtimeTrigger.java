@@ -1,29 +1,5 @@
 package io.kestra.plugin.gcp.pubsub;
 
-import com.google.api.core.ApiService;
-import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.pubsub.v1.MessageReceiver;
-import com.google.cloud.pubsub.v1.Subscriber;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.pubsub.v1.ProjectSubscriptionName;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.conditions.ConditionContext;
-import io.kestra.core.models.executions.Execution;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.triggers.*;
-import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.pubsub.model.Message;
-import io.kestra.plugin.gcp.pubsub.model.SerdeType;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +9,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.reactivestreams.Publisher;
+
+import com.google.api.core.ApiService;
+import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.pubsub.v1.MessageReceiver;
+import com.google.cloud.pubsub.v1.Subscriber;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.pubsub.v1.ProjectSubscriptionName;
+
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.conditions.ConditionContext;
+import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.triggers.*;
+import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.gcp.pubsub.model.Message;
+import io.kestra.plugin.gcp.pubsub.model.SerdeType;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import reactor.core.publisher.Flux;
 
 @SuperBuilder
 @ToString
@@ -186,14 +187,16 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
 
         var serdeTypeRendered = runContext.render(serdeType).as(SerdeType.class).orElseThrow();
         return Flux.create(
-            emitter -> {
+            emitter ->
+            {
                 AtomicInteger total = new AtomicInteger();
-                final MessageReceiver receiver = (message, consumer) -> {
+                final MessageReceiver receiver = (message, consumer) ->
+                {
                     try {
                         emitter.next(Message.of(message, serdeTypeRendered));
                         total.getAndIncrement();
                         consumer.ack();
-                    }  catch(Exception exception) {
+                    } catch (Exception exception) {
                         emitter.error(exception);
                         consumer.nack();
                     }
@@ -230,7 +233,8 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
                     emitter.error(exception);
                     waitForTermination.countDown();
                 }
-            });
+            }
+        );
     }
 
     /**
@@ -254,7 +258,8 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
             return;
         }
 
-        Optional.ofNullable(subscriberReference.get()).ifPresent(subscriber -> {
+        Optional.ofNullable(subscriberReference.get()).ifPresent(subscriber ->
+        {
             subscriber.stopAsync(); // Shut down the PubSub subscriber.
             if (wait) {
                 try {

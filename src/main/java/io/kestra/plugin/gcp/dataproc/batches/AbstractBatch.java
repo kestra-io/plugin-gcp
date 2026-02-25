@@ -1,7 +1,15 @@
 package io.kestra.plugin.gcp.dataproc.batches;
 
+import java.util.AbstractMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.dataproc.v1.*;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
@@ -9,16 +17,11 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Slugify;
 import io.kestra.plugin.gcp.AbstractTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.util.AbstractMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import jakarta.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -121,9 +124,10 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
                 }
 
                 if (this.peripherals.sparkHistoryServer != null) {
-                    peripheralsConfig.setSparkHistoryServerConfig(SparkHistoryServerConfig.newBuilder()
-                        .setDataprocCluster(runContext.render(this.peripherals.sparkHistoryServer.dataprocCluster).as(String.class).orElseThrow())
-                        .build()
+                    peripheralsConfig.setSparkHistoryServerConfig(
+                        SparkHistoryServerConfig.newBuilder()
+                            .setDataprocCluster(runContext.render(this.peripherals.sparkHistoryServer.dataprocCluster).as(String.class).orElseThrow())
+                            .build()
                     );
                 }
 
@@ -145,20 +149,24 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
 
                 var runtimeProps = runContext.render(this.runtime.properties).asMap(String.class, String.class);
                 if (!runtimeProps.isEmpty()) {
-                    runtimeConfig.putAllProperties(runtimeProps
-                        .entrySet()
-                        .stream()
-                        .map(throwFunction(entry -> new AbstractMap.SimpleEntry<>(
-                            runContext.render(entry.getKey()),
-                            runContext.render(entry.getValue())
-                        )))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+                    runtimeConfig.putAllProperties(
+                        runtimeProps
+                            .entrySet()
+                            .stream()
+                            .map(
+                                throwFunction(
+                                    entry -> new AbstractMap.SimpleEntry<>(
+                                        runContext.render(entry.getKey()),
+                                        runContext.render(entry.getValue())
+                                    )
+                                )
+                            )
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
                     );
                 }
 
                 batchBuilder.setRuntimeConfig(runtimeConfig.build());
             }
-
 
             batchBuilder.setEnvironmentConfig(EnvironmentConfig.newBuilder().build());
 

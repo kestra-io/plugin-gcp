@@ -1,11 +1,16 @@
 package io.kestra.plugin.gcp.cli;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.runners.ScriptService;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.core.runners.RunContext;
@@ -13,18 +18,12 @@ import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.kestra.plugin.scripts.runner.docker.Docker;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -32,86 +31,86 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Run gcloud commands in a task runner",
-        description = "Executes one or more `gcloud` commands via the configured task runner (Docker by default with image `google/cloud-sdk`). Supports injecting a service account key and project ID into env vars and collecting output files."
+    title = "Run gcloud commands in a task runner",
+    description = "Executes one or more `gcloud` commands via the configured task runner (Docker by default with image `google/cloud-sdk`). Supports injecting a service account key and project ID into env vars and collecting output files."
 )
 @Plugin(
-        examples = {
-                @Example(
-                        full = true,
-                        title = "Create a cluster then list them using a service account.",
-                        code = """
-                            id: gcp_g_cloud_cli
-                            namespace: company.team
+    examples = {
+        @Example(
+            full = true,
+            title = "Create a cluster then list them using a service account.",
+            code = """
+                id: gcp_g_cloud_cli
+                namespace: company.team
 
-                            tasks:
-                              - id: g_cloud_cli
-                                type: io.kestra.plugin.gcp.cli.GCloudCLI
-                                projectId: my-gcp-project
-                                serviceAccount: "{{ secret('gcp-sa') }}"
-                                commands:
-                                  - gcloud container clusters create simple-cluster --region=europe-west3
-                                  - gcloud container clusters list
-                            """
-                ),
-                @Example(
-                        full = true,
-                        title = "Create a GCS bucket.",
-                        code = """
-                            id: gcp_g_cloud_cli
-                            namespace: company.team
+                tasks:
+                  - id: g_cloud_cli
+                    type: io.kestra.plugin.gcp.cli.GCloudCLI
+                    projectId: my-gcp-project
+                    serviceAccount: "{{ secret('gcp-sa') }}"
+                    commands:
+                      - gcloud container clusters create simple-cluster --region=europe-west3
+                      - gcloud container clusters list
+                """
+        ),
+        @Example(
+            full = true,
+            title = "Create a GCS bucket.",
+            code = """
+                id: gcp_g_cloud_cli
+                namespace: company.team
 
-                            tasks:
-                              - id: g_cloud_cli
-                                type: io.kestra.plugin.gcp.cli.GCloudCLI
-                                projectId: my-gcp-project
-                                serviceAccount: "{{ secret('gcp-sa') }}"
-                                commands:
-                                  - gcloud storage buckets create gs://my-bucket
-                            """
-                ),
-                @Example(
-                        full = true,
-                        title = "Output the result of a command.",
-                        code = """
-                            id: gcp_g_cloud_cli
-                            namespace: company.team
+                tasks:
+                  - id: g_cloud_cli
+                    type: io.kestra.plugin.gcp.cli.GCloudCLI
+                    projectId: my-gcp-project
+                    serviceAccount: "{{ secret('gcp-sa') }}"
+                    commands:
+                      - gcloud storage buckets create gs://my-bucket
+                """
+        ),
+        @Example(
+            full = true,
+            title = "Output the result of a command.",
+            code = """
+                id: gcp_g_cloud_cli
+                namespace: company.team
 
-                            tasks:
-                              - id: g_cloud_cli
-                                type: io.kestra.plugin.gcp.cli.GCloudCLI
-                                projectId: my-gcp-project
-                                serviceAccount: "{{ secret('gcp-sa') }}"
-                                commands:
-                                  # Outputs as a flow output for UI display
-                                  - gcloud pubsub topics list --format=json | tr -d '\n ' | xargs -0 -I {} echo '::{"outputs":{"gcloud":{}}}::'
+                tasks:
+                  - id: g_cloud_cli
+                    type: io.kestra.plugin.gcp.cli.GCloudCLI
+                    projectId: my-gcp-project
+                    serviceAccount: "{{ secret('gcp-sa') }}"
+                    commands:
+                      # Outputs as a flow output for UI display
+                      - gcloud pubsub topics list --format=json | tr -d '\n ' | xargs -0 -I {} echo '::{"outputs":{"gcloud":{}}}::'
 
-                                  # Outputs as a file, preferred way for large payloads
-                                  - gcloud storage ls --json > storage.json
-                            """
-                ),
-                @Example(
-                    full = true,
-                    title = "List storage buckets in a given GCP project and output the result",
-                    code = """
-                        id: gcloud_cli_flow
-                        namespace: company.team
+                      # Outputs as a file, preferred way for large payloads
+                      - gcloud storage ls --json > storage.json
+                """
+        ),
+        @Example(
+            full = true,
+            title = "List storage buckets in a given GCP project and output the result",
+            code = """
+                id: gcloud_cli_flow
+                namespace: company.team
 
-                        tasks:
-                          - id: gcloud_cli
-                            type: io.kestra.plugin.gcp.cli.GCloudCLI
-                            serviceAccount: "{{ secret('GCP_CREDS') }}"
-                            projectId: yourProject
-                            outputFiles:
-                              - storage.json
-                            commands:
-                              - gcloud storage ls
-                              - gcloud storage ls --json > storage.json
-                              - gcloud storage ls --json | tr -d '\n ' | xargs -0 -I {} echo
-                                '::{"outputs":{"gcloud":{}}}::'
-                        """
-                )
-        }
+                tasks:
+                  - id: gcloud_cli
+                    type: io.kestra.plugin.gcp.cli.GCloudCLI
+                    serviceAccount: "{{ secret('GCP_CREDS') }}"
+                    projectId: yourProject
+                    outputFiles:
+                      - storage.json
+                    commands:
+                      - gcloud storage ls
+                      - gcloud storage ls --json > storage.json
+                      - gcloud storage ls --json | tr -d '\n ' | xargs -0 -I {} echo
+                        '::{"outputs":{"gcloud":{}}}::'
+                """
+        )
+    }
 )
 public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
     private static final String DEFAULT_IMAGE = "google/cloud-sdk";
@@ -213,10 +212,12 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
 
         if (serviceAccount != null) {
             Path serviceAccountPath = runContext.workingDir().createTempFile(runContext.render(this.serviceAccount).as(String.class).orElseThrow().getBytes());
-            envs.putAll(Map.of(
+            envs.putAll(
+                Map.of(
                     "GOOGLE_APPLICATION_CREDENTIALS", serviceAccountPath.toString(),
                     "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", serviceAccountPath.toString()
-            ));
+                )
+            );
         }
 
         if (projectId != null) {

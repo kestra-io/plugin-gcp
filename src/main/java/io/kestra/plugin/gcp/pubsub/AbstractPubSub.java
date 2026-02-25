@@ -1,23 +1,25 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.StreamSupport;
+
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
 import com.google.pubsub.v1.*;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 @SuperBuilder
 @ToString
@@ -52,7 +54,7 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
         TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic).as(String.class).orElseThrow());
         ProjectSubscriptionName subscriptionName = ProjectSubscriptionName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(subscription));
 
-        if(autoCreateSubscription) {
+        if (autoCreateSubscription) {
             SubscriptionAdminSettings subscriptionAdminSettings = SubscriptionAdminSettings.newBuilder()
                 .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
                 .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))

@@ -1,20 +1,22 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -42,11 +44,15 @@ class DeleteTableTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
-                "PARTITION BY DATE(transaction_date)\n" +
-                "AS (SELECT 1, DATETIME '" + today.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n" +
-                "UNION ALL\n" +
-                "(SELECT 2, DATETIME '" + previous.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n"))
+            .sql(
+                Property.ofValue(
+                    "CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+                        "PARTITION BY DATE(transaction_date)\n" +
+                        "AS (SELECT 1, DATETIME '" + today.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n" +
+                        "UNION ALL\n" +
+                        "(SELECT 2, DATETIME '" + previous.format(DateTimeFormatter.ISO_LOCAL_DATE) + " 12:30:00.45')\n"
+                )
+            )
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());

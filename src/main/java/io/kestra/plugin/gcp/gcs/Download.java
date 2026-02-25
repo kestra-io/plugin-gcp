@@ -1,26 +1,28 @@
 package io.kestra.plugin.gcp.gcs;
 
-import com.google.cloud.ReadChannel;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.Storage;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.utils.FileUtils;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import org.slf4j.Logger;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.FileChannel;
+
+import org.slf4j.Logger;
+
+import com.google.cloud.ReadChannel;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.Storage;
+
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.FileUtils;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -57,7 +59,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
     static File download(RunContext runContext, Storage connection, BlobId source) throws IOException {
         Blob blob = connection.get(source);
         if (blob == null) {
-            throw new IllegalArgumentException("Unable to find blob on bucket '" +  source.getBucket() +"' with path '" +  source.getName() +"'");
+            throw new IllegalArgumentException("Unable to find blob on bucket '" + source.getBucket() + "' with path '" + source.getName() + "'");
         }
         ReadChannel readChannel = blob.reader();
 

@@ -1,10 +1,10 @@
 package io.kestra.plugin.gcp.gcs.models;
 
+import java.net.URI;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
-
-import java.net.URI;
 
 @Data
 @Builder

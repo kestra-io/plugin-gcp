@@ -1,8 +1,17 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.net.URI;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
@@ -14,19 +23,11 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.kestra.plugin.gcp.pubsub.model.SerdeType;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.net.URI;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -117,13 +118,13 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
 
         try (var outputFile = new BufferedOutputStream(new FileOutputStream(tempFile))) {
             AtomicReference<Exception> threadException = new AtomicReference<>();
-            MessageReceiver receiver = (message, consumer) -> {
+            MessageReceiver receiver = (message, consumer) ->
+            {
                 try {
                     FileSerde.write(outputFile, Message.of(message, runContext.render(serdeType).as(SerdeType.class).orElseThrow()));
                     total.getAndIncrement();
                     consumer.ack();
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     threadException.set(e);
                     consumer.nack();
                 }

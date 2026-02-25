@@ -1,12 +1,14 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.cloud.bigquery.JobInfo;
-import io.kestra.core.models.property.Property;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.time.Duration;
 import java.util.Map;
+
+import com.google.cloud.bigquery.JobInfo;
+
+import io.kestra.core.models.property.Property;
+
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString

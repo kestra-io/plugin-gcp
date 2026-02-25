@@ -1,18 +1,21 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-
-import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -33,10 +36,11 @@ class TableMetadataTest {
 
     private Job query(BigQuery bigQuery, String query) throws InterruptedException {
         return bigQuery
-            .create(JobInfo
-                .newBuilder(QueryJobConfiguration.newBuilder(query).build())
-                .setJobId(JobId.of(UUID.randomUUID().toString()))
-                .build()
+            .create(
+                JobInfo
+                    .newBuilder(QueryJobConfiguration.newBuilder(query).build())
+                    .setJobId(JobId.of(UUID.randomUUID().toString()))
+                    .build()
             )
             .waitFor();
     }
@@ -103,7 +107,6 @@ class TableMetadataTest {
                 "AS SELECT 'name' as name, 'state' as state, 1.23 as float, 1 as int"
         );
 
-
         TableMetadata.Output run = task.run(runContext);
 
         assertThat(run.getTable(), is(friendlyId));
@@ -112,7 +115,6 @@ class TableMetadataTest {
 
         assertThat(run.getDefinition().getSchema().getFields().get(2).getType(), is(StandardSQLTypeName.FLOAT64));
     }
-
 
     @Test
     void dontExistsError() throws Exception {
@@ -125,7 +127,8 @@ class TableMetadataTest {
             .build();
 
         // flow is not created
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () ->
+        {
             TableMetadata.Output run = task.run(runContextFactory.of(ImmutableMap.of()));
         });
     }

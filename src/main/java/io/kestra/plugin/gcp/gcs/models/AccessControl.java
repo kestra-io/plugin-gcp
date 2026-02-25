@@ -1,18 +1,20 @@
 package io.kestra.plugin.gcp.gcs.models;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.cloud.storage.Acl;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import jakarta.validation.constraints.NotNull;
 
 @Getter
 @Builder
@@ -40,7 +42,8 @@ public class AccessControl {
     public static List<Acl> convert(List<AccessControl> accessControls, RunContext runContext) {
         return accessControls
             .stream()
-            .map(c -> {
+            .map(c ->
+            {
                 try {
                     return c.convert(runContext);
                 } catch (IllegalVariableEvaluationException e) {

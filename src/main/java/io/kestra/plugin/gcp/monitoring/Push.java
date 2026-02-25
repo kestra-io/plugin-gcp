@@ -1,23 +1,24 @@
 package io.kestra.plugin.gcp.monitoring;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
 import com.google.api.Metric;
 import com.google.api.MonitoredResource;
 import com.google.cloud.monitoring.v3.MetricServiceClient;
 import com.google.monitoring.v3.*;
 import com.google.protobuf.Timestamp;
+
 import io.kestra.core.models.annotations.*;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -75,7 +76,8 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
             var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
 
             var timeSeriesList = rMetrics.stream()
-                .map(throwFunction(mv -> {
+                .map(throwFunction(mv ->
+                {
                     var rMetricType = runContext.render(mv.getMetricType()).as(String.class).orElseThrow();
                     var rValue = runContext.render(mv.getValue()).as(Double.class).orElseThrow();
                     var rMetricKind = runContext.render(mv.getMetricKind()).as(MetricKind.class).orElse(MetricKind.GAUGE);
@@ -107,10 +109,12 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
                 }))
                 .toList();
 
-            client.createTimeSeries(CreateTimeSeriesRequest.newBuilder()
-                .setName("projects/" + rProjectId)
-                .addAllTimeSeries(timeSeriesList)
-                .build());
+            client.createTimeSeries(
+                CreateTimeSeriesRequest.newBuilder()
+                    .setName("projects/" + rProjectId)
+                    .addAllTimeSeries(timeSeriesList)
+                    .build()
+            );
 
             runContext.logger().info("Successfully pushed {} metrics", timeSeriesList.size());
 

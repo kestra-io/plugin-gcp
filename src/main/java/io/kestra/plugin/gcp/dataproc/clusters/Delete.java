@@ -7,14 +7,15 @@ import com.google.cloud.dataproc.v1.ClusterControllerSettings;
 import com.google.cloud.dataproc.v1.ClusterOperationMetadata;
 import com.google.cloud.dataproc.v1.DeleteClusterRequest;
 import com.google.protobuf.Empty;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.Output;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -26,8 +27,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
- title = "Delete a Dataproc cluster",
- description = "Deletes the specified cluster in a region using project credentials; waits for the delete operation to finish."
+    title = "Delete a Dataproc cluster",
+    description = "Deletes the specified cluster in a region using project credentials; waits for the delete operation to finish."
 )
 @Plugin(
     examples = @Example(

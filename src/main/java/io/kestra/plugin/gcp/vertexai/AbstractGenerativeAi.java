@@ -1,26 +1,28 @@
 package io.kestra.plugin.gcp.vertexai;
 
+import java.util.List;
+
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.*;
 import com.google.cloud.vertexai.generativeai.GenerativeModel;
+
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 @SuperBuilder
 @ToString
@@ -134,12 +136,14 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     // common response objects
     public record Prediction(SafetyAttributes safetyAttributes, CitationMetadata citationMetadata, String content) {
         public static Prediction of(Candidate candidate) {
-            return new Prediction(SafetyAttributes.of(candidate.getSafetyRatingsList()),
+            return new Prediction(
+                SafetyAttributes.of(candidate.getSafetyRatingsList()),
                 CitationMetadata.of(candidate.getCitationMetadata()),
                 candidate.getContent().getParts(0).getText()
             );
         }
     }
+
     public record CitationMetadata(List<Citation> citations) {
         public static CitationMetadata of(com.google.cloud.vertexai.api.CitationMetadata citationMetadata) {
             return new CitationMetadata(
@@ -147,7 +151,10 @@ abstract class AbstractGenerativeAi extends AbstractTask {
             );
         }
     }
-    public record Citation(List<String> citations) {}
+
+    public record Citation(List<String> citations) {
+    }
+
     public record SafetyAttributes(List<Float> scores, List<String> categories, Boolean blocked) {
         public static SafetyAttributes of(List<SafetyRating> safetyRatingsList) {
             return new SafetyAttributes(

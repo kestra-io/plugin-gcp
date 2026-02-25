@@ -1,16 +1,17 @@
 package io.kestra.plugin.gcp.vertexai.models;
 
+import java.util.Locale;
+
 import com.google.cloud.aiplatform.v1.DiskSpec;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.Locale;
 
 @Getter
 @Builder
@@ -28,7 +29,7 @@ public class DiscSpec {
     @Builder.Default
     private Property<Integer> bootDiskSizeGb = Property.ofValue(100);
 
-    public  com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
+    public com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {
         return DiskSpec.newBuilder()
             .setBootDiskType(runContext.render(this.getBootDiskType()).as(DiskType.class).orElseThrow().value())
             .setBootDiskSizeGb(runContext.render(this.getBootDiskSizeGb()).as(Integer.class).orElseThrow())

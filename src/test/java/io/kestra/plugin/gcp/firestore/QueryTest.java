@@ -1,20 +1,21 @@
 package io.kestra.plugin.gcp.firestore;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
-import io.kestra.core.utils.Rethrow;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static io.kestra.core.utils.Rethrow.throwSupplier;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,8 +38,10 @@ class QueryTest {
         var query = Query.builder()
             .projectId(Property.ofValue(project))
             .collection(Property.ofValue(collectionName))
-            .filters(List.of(
-                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build()
+                )
             )
             .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
@@ -52,7 +55,8 @@ class QueryTest {
         }
 
         Await.until(
-            throwSupplier(() -> {
+            throwSupplier(() ->
+            {
                 try (var firestore = query.connection(runContext)) {
                     return firestore.collection("persons").get().get().size() == 3;
                 }
@@ -81,9 +85,11 @@ class QueryTest {
         var query = Query.builder()
             .projectId(Property.ofValue(project))
             .collection(Property.ofValue(collectionName))
-            .filters(List.of(
-                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build(),
-                Query.Filter.builder().field(Property.ofValue("firstname")).value(Property.ofValue("Jane")).build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build(),
+                    Query.Filter.builder().field(Property.ofValue("firstname")).value(Property.ofValue("Jane")).build()
+                )
             )
             .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
@@ -147,8 +153,10 @@ class QueryTest {
         var query = Query.builder()
             .projectId(Property.ofValue(project))
             .collection(Property.ofValue(collectionName))
-            .filters(List.of(
-                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).operator(Property.ofValue(Query.QueryOperator.NOT_EQUAL_TO)).build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).operator(Property.ofValue(Query.QueryOperator.NOT_EQUAL_TO)).build()
+                )
             )
             .orderBy(Property.ofValue("firstname"))
             .fetchType(Property.ofValue(FetchType.FETCH))
@@ -182,8 +190,10 @@ class QueryTest {
         var query = Query.builder()
             .projectId(Property.ofValue(project))
             .collection(Property.ofValue(collectionName))
-            .filters(List.of(
-                Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build())
+            .filters(
+                List.of(
+                    Query.Filter.builder().field(Property.ofValue("lastname")).value(Property.ofValue("Doe")).build()
+                )
             )
             .fetchType(Property.ofValue(FetchType.STORE))
             .build();
