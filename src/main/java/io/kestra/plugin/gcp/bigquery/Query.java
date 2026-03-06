@@ -316,7 +316,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             .jobId(queryJob.getJobId().getJob());
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
-            var retryConfig = this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
+            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto() : Exponential.builder()
                 .type("exponential")
                 .interval(Duration.ofSeconds(5))
                 .maxInterval(Duration.ofMinutes(60))
@@ -343,7 +343,20 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 try {
                     return queryJob.getQueryResults();
                 } catch (com.google.cloud.bigquery.BigQueryException e) {
-                    throw new BigQueryException(e.getErrors());
+                    List<BigQueryError> errors = e.getErrors();
+                    if (errors == null || errors.isEmpty()) {
+                        String reason = e.getReason();
+                        if (reason == null) {
+                            reason = switch (e.getCode()) {
+                                case 503 -> "backendError";
+                                case 500 -> "internalError";
+                                case 429 -> "rateLimitExceeded";
+                                default -> "unknown";
+                            };
+                        }
+                        errors = List.of(new BigQueryError(reason, e.getLocation(), e.getMessage()));
+                    }
+                    throw new BigQueryException(errors);
                 }
             });
 

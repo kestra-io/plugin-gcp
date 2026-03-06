@@ -88,16 +88,6 @@ abstract public class AbstractBigquery extends AbstractTask {
     @JsonIgnore
     protected BigQueryFactory bigQueryFactory = AbstractBigquery::connection;
 
-
-//    BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-//        return connection(
-//            runContext,
-//            this.credentials(runContext),
-//            runContext.render(this.projectId).as(String.class).orElse(null),
-//            runContext.render(this.location).as(String.class).orElse(null)
-//        );
-//    }
-
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         GoogleCredentials credentials = this.credentials(runContext);
         String projectId = runContext.render(this.projectId).as(String.class).orElse(null);
@@ -105,7 +95,6 @@ abstract public class AbstractBigquery extends AbstractTask {
 
         return bigQueryFactory.create(runContext, credentials, projectId, location);
     }
-
 
 
     static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
