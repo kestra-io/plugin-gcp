@@ -162,7 +162,7 @@ public class QueryErrorTest {
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         stubCommonEndpoints();
 
-        stubFor(get(urlEqualTo("/bigquery/v2/projects/my-project/datasets/_temp_dataset/tables/anon1234567890abcdef/data?prettyPrint=false"))
+        stubFor(get(urlEqualTo("/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false"))
             .willReturn(aResponse()
                 .withStatus(503)
                 .withHeader("Content-Type", "application/json")
@@ -179,7 +179,7 @@ public class QueryErrorTest {
         assertInstanceOf(BigQueryException.class, cause);
 
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
-        verify(3, getRequestedFor(urlEqualTo("/bigquery/v2/projects/my-project/datasets/_temp_dataset/tables/anon1234567890abcdef/data?prettyPrint=false")));
+        verify(3, getRequestedFor(urlEqualTo("/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false")));
     }
 
     private void stubCommonEndpoints() {
