@@ -162,7 +162,22 @@ public class QueryErrorTest {
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         stubCommonEndpoints();
 
-        stubFor(get(urlEqualTo("/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false"))
+        // Use WireMock scenarios: first call to queries endpoint succeeds (used by Job.waitFor()),
+        // subsequent calls return 503 (used by Job.getQueryResults())
+        String queriesUrl = "/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false";
+
+        stubFor(get(urlEqualTo(queriesUrl))
+            .inScenario("backendError")
+            .whenScenarioStateIs("Started")
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(QUERY_RESULTS_RESPONSE))
+            .willSetStateTo("waitForDone"));
+
+        stubFor(get(urlEqualTo(queriesUrl))
+            .inScenario("backendError")
+            .whenScenarioStateIs("waitForDone")
             .willReturn(aResponse()
                 .withStatus(503)
                 .withHeader("Content-Type", "application/json")
@@ -178,8 +193,8 @@ public class QueryErrorTest {
         Throwable cause = thrown instanceof BigQueryException ? thrown : thrown.getCause();
         assertInstanceOf(BigQueryException.class, cause);
 
-        // Verify that retries actually happened (3 attempts = initial + 2 retries)
-        verify(3, getRequestedFor(urlEqualTo("/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false")));
+        // Verify retries happened: 1 success (waitFor) + 3 failures (getQueryResults retries) = 4 total
+        verify(4, getRequestedFor(urlEqualTo(queriesUrl)));
     }
 
     private void stubCommonEndpoints() {
