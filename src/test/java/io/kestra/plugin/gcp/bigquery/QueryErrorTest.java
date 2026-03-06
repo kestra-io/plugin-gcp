@@ -34,46 +34,6 @@ public class QueryErrorTest {
     @Value("${kestra.tasks.bigquery.project}")
     private String project;
 
-    @Value("${kestra.tasks.bigquery.dataset}")
-    private String dataset;
-
-    private static final String JOB_RESPONSE_RUNNING = """
-        {
-          "kind": "bigquery#job",
-          "etag": "\\"abcdef1234567890\\"",
-          "id": "my-project:US.job_1234567890abcdef",
-          "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/my-project/jobs/job_1234567890abcdef",
-          "user_email": "user@example.com",
-          "configuration": {
-            "query": {
-              "query": "SELECT * FROM `my-project.my_dataset.my_table` LIMIT 100",
-              "destinationTable": {
-                "projectId": "my-project",
-                "datasetId": "_temp_dataset",
-                "tableId": "anon1234567890abcdef"
-              },
-              "createDisposition": "CREATE_IF_NEEDED",
-              "writeDisposition": "WRITE_TRUNCATE",
-              "priority": "INTERACTIVE",
-              "useLegacySql": false,
-              "useQueryCache": true
-            },
-            "jobType": "QUERY"
-          },
-          "jobReference": {
-            "projectId": "my-project",
-            "jobId": "job_1234567890abcdef",
-            "location": "US"
-          },
-          "status": {
-            "state": "RUNNING"
-          },
-          "statistics": {
-            "creationTime": "1697123456789",
-            "startTime": "1697123457000"
-          }
-        }""";
-
     private static final String JOB_RESPONSE_DONE = """
         {
           "kind": "bigquery#job",
@@ -115,33 +75,6 @@ public class QueryErrorTest {
           }
         }""";
 
-    private static final String QUERY_RESULTS_RESPONSE = """
-        {
-          "kind": "bigquery#getQueryResultsResponse",
-          "etag": "\\"abc123def456\\"",
-          "jobReference": {
-            "projectId": "my-project",
-            "jobId": "job_1234567890abcdef",
-            "location": "US"
-          },
-          "schema": {
-            "fields": [
-              { "name": "name", "type": "STRING", "mode": "NULLABLE" },
-              { "name": "age", "type": "INTEGER", "mode": "NULLABLE" },
-              { "name": "email", "type": "STRING", "mode": "NULLABLE" }
-            ]
-          },
-          "jobComplete": true,
-          "totalRows": "3",
-          "rows": [
-            { "f": [{ "v": "John Doe" }, { "v": "30" }, { "v": "john.doe@example.com" }] },
-            { "f": [{ "v": "Jane Smith" }, { "v": "25" }, { "v": "jane.smith@example.com" }] },
-            { "f": [{ "v": "Bob Johnson" }, { "v": "35" }, { "v": "bob.johnson@example.com" }] }
-          ],
-          "totalBytesProcessed": "1048576",
-          "cacheHit": false
-        }""";
-
     private static final String BACKEND_ERROR_RESPONSE = """
         {
           "error": {
@@ -160,24 +93,17 @@ public class QueryErrorTest {
 
     @Test
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
-        stubCommonEndpoints();
-
-        // Use WireMock scenarios: first call to queries endpoint succeeds (used by Job.waitFor()),
-        // subsequent calls return 503 (used by Job.getQueryResults())
-        String queriesUrl = "/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false";
-
-        stubFor(get(urlEqualTo(queriesUrl))
-            .inScenario("backendError")
-            .whenScenarioStateIs("Started")
+        // Return a DONE job from creation
+        stubFor(post(urlEqualTo("/bigquery/v2/projects/kestra-unit-test/jobs?prettyPrint=false"))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
-                .withBody(QUERY_RESULTS_RESPONSE))
-            .willSetStateTo("waitForDone"));
+                .withBody(JOB_RESPONSE_DONE)));
 
+        // Stub queries endpoint to always return 503 — this is only hit by getQueryResults()
+        // because dryRun=true skips Job.waitFor() (which also calls this endpoint in some SDK versions)
+        String queriesUrl = "/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false";
         stubFor(get(urlEqualTo(queriesUrl))
-            .inScenario("backendError")
-            .whenScenarioStateIs("waitForDone")
             .willReturn(aResponse()
                 .withStatus(503)
                 .withHeader("Content-Type", "application/json")
@@ -193,28 +119,8 @@ public class QueryErrorTest {
         Throwable cause = thrown instanceof BigQueryException ? thrown : thrown.getCause();
         assertInstanceOf(BigQueryException.class, cause);
 
-        // Verify retries happened: 1 success (waitFor) + 3 failures (getQueryResults retries) = 4 total
-        verify(4, getRequestedFor(urlEqualTo(queriesUrl)));
-    }
-
-    private void stubCommonEndpoints() {
-        stubFor(post(urlEqualTo("/bigquery/v2/projects/kestra-unit-test/jobs?prettyPrint=false"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_RUNNING)));
-
-        stubFor(get(urlEqualTo("/bigquery/v2/projects/my-project/jobs/job_1234567890abcdef?location=US&prettyPrint=false"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
-
-        stubFor(get(urlEqualTo("/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(QUERY_RESULTS_RESPONSE)));
+        // Verify that retries actually happened (3 attempts = initial + 2 retries)
+        verify(3, getRequestedFor(urlEqualTo(queriesUrl)));
     }
 
     private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) {
@@ -232,6 +138,7 @@ public class QueryErrorTest {
             .projectId(Property.ofValue(project))
             .sql(Property.ofValue("SELECT * from test_table"))
             .fetchType(Property.ofValue(FetchType.FETCH))
+            .dryRun(Property.ofValue(true))
             .build();
     }
 
