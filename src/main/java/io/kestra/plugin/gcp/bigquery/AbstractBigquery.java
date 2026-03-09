@@ -107,7 +107,7 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun, RunContext runContext) {
         return Failsafe
-            .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
+            .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetryAuto() : Exponential.builder()
                         .type("exponential")
                         .interval(Duration.ofSeconds(5))
                         .maxInterval(Duration.ofMinutes(60))
