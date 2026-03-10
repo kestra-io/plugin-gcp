@@ -1,26 +1,29 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.cloud.bigquery.*;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.CharStreams;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.tenant.TenantService;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Test;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.utils.TestsUtils;
-import io.kestra.plugin.gcp.gcs.Download;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.UUID;
-import jakarta.inject.Inject;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import com.google.cloud.bigquery.*;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.CharStreams;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.Task;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.gcs.Download;
+
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -54,10 +57,11 @@ public class ExtractToGcsTest extends AbstractBigquery {
 
     private Job query(BigQuery bigQuery, String query) throws InterruptedException {
         return bigQuery
-            .create(JobInfo
-                .newBuilder(QueryJobConfiguration.newBuilder(query).build())
-                .setJobId(JobId.of(UUID.randomUUID().toString()))
-                .build()
+            .create(
+                JobInfo
+                    .newBuilder(QueryJobConfiguration.newBuilder(query).build())
+                    .setJobId(JobId.of(UUID.randomUUID().toString()))
+                    .build()
             )
             .waitFor();
     }
@@ -70,9 +74,13 @@ public class ExtractToGcsTest extends AbstractBigquery {
         ExtractToGcs task = ExtractToGcs.builder()
             .id(ExtractToGcsTest.class.getSimpleName())
             .type(ExtractToGcs.class.getName())
-            .destinationUris(Property.ofValue(Collections.singletonList(
-                "gs://" + this.bucket + "/" + this.filename
-            )))
+            .destinationUris(
+                Property.ofValue(
+                    Collections.singletonList(
+                        "gs://" + this.bucket + "/" + this.filename
+                    )
+                )
+            )
             .sourceTable(Property.ofValue(this.project + "." + this.dataset + "." + this.table))
             .printHeader(Property.ofValue(printHeader))
             .build();
@@ -81,12 +89,12 @@ public class ExtractToGcsTest extends AbstractBigquery {
 
         query(
             task.connection(runContext),
-            "CREATE OR REPLACE TABLE  `" + this.dataset + "." +  this.table + "`" +
-            "(product STRING, quantity INT64)" +
-            ";" +
-            "INSERT `" + this.dataset + "." +  this.table + "` (product, quantity)" +
-            "VALUES('top load washer', 10)" +
-            ";"
+            "CREATE OR REPLACE TABLE  `" + this.dataset + "." + this.table + "`" +
+                "(product STRING, quantity INT64)" +
+                ";" +
+                "INSERT `" + this.dataset + "." + this.table + "` (product, quantity)" +
+                "VALUES('top load washer', 10)" +
+                ";"
         );
 
         ExtractToGcs.Output extractOutput = task.run(runContext);
@@ -112,7 +120,7 @@ public class ExtractToGcsTest extends AbstractBigquery {
         );
 
         // Clean sample table
-        query(task.connection(runContext), "DROP TABLE  `" + this.dataset + "." +  this.table + "` ;");
+        query(task.connection(runContext), "DROP TABLE  `" + this.dataset + "." + this.table + "` ;");
 
     }
 
@@ -126,4 +134,3 @@ public class ExtractToGcsTest extends AbstractBigquery {
         );
     }
 }
-

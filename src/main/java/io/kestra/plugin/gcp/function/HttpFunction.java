@@ -1,7 +1,15 @@
 package io.kestra.plugin.gcp.function;
 
+import java.net.URI;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+
 import com.google.auth.oauth2.IdTokenCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.http.HttpRequest;
 import io.kestra.core.http.HttpResponse;
@@ -16,16 +24,11 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.gcp.AbstractTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.net.URI;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -36,21 +39,23 @@ import java.util.Map;
     title = "Invoke an authenticated Cloud Run function",
     description = "Calls an HTTP-triggered Cloud Run service using an ID token from the provided service account and returns the response body."
 )
-@Plugin(examples = {
-    @Example(
-        full = true,
-        code = """
-            id: test_gcp_function
-            namespace: com.company.test.gcp
+@Plugin(
+    examples = {
+        @Example(
+            full = true,
+            code = """
+                id: test_gcp_function
+                namespace: com.company.test.gcp
 
-            tasks:
-              - id: get_hello_json
-                type: io.kestra.plugin.gcp.function.HttpFunction
-                httpMethod: GET
-                url: https://my-function.europe-west9.run.app
-            """
-    )
-})
+                tasks:
+                  - id: get_hello_json
+                    type: io.kestra.plugin.gcp.function.HttpFunction
+                    httpMethod: GET
+                    url: https://my-function.europe-west9.run.app
+                """
+        )
+    }
+)
 public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunction.Output> {
 
     @Schema(
@@ -95,15 +100,17 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
 
         Logger logger = runContext.logger();
 
-        try (var client = new HttpClient(
-            runContext,
-            HttpConfiguration.builder()
-                .timeout(
-                    TimeoutConfiguration.builder()
-                        .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
-                        .build()
-                ).build()
-        )) {
+        try (
+            var client = new HttpClient(
+                runContext,
+                HttpConfiguration.builder()
+                    .timeout(
+                        TimeoutConfiguration.builder()
+                            .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
+                            .build()
+                    ).build()
+            )
+        ) {
             HttpRequest.HttpRequestBuilder requestBuilder = HttpRequest.builder()
                 .uri(new URI(rUrl))
                 .method(rMethod)
@@ -131,7 +138,8 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
                     .build();
             }
         } catch (HttpClientResponseException e) {
-            logger.error("HttpFunction failed: status={}, body={}",
+            logger.error(
+                "HttpFunction failed: status={}, body={}",
                 e.getResponse() != null ? e.getResponse().getStatus().getCode() : -1,
                 e.getResponse() != null ? e.getResponse().getBody() : "null"
             );

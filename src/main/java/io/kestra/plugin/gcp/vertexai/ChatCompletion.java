@@ -1,8 +1,11 @@
 package io.kestra.plugin.gcp.vertexai;
 
+import java.util.List;
+
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.GenerateContentResponse;
 import com.google.cloud.vertexai.generativeai.ContentMaker;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -11,7 +14,10 @@ import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -19,11 +25,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
-
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -136,7 +137,6 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
             List<GenerateContentResponse> responses = messages.stream()
                 .map(throwFunction(message -> chatSession.sendMessage(runContext.render(message.content).as(String.class).orElseThrow())))
                 .toList();
-
 
             List<com.google.cloud.vertexai.api.Candidate> candidates = responses.stream().flatMap(response -> response.getCandidatesList().stream()).toList();
             List<GenerateContentResponse.UsageMetadata> metadatas = responses.stream().map(response -> response.getUsageMetadata()).toList();

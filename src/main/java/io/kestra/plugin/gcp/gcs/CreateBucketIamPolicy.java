@@ -1,21 +1,22 @@
 package io.kestra.plugin.gcp.gcs;
 
+import org.slf4j.Logger;
+
 import com.google.cloud.Identity;
 import com.google.cloud.Policy;
 import com.google.cloud.Role;
 import com.google.cloud.storage.Storage;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -88,11 +89,12 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
         boolean exists = currentPolicy
             .getBindingsList()
             .stream()
-            .anyMatch(binding -> binding.getRole().equals(role.getValue()) &&
-                binding
-                    .getMembers()
-                    .stream()
-                    .anyMatch(s -> s.equals(identity.strValue()))
+            .anyMatch(
+                binding -> binding.getRole().equals(role.getValue()) &&
+                    binding
+                        .getMembers()
+                        .stream()
+                        .anyMatch(s -> s.equals(identity.strValue()))
             );
 
         Output.OutputBuilder output = Output.builder()

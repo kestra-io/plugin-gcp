@@ -1,7 +1,18 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+
+import org.apache.commons.io.FilenameUtils;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
@@ -10,18 +21,8 @@ import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
-import io.micronaut.context.annotation.Value;
-import org.apache.commons.io.FilenameUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.Map;
-import java.util.Objects;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -45,9 +46,15 @@ class GcsTestUtils {
             TenantService.MAIN_TENANT,
             null,
             new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(new File(Objects.requireNonNull(UploadTest.class.getClassLoader()
-                .getResource(resource))
-                .toURI()))
+            new FileInputStream(
+                new File(
+                    Objects.requireNonNull(
+                        UploadTest.class.getClassLoader()
+                            .getResource(resource)
+                    )
+                        .toURI()
+                )
+            )
         );
 
         Upload task = Upload.builder()
@@ -81,7 +88,6 @@ class GcsTestUtils {
 
         return task.run(runContext(task));
     }
-
 
     RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(

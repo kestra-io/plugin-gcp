@@ -4,23 +4,21 @@ import com.google.cloud.dataform.v1.CreateWorkflowInvocationRequest;
 import com.google.cloud.dataform.v1.DataformClient;
 import com.google.cloud.dataform.v1.WorkflowInvocation;
 
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import jakarta.validation.constraints.NotNull;
-
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import lombok.Builder;
 
 @SuperBuilder
 @Getter
@@ -70,31 +68,32 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
     @PluginProperty
     protected Boolean wait = true;;
 
-   @Override
-public Output run(RunContext runContext) throws Exception {
-    try (DataformClient client = this.dataformClient(runContext)) {
-        String parent = buildRepositoryPath(runContext);
+    @Override
+    public Output run(RunContext runContext) throws Exception {
+        try (DataformClient client = this.dataformClient(runContext)) {
+            String parent = buildRepositoryPath(runContext);
 
-        // Render the config ID
-        String configPath = String.format("%s/workflowConfigs/%s",
-            parent,
-            runContext.render(this.workflowConfigId).as(String.class).orElseThrow()
-        );
+            // Render the config ID
+            String configPath = String.format(
+                "%s/workflowConfigs/%s",
+                parent,
+                runContext.render(this.workflowConfigId).as(String.class).orElseThrow()
+            );
 
-        // Build the workflow invocation with the proper field name
-        WorkflowInvocation requestBody = WorkflowInvocation.newBuilder()
-            .setWorkflowConfig(configPath)
-            .build();
+            // Build the workflow invocation with the proper field name
+            WorkflowInvocation requestBody = WorkflowInvocation.newBuilder()
+                .setWorkflowConfig(configPath)
+                .build();
 
-        CreateWorkflowInvocationRequest request = CreateWorkflowInvocationRequest.newBuilder()
-            .setParent(parent)
-            .setWorkflowInvocation(requestBody)
-            .build();
+            CreateWorkflowInvocationRequest request = CreateWorkflowInvocationRequest.newBuilder()
+                .setParent(parent)
+                .setWorkflowInvocation(requestBody)
+                .build();
 
-        WorkflowInvocation response = client.createWorkflowInvocation(request);
-        String invocationName = response.getName();
+            WorkflowInvocation response = client.createWorkflowInvocation(request);
+            String invocationName = response.getName();
 
-        if (wait) {
+            if (wait) {
                 WorkflowInvocation current;
                 do {
                     Thread.sleep(1000);
@@ -102,14 +101,14 @@ public Output run(RunContext runContext) throws Exception {
                 } while (current.getState() == WorkflowInvocation.State.RUNNING);
 
                 response = current; // Optional: return latest status
-        }
+            }
 
-        return Output.builder()
-            .workflowInvocationName(response.getName())
-            .workflowInvocationState(response.getState().name())
-            .build();
+            return Output.builder()
+                .workflowInvocationName(response.getName())
+                .workflowInvocationState(response.getState().name())
+                .build();
+        }
     }
-}
 
     @Builder
     @Getter

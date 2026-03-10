@@ -1,26 +1,28 @@
 package io.kestra.plugin.gcp.monitoring;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.cloud.monitoring.v3.MetricServiceClient;
-import com.google.monitoring.v3.*;
-import com.google.protobuf.Timestamp;
-import com.google.protobuf.util.JsonFormat;
-import io.kestra.core.models.annotations.*;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.JacksonMapper;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.cloud.monitoring.v3.MetricServiceClient;
+import com.google.monitoring.v3.*;
+import com.google.protobuf.Timestamp;
+import com.google.protobuf.util.JsonFormat;
+
+import io.kestra.core.models.annotations.*;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.JacksonMapper;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -79,9 +81,11 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
             var request = ListTimeSeriesRequest.newBuilder()
                 .setName("projects/" + rProjectId)
                 .setFilter(rFilter)
-                .setInterval(TimeInterval.newBuilder()
-                    .setStartTime(Timestamp.newBuilder().setSeconds(now - rWindow.getSeconds()))
-                    .setEndTime(Timestamp.newBuilder().setSeconds(now)))
+                .setInterval(
+                    TimeInterval.newBuilder()
+                        .setStartTime(Timestamp.newBuilder().setSeconds(now - rWindow.getSeconds()))
+                        .setEndTime(Timestamp.newBuilder().setSeconds(now))
+                )
                 .setView(ListTimeSeriesRequest.TimeSeriesView.FULL)
                 .build();
 
@@ -90,9 +94,11 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
                 .includingDefaultValueFields();
 
             var series = StreamSupport.stream(client.listTimeSeries(request).iterateAll().spliterator(), false)
-                .map(ts -> {
+                .map(ts ->
+                {
                     try {
-                        return JacksonMapper.ofJson().readValue(printer.print(ts), new TypeReference<Map<String, Object>>() {});
+                        return JacksonMapper.ofJson().readValue(printer.print(ts), new TypeReference<Map<String, Object>>() {
+                        });
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

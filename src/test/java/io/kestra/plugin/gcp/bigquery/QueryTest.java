@@ -1,29 +1,5 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.devskiller.friendly_id.FriendlyId;
-import com.google.cloud.bigquery.JobInfo;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.CharStreams;
-import dev.failsafe.FailsafeException;
-import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.tenant.TenantService;
-import io.kestra.core.utils.TestsUtils;
-import io.micronaut.context.annotation.Value;
-import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -33,6 +9,31 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import com.devskiller.friendly_id.FriendlyId;
+import com.google.cloud.bigquery.JobInfo;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.CharStreams;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.core.utils.TestsUtils;
+
+import dev.failsafe.FailsafeException;
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static io.kestra.core.utils.Rethrow.throwRunnable;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -88,12 +89,14 @@ class QueryTest {
     @MethodSource("provideFetchOrFetchType")
     @SuppressWarnings("unchecked")
     void fetch(boolean fetch, Property<FetchType> fetchType) throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of(
-            "sql", sql(),
-            "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "io.kestra.tests"),
-            "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
-            "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
-        ));
+        RunContext runContext = runContextFactory.of(
+            ImmutableMap.of(
+                "sql", sql(),
+                "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "io.kestra.tests"),
+                "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
+                "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
+            )
+        );
 
         Query task = Query.builder()
             .projectId(Property.ofValue(project))
@@ -182,14 +185,17 @@ class QueryTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofExpression("{% for input in inputs.loop %}" +
-                "SELECT" +
-                "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\")}}\" as execution_date," +
-                "  {{ input }} as counter" +
-                "{{ loop.last  == false ? '\nUNION ALL\n' : '\n' }}" +
-                "{% endfor %}"
-            ))
+            .sql(
+                Property.ofExpression(
+                    "{% for input in inputs.loop %}" +
+                        "SELECT" +
+                        "  \"{{execution.id}}\" as execution_id," +
+                        "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\")}}\" as execution_date," +
+                        "  {{ input }} as counter" +
+                        "{{ loop.last  == false ? '\nUNION ALL\n' : '\n' }}" +
+                        "{% endfor %}"
+                )
+            )
             .destinationTable(Property.ofValue(project + "." + dataset + "." + friendlyId))
             .timePartitioningField(Property.ofValue("execution_date"))
             .clusteringFields(Property.ofValue(Arrays.asList("execution_id", "counter")))
@@ -197,9 +203,11 @@ class QueryTest {
             .writeDisposition(Property.ofValue(JobInfo.WriteDisposition.WRITE_APPEND))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", IntStream.range(1, 26).boxed().toList()
-        ));
+        RunContext runContext = TestsUtils.mockRunContext(
+            runContextFactory, task, ImmutableMap.of(
+                "loop", IntStream.range(1, 26).boxed().toList()
+            )
+        );
 
         Query.Output run = task.run(runContext);
         assertThat(run.getJobId(), is(notNullValue()));
@@ -219,7 +227,8 @@ class QueryTest {
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
-        FailsafeException e = assertThrows(FailsafeException.class, () -> {
+        FailsafeException e = assertThrows(FailsafeException.class, () ->
+        {
             task.run(runContext);
         });
 
@@ -232,18 +241,23 @@ class QueryTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofExpression("{% for input in inputs.loop %}" +
-                "SELECT" +
-                "  \"{{execution.id}}\" as execution_id," +
-                "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\") }}\" as execution_date," +
-                "  {{input}} as counter;" +
-                "{% endfor %}"
-            ))
+            .sql(
+                Property.ofExpression(
+                    "{% for input in inputs.loop %}" +
+                        "SELECT" +
+                        "  \"{{execution.id}}\" as execution_id," +
+                        "  TIMESTAMP \"{{execution.startDate | date(\"yyyy-MM-dd HH:mm:ss.SSSSSS\") }}\" as execution_date," +
+                        "  {{input}} as counter;" +
+                        "{% endfor %}"
+                )
+            )
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", IntStream.range(1, 3).boxed().toList()
-        ));
+        RunContext runContext = TestsUtils.mockRunContext(
+            runContextFactory, task, ImmutableMap.of(
+                "loop", IntStream.range(1, 3).boxed().toList()
+            )
+        );
 
         Query.Output run = task.run(runContext);
         assertThat(run.getJobId(), is(notNullValue()));
@@ -277,7 +291,8 @@ class QueryTest {
 
         List<Query.Output> results = futures
             .stream()
-            .map(outputFuture -> {
+            .map(outputFuture ->
+            {
                 try {
                     return outputFuture.get();
                 } catch (InterruptedException | ExecutionException e) {
@@ -297,17 +312,23 @@ class QueryTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofExpression("{% for input in  inputs.loop %}" +
-                "SELECT * from `{{execution.id}}`;" +
-                "{% endfor %}"
-            ))
+            .sql(
+                Property.ofExpression(
+                    "{% for input in  inputs.loop %}" +
+                        "SELECT * from `{{execution.id}}`;" +
+                        "{% endfor %}"
+                )
+            )
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of(
-            "loop", IntStream.range(1, 3).boxed().toList()
-        ));
+        RunContext runContext = TestsUtils.mockRunContext(
+            runContextFactory, task, ImmutableMap.of(
+                "loop", IntStream.range(1, 3).boxed().toList()
+            )
+        );
 
-        FailsafeException e = assertThrows(FailsafeException.class, () -> {
+        FailsafeException e = assertThrows(FailsafeException.class, () ->
+        {
             task.run(runContext);
         });
 
@@ -320,9 +341,12 @@ class QueryTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue("DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".not`;" +
-                "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".exist`;"
-            ))
+            .sql(
+                Property.ofValue(
+                    "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".not`;" +
+                        "DROP TABLE IF EXISTS `" + project + "." + this.dataset + ".exist`;"
+                )
+            )
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -362,7 +386,8 @@ class QueryTest {
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         for (int i = 0; i < COUNT; i++) {
-            executorService.execute(throwRunnable(() -> {
+            executorService.execute(throwRunnable(() ->
+            {
                 Query.Output result = task.run(runContext);
                 assertThat(result.getRow().get("number"), is(1L));
 

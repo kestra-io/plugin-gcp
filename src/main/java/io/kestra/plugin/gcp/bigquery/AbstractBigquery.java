@@ -1,8 +1,17 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
+import org.slf4j.Logger;
+
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
-import dev.failsafe.Failsafe;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
@@ -10,17 +19,11 @@ import io.kestra.core.models.tasks.retrys.AbstractRetry;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
+
+import dev.failsafe.Failsafe;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
 
 @SuperBuilder
 @ToString
@@ -46,24 +49,28 @@ abstract public class AbstractBigquery extends AbstractTask {
         title = "Retry reasons",
         description = "BigQuery error reasons that trigger an automatic retry; evaluated against error reason strings"
     )
-    protected Property<List<String>> retryReasons = Property.ofValue(Arrays.asList(
-        "rateLimitExceeded",
-        "jobBackendError",
-        "backendError",
-        "internalError",
-        "jobInternalError"
-    ));
+    protected Property<List<String>> retryReasons = Property.ofValue(
+        Arrays.asList(
+            "rateLimitExceeded",
+            "jobBackendError",
+            "backendError",
+            "internalError",
+            "jobInternalError"
+        )
+    );
 
     @Builder.Default
     @Schema(
         title = "Retry message substrings",
         description = "Case-insensitive substrings that, if found in the error message, trigger an automatic retry"
     )
-    protected Property<List<String>> retryMessages = Property.ofValue(Arrays.asList(
-        "due to concurrent update",
-        "Retrying the job may solve the problem",
-        "Retrying may solve the problem"
-    ));
+    protected Property<List<String>> retryMessages = Property.ofValue(
+        Arrays.asList(
+            "due to concurrent update",
+            "Retrying the job may solve the problem",
+            "Retrying may solve the problem"
+        )
+    );
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         return connection(
@@ -91,22 +98,28 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun, RunContext runContext) {
         return Failsafe
-            .with(AbstractRetry.<Job>retryPolicy(this.getRetryAuto() != null ? this.getRetry() : Exponential.builder()
-                        .type("exponential")
-                        .interval(Duration.ofSeconds(5))
-                        .maxInterval(Duration.ofMinutes(60))
-                        .maxDuration(Duration.ofMinutes(15))
-                        .maxAttempts(10)
-                        .build()
-                    )
+            .with(
+                AbstractRetry.<Job> retryPolicy(
+                    this.getRetryAuto() != null ? this.getRetry()
+                        : Exponential.builder()
+                            .type("exponential")
+                            .interval(Duration.ofSeconds(5))
+                            .maxInterval(Duration.ofMinutes(60))
+                            .maxDuration(Duration.ofMinutes(15))
+                            .maxAttempts(10)
+                            .build()
+                )
                     .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
-                    .onFailure(event -> logger.error(
-                        "Stop retry, attempts {} elapsed {} seconds",
-                        event.getAttemptCount(),
-                        event.getElapsedTime().getSeconds(),
-                        event.getException()
-                    ))
-                    .onRetry(event -> {
+                    .onFailure(
+                        event -> logger.error(
+                            "Stop retry, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds(),
+                            event.getException()
+                        )
+                    )
+                    .onRetry(event ->
+                    {
                         logger.warn(
                             "Retrying, attempts {} elapsed {} seconds",
                             event.getAttemptCount(),
@@ -114,7 +127,8 @@ abstract public class AbstractBigquery extends AbstractTask {
                         );
                     }).build()
             )
-            .get(() -> {
+            .get(() ->
+            {
                 Job job = null;
                 try {
                     job = createJob.call();

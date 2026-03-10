@@ -1,19 +1,21 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.google.cloud.storage.BucketInfo;
+
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Rethrow;
 import io.kestra.plugin.gcp.gcs.models.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -168,10 +170,12 @@ public abstract class AbstractBucket extends AbstractGcs implements RunnableTask
         if (this.labels != null) {
             builder.setLabels(
                 runContext.render(this.labels).asMap(String.class, String.class).entrySet().stream()
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Rethrow.throwFunction(e -> runContext.render(e.getValue()))
-                    ))
+                    .collect(
+                        Collectors.toMap(
+                            Map.Entry::getKey,
+                            Rethrow.throwFunction(e -> runContext.render(e.getValue()))
+                        )
+                    )
             );
         }
 

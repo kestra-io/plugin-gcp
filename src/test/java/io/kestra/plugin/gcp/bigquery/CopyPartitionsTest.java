@@ -1,16 +1,19 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
+
 import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -36,18 +39,21 @@ class CopyPartitionsTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
-                    "PARTITION BY DATE(transaction_date)\n" +
-                    "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')\n" +
-                    "UNION ALL\n" +
-                    "(SELECT 2, DATETIME '2020-04-02 12:30:00.45')\n" +
-                    "UNION ALL\n" +
-                    "(SELECT 3, DATETIME '2020-04-03 12:30:00.45')\n" +
-                    "UNION ALL\n" +
-                    "(SELECT 4, DATETIME '2020-04-04 12:30:00.45')\n" +
-                    "UNION ALL\n" +
-                    "(SELECT 5, DATETIME '2020-04-05 12:30:00.45')"
-                ))
+            .sql(
+                Property.ofValue(
+                    "CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+                        "PARTITION BY DATE(transaction_date)\n" +
+                        "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')\n" +
+                        "UNION ALL\n" +
+                        "(SELECT 2, DATETIME '2020-04-02 12:30:00.45')\n" +
+                        "UNION ALL\n" +
+                        "(SELECT 3, DATETIME '2020-04-03 12:30:00.45')\n" +
+                        "UNION ALL\n" +
+                        "(SELECT 4, DATETIME '2020-04-04 12:30:00.45')\n" +
+                        "UNION ALL\n" +
+                        "(SELECT 5, DATETIME '2020-04-05 12:30:00.45')"
+                )
+            )
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
@@ -92,10 +98,13 @@ class CopyPartitionsTest {
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue("CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
-                "PARTITION BY DATE(transaction_date)\n" +
-                "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')"
-            ))
+            .sql(
+                Property.ofValue(
+                    "CREATE TABLE `" + project + "." + dataset + "." + table + "` (transaction_id INT64, transaction_date DATETIME)\n" +
+                        "PARTITION BY DATE(transaction_date)\n" +
+                        "AS (SELECT 1, DATETIME '2020-04-01 12:30:00.45')"
+                )
+            )
             .build();
 
         var runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());

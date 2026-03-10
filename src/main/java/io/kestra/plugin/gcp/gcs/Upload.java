@@ -1,25 +1,28 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.ByteBuffer;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import org.slf4j.Logger;
 
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.ByteBuffer;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -121,10 +124,12 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
         URI to = encode(runContext, runContext.render(this.to).as(String.class).orElse(null));
 
         BlobInfo.Builder builder = BlobInfo
-            .newBuilder(BlobId.of(
-                to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(),
-                blobPath(to.getPath().substring(1))
-            ));
+            .newBuilder(
+                BlobId.of(
+                    to.getScheme().equals("gs") ? to.getAuthority() : to.getScheme(),
+                    blobPath(to.getPath().substring(1))
+                )
+            );
 
         if (this.contentType != null) {
             builder.setContentType(runContext.render(this.contentType).as(String.class).orElseThrow());

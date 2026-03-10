@@ -1,15 +1,13 @@
 package io.kestra.plugin.gcp.bigquery.models;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.List;
 
 @Getter
 @Builder
@@ -35,10 +33,9 @@ public class UserDefinedFunction {
     }
 
     public com.google.cloud.bigquery.UserDefinedFunction to(RunContext runContext) throws IllegalVariableEvaluationException {
-        return runContext.render(this.getType()).as(com.google.cloud.bigquery.UserDefinedFunction.Type.class).orElse(null)
-            == com.google.cloud.bigquery.UserDefinedFunction.Type.FROM_URI ?
-            com.google.cloud.bigquery.UserDefinedFunction.fromUri(runContext.render(content).as(String.class).orElse(null)) :
-            com.google.cloud.bigquery.UserDefinedFunction.inline(runContext.render(content).as(String.class).orElse(null));
+        return runContext.render(this.getType()).as(com.google.cloud.bigquery.UserDefinedFunction.Type.class).orElse(null) == com.google.cloud.bigquery.UserDefinedFunction.Type.FROM_URI
+            ? com.google.cloud.bigquery.UserDefinedFunction.fromUri(runContext.render(content).as(String.class).orElse(null))
+            : com.google.cloud.bigquery.UserDefinedFunction.inline(runContext.render(content).as(String.class).orElse(null));
     }
 
     @Getter

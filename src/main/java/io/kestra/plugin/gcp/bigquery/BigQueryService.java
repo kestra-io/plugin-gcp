@@ -1,16 +1,18 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobId;
 import com.google.cloud.bigquery.TableId;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import org.slf4j.Logger;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class BigQueryService {
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
@@ -47,7 +49,7 @@ public class BigQueryService {
             if (errors.size() > 0) {
                 logger.warn(
                     "Error query on job '{}' with errors:\n[\n - {}\n]",
-                     "job '" + job.getJobId().getJob() + "'",
+                    "job '" + job.getJobId().getJob() + "'",
                     String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
                 );
 

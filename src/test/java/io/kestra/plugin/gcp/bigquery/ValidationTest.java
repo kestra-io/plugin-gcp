@@ -1,11 +1,13 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.validations.ModelValidator;
-import io.kestra.core.junit.annotations.KestraTest;
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.validations.ModelValidator;
+
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolationException;
 

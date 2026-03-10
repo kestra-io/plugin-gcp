@@ -1,22 +1,23 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.cloud.bigquery.*;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.cloud.bigquery.*;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -53,7 +54,6 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     )
     @Builder.Default
     private Property<TimePartitioning.Type> timePartitioningType = Property.ofValue(TimePartitioning.Type.DAY);
-
 
     @Schema(
         title = "Write disposition",
@@ -117,9 +117,10 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         }
 
         if (this.timePartitioningField != null) {
-            builder.setTimePartitioning(TimePartitioning.newBuilder(runContext.render(this.timePartitioningType).as(TimePartitioning.Type.class).orElseThrow())
-                .setField(runContext.render(runContext.render(this.timePartitioningField).as(String.class).orElseThrow()))
-                .build()
+            builder.setTimePartitioning(
+                TimePartitioning.newBuilder(runContext.render(this.timePartitioningType).as(TimePartitioning.Type.class).orElseThrow())
+                    .setField(runContext.render(runContext.render(this.timePartitioningField).as(String.class).orElseThrow()))
+                    .build()
             );
         }
 
@@ -171,7 +172,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     }
 
     @SuppressWarnings("unchecked")
-    private com.google.cloud.bigquery.Schema schema(Map<String, Object> schema)  {
+    private com.google.cloud.bigquery.Schema schema(Map<String, Object> schema) {
 
         if (!schema.containsKey("fields")) {
             throw new IllegalArgumentException("Unable to deserialize schema, no 'fields' with data '" + schema + "'");
@@ -181,18 +182,19 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     }
 
     @SuppressWarnings("unchecked")
-    private List<Field> fields(List<Map<String, Object>> fields)  {
+    private List<Field> fields(List<Map<String, Object>> fields) {
         return fields
             .stream()
-            .map(r -> Field
-                .newBuilder(
-                    (String) r.get("name"),
-                    StandardSQLTypeName.valueOf((String) r.get("type")),
-                    r.containsKey("fields") ? FieldList.of(fields((List<Map<String, Object>>) r.get("fields"))) : null
-                )
-                .setDescription(r.containsKey("description") ? (String) r.get("description") : null)
-                .setMode(r.containsKey("mode") ? Field.Mode.valueOf((String) r.get("mode")) : null)
-                .build()
+            .map(
+                r -> Field
+                    .newBuilder(
+                        (String) r.get("name"),
+                        StandardSQLTypeName.valueOf((String) r.get("type")),
+                        r.containsKey("fields") ? FieldList.of(fields((List<Map<String, Object>>) r.get("fields"))) : null
+                    )
+                    .setDescription(r.containsKey("description") ? (String) r.get("description") : null)
+                    .setMode(r.containsKey("mode") ? Field.Mode.valueOf((String) r.get("mode")) : null)
+                    .build()
             )
             .collect(Collectors.toList());
     }
@@ -204,9 +206,11 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         return Output.builder()
             .jobId(job.getJobId().getJob())
             .rows(stats.getOutputRows())
-            .destinationTable(configuration.getDestinationTable().getProject() + "." +
-                configuration.getDestinationTable().getDataset() + "." +
-                configuration.getDestinationTable().getTable())
+            .destinationTable(
+                configuration.getDestinationTable().getProject() + "." +
+                    configuration.getDestinationTable().getDataset() + "." +
+                    configuration.getDestinationTable().getTable()
+            )
             .build();
     }
 

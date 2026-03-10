@@ -1,21 +1,5 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.devskiller.friendly_id.FriendlyId;
-import com.google.common.collect.ImmutableMap;
-import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.tenant.TenantService;
-import io.kestra.core.utils.IdUtils;
-import io.kestra.core.utils.TestsUtils;
-import io.micronaut.context.annotation.Value;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -27,6 +11,25 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import com.devskiller.friendly_id.FriendlyId;
+import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.core.utils.IdUtils;
+import io.kestra.core.utils.TestsUtils;
+
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -48,26 +51,29 @@ class StorageWriteTest {
 
     @Test
     void run() throws Exception {
-        String table = this.project  + "." + this.dataset + "." + FriendlyId.createFriendlyId();
+        String table = this.project + "." + this.dataset + "." + FriendlyId.createFriendlyId();
 
         Query create = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .projectId(Property.ofValue(project))
-            .sql(Property.ofValue("CREATE TABLE " + table + " AS " + "SELECT \n" +
-                "  \"hello\" as string,\n" +
-                "  CAST(NULL AS INT) AS `nullable`,\n" +
-                "  TRUE AS `bool`,\n" +
-                "  1 as int,\n" +
-                "  1.25 AS float,\n" +
-                "  DATE(\"2008-12-25\") AS date,\n" +
-                "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
-                "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
-                "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
-                "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
-                "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
-                "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
-            ))
+            .sql(
+                Property.ofValue(
+                    "CREATE TABLE " + table + " AS " + "SELECT \n" +
+                        "  \"hello\" as string,\n" +
+                        "  CAST(NULL AS INT) AS `nullable`,\n" +
+                        "  TRUE AS `bool`,\n" +
+                        "  1 as int,\n" +
+                        "  1.25 AS float,\n" +
+                        "  DATE(\"2008-12-25\") AS date,\n" +
+                        "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
+                        "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
+                        "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
+                        "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
+                        "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
+                        "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`"
+                )
+            )
             .build();
         create.run(TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of()));
 

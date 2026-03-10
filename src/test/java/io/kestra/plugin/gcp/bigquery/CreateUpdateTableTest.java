@@ -1,8 +1,15 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.time.Duration;
+import java.util.Arrays;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -11,13 +18,9 @@ import io.kestra.plugin.gcp.bigquery.models.Field;
 import io.kestra.plugin.gcp.bigquery.models.Schema;
 import io.kestra.plugin.gcp.bigquery.models.StandardTableDefinition;
 import io.kestra.plugin.gcp.bigquery.models.TableDefinition;
+
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-
-import java.time.Duration;
-import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -43,30 +46,34 @@ public class CreateUpdateTableTest {
             .dataset(Property.ofValue(this.dataset))
             .table(Property.ofValue(friendlyId))
             .friendlyName(Property.ofValue("new_table"))
-            .tableDefinition(TableDefinition.builder()
-                .type(Property.ofValue(TableDefinition.Type.TABLE))
-                .schema(Schema.builder()
-                    .fields(Arrays.asList(
-                        Field.builder()
-                            .name(Property.ofValue("id"))
-                            .type(Property.ofValue(StandardSQLTypeName.INT64))
-                            .build(),
-                        Field.builder()
-                            .name(Property.ofValue("name"))
-                            .type(Property.ofValue(StandardSQLTypeName.STRING))
+            .tableDefinition(
+                TableDefinition.builder()
+                    .type(Property.ofValue(TableDefinition.Type.TABLE))
+                    .schema(
+                        Schema.builder()
+                            .fields(
+                                Arrays.asList(
+                                    Field.builder()
+                                        .name(Property.ofValue("id"))
+                                        .type(Property.ofValue(StandardSQLTypeName.INT64))
+                                        .build(),
+                                    Field.builder()
+                                        .name(Property.ofValue("name"))
+                                        .type(Property.ofValue(StandardSQLTypeName.STRING))
+                                        .build()
+                                )
+                            )
                             .build()
-                    ))
+                    )
+                    .standardTableDefinition(
+                        StandardTableDefinition.builder()
+                            .clustering(Property.ofValue(Arrays.asList("id", "name")))
+                            .build()
+                    )
                     .build()
-                )
-                .standardTableDefinition(StandardTableDefinition.builder()
-                    .clustering(Property.ofValue(Arrays.asList("id", "name")))
-                    .build()
-                )
-                .build()
             )
             .build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         CreateTable.Output run = task.run(runContext);
 
@@ -98,30 +105,33 @@ public class CreateUpdateTableTest {
         String friendlyId = FriendlyId.createFriendlyId();
 
         CreateTable task = CreateTable.builder()
-                .projectId(Property.ofValue(this.project))
-                .dataset(Property.ofValue(this.dataset))
-                .table(Property.ofValue(friendlyId))
-                .friendlyName(Property.ofValue("new_table"))
-                .tableDefinition(TableDefinition.builder()
-                        .type(Property.ofValue(TableDefinition.Type.TABLE))
-                        .schema(Schema.builder()
-                                .fields(Arrays.asList(
-                                        Field.builder()
-                                                .name(Property.ofValue("id"))
-                                                .type(Property.ofValue(StandardSQLTypeName.INT64))
-                                                .build(),
-                                        Field.builder()
-                                                .name(Property.ofValue("name"))
-                                                .type(Property.ofValue(StandardSQLTypeName.STRING))
-                                                .build()
-                                ))
-                                .build()
-                        )
-                        .build()
-                )
-                .build();
+            .projectId(Property.ofValue(this.project))
+            .dataset(Property.ofValue(this.dataset))
+            .table(Property.ofValue(friendlyId))
+            .friendlyName(Property.ofValue("new_table"))
+            .tableDefinition(
+                TableDefinition.builder()
+                    .type(Property.ofValue(TableDefinition.Type.TABLE))
+                    .schema(
+                        Schema.builder()
+                            .fields(
+                                Arrays.asList(
+                                    Field.builder()
+                                        .name(Property.ofValue("id"))
+                                        .type(Property.ofValue(StandardSQLTypeName.INT64))
+                                        .build(),
+                                    Field.builder()
+                                        .name(Property.ofValue("name"))
+                                        .type(Property.ofValue(StandardSQLTypeName.STRING))
+                                        .build()
+                                )
+                            )
+                            .build()
+                    )
+                    .build()
+            )
+            .build();
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         CreateTable.Output run = task.run(runContext);
 

@@ -1,20 +1,22 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.util.Objects;
+
+import org.slf4j.Logger;
+
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import org.slf4j.Logger;
-
-import java.util.Objects;
 
 @SuperBuilder
 @ToString
@@ -56,14 +58,15 @@ public class TableMetadata extends AbstractTable implements RunnableTask<Abstrac
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
 
-        TableId tableId = this.projectId != null  ?
-            TableId.of(
-                runContext.render(this.projectId).as(String.class).orElseThrow(),
+        TableId tableId = this.projectId != null ? TableId.of(
+            runContext.render(this.projectId).as(String.class).orElseThrow(),
+            runContext.render(this.dataset).as(String.class).orElse(null),
+            runContext.render(this.table).as(String.class).orElse(null)
+        )
+            : TableId.of(
                 runContext.render(this.dataset).as(String.class).orElse(null),
-                runContext.render(this.table).as(String.class).orElse(null)) :
-            TableId.of(
-                runContext.render(this.dataset).as(String.class).orElse(null),
-                runContext.render(this.table).as(String.class).orElse(null));
+                runContext.render(this.table).as(String.class).orElse(null)
+            );
 
         logger.debug("Getting table metadata '{}'", tableId);
 

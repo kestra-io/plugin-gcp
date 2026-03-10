@@ -1,10 +1,23 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.TopicAdminClient;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PushConfig;
+
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
@@ -14,21 +27,9 @@ import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.kestra.plugin.gcp.pubsub.model.SerdeType;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -77,7 +78,7 @@ class PublishThenConsumeTest {
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(2));
         } finally {
-           deleteTopic(topic);
+            deleteTopic(topic);
         }
     }
 
@@ -146,7 +147,7 @@ class PublishThenConsumeTest {
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(2));
         } finally {
-           deleteTopic(topic);
+            deleteTopic(topic);
         }
     }
 
@@ -184,7 +185,6 @@ class PublishThenConsumeTest {
                 )
                 .build();
 
-
             var publishOutput = publish.run(runContext);
             assertThat(publishOutput.getMessagesCount(), is(4));
 
@@ -198,7 +198,7 @@ class PublishThenConsumeTest {
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(4));
         } finally {
-           deleteTopic(topic);
+            deleteTopic(topic);
         }
     }
 
@@ -206,10 +206,14 @@ class PublishThenConsumeTest {
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         OutputStream output = new FileOutputStream(tempFile);
 
-        FileSerde.write(output,
-            Message.builder().data("Hello World".getBytes()).build());
-        FileSerde.write(output,
-            Message.builder().attributes(Map.of("key", "value")).build());
+        FileSerde.write(
+            output,
+            Message.builder().data("Hello World".getBytes()).build()
+        );
+        FileSerde.write(
+            output,
+            Message.builder().attributes(Map.of("key", "value")).build()
+        );
         return storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
     }
 

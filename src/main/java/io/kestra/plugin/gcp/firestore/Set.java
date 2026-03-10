@@ -1,6 +1,11 @@
 package io.kestra.plugin.gcp.firestore;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -9,13 +14,10 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -69,7 +71,7 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     @Schema(
         title = "Document payload",
         description = "Map or JSON string to write",
-        anyOf = {String.class, Map.class}
+        anyOf = { String.class, Map.class }
     )
     @PluginProperty(dynamic = true)
     private Object document;
@@ -84,9 +86,7 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
     public Output run(RunContext runContext) throws Exception {
         try (var firestore = this.connection(runContext)) {
             var collectionRef = this.collection(runContext, firestore);
-            var documentReference = this.childPath == null ?
-                collectionRef.document() :
-                collectionRef.document(runContext.render(this.childPath).as(String.class).orElseThrow());
+            var documentReference = this.childPath == null ? collectionRef.document() : collectionRef.document(runContext.render(this.childPath).as(String.class).orElseThrow());
             var future = documentReference.set(fields(runContext, this.document));
 
             // wait for the write to happen

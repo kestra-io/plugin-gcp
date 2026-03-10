@@ -10,13 +10,11 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.kestra.plugin.gcp.pubsub.model.SerdeType;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import jakarta.validation.constraints.NotNull;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -67,7 +65,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
     @Schema(
         title = io.kestra.core.models.property.Data.From.TITLE,
         description = io.kestra.core.models.property.Data.From.DESCRIPTION,
-        anyOf = {String.class, Message[].class, Message.class}
+        anyOf = { String.class, Message[].class, Message.class }
     )
     private Object from;
 
@@ -92,7 +90,8 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
         Integer count = io.kestra.core.models.property.Data.from(from)
             .readAs(runContext, Message.class, map -> JacksonMapper.toMap(map, Message.class))
-            .map(throwFunction(message -> {
+            .map(throwFunction(message ->
+            {
                 publisher.publish(message.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow()));
                 return 1;
             }))
@@ -107,7 +106,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
 
         return Output.builder()
             .messagesCount(count)
-        .build();
+            .build();
     }
 
     private boolean checkForOrderingKeys(RunContext runContext) {
@@ -118,7 +117,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
                 .blockOptional()
                 .orElse(false);
         } catch (Exception e) {
-            runContext.logger().info("Failed to parse messages while checking for ordering keys. ",e);
+            runContext.logger().info("Failed to parse messages while checking for ordering keys. ", e);
             return false;
         }
     }

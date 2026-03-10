@@ -1,27 +1,29 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.cloud.bigquery.*;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Metric;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+
+import com.google.cloud.bigquery.*;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -48,7 +50,7 @@ import jakarta.validation.constraints.NotNull;
     },
     metrics = {
         @Metric(name = "num.child.jobs", type = Counter.TYPE, description = "The number of child jobs executed."),
-        @Metric(name = "duration", type = Timer.TYPE, description= "The time it took for the job to run.")
+        @Metric(name = "duration", type = Timer.TYPE, description = "The time it took for the job to run.")
     }
 )
 @Schema(
@@ -88,12 +90,14 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
         Job copyJob = this.waitForJob(
             logger,
             () -> connection
-                .create(JobInfo.newBuilder(jobConfiguration)
-                    .setJobId(BigQueryService.jobId(runContext, this))
-                    .build()
+                .create(
+                    JobInfo.newBuilder(jobConfiguration)
+                        .setJobId(BigQueryService.jobId(runContext, this))
+                        .build()
                 ),
             runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
-            runContext);
+            runContext
+        );
 
         JobStatistics.CopyStatistics copyJobStatistics = copyJob.getStatistics();
 
@@ -147,7 +151,7 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     }
 
     private String[] tags(JobStatistics.CopyStatistics stats, Job queryJob) {
-        return new String[]{
+        return new String[] {
             "project_id", queryJob.getJobId().getProject(),
             "location", queryJob.getJobId().getLocation(),
         };

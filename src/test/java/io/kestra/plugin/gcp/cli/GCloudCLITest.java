@@ -1,17 +1,19 @@
 package io.kestra.plugin.gcp.cli;
 
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
-import io.kestra.core.junit.annotations.KestraTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -28,21 +30,25 @@ class GCloudCLITest {
         String envKey = "MY_KEY";
         String envValue = "MY_VALUE";
         GCloudCLI execute = GCloudCLI.builder()
-                .id(IdUtils.create())
-                .type(GCloudCLI.class.getName())
-                .projectId(Property.ofValue(projectId))
-                .serviceAccount(Property.ofValue(serviceAccount))
-                .env(new Property<>(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
-                .commands(Property.ofValue(List.of(
+            .id(IdUtils.create())
+            .type(GCloudCLI.class.getName())
+            .projectId(Property.ofValue(projectId))
+            .serviceAccount(Property.ofValue(serviceAccount))
+            .env(new Property<>(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
+            .commands(
+                Property.ofValue(
+                    List.of(
                         "echo \"::{\\\"outputs\\\":{" +
-                                "\\\"appCredentials\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\"," +
-                                "\\\"cliCredentials\\\":\\\"$(cat $CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE)\\\"," +
-                                "\\\"projectId\\\":\\\"$CLOUDSDK_CORE_PROJECT\\\"," +
-                                "\\\"customEnv\\\":\\\"$"+envKey+"\\\"" +
-                                "}}::\"",
+                            "\\\"appCredentials\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\"," +
+                            "\\\"cliCredentials\\\":\\\"$(cat $CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE)\\\"," +
+                            "\\\"projectId\\\":\\\"$CLOUDSDK_CORE_PROJECT\\\"," +
+                            "\\\"customEnv\\\":\\\"$" + envKey + "\\\"" +
+                            "}}::\"",
                         "gcloud version"
-                )))
-                .build();
+                    )
+                )
+            )
+            .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, execute, Map.of("envKey", envKey, "envValue", envValue));
 

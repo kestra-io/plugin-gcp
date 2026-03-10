@@ -1,16 +1,16 @@
 package io.kestra.plugin.gcp.bigquery.models;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.time.Duration;
-import java.time.Instant;
 
 @Getter
 @Builder
@@ -38,7 +38,8 @@ public class MaterializedViewDefinition {
     }
 
     public com.google.cloud.bigquery.MaterializedViewDefinition to(RunContext runContext) throws IllegalVariableEvaluationException {
-        com.google.cloud.bigquery.MaterializedViewDefinition.Builder builder = com.google.cloud.bigquery.MaterializedViewDefinition.newBuilder(runContext.render(this.query).as(String.class).orElse(null));
+        com.google.cloud.bigquery.MaterializedViewDefinition.Builder builder = com.google.cloud.bigquery.MaterializedViewDefinition
+            .newBuilder(runContext.render(this.query).as(String.class).orElse(null));
 
         if (this.enableRefresh != null) {
             builder.setEnableRefresh(runContext.render(this.enableRefresh).as(Boolean.class).orElseThrow());

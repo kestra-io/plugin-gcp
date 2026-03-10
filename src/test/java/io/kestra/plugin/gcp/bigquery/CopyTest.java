@@ -1,20 +1,21 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
+
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,7 +60,6 @@ class CopyTest {
         runContext = TestsUtils.mockRunContext(runContextFactory, copy, ImmutableMap.of());
         Copy.Output copyOutput = copy.run(runContext);
         assertThat(copyOutput.getJobId(), is(notNullValue()));
-
 
         Query fetch = Query.builder()
             .id(CopyTest.class.getSimpleName())

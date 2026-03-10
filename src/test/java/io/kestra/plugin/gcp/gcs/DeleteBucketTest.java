@@ -1,19 +1,22 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.net.URI;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
+
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
 
-import java.net.URI;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -30,12 +33,14 @@ class DeleteBucketTest {
     @Test
     void forceFalse_shouldDeleteBucket() throws Exception {
         // given
-        DeleteBucket task = Mockito.spy(DeleteBucket.builder()
-            .id(DeleteBucket.class.getSimpleName())
-            .type(DeleteBucket.class.getName())
-            .name(Property.ofValue("my-bucket"))
-            .force(Property.ofValue(false))
-            .build());
+        DeleteBucket task = Mockito.spy(
+            DeleteBucket.builder()
+                .id(DeleteBucket.class.getSimpleName())
+                .type(DeleteBucket.class.getName())
+                .name(Property.ofValue("my-bucket"))
+                .force(Property.ofValue(false))
+                .build()
+        );
 
         // Mock GCS Storage delete so no real bucket is touched.
         Storage storage = mock(Storage.class);
@@ -57,12 +62,14 @@ class DeleteBucketTest {
     @Test
     void forceTrue_shouldCallDeleteListBeforeDeletingBucket() throws Exception {
         // given
-        DeleteBucket task = Mockito.spy(DeleteBucket.builder()
-            .id(DeleteBucket.class.getSimpleName())
-            .type(DeleteBucket.class.getName())
-            .name(Property.ofValue("my-bucket"))
-            .force(Property.ofValue(true))
-            .build());
+        DeleteBucket task = Mockito.spy(
+            DeleteBucket.builder()
+                .id(DeleteBucket.class.getSimpleName())
+                .type(DeleteBucket.class.getName())
+                .name(Property.ofValue("my-bucket"))
+                .force(Property.ofValue(true))
+                .build()
+        );
 
         Storage storage = mock(Storage.class);
         doReturn(storage).when(task).connection(any(RunContext.class));
@@ -71,13 +78,16 @@ class DeleteBucketTest {
         var runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
 
         // Intercept DeleteList construction so we don't delete anything real.
-        try (MockedConstruction<DeleteList> mocked = Mockito.mockConstruction(
-            DeleteList.class,
-            (mock, context) -> {
-                when(mock.run(any(RunContext.class)))
-                    .thenReturn(DeleteList.Output.builder().count(0).size(0).build());
-            }
-        )) {
+        try (
+            MockedConstruction<DeleteList> mocked = Mockito.mockConstruction(
+                DeleteList.class,
+                (mock, context) ->
+                {
+                    when(mock.run(any(RunContext.class)))
+                        .thenReturn(DeleteList.Output.builder().count(0).size(0).build());
+                }
+            )
+        ) {
             // when
             DeleteBucket.Output output = task.run(runContext);
 
@@ -97,12 +107,14 @@ class DeleteBucketTest {
     @Test
     void shouldThrow404WhenBucketNotFound() throws Exception {
         // given
-        DeleteBucket task = Mockito.spy(DeleteBucket.builder()
-            .id(DeleteBucket.class.getSimpleName())
-            .type(DeleteBucket.class.getName())
-            .name(Property.ofValue("missing-bucket"))
-            .force(Property.ofValue(false))
-            .build());
+        DeleteBucket task = Mockito.spy(
+            DeleteBucket.builder()
+                .id(DeleteBucket.class.getSimpleName())
+                .type(DeleteBucket.class.getName())
+                .name(Property.ofValue("missing-bucket"))
+                .force(Property.ofValue(false))
+                .build()
+        );
 
         Storage storage = mock(Storage.class);
         doReturn(storage).when(task).connection(any(RunContext.class));

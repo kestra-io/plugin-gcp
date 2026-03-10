@@ -1,27 +1,28 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.cloud.bigquery.*;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Metric;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.JacksonMapper;
-import org.slf4j.Logger;
-
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+
+import com.google.cloud.bigquery.*;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.JacksonMapper;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -49,16 +50,16 @@ import java.util.Map;
                 """
         )
     },
-    metrics= {
-        @Metric(name = "output.file_counts", type = Counter.TYPE, description= "The number of files extracted to GCS."),
-        @Metric(name = "duration", type = Timer.TYPE, description= "The time it took for the job to run.")
+    metrics = {
+        @Metric(name = "output.file_counts", type = Counter.TYPE, description = "The number of files extracted to GCS."),
+        @Metric(name = "duration", type = Timer.TYPE, description = "The time it took for the job to run.")
     }
 )
 @Schema(
     title = "Export BigQuery table to GCS",
     description = "Runs an extract job from a table or partition to one or more GCS URIs. Supports CSV/JSON/AVRO, optional compression, custom delimiter, and AVRO logical types. Prints a header row by default."
 )
-public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output>{
+public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output> {
 
     @Schema(
         title = "Source table",
@@ -127,7 +128,8 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         return this.execute(runContext, logger, configuration, extractJob);
     }
 
-    protected ExtractToGcs.Output execute(RunContext runContext, Logger logger, ExtractJobConfiguration configuration, Job job) throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
+    protected ExtractToGcs.Output execute(RunContext runContext, Logger logger, ExtractJobConfiguration configuration, Job job)
+        throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
         BigQueryService.handleErrors(job, logger);
         job = job.waitFor();
         BigQueryService.handleErrors(job, logger);
@@ -188,11 +190,11 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
                 runContext.render(this.destinationUris).asList(String.class)
             );
 
-        if (this.sourceTable != null){
+        if (this.sourceTable != null) {
             builder.setSourceTable(BigQueryService.tableId(runContext.render(this.sourceTable).as(String.class).orElseThrow()));
         }
 
-        if (this.destinationUris != null){
+        if (this.destinationUris != null) {
             builder.setDestinationUris(runContext.render(this.destinationUris).asList(String.class));
         }
 

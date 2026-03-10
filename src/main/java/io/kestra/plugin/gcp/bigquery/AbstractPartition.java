@@ -1,24 +1,25 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.TableId;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.TableId;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 import static io.kestra.plugin.gcp.bigquery.AbstractPartition.PartitionType.*;
 import static io.kestra.plugin.gcp.bigquery.AbstractPartition.PartitionType.YEAR;
@@ -58,14 +59,15 @@ abstract public class AbstractPartition extends AbstractTable {
     protected Property<String> to;
 
     protected TableId tableId(RunContext runContext, String partition) throws IllegalVariableEvaluationException {
-        return this.projectId != null  ?
-            TableId.of(
-                runContext.render(this.projectId).as(String.class).orElseThrow(),
+        return this.projectId != null ? TableId.of(
+            runContext.render(this.projectId).as(String.class).orElseThrow(),
+            runContext.render(this.dataset).as(String.class).orElseThrow(),
+            runContext.render(this.table).as(String.class).orElseThrow() + "$" + partition
+        )
+            : TableId.of(
                 runContext.render(this.dataset).as(String.class).orElseThrow(),
-                runContext.render(this.table).as(String.class).orElseThrow() + "$" + partition) :
-            TableId.of(
-                runContext.render(this.dataset).as(String.class).orElseThrow(),
-                runContext.render(this.table).as(String.class).orElseThrow() + "$" + partition);
+                runContext.render(this.table).as(String.class).orElseThrow() + "$" + partition
+            );
     }
 
     protected List<String> listPartitions(RunContext runContext, BigQuery connection, TableId tableId) throws IllegalVariableEvaluationException {
@@ -78,7 +80,8 @@ abstract public class AbstractPartition extends AbstractTable {
 
             return partitions
                 .stream()
-                .filter(s -> {
+                .filter(s ->
+                {
                     int current = Integer.parseInt(s);
 
                     return current >= from &&
@@ -91,7 +94,8 @@ abstract public class AbstractPartition extends AbstractTable {
             return partitions
                 .stream()
                 .filter(s -> !s.equals("__NULL__"))
-                .filter(s -> {
+                .filter(s ->
+                {
                     LocalDateTime current = LocalDateTime.parse(
                         s + ADDED_DATE.get(renderedPartitionType),
                         DateTimeFormatter.ofPattern("yyyyMMddHHmmss")

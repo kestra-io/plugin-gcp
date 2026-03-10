@@ -1,21 +1,19 @@
 package io.kestra.plugin.gcp.vertexai.models;
 
-import com.google.cloud.aiplatform.v1.EnvVar;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.extern.jackson.Jacksonized;
-
 import java.util.List;
 import java.util.Map;
 
-import jakarta.validation.constraints.NotNull;
+import com.google.cloud.aiplatform.v1.EnvVar;
 
-import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
 @Getter
 @Builder
@@ -52,15 +50,17 @@ public class ContainerSpec {
             .addAllArgs(runContext.render(this.getArgs()).asList(String.class));
 
         if (this.getEnv() != null) {
-            builder.addAllEnv(runContext.render(this.getEnv()).asMap(String.class, String.class)
-                .entrySet()
-                .stream()
-                .map(e -> EnvVar.newBuilder()
-                    .setName(e.getKey())
-                    .setValue(e.getValue())
-                    .build()
-                )
-                .toList()
+            builder.addAllEnv(
+                runContext.render(this.getEnv()).asMap(String.class, String.class)
+                    .entrySet()
+                    .stream()
+                    .map(
+                        e -> EnvVar.newBuilder()
+                            .setName(e.getKey())
+                            .setValue(e.getValue())
+                            .build()
+                    )
+                    .toList()
             );
         }
 

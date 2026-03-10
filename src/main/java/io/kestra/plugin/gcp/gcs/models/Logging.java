@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.gcs.models;
 
 import com.google.cloud.storage.BucketInfo;
+
 import lombok.Builder;
 import lombok.Data;
 

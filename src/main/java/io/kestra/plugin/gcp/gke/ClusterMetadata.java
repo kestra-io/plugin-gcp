@@ -1,24 +1,26 @@
 package io.kestra.plugin.gcp.gke;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.container.v1.ClusterManagerClient;
 import com.google.cloud.container.v1.ClusterManagerSettings;
 import com.google.container.v1.Cluster;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.AbstractTask;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -84,20 +86,23 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
             .project(runContext.render(clusterProjectId).as(String.class).orElse(null))
             .createTime(cluster.getCreateTime())
             .nodePoolsCount(cluster.getNodePoolsCount())
-            .nodePools(cluster.getNodePoolsList()
-                .stream()
-                .map(r -> NodePool.builder()
-                    .name(r.getName())
-                    .status(r.getStatus())
-                    .build()
-                )
-                .collect(Collectors.toList())
+            .nodePools(
+                cluster.getNodePoolsList()
+                    .stream()
+                    .map(
+                        r -> NodePool.builder()
+                            .name(r.getName())
+                            .status(r.getStatus())
+                            .build()
+                    )
+                    .collect(Collectors.toList())
             )
-            .masterAuth(MasterAuth.builder()
-                .clusterCertificate(cluster.getMasterAuth().getClusterCaCertificate())
-                .clientKey(cluster.getMasterAuth().getClientKey())
-                .clientCertificate(cluster.getMasterAuth().getClientCertificate())
-                .build()
+            .masterAuth(
+                MasterAuth.builder()
+                    .clusterCertificate(cluster.getMasterAuth().getClusterCaCertificate())
+                    .clientKey(cluster.getMasterAuth().getClientKey())
+                    .clientCertificate(cluster.getMasterAuth().getClientCertificate())
+                    .build()
             )
             .loggingService(cluster.getLoggingService())
             .monitoringService(cluster.getMonitoringService())
@@ -111,11 +116,13 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
             .build();
 
         try (ClusterManagerClient client = ClusterManagerClient.create(clusterManagerSettings)) {
-            return client.getCluster("projects/%s/locations/%s/clusters/%s".formatted(
-                runContext.render(clusterProjectId).as(String.class).orElse(null),
-                runContext.render(clusterZone).as(String.class).orElse(null),
-                runContext.render(clusterId).as(String.class).orElse(null)
-            ));
+            return client.getCluster(
+                "projects/%s/locations/%s/clusters/%s".formatted(
+                    runContext.render(clusterProjectId).as(String.class).orElse(null),
+                    runContext.render(clusterZone).as(String.class).orElse(null),
+                    runContext.render(clusterId).as(String.class).orElse(null)
+                )
+            );
         }
     }
 

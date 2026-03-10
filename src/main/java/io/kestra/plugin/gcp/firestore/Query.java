@@ -1,8 +1,18 @@
 package io.kestra.plugin.gcp.firestore;
 
+import java.io.*;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.Query.Direction;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
@@ -15,21 +25,12 @@ import io.kestra.core.models.tasks.common.FetchOutput;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.tuple.Pair;
-
-import java.io.*;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
-import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -139,7 +140,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
                     outputBuilder
                         .rows(fetch.getLeft())
                         .size(fetch.getRight());
-                break;
+                    break;
 
                 case FETCH_ONE:
                     var o = this.fetchOne(queryDocumentSnapshots);
@@ -147,22 +148,24 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
                     outputBuilder
                         .row(o)
                         .size(o != null ? 1L : 0L);
-                break;
+                    break;
 
                 case STORE:
                     Pair<URI, Long> store = this.store(runContext, queryDocumentSnapshots);
                     outputBuilder
                         .uri(store.getLeft())
                         .size(store.getRight());
-                break;
+                    break;
             }
 
             var output = outputBuilder.build();
 
-            runContext.metric(Counter.of(
-                "records", output.getSize(),
-                "collection", collectionRef.getId()
-            ));
+            runContext.metric(
+                Counter.of(
+                    "records", output.getSize(),
+                    "collection", collectionRef.getId()
+                )
+            );
 
             return output;
         }
@@ -176,14 +179,14 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             return query;
         }
 
-        for(Filter option : filters)  {
-           query = appendQueryPart(runContext, query, option);
+        for (Filter option : filters) {
+            query = appendQueryPart(runContext, query, option);
         }
         return query;
     }
 
     private com.google.cloud.firestore.Query appendQueryPart(RunContext runContext, com.google.cloud.firestore.Query query,
-                                                             Filter filter)
+        Filter filter)
         throws IllegalVariableEvaluationException {
         switch (runContext.render(filter.getOperator()).as(QueryOperator.class).orElseThrow()) {
             case EQUAL_TO: {
@@ -246,14 +249,14 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         List<Object> result = new ArrayList<>();
         AtomicLong count = new AtomicLong();
 
-        documents.forEach(throwConsumer(snapshot -> {
+        documents.forEach(throwConsumer(snapshot ->
+        {
             count.incrementAndGet();
             result.add(snapshot.getData());
         }));
 
         return Pair.of(result, count.get());
     }
-
 
     private Map<String, Object> fetchOne(List<QueryDocumentSnapshot> documents) {
         if (documents.isEmpty()) {

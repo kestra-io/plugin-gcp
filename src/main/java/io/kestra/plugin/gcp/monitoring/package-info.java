@@ -2,7 +2,7 @@
     title = "Cloud Monitoring (Observability)",
     description = "This sub-group of plugins contains tasks and triggers for interacting with " +
         "Google Cloud Monitoring (formerly Stackdriver). ",
-        categories = {
+    categories = {
         PluginSubGroup.PluginCategory.CLOUD
     }
 )

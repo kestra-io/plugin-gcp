@@ -1,9 +1,10 @@
 package io.kestra.plugin.gcp.pubsub.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kestra.core.serializers.JacksonMapper;
-
 import java.io.IOException;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.kestra.core.serializers.JacksonMapper;
 
 public enum SerdeType {
     STRING,

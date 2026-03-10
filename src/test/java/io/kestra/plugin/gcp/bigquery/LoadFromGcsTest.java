@@ -1,26 +1,29 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.devskiller.friendly_id.FriendlyId;
-import com.google.common.collect.ImmutableMap;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.tenant.TenantService;
-import io.kestra.plugin.gcp.gcs.Upload;
-import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Test;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.utils.TestsUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
-import jakarta.inject.Inject;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import com.devskiller.friendly_id.FriendlyId;
+import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.gcs.Upload;
+
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -45,9 +48,12 @@ public class LoadFromGcsTest {
 
     @Test
     void fromJson() throws Exception {
-        File applicationFile = new File(Objects.requireNonNull(LoadFromGcsTest.class.getClassLoader()
-            .getResource("data/us-states.json"))
-            .toURI()
+        File applicationFile = new File(
+            Objects.requireNonNull(
+                LoadFromGcsTest.class.getClassLoader()
+                    .getResource("data/us-states.json")
+            )
+                .toURI()
         );
 
         URI put = storageInterface.put(
@@ -70,17 +76,25 @@ public class LoadFromGcsTest {
             .id(LoadFromGcsTest.class.getSimpleName())
             .type(LoadFromGcs.class.getName())
             .projectId(Property.ofValue(project))
-            .from(Property.ofValue(Collections.singletonList(
-                upload.getTo().toString()
-            )))
+            .from(
+                Property.ofValue(
+                    Collections.singletonList(
+                        upload.getTo().toString()
+                    )
+                )
+            )
             .destinationTable(Property.ofValue(project + "." + dataset + "." + FriendlyId.createFriendlyId()))
             .format(AbstractLoad.Format.JSON)
-            .schema(Property.ofValue(ImmutableMap.of(
-                "fields", Arrays.asList(
-                    ImmutableMap.of("name", "name", "type", "STRING"),
-                    ImmutableMap.of("name", "post_abbr", "type", "STRING")
+            .schema(
+                Property.ofValue(
+                    ImmutableMap.of(
+                        "fields", Arrays.asList(
+                            ImmutableMap.of("name", "name", "type", "STRING"),
+                            ImmutableMap.of("name", "post_abbr", "type", "STRING")
+                        )
+                    )
                 )
-            )))
+            )
             .build();
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 

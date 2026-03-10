@@ -1,12 +1,13 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import com.google.cloud.bigquery.JobInfo;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.property.Property;
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.time.Duration;
 import java.util.Map;
+
+import com.google.cloud.bigquery.JobInfo;
+
+import io.kestra.core.models.property.Property;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public interface AbstractJobInterface {
     @Schema(

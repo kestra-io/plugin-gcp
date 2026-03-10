@@ -1,11 +1,18 @@
 package io.kestra.plugin.gcp.vertexai;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.Candidate;
 import com.google.cloud.vertexai.api.Part;
 import com.google.cloud.vertexai.generativeai.ContentMaker;
 import com.google.cloud.vertexai.generativeai.PartMaker;
 import com.google.cloud.vertexai.generativeai.ResponseHandler;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
@@ -16,17 +23,12 @@ import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -121,7 +123,8 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
         try (VertexAI vertexAI = new VertexAI.Builder().setProjectId(projectId).setLocation(region).setCredentials(this.credentials(runContext)).build()) {
             var model = buildModel(modelId, vertexAI);
             var parts = contents.stream()
-                .map( content -> {
+                .map(content ->
+                {
                     try {
                         return content.getMimeType() == null ? runContext.render(content.getContent()).as(String.class).orElseThrow() : createPart(runContext, content);
                     } catch (IllegalVariableEvaluationException e) {
@@ -137,10 +140,12 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
 
             var finishReason = ResponseHandler.getFinishReason(response);
             var safetyRatings = response.getCandidates(0).getSafetyRatingsList().stream()
-                .map(safetyRating -> new SafetyRating(
-                    safetyRating.getCategory().name(),
-                    safetyRating.getProbability().name(),
-                    safetyRating.getBlocked())
+                .map(
+                    safetyRating -> new SafetyRating(
+                        safetyRating.getCategory().name(),
+                        safetyRating.getProbability().name(),
+                        safetyRating.getBlocked()
+                    )
                 )
                 .toList();
             var output = Output.builder()
@@ -150,12 +155,10 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
             if (finishReason == Candidate.FinishReason.SAFETY) {
                 runContext.logger().warn("Content response has been blocked for safety reason");
                 output.blocked(true);
-            }
-            else if (finishReason == Candidate.FinishReason.RECITATION) {
+            } else if (finishReason == Candidate.FinishReason.RECITATION) {
                 runContext.logger().warn("Content response has been blocked for recitation reason");
                 output.blocked(true);
-            }
-            else {
+            } else {
                 output.text(ResponseHandler.getText(response));
             }
 
