@@ -36,7 +36,7 @@ import lombok.experimental.SuperBuilder;
                   - id: create_bucket_iam_policy
                     type: io.kestra.plugin.gcp.gcs.CreateBucketIamPolicy
                     name: "my-bucket"
-                    member: "sa@project.iam.gserviceaccount.com"
+                    member: "serviceAccount:sa@project.iam.gserviceaccount.com"
                     role: "roles/storage.admin"
                 """
         )
