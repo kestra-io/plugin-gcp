@@ -6,6 +6,7 @@ import com.google.cloud.NoCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -17,7 +18,9 @@ import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 
@@ -37,43 +40,33 @@ public class QueryErrorTest {
         {
           "kind": "bigquery#job",
           "etag": "\\"abcdef1234567890\\"",
-          "id": "kestra-unit-test:US.job_1234567890abcdef",
-          "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/kestra-unit-test/jobs/job_1234567890abcdef",
-          "user_email": "user@example.com",
-          "configuration": {
-            "query": {
-              "query": "SELECT * FROM `kestra-unit-test.my_dataset.my_table` LIMIT 100",
-              "destinationTable": {
-                "projectId": "kestra-unit-test",
-                "datasetId": "_temp_dataset",
-                "tableId": "anon1234567890abcdef"
-              },
-              "createDisposition": "CREATE_IF_NEEDED",
-              "writeDisposition": "WRITE_TRUNCATE",
-              "priority": "INTERACTIVE",
-              "useLegacySql": false,
-              "useQueryCache": true
-            },
-            "jobType": "QUERY"
-          },
+          "id": "kestra-unit-test:europe-west3.job_1234567890abcdef",
           "jobReference": {
             "projectId": "kestra-unit-test",
             "jobId": "job_1234567890abcdef",
             "location": "europe-west3"
           },
-          "status": {
-            "state": "DONE"
+          "configuration": {
+            "query": {
+              "query": "SELECT * FROM `kestra-unit-test.my_dataset.my_table`",
+              "destinationTable": {
+                "projectId": "kestra-unit-test",
+                "datasetId": "_temp_dataset",
+                "tableId": "anon1234567890abcdef"
+              },
+              "useLegacySql": false
+            },
+            "jobType": "QUERY"
           },
+          "status": { "state": "DONE" },
           "statistics": {
             "creationTime": "1697123456789",
             "startTime": "1697123457000",
             "endTime": "1697123459000",
-            "query": {
-                "statementType": "SELECT"
-            }
+            "query": { "statementType": "SELECT" }
           }
         }""";
-
+    
     private static final String BACKEND_ERROR_RESPONSE = """
         {
           "error": {
@@ -107,14 +100,13 @@ public class QueryErrorTest {
         assertThrows(Exception.class, () -> task.run(runContext));
 
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
-        verify(3, getRequestedFor(urlPathMatching(jobsPath)));
+        verify(3, postRequestedFor(urlPathMatching(jobsPath)));
     }
 
-    private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) {
-        return io.kestra.plugin.gcp.bigquery.Query.builder()
+    private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) throws IllegalVariableEvaluationException, IOException {
+        Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .bigQueryFactory((runContext, credentials, projectId, location) -> mockBigQueryClient(wmRuntimeInfo.getHttpBaseUrl()))
             .retryAuto(Exponential.builder()
                 .type("exponential")
                 .interval(Duration.ofMillis(100))
@@ -127,6 +119,48 @@ public class QueryErrorTest {
             .fetchType(Property.ofValue(FetchType.FETCH))
             .dryRun(Property.ofValue(false))
             .build();
+
+        Query spy = Mockito.spy(task);
+        Mockito.doReturn(mockBigQueryClient(wmRuntimeInfo.getHttpBaseUrl()))
+            .when(spy).connection(Mockito.any(RunContext.class));
+        return spy;
+    }
+
+    @Test
+    void shouldRetryOnBackendErrorWhenFetchingResults(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        // Job creation and polling succeed
+        stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_DONE)));
+
+        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/jobs/job_1234567890abcdef"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_DONE)));
+
+        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/queries/job_1234567890abcdef"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_DONE)));
+
+        // tabledata.list returns 503 — this is what getQueryResults() calls internally
+        String tabledataPath = "/bigquery/v2/projects/.*/datasets/.*/tables/.*/data";
+        stubFor(get(urlPathMatching(tabledataPath))
+            .willReturn(aResponse()
+                .withStatus(503)
+                .withHeader("Content-Type", "application/json")
+                .withBody(BACKEND_ERROR_RESPONSE)));
+
+        Query task = buildQuery(wmRuntimeInfo, 3);
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        assertThrows(Exception.class, () -> task.run(runContext));
+
+        verify(3, getRequestedFor(urlPathMatching(tabledataPath)));
     }
 
     private BigQuery mockBigQueryClient(final String bigQueryApiHost) {

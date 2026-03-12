@@ -74,24 +74,15 @@ abstract public class AbstractBigquery extends AbstractTask {
         )
     );
 
-    @FunctionalInterface
-    public interface BigQueryFactory {
-        BigQuery create(RunContext runContext, GoogleCredentials credentials, String projectId, String location) throws IllegalVariableEvaluationException;
-    }
-
-    @Builder.Default
-    @JsonIgnore
-    protected BigQueryFactory bigQueryFactory = AbstractBigquery::connection;
-
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         GoogleCredentials credentials = this.credentials(runContext);
         String projectId = runContext.render(this.projectId).as(String.class).orElse(null);
         String location = runContext.render(this.location).as(String.class).orElse(null);
 
-        return bigQueryFactory.create(runContext, credentials, projectId, location);
+        return connection(runContext, credentials, projectId, location);
     }
 
-    static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
+    protected static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
         return BigQueryOptions
             .newBuilder()
             .setCredentials(googleCredentials)
