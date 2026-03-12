@@ -115,12 +115,26 @@ public class QueryErrorTest {
 
         Exception thrown = assertThrows(Exception.class, () -> task.run(runContext));
 
-        // The BigQueryException may be wrapped in a FailsafeException
-        Throwable cause = thrown instanceof BigQueryException ? thrown : thrown.getCause();
-        assertInstanceOf(BigQueryException.class, cause);
+        var cause = findCause(thrown, BigQueryException.class);
+        assertNotNull(cause);
+        assertTrue(cause.getMessage().contains("backendError"));
 
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
         verify(3, getRequestedFor(urlEqualTo(queriesUrl)));
+    }
+
+    private static <T extends Throwable> T findCause(Throwable throwable, Class<T> type) {
+        var current = throwable;
+
+        while (current != null) {
+            if (type.isInstance(current)) {
+                return type.cast(current);
+            }
+
+            current = current.getCause();
+        }
+
+        return null;
     }
 
     private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) {
