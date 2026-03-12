@@ -116,6 +116,9 @@ public class QueryErrorTest {
 
         assertThrows(Exception.class, () -> task.run(runContext));
 
+        getAllServeEvents().forEach(e ->
+            System.out.println(e.getRequest().getUrl()));
+
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
         verify(3, getRequestedFor(urlPathMatching(queriesPath)));
     }

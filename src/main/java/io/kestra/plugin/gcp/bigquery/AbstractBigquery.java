@@ -76,12 +76,7 @@ abstract public class AbstractBigquery extends AbstractTask {
 
     @FunctionalInterface
     public interface BigQueryFactory {
-        BigQuery create(
-            RunContext runContext,
-            GoogleCredentials credentials,
-            String projectId,
-            String location
-        ) throws IllegalVariableEvaluationException;
+        BigQuery create(RunContext runContext, GoogleCredentials credentials, String projectId, String location) throws IllegalVariableEvaluationException;
     }
 
     @Builder.Default
@@ -95,7 +90,6 @@ abstract public class AbstractBigquery extends AbstractTask {
 
         return bigQueryFactory.create(runContext, credentials, projectId, location);
     }
-
 
     static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
         return BigQueryOptions
@@ -161,8 +155,7 @@ abstract public class AbstractBigquery extends AbstractTask {
 
                     return job;
                 } catch (Exception exception) {
-                    if (exception instanceof com.google.cloud.bigquery.BigQueryException) {
-                        com.google.cloud.bigquery.BigQueryException bqException = (com.google.cloud.bigquery.BigQueryException) exception;
+                    if (exception instanceof com.google.cloud.bigquery.BigQueryException bqException) {
 
                         logger.warn(
                             "Error query on {} with errors:\n[\n - {}\n]",
@@ -171,8 +164,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                         );
 
                         throw new BigQueryException(bqException.getErrors());
-                    } else if (exception instanceof JobException) {
-                        JobException bqException = (JobException) exception;
+                    } else if (exception instanceof JobException bqException) {
 
                         logger.warn(
                             "Error query on job '{}' with errors:\n[\n - {}\n]",
