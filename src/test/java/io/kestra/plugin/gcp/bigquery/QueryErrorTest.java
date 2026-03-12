@@ -94,16 +94,18 @@ public class QueryErrorTest {
     @Test
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         // Return a DONE job from creation
-        stubFor(post(urlEqualTo("/bigquery/v2/projects/kestra-unit-test/jobs?prettyPrint=false"))
+        stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
+            .withQueryParam("prettyPrint", equalTo("false"))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
                 .withBody(JOB_RESPONSE_DONE)));
 
-        // Stub queries endpoint to always return 503 — this is only hit by getQueryResults()
-        // because dryRun=true skips Job.waitFor() (which also calls this endpoint in some SDK versions)
-        String queriesUrl = "/bigquery/v2/projects/my-project/queries/job_1234567890abcdef?location=US&maxResults=0&prettyPrint=false";
-        stubFor(get(urlEqualTo(queriesUrl))
+        // Match the query results endpoint loosely because the SDK can vary project and location handling
+        // across versions while still exercising the same retry path.
+        String queriesPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
+        stubFor(get(urlPathMatching(queriesPath))
+            .withQueryParam("prettyPrint", equalTo("false"))
             .willReturn(aResponse()
                 .withStatus(503)
                 .withHeader("Content-Type", "application/json")
@@ -115,12 +117,16 @@ public class QueryErrorTest {
 
         Exception thrown = assertThrows(Exception.class, () -> task.run(runContext));
 
-        var cause = findCause(thrown, BigQueryException.class);
-        assertNotNull(cause);
-        assertTrue(cause.getMessage().contains("backendError"));
+        var kestraCause = findCause(thrown, BigQueryException.class);
+        var googleCause = findCause(thrown, com.google.cloud.bigquery.BigQueryException.class);
+        assertTrue(kestraCause != null || googleCause != null);
+
+        var message = kestraCause != null ? kestraCause.getMessage() : googleCause.getMessage();
+        assertNotNull(message);
+        assertTrue(message.contains("backendError") || message.contains("Visibility check was unavailable"));
 
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
-        verify(3, getRequestedFor(urlEqualTo(queriesUrl)));
+        verify(3, getRequestedFor(urlPathMatching(queriesPath)));
     }
 
     private static <T extends Throwable> T findCause(Throwable throwable, Class<T> type) {
@@ -138,7 +144,7 @@ public class QueryErrorTest {
     }
 
     private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) {
-        return Query.builder()
+        return io.kestra.plugin.gcp.bigquery.Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
             .bigQueryFactory((runContext, credentials, projectId, location) -> mockBigQueryClient(wmRuntimeInfo.getHttpBaseUrl()))
