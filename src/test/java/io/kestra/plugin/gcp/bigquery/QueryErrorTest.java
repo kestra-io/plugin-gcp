@@ -94,6 +94,8 @@ public class QueryErrorTest {
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         String queriesPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
 
+        System.out.println("[DEBUG] WireMock base URL: " + wmRuntimeInfo.getHttpBaseUrl());
+
         stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
             .willReturn(aResponse()
                 .withStatus(200)
@@ -109,7 +111,7 @@ public class QueryErrorTest {
         Query task = buildQuery(wmRuntimeInfo, 3);
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
-        
+
         assertThrows(Exception.class, () -> task.run(runContext));
 
         System.out.println("Requests received: " + wmRuntimeInfo.getWireMock().getServeEvents());
