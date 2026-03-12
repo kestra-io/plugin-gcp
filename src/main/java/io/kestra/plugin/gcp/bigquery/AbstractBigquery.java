@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 import org.slf4j.Logger;
 
@@ -73,15 +75,14 @@ abstract public class AbstractBigquery extends AbstractTask {
     );
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        return connection(
-            runContext,
-            this.credentials(runContext),
-            runContext.render(this.projectId).as(String.class).orElse(null),
-            runContext.render(this.location).as(String.class).orElse(null)
-        );
+        GoogleCredentials credentials = this.credentials(runContext);
+        String projectId = runContext.render(this.projectId).as(String.class).orElse(null);
+        String location = runContext.render(this.location).as(String.class).orElse(null);
+
+        return connection(runContext, credentials, projectId, location);
     }
 
-    static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
+    protected static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
         return BigQueryOptions
             .newBuilder()
             .setCredentials(googleCredentials)
@@ -100,7 +101,7 @@ abstract public class AbstractBigquery extends AbstractTask {
         return Failsafe
             .with(
                 AbstractRetry.<Job> retryPolicy(
-                    this.getRetryAuto() != null ? this.getRetry()
+                    this.getRetryAuto() != null ? this.getRetryAuto()
                         : Exponential.builder()
                             .type("exponential")
                             .interval(Duration.ofSeconds(5))
@@ -145,8 +146,7 @@ abstract public class AbstractBigquery extends AbstractTask {
 
                     return job;
                 } catch (Exception exception) {
-                    if (exception instanceof com.google.cloud.bigquery.BigQueryException) {
-                        com.google.cloud.bigquery.BigQueryException bqException = (com.google.cloud.bigquery.BigQueryException) exception;
+                    if (exception instanceof com.google.cloud.bigquery.BigQueryException bqException) {
 
                         logger.warn(
                             "Error query on {} with errors:\n[\n - {}\n]",
@@ -155,8 +155,7 @@ abstract public class AbstractBigquery extends AbstractTask {
                         );
 
                         throw new BigQueryException(bqException.getErrors());
-                    } else if (exception instanceof JobException) {
-                        JobException bqException = (JobException) exception;
+                    } else if (exception instanceof JobException bqException) {
 
                         logger.warn(
                             "Error query on job '{}' with errors:\n[\n - {}\n]",
@@ -172,7 +171,7 @@ abstract public class AbstractBigquery extends AbstractTask {
             });
     }
 
-    private boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
+    boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
         if (!(failure instanceof BigQueryException)) {
             logger.warn("Cancelled retrying, unknown exception type {}", failure.getClass(), failure);
             return false;
