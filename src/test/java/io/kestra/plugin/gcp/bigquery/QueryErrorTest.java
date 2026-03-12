@@ -25,7 +25,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @KestraTest
-@Slf4j
 @WireMockTest
 public class QueryErrorTest {
     @Inject
@@ -136,7 +135,7 @@ public class QueryErrorTest {
             .projectId(Property.ofValue(project))
             .sql(Property.ofValue("SELECT * from test_table"))
             .fetchType(Property.ofValue(FetchType.FETCH))
-            .dryRun(Property.ofValue(true))
+            .dryRun(Property.ofValue(false))
             .build();
     }
 
