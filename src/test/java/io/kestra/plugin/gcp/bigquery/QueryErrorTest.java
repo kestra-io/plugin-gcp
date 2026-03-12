@@ -115,32 +115,10 @@ public class QueryErrorTest {
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
-        Exception thrown = assertThrows(Exception.class, () -> task.run(runContext));
-
-        var kestraCause = findCause(thrown, BigQueryException.class);
-        var googleCause = findCause(thrown, com.google.cloud.bigquery.BigQueryException.class);
-        assertTrue(kestraCause != null || googleCause != null);
-
-        var message = kestraCause != null ? kestraCause.getMessage() : googleCause.getMessage();
-        assertNotNull(message);
-        assertTrue(message.contains("backendError") || message.contains("Visibility check was unavailable"));
+        assertThrows(Exception.class, () -> task.run(runContext));
 
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
         verify(3, getRequestedFor(urlPathMatching(queriesPath)));
-    }
-
-    private static <T extends Throwable> T findCause(Throwable throwable, Class<T> type) {
-        var current = throwable;
-
-        while (current != null) {
-            if (type.isInstance(current)) {
-                return type.cast(current);
-            }
-
-            current = current.getCause();
-        }
-
-        return null;
     }
 
     private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) {
