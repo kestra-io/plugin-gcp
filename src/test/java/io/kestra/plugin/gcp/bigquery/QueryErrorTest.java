@@ -59,7 +59,7 @@ public class QueryErrorTest {
           "jobReference": {
             "projectId": "kestra-unit-test",
             "jobId": "job_1234567890abcdef",
-            "location": "US"
+            "location": "europe-west3"
           },
           "status": {
             "state": "DONE"
@@ -109,8 +109,10 @@ public class QueryErrorTest {
         Query task = buildQuery(wmRuntimeInfo, 3);
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
-
+        
         assertThrows(Exception.class, () -> task.run(runContext));
+
+        System.out.println("Requests received: " + wmRuntimeInfo.getWireMock().getServeEvents());
 
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
         verify(3, getRequestedFor(urlPathMatching(queriesPath)));
