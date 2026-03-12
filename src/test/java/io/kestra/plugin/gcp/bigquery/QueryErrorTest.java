@@ -92,22 +92,14 @@ public class QueryErrorTest {
 
     @Test
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
-        // Return a DONE job from creation
+        String queriesPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
+
         stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
                 .withBody(JOB_RESPONSE_DONE)));
 
-        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/jobs/job_1234567890abcdef"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
-
-        // Match the query results endpoint loosely because the SDK can vary project and location handling
-        // across versions while still exercising the same retry path.
-        String queriesPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
         stubFor(get(urlPathMatching(queriesPath))
             .willReturn(aResponse()
                 .withStatus(503)
