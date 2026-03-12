@@ -283,6 +283,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     public Query.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
         Logger logger = runContext.logger();
+        logger.info("[DEBUG] bigQueryFactory class: {}", this.bigQueryFactory.getClass().getName());
 
         QueryJobConfiguration jobConfiguration = this.jobConfiguration(runContext);
 
