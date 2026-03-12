@@ -37,14 +37,14 @@ public class QueryErrorTest {
         {
           "kind": "bigquery#job",
           "etag": "\\"abcdef1234567890\\"",
-          "id": "my-project:US.job_1234567890abcdef",
-          "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/my-project/jobs/job_1234567890abcdef",
+          "id": "kestra-unit-test:US.job_1234567890abcdef",
+          "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/kestra-unit-test/jobs/job_1234567890abcdef",
           "user_email": "user@example.com",
           "configuration": {
             "query": {
-              "query": "SELECT * FROM `my-project.my_dataset.my_table` LIMIT 100",
+              "query": "SELECT * FROM `kestra-unit-test.my_dataset.my_table` LIMIT 100",
               "destinationTable": {
-                "projectId": "my-project",
+                "projectId": "kestra-unit-test",
                 "datasetId": "_temp_dataset",
                 "tableId": "anon1234567890abcdef"
               },
@@ -57,7 +57,7 @@ public class QueryErrorTest {
             "jobType": "QUERY"
           },
           "jobReference": {
-            "projectId": "%s",
+            "projectId": "kestra-unit-test",
             "jobId": "job_1234567890abcdef",
             "location": "US"
           },
@@ -94,17 +94,21 @@ public class QueryErrorTest {
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         // Return a DONE job from creation
         stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
-            .withQueryParam("prettyPrint", equalTo("false"))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE.formatted(project))));
+                .withBody(JOB_RESPONSE_DONE)));
+
+        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/jobs/job_1234567890abcdef"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_DONE)));
 
         // Match the query results endpoint loosely because the SDK can vary project and location handling
         // across versions while still exercising the same retry path.
         String queriesPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
         stubFor(get(urlPathMatching(queriesPath))
-            .withQueryParam("prettyPrint", equalTo("false"))
             .willReturn(aResponse()
                 .withStatus(503)
                 .withHeader("Content-Type", "application/json")
