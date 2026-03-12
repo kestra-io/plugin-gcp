@@ -6,7 +6,6 @@ import com.google.cloud.NoCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.common.collect.ImmutableMap;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -16,11 +15,9 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 
@@ -30,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @KestraTest
 @WireMockTest
 public class QueryErrorTest {
+
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -66,7 +64,7 @@ public class QueryErrorTest {
             "query": { "statementType": "SELECT" }
           }
         }""";
-    
+
     private static final String BACKEND_ERROR_RESPONSE = """
         {
           "error": {
@@ -94,16 +92,46 @@ public class QueryErrorTest {
                 .withBody(BACKEND_ERROR_RESPONSE)));
 
         Query task = buildQuery(wmRuntimeInfo, 3);
-
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         assertThrows(Exception.class, () -> task.run(runContext));
 
-        // Verify that retries actually happened (3 attempts = initial + 2 retries)
         verify(3, postRequestedFor(urlPathMatching(jobsPath)));
     }
 
-    private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) throws IllegalVariableEvaluationException, IOException {
+    @Test
+    void shouldRetryOnBackendErrorWhenFetchingResults(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        String resultsPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
+
+        // Job creation and polling succeed
+        stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_DONE)));
+
+        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/jobs/job_1234567890abcdef"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_DONE)));
+
+        // Result fetching returns 503
+        stubFor(get(urlPathMatching(resultsPath))
+            .willReturn(aResponse()
+                .withStatus(503)
+                .withHeader("Content-Type", "application/json")
+                .withBody(BACKEND_ERROR_RESPONSE)));
+
+        Query task = buildQuery(wmRuntimeInfo, 3);
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        assertThrows(Exception.class, () -> task.run(runContext));
+
+        verify(3, getRequestedFor(urlPathMatching(resultsPath)));
+    }
+
+    private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) throws Exception {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
@@ -126,44 +154,7 @@ public class QueryErrorTest {
         return spy;
     }
 
-    @Test
-    void shouldRetryOnBackendErrorWhenFetchingResults(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
-        // Job creation and polling succeed
-        stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
-
-        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/jobs/job_1234567890abcdef"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
-
-        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/queries/job_1234567890abcdef"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
-
-        // tabledata.list returns 503 — this is what getQueryResults() calls internally
-        String tabledataPath = "/bigquery/v2/projects/.*/datasets/.*/tables/.*/data";
-        stubFor(get(urlPathMatching(tabledataPath))
-            .willReturn(aResponse()
-                .withStatus(503)
-                .withHeader("Content-Type", "application/json")
-                .withBody(BACKEND_ERROR_RESPONSE)));
-
-        Query task = buildQuery(wmRuntimeInfo, 3);
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
-
-        assertThrows(Exception.class, () -> task.run(runContext));
-
-        verify(3, getRequestedFor(urlPathMatching(tabledataPath)));
-    }
-
-    private BigQuery mockBigQueryClient(final String bigQueryApiHost) {
+    private BigQuery mockBigQueryClient(String bigQueryApiHost) {
         return BigQueryOptions.newBuilder()
             .setHost(bigQueryApiHost)
             .setCredentials(NoCredentials.getInstance())
