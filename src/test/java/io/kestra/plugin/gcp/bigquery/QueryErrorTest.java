@@ -57,7 +57,7 @@ public class QueryErrorTest {
             "jobType": "QUERY"
           },
           "jobReference": {
-            "projectId": "my-project",
+            "projectId": "%s",
             "jobId": "job_1234567890abcdef",
             "location": "US"
           },
@@ -98,7 +98,7 @@ public class QueryErrorTest {
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
+                .withBody(JOB_RESPONSE_DONE.formatted(project))));
 
         // Match the query results endpoint loosely because the SDK can vary project and location handling
         // across versions while still exercising the same retry path.
@@ -115,9 +115,6 @@ public class QueryErrorTest {
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         assertThrows(Exception.class, () -> task.run(runContext));
-
-        getAllServeEvents().forEach(e ->
-            System.out.println(e.getRequest().getUrl()));
 
         // Verify that retries actually happened (3 attempts = initial + 2 retries)
         verify(3, getRequestedFor(urlPathMatching(queriesPath)));
