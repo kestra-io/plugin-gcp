@@ -99,7 +99,7 @@ dependencies {
     // Platform
     testAnnotationProcessor enforcedPlatform("io.kestra:platform:$kestraVersion")
     testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
-    testImplementation 'org.wiremock:wiremock-jetty12:3.13.1'
+    testImplementation 'org.wiremock:wiremock-jetty12:3.13.2'
 
     // lombok
     testAnnotationProcessor "org.projectlombok:lombok"
