@@ -34,7 +34,7 @@ class GCloudCLITest {
             .type(GCloudCLI.class.getName())
             .projectId(Property.ofValue(projectId))
             .serviceAccount(Property.ofValue(serviceAccount))
-            .env(new Property<>(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
+            .env(Property.ofExpression(Map.of("{{ inputs.envKey }}", "{{ inputs.envValue }}")))
             .commands(
                 Property.ofValue(
                     List.of(
