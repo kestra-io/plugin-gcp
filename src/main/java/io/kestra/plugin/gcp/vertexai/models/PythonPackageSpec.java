@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -27,6 +28,7 @@ public class PythonPackageSpec {
         description = "The maximum number of package URIs is 100."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<List<String>> packageUris;
 
     @Schema(
@@ -34,6 +36,7 @@ public class PythonPackageSpec {
         description = "The maximum number of package URIs is 100."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<List<String>> args;
 
     @Schema(
@@ -41,6 +44,7 @@ public class PythonPackageSpec {
         description = "Maximum limit is 100."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<Map<String, String>> envs;
 
     public com.google.cloud.aiplatform.v1.PythonPackageSpec to(RunContext runContext) throws IllegalVariableEvaluationException {

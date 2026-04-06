@@ -27,19 +27,19 @@ public class Message implements Output {
         title = "The message data, must be a string if serde type is 'STRING', otherwise a JSON object",
         description = "If it's a string, it can be a dynamic property otherwise not."
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     private Object data;
 
     @Schema(title = "The message attributes map")
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     private Map<String, String> attributes;
 
     @Schema(title = "The message identifier")
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     private String messageId;
 
     @Schema(title = "The message ordering key")
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "connection")
     private String orderingKey;
 
     public PubsubMessage to(RunContext runContext, SerdeType serdeType) throws IllegalVariableEvaluationException, IOException {

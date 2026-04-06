@@ -79,7 +79,7 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
         title = "Cluster name"
     )
     @NotBlank
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     private String clusterName;
 
     @Schema(
@@ -87,50 +87,58 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
         description = "Dataproc region endpoint (e.g., europe-west3)"
     )
     @NotBlank
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     private String region;
 
     @Schema(
         title = "Zone",
         description = "Optional compute zone URI"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> zone;
 
     @Schema(
         title = "Master machine type"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> masterMachineType;
 
     @Schema(
         title = "Master disk size (GB)"
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> masterDiskSizeGB;
 
     @Schema(
         title = "Worker machine type"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> workerMachineType;
 
     @Schema(
         title = "Worker disk size (GB)"
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> workerDiskSizeGB;
 
     @Schema(
         title = "Number of workers"
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> workers;
 
     @Schema(
         title = "Bucket",
         description = "Optional GCS bucket for cluster staging"
     )
+    @PluginProperty(group = "connection")
     private Property<String> bucket;
 
     @Schema(
         title = "Dataproc image version",
         description = "Compute Engine image for instances (e.g., 2.1-debian12)"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> imageVersion;
 
     @Override

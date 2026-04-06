@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -16,6 +17,7 @@ public class EncryptionConfiguration {
     @Schema(
         name = "The KMS key name."
     )
+    @PluginProperty(group = "advanced")
     private final Property<String> kmsKeyName;
 
     public static EncryptionConfiguration.Output of(com.google.cloud.bigquery.EncryptionConfiguration encryptionConfiguration) {

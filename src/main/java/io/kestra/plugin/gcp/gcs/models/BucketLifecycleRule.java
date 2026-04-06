@@ -24,14 +24,14 @@ public class BucketLifecycleRule {
     @Schema(
         title = "The condition"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     private final Condition condition;
 
     @NotNull
     @Schema(
         title = "The action to take when a lifecycle condition is met"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     private final Action action;
 
     @Getter
@@ -42,6 +42,7 @@ public class BucketLifecycleRule {
         @Schema(
             title = "The Age condition is satisfied when an object reaches the specified age (in days). Age is measured from the object's creation time."
         )
+        @PluginProperty(group = "main")
         private final Property<Integer> age;
     }
 
@@ -53,11 +54,13 @@ public class BucketLifecycleRule {
         @Schema(
             title = "The type of the action (DELETE ...)"
         )
+        @PluginProperty(group = "main")
         private final Property<Type> type;
 
         @Schema(
             title = "The value for the action (if any)"
         )
+        @PluginProperty(group = "advanced")
         private final Property<String> value;
 
         public enum Type {
@@ -87,6 +90,7 @@ public class BucketLifecycleRule {
         @Schema(
             title = "The storage class (standard, nearline, coldline ...)"
         )
+        @PluginProperty(group = "main")
         private final Property<StorageClass> storageClass;
 
         public BucketInfo.LifecycleRule convert(Condition condition, RunContext runContext) throws IllegalVariableEvaluationException {

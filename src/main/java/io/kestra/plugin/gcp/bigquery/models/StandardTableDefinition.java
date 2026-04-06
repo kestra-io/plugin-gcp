@@ -13,21 +13,26 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
 @Jacksonized
 public class StandardTableDefinition {
     @Schema(title = "Returns information on the table's streaming buffer, if exists. Returns {@code null} if no streaming buffer exists.")
+    @PluginProperty(group = "advanced")
     private final StreamingBuffer streamingBuffer;
 
     @Schema(title = "Returns the clustering configuration for this table. If {@code null}, the table is not clustered.")
+    @PluginProperty(group = "advanced")
     private final Property<List<String>> clustering;
 
     @Schema(title = "Returns the time partitioning configuration for this table. If {@code null}, the table is not time-partitioned.")
+    @PluginProperty(group = "advanced")
     private final TimePartitioning timePartitioning;
 
     @Schema(title = "Returns the range partitioning configuration for this table. If {@code null}, the table is not range-partitioned.")
+    @PluginProperty(group = "advanced")
     private final RangePartitioning rangePartitioning;
 
     public static StandardTableDefinition.Output of(com.google.cloud.bigquery.StandardTableDefinition standardTableDefinition) {

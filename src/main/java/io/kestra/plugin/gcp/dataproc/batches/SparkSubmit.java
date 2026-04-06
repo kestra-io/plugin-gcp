@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -51,6 +52,7 @@ public class SparkSubmit extends AbstractSparkSubmit {
         description = "Fully qualified class name; its JAR must be on the classpath or in jarFileUris"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> mainClass;
 
     @Override

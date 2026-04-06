@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -80,6 +81,7 @@ public class TextCompletion extends AbstractGenerativeAi implements RunnableTask
         description = "Prompts can include preamble, questions, suggestions, instructions, or examples."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> prompt;
 
     @Override

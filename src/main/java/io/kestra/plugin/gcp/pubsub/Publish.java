@@ -17,6 +17,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -67,6 +68,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
         description = io.kestra.core.models.property.Data.From.DESCRIPTION,
         anyOf = { String.class, Message[].class, Message.class }
     )
+    @PluginProperty(group = "main")
     private Object from;
 
     @Builder.Default
@@ -75,6 +77,7 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
         title = "Serde type",
         description = "Serializer/deserializer for message payloads; defaults to STRING"
     )
+    @PluginProperty(group = "advanced")
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override

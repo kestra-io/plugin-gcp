@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -22,11 +23,13 @@ public class MachineSpec {
             "training](https://cloud.google.com/vertex-ai/docs/training/configure-compute#machine-types)."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> machineType;
 
     @Schema(
         title = "The number of accelerators to attach to the machine."
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> acceleratorCount;
 
     @Schema(

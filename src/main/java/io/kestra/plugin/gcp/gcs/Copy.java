@@ -19,6 +19,7 @@ import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -64,12 +65,14 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         title = "Source object URI",
         description = "Fully qualified gs:// path to copy from"
     )
+    @PluginProperty(group = "source")
     private Property<String> from;
 
     @Schema(
         title = "Destination object URI",
         description = "Fully qualified gs:// path to copy to"
     )
+    @PluginProperty(group = "destination")
     private Property<String> to;
 
     @Schema(
@@ -77,6 +80,7 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
         description = "If true, removes the source object after a successful copy; default false"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private final Property<Boolean> delete = Property.ofValue(false);
 
     @Override

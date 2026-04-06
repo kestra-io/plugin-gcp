@@ -73,13 +73,14 @@ public class Set extends AbstractFirestore implements RunnableTask<Set.Output> {
         description = "Map or JSON string to write",
         anyOf = { String.class, Map.class }
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     private Object document;
 
     @Schema(
         title = "Document path",
         description = "Optional child path; if absent, an ID is auto-generated"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> childPath;
 
     @Override

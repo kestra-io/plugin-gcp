@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -46,6 +47,7 @@ public class Get extends AbstractFirestore implements RunnableTask<Get.Output> {
         description = "Child path (relative to collection) of the document to fetch"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> childPath;
 
     @Override

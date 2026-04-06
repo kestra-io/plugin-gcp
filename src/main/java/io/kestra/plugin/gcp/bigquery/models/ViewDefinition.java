@@ -13,15 +13,18 @@ import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
 @Jacksonized
 public class ViewDefinition {
     @Schema(title = "The query whose result is persisted.")
+    @PluginProperty(group = "processing")
     public final Property<String> query;
 
     @Schema(title = "User defined functions that can be used by query. Returns {@code null} if not set.")
+    @PluginProperty(group = "advanced")
     private final List<UserDefinedFunction> viewUserDefinedFunctions;
 
     public static ViewDefinition.Output of(com.google.cloud.bigquery.ViewDefinition viewDefinition) {

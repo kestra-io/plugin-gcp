@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -18,6 +19,7 @@ public class PolicyTags {
     @Schema(
         name = "The policy tags' names."
     )
+    @PluginProperty(group = "advanced")
     private final Property<List<String>> names;
 
     public static PolicyTags.Output of(com.google.cloud.bigquery.PolicyTags policyTags) {

@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -31,6 +32,7 @@ public abstract class AbstractList extends AbstractGcs implements ListInterface 
         title = "Include all versions",
         description = "If true, includes object versions; default false"
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> allVersions;
 
     @Builder.Default

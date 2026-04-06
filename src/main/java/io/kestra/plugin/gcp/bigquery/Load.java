@@ -71,7 +71,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         title = "Source file URI",
         description = "Kestra internal storage URI for the file to load"
     )
-    @PluginProperty(internalStorageURI = true)
+    @PluginProperty(internalStorageURI = true, group = "source")
     private Property<String> from;
 
     @Schema(
@@ -79,6 +79,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
         description = "If true (default), raises an error when the input file has zero bytes"
     )
     @Builder.Default
+    @PluginProperty(group = "reliability")
     private Property<Boolean> failedOnEmpty = Property.ofValue(true);
 
     @Override

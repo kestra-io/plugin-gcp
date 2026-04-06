@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -21,12 +22,15 @@ public class TimePartitioning {
     @Schema(
         title = "The number of milliseconds for which to keep the storage for a partition. When expired, the storage for the partition is reclaimed. If null, the partition does not expire."
     )
+    @PluginProperty(group = "advanced")
     private final Property<Duration> expiration;
 
     @Schema(title = "If not set, the table is partitioned by pseudo column '_PARTITIONTIME'; if set, the table is partitioned by this field.")
+    @PluginProperty(group = "advanced")
     private final Property<String> field;
 
     @Schema(title = "If set to true, queries over this table require a partition filter (that can be used for partition elimination) to be specified.")
+    @PluginProperty(group = "advanced")
     private final Property<Boolean> requirePartitionFilter;
 
     public static TimePartitioning.Output of(com.google.cloud.bigquery.TimePartitioning timePartitioning) {

@@ -25,6 +25,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -65,6 +66,7 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         title = "Destination table",
         description = "Target table receiving the copied partitions"
     )
+    @PluginProperty(group = "destination")
     protected Property<String> destinationTable;
 
     @Schema(
@@ -83,11 +85,13 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         title = "Job timeout",
         description = "Optional maximum duration for the copy job"
     )
+    @PluginProperty(group = "execution")
     protected Property<Duration> jobTimeout;
 
     @Schema(
         title = "Job labels"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Map<String, String>> labels;
 
     @Builder.Default
@@ -95,6 +99,7 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         title = "Dry run",
         description = "If true, validates the job without executing"
     )
+    @PluginProperty(group = "reliability")
     protected Property<Boolean> dryRun = Property.ofValue(false);
 
     @Builder.Default

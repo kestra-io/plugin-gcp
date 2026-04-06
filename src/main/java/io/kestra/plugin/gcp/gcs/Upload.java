@@ -86,33 +86,38 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
         title = "Source file URI",
         description = "Kestra internal storage URI to upload"
     )
-    @PluginProperty(internalStorageURI = true)
+    @PluginProperty(internalStorageURI = true, group = "source")
     private Property<String> from;
 
     @Schema(
         title = "Destination object URI",
         description = "gs:// bucket/path for the uploaded object"
     )
+    @PluginProperty(group = "destination")
     private Property<String> to;
 
     @Schema(
         title = "Content-Type"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> contentType;
 
     @Schema(
         title = "Content-Encoding"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> contentEncoding;
 
     @Schema(
         title = "Content-Disposition"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> contentDisposition;
 
     @Schema(
         title = "Cache-Control"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> cacheControl;
 
     @Override

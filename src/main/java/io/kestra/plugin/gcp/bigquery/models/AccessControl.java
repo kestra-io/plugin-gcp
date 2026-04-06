@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -16,12 +17,14 @@ public class AccessControl {
     @Schema(
         title = "The GCP entity."
     )
+    @PluginProperty(group = "main")
     private final Entity entity;
 
     @NotNull
     @Schema(
         title = "The role to assign to the entity."
     )
+    @PluginProperty(group = "main")
     private final Property<Role> role;
 
     public enum Role {

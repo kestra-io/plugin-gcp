@@ -110,7 +110,7 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
         title = "Prompt parts",
         description = "Ordered list of text or media parts sent to the model"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     @NotEmpty
     private List<Content> contents;
 

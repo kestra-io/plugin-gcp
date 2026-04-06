@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -24,23 +25,27 @@ public class ContainerSpec {
         description = "Must be on google container registry, example: `gcr.io/{{ project }}/{{ dir }}/{{ image }}:{{ tag }}`"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> imageUri;
 
     @Schema(
         title = "The command to be invoked when the container is started.",
         description = "It overrides the entrypoint instruction in Dockerfile when provided."
     )
+    @PluginProperty(group = "advanced")
     private Property<List<String>> commands;
 
     @Schema(
         title = "The arguments to be passed when starting the container."
     )
+    @PluginProperty(group = "advanced")
     private Property<List<String>> args;
 
     @Schema(
         title = "Environment variables to be passed to the container.",
         description = "Maximum limit is 100."
     )
+    @PluginProperty(group = "execution")
     private Property<Map<String, String>> env;
 
     public com.google.cloud.aiplatform.v1.ContainerSpec to(RunContext runContext) throws IllegalVariableEvaluationException {

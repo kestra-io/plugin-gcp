@@ -4,6 +4,7 @@ import io.kestra.core.models.property.Property;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import io.kestra.core.models.annotations.PluginProperty;
 
 public interface ListInterface {
     @Schema(
@@ -11,6 +12,7 @@ public interface ListInterface {
         description = "gs:// path to list"
     )
     @NotNull
+    @PluginProperty(group = "main")
     Property<String> getFrom();
 
     @Schema(
@@ -23,6 +25,7 @@ public interface ListInterface {
         title = "Regex filter",
         description = "Optional regex applied to full object path (e.g., `.*2020-01-0.\\.csv`)"
     )
+    @PluginProperty(group = "advanced")
     Property<String> getRegExp();
 
     enum Filter {

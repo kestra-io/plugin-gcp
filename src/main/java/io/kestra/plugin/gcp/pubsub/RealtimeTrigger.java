@@ -34,6 +34,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import reactor.core.publisher.Flux;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -115,6 +116,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
         title = "Subscription",
         description = "Subscription name; auto-created when `autoCreateSubscription` is true"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> subscription;
 
     @Schema(
@@ -122,6 +124,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
         description = "Create the subscription if missing; default true"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
     @Builder.Default
@@ -131,12 +134,14 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
         title = "Max records",
         description = "Optional cap on messages before stopping"
     )
+    @PluginProperty(group = "execution")
     private Property<Integer> maxRecords;
 
     @Schema(
         title = "Max duration",
         description = "Optional run duration limit (ISO-8601)"
     )
+    @PluginProperty(group = "execution")
     private Property<Duration> maxDuration;
 
     @Builder.Default
@@ -145,6 +150,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
         title = "Serde type",
         description = "Serializer/deserializer for messages; defaults to STRING"
     )
+    @PluginProperty(group = "main")
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Builder.Default

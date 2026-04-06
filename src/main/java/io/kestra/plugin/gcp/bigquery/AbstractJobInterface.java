@@ -8,12 +8,14 @@ import com.google.cloud.bigquery.JobInfo;
 import io.kestra.core.models.property.Property;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.kestra.core.models.annotations.PluginProperty;
 
 public interface AbstractJobInterface {
     @Schema(
         title = "Destination table",
         description = "Table to receive job output; creation depends on createDisposition"
     )
+    @PluginProperty(group = "advanced")
     Property<String> getDestinationTable();
 
     @Schema(
@@ -32,16 +34,19 @@ public interface AbstractJobInterface {
         title = "Job timeout",
         description = "Optional max duration; BigQuery may terminate the job when exceeded"
     )
+    @PluginProperty(group = "execution")
     Property<Duration> getJobTimeout();
 
     @Schema(
         title = "Job labels"
     )
+    @PluginProperty(group = "advanced")
     Property<Map<String, String>> getLabels();
 
     @Schema(
         title = "Dry run",
         description = "If true, validates the job and returns statistics without running it"
     )
+    @PluginProperty(group = "advanced")
     Property<Boolean> getDryRun();
 }

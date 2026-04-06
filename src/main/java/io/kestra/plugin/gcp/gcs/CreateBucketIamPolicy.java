@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -51,6 +52,7 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
     @Schema(
         title = "Bucket name"
     )
+    @PluginProperty(group = "main")
     protected Property<String> name;
 
     @NotNull
@@ -58,6 +60,7 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
         title = "Member",
         description = "IAM member string, e.g., user:alice@example.com or serviceAccount:sa@project.iam.gserviceaccount.com"
     )
+    @PluginProperty(group = "main")
     protected Property<String> member;
 
     @NotNull
@@ -65,6 +68,7 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
         title = "Role",
         description = "IAM role to grant (e.g., roles/storage.objectViewer)"
     )
+    @PluginProperty(group = "main")
     protected Property<String> role;
 
     @Builder.Default
@@ -72,6 +76,7 @@ public class CreateBucketIamPolicy extends AbstractGcs implements RunnableTask<C
         title = "Existing binding policy",
         description = "`ERROR` or `SKIP` when the role/member already exists; default SKIP"
     )
+    @PluginProperty(group = "advanced")
     private Property<IfExists> ifExists = Property.ofValue(IfExists.SKIP);
 
     @Override

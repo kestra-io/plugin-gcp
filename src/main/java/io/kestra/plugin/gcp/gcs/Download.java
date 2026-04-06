@@ -23,6 +23,7 @@ import io.kestra.core.utils.FileUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -54,6 +55,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
         title = "Source object URI",
         description = "gs:// path to download"
     )
+    @PluginProperty(group = "source")
     private Property<String> from;
 
     static File download(RunContext runContext, Storage connection, BlobId source) throws IOException {

@@ -17,6 +17,7 @@ import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -52,6 +53,7 @@ public class CreateDataset extends AbstractDataset implements RunnableTask<Abstr
         title = "Existing dataset policy",
         description = "`ERROR` by default. Use `UPDATE` to apply new metadata or `SKIP` to leave the dataset unchanged."
     )
+    @PluginProperty(group = "advanced")
     private final Property<IfExists> ifExists = Property.ofValue(IfExists.ERROR);
 
     @Override

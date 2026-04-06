@@ -137,21 +137,26 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         title = "SQL query",
         description = "Rendered SQL string to execute; uses standard SQL unless `legacySql` is true"
     )
+    @PluginProperty(group = "main")
     private Property<String> sql;
 
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> legacySql = Property.ofValue(false);
 
     @Builder.Default
     @Deprecated
+    @PluginProperty(group = "deprecated")
     private boolean fetch = false;
 
     @Builder.Default
     @Deprecated
+    @PluginProperty(group = "deprecated")
     private boolean store = false;
 
     @Builder.Default
     @Deprecated
+    @PluginProperty(group = "deprecated")
     private boolean fetchOne = false;
 
     @Builder.Default
@@ -159,6 +164,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         title = "Result handling mode",
         description = "`NONE` by default. Use `FETCH` or `STORE` to make results available to downstream tasks; prefer over deprecated `fetch`/`store` flags."
     )
+    @PluginProperty(group = "processing")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     // private List<String> positionalParameters;
@@ -168,6 +174,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     @Schema(
         title = "The clustering specification for the destination table."
     )
+    @PluginProperty(group = "advanced")
     private Property<List<String>> clusteringFields;
 
     @Schema(
@@ -185,6 +192,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     @Schema(
         title = "The time partitioning field for the destination table."
     )
+    @PluginProperty(group = "advanced")
     private Property<String> timePartitioningField;
 
     @Schema(
@@ -196,27 +204,32 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     @Schema(
         title = "Range partitioning field for the destination table."
     )
+    @PluginProperty(group = "advanced")
     private Property<String> rangePartitioningField;
 
     @Schema(
         title = "The start of range partitioning, inclusive."
     )
+    @PluginProperty(group = "advanced")
     private Property<Long> rangePartitioningStart;
 
     @Schema(
         title = "The end range partitioning, inclusive."
     )
+    @PluginProperty(group = "advanced")
     private Property<Long> rangePartitioningEnd;
 
     @Schema(
         title = "The width of each interval."
     )
+    @PluginProperty(group = "advanced")
     private Property<Long> rangePartitioningInterval;
 
     @Schema(
         title = "Sets the default dataset.",
         description = "This dataset is used for all unqualified table names used in the query."
     )
+    @PluginProperty(group = "source")
     private Property<String> defaultDataset;
 
     @Schema(
@@ -231,6 +244,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "If `true` the query is allowed to create large results at a slight cost in performance. " +
             "`destinationTable` must be provided."
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> allowLargeResults;
 
     @Schema(
@@ -238,6 +252,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "The query cache is a best-effort cache that will be flushed whenever tables in the query are " +
             "modified. Moreover, the query cache is only available when `destinationTable` is not set "
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> useQueryCache;
 
     @Schema(
@@ -245,6 +260,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "If set to `false`, allowLargeResults must be `true`."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> flattenResults = Property.ofValue(true);
 
     @Schema(
@@ -253,6 +269,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             "while an invalid query will return the same error it would if it wasn't a dry run."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> useLegacySql = Property.ofValue(false);
 
     @Schema(
@@ -260,6 +277,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "Queries that have resource usage beyond this tier will fail (without incurring a charge). " +
             "If unspecified, this will be set to your project default."
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> maximumBillingTier;
 
     @Schema(
@@ -267,6 +285,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         description = "Queries that will have bytes billed beyond this limit will fail (without incurring a charge). " +
             "If unspecified, this will be set to your project default."
     )
+    @PluginProperty(group = "advanced")
     private Property<Long> maximumBytesBilled;
 
     @Schema(
@@ -277,6 +296,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             "addition to this limit, responses are also limited to 10 MB. By default, there is no maximum " +
             "row count, and only the byte limit applies."
     )
+    @PluginProperty(group = "processing")
     private Property<Long> maxResults;
 
     @Override

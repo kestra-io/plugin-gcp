@@ -119,12 +119,14 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         title = "Service account key",
         description = "Full JSON key content written to a temp file and wired to `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE`"
     )
+    @PluginProperty(group = "connection")
     protected Property<String> serviceAccount;
 
     @Schema(
         title = "Project ID",
         description = "Optional default project exported as CLOUDSDK_CORE_PROJECT"
     )
+    @PluginProperty(group = "connection")
     protected Property<String> projectId;
 
     @Schema(
@@ -132,19 +134,21 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         description = "Shell commands executed with `/bin/sh -c`; rendered before execution"
     )
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<List<String>> commands;
 
     @Schema(
         title = "Additional environment variables",
         description = "Merged into the task environment after project/service account vars"
     )
+    @PluginProperty(group = "execution")
     protected Property<Map<String, String>> env;
 
     @Schema(
         title = "Docker options (deprecated)",
         description = "Deprecated; use `taskRunner` instead"
     )
-    @PluginProperty
+    @PluginProperty(group = "deprecated")
     @Deprecated
     private DockerOptions docker;
 
@@ -152,7 +156,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         title = "Task runner",
         description = "Runner plugin configuration; defaults to Docker"
     )
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Builder.Default
     @Valid
     private TaskRunner<?> taskRunner = Docker.instance();
@@ -162,16 +166,20 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         description = "Used when the task runner is container-based; defaults to google/cloud-sdk"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
+    @PluginProperty(group = "source")
     private NamespaceFiles namespaceFiles;
 
+    @PluginProperty(group = "source")
     private Object inputFiles;
 
     @Schema(
         title = "Output files",
         description = "Paths to copy from the task runtime back to internal storage after execution"
     )
+    @PluginProperty(group = "destination")
     private Property<List<String>> outputFiles;
 
     @Override

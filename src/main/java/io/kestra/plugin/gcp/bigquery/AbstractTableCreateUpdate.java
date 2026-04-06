@@ -31,17 +31,19 @@ abstract public class AbstractTableCreateUpdate extends AbstractTable {
         title = "Table definition",
         description = "Required table definition (standard, external, view, etc.)"
     )
+    @PluginProperty(group = "advanced")
     protected TableDefinition tableDefinition;
 
     @Schema(
         title = "Table display name"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> friendlyName;
 
     @Schema(
         title = "Table description"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     protected String description;
 
     @Schema(
@@ -53,18 +55,21 @@ abstract public class AbstractTableCreateUpdate extends AbstractTable {
         title = "Require partition filter",
         description = "If true, queries must include a partition filter for partitioned tables"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Boolean> requirePartitionFilter;
 
     @Schema(
         title = "Encryption configuration",
         description = "Optional CMEK for the table"
     )
+    @PluginProperty(group = "advanced")
     protected EncryptionConfiguration encryptionConfiguration;
 
     @Schema(
         title = "Expiration duration",
         description = "Duration from now until table expiration; if unset, table persists"
     )
+    @PluginProperty(group = "execution")
     protected Property<Duration> expirationDuration;
 
     protected TableInfo.Builder build(TableInfo.Builder builder, RunContext runContext) throws Exception {
