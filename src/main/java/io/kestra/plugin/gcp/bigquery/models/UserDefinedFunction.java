@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -23,6 +24,7 @@ public class UserDefinedFunction {
         description = "If `type` is UserDefinedFunction.Type.INLINE, this method returns a code blob.\n" +
             "If `type` is UserDefinedFunction.Type.FROM_URI, the method returns a Google Cloud Storage URI (e.g. gs://bucket/path)."
     )
+    @PluginProperty(group = "advanced")
     private final Property<String> content;
 
     public static UserDefinedFunction.Output of(com.google.cloud.bigquery.UserDefinedFunction userDefinedFunction) {

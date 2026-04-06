@@ -15,6 +15,7 @@ import io.kestra.plugin.gcp.gcs.models.Bucket;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -51,6 +52,7 @@ public class CreateBucket extends AbstractBucket implements RunnableTask<Abstrac
         title = "Existing bucket policy",
         description = "`ERROR` by default; `UPDATE` to apply new settings; `SKIP` to leave as-is."
     )
+    @PluginProperty(group = "advanced")
     private Property<IfExists> ifExists = Property.ofValue(IfExists.ERROR);
 
     @Override

@@ -24,13 +24,14 @@ public class AccessControl {
     @Schema(
         title = "The entity"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     private final Entity entity;
 
     @NotNull
     @Schema(
         title = "The role to assign to the entity"
     )
+    @PluginProperty(group = "main")
     private final Property<Role> role;
 
     public enum Role {

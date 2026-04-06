@@ -18,32 +18,33 @@ public class WorkerPoolSpec {
     @Schema(
         title = " The custom container task."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(dynamic = false, group = "main")
     @NotNull
     private ContainerSpec containerSpec;
 
     @Schema(
         title = "The specification of a single machine."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(dynamic = false, group = "main")
     @NotNull
     private MachineSpec machineSpec;
 
     @Schema(
         title = "The specification of the disk."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(dynamic = false, group = "advanced")
     private DiscSpec discSpec;
 
     @Schema(
         title = "The specification of the disk."
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> replicaCount;
 
     @Schema(
         title = "The python package specs."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(dynamic = false, group = "advanced")
     private PythonPackageSpec pythonPackageSpec;
 
     public com.google.cloud.aiplatform.v1.WorkerPoolSpec to(RunContext runContext) throws IllegalVariableEvaluationException {

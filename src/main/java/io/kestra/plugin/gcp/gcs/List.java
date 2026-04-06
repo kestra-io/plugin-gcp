@@ -21,6 +21,7 @@ import io.kestra.plugin.gcp.gcs.models.Blob;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -62,6 +63,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
         description = "Choose FILES, DIRECTORY, or BOTH; defaults to BOTH"
     )
     @Builder.Default
+    @PluginProperty(group = "processing")
     protected final Property<Filter> filter = Property.ofValue(Filter.BOTH);
 
     @Schema(
@@ -71,6 +73,7 @@ public class List extends AbstractList implements RunnableTask<List.Output>, Lis
             """
     )
     @Builder.Default
+    @PluginProperty(group = "processing")
     private Property<Integer> maxFiles = Property.ofValue(25);
 
     @Override

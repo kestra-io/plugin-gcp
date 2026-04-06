@@ -18,6 +18,7 @@ import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -30,11 +31,13 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         title = "Destination table",
         description = "Target table for the load job; creation depends on createDisposition"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> destinationTable;
 
     @Schema(
         title = "Clustering fields"
     )
+    @PluginProperty(group = "advanced")
     private Property<List<String>> clusteringFields;
 
     @Schema(
@@ -46,6 +49,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     @Schema(
         title = "Time partitioning field"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> timePartitioningField;
 
     @Schema(
@@ -65,6 +69,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         title = "Autodetect source options",
         description = "Experimental. Lets BigQuery infer schema/options for CSV or JSON sources."
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> autodetect;
 
     @Schema(
@@ -77,33 +82,39 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         title = "Ignore unknown values",
         description = "If true, extra columns are skipped; if false, extra columns count as bad records. Default is false."
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> ignoreUnknownValues;
 
     @Schema(
         title = "Max bad records",
         description = "Number of bad records allowed before the job fails; default 0"
     )
+    @PluginProperty(group = "execution")
     private Property<Integer> maxBadRecords;
 
     @Schema(
         title = "Destination schema",
         description = "Table schema definition; may be omitted when loading into an existing table or supported backup formats"
     )
+    @PluginProperty(group = "advanced")
     private Property<Map<String, Object>> schema;
 
     @Schema(
         title = "Source format"
     )
+    @PluginProperty(group = "processing")
     private Format format;
 
     @Schema(
         title = "CSV parsing options"
     )
+    @PluginProperty(group = "advanced")
     private CsvOptions csvOptions;
 
     @Schema(
         title = "Avro parsing options"
     )
+    @PluginProperty(group = "advanced")
     private AvroOptions avroOptions;
 
     @SuppressWarnings("DuplicatedCode")
@@ -288,12 +299,14 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " records, an invalid error is returned in the job result. By default, rows with missing" +
                 " trailing columns are considered bad records."
         )
+        @PluginProperty(group = "advanced")
         private Property<Boolean> allowJaggedRows;
 
         @Schema(
             title = "Whether BigQuery should allow quoted data sections that contain newline characters in a CSV file.",
             description = "By default quoted newline are not allowed."
         )
+        @PluginProperty(group = "advanced")
         private Property<Boolean> allowQuotedNewLines;
 
         @Schema(
@@ -302,6 +315,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split" +
                 " using the values set in {@link #setQuote(String)} and {@link #setFieldDelimiter(String)}."
         )
+        @PluginProperty(group = "processing")
         private Property<String> encoding;
 
         @Schema(
@@ -311,6 +325,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " binary state. BigQuery also supports the escape sequence \"\\t\" to specify a tab separator. The" +
                 " default value is a comma (',')."
         )
+        @PluginProperty(group = "processing")
         private Property<String> fieldDelimiter;
 
         @Schema(
@@ -322,6 +337,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " contains quoted newline characters, you must also set {@link" +
                 " #setAllowQuotedNewLines(boolean)} property to {@code true}."
         )
+        @PluginProperty(group = "advanced")
         private Property<String> quote;
 
         @Schema(
@@ -329,6 +345,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
             description = "The default value is 0. This property is useful if you have header rows in the file" +
                 " that should be skipped."
         )
+        @PluginProperty(group = "advanced")
         private Property<Long> skipLeadingRows;
 
         private com.google.cloud.bigquery.CsvOptions to(RunContext runContext) throws IllegalVariableEvaluationException {
@@ -374,6 +391,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " types (such as TIMESTAMP) instead of only using their raw types (such as INTEGER)",
             description = "The value may be null."
         )
+        @PluginProperty(group = "advanced")
         private Property<Boolean> useAvroLogicalTypes;
     }
 }

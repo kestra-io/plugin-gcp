@@ -75,6 +75,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         description = "If true, throws when no objects were deleted; default false"
     )
     @Builder.Default
+    @PluginProperty(group = "reliability")
     private final Property<Boolean> errorOnEmpty = Property.ofValue(false);
 
     @Min(2)
@@ -82,7 +83,7 @@ public class DeleteList extends AbstractList implements RunnableTask<DeleteList.
         title = "Concurrent deletions",
         description = "Number of parallel delete workers; optional"
     )
-    @PluginProperty
+    @PluginProperty(group = "execution")
     private Integer concurrent;
 
     @Override

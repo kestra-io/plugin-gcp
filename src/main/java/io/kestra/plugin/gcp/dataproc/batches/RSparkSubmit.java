@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -47,6 +48,7 @@ public class RSparkSubmit extends AbstractSparkSubmit {
         description = "HCFS URI to the driver R script (.R/.r) accessible by the cluster"
     )
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<String> mainRFileUri;
 
     @Override

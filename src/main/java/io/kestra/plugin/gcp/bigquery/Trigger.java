@@ -18,6 +18,7 @@ import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -63,6 +64,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         description = "Duration between query runs; defaults to 60 seconds"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private final Duration interval = Duration.ofSeconds(60);
 
     protected Property<String> projectId;
@@ -74,6 +76,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "SQL query",
         description = "Rendered SQL string executed on each poll"
     )
+    @PluginProperty(group = "processing")
     private Property<String> sql;
 
     @Builder.Default
@@ -96,6 +99,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Result handling mode",
         description = "`NONE` by default. Use `FETCH` or `STORE` to expose rows to downstream tasks; supersedes deprecated flags."
     )
+    @PluginProperty(group = "execution")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     @Override

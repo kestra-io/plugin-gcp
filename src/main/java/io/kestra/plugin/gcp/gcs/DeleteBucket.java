@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -50,6 +51,7 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
         title = "Bucket name",
         description = "Name of the bucket to delete"
     )
+    @PluginProperty(group = "main")
     private Property<String> name;
 
     @Schema(
@@ -57,6 +59,7 @@ public class DeleteBucket extends AbstractGcs implements RunnableTask<DeleteBuck
         description = "If true, deletes all objects before deleting the bucket; default false"
     )
     @Builder.Default
+    @PluginProperty(group = "reliability")
     private Property<Boolean> force = Property.ofValue(false);
 
     public static final int CONCURRENT_DELETIONS = 8;

@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -56,6 +57,7 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
         description = "Cloud Monitoring filter string rendered before execution; required"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> filter;
 
     @Schema(
@@ -63,6 +65,7 @@ public class Query extends AbstractMonitoringTask implements RunnableTask<Query.
         description = "Lookback duration for the time interval; defaults to 5 minutes"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(5));
 
     @Override

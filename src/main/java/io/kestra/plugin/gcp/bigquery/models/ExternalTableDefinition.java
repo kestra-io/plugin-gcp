@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -24,23 +25,28 @@ public class ExternalTableDefinition {
             "* to load jobs apply to external data sources, plus an additional limit of 10 GB maximum size\n" +
             "* across all URIs."
     )
+    @PluginProperty(group = "advanced")
     private final Property<List<String>> sourceUris;
 
     @Schema(
         title = "The source format, and possibly some parsing options, of the external data."
     )
+    @PluginProperty(group = "advanced")
     private final Property<FormatType> formatType;
 
     @Schema(title = "Whether automatic detection of schema and format options should be performed.")
+    @PluginProperty(group = "advanced")
     private final Property<Boolean> autodetect;
 
     @Schema(title = "The compression type of the data source.")
+    @PluginProperty(group = "processing")
     private final Property<String> compression;
 
     @Schema(
         title = "The maximum number of bad records that BigQuery can ignore when reading data.",
         description = "If the number of bad records exceeds this value, an invalid error is returned in the job result."
     )
+    @PluginProperty(group = "execution")
     private final Property<Integer> maxBadRecords;
 
     @Schema(
@@ -49,6 +55,7 @@ public class ExternalTableDefinition {
             "as bad records, and if there are too many bad records, an invalid error is returned in the job " +
             "result."
     )
+    @PluginProperty(group = "advanced")
     private final Property<Boolean> ignoreUnknownValues;
 
     public static ExternalTableDefinition.Output of(com.google.cloud.bigquery.ExternalTableDefinition externalTableDefinition) {

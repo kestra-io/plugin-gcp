@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -45,6 +46,7 @@ public class Delete extends AbstractFirestore implements RunnableTask<Delete.Out
         description = "Child path (relative to collection) of the document to delete"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> childPath;
 
     @Override

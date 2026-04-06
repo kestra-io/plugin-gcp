@@ -37,6 +37,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         description = "Vertex AI region used for the API endpoint"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> region;
 
     @Builder.Default
@@ -44,14 +45,14 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         title = "Model parameters",
         description = "Temperature/topK/topP/maxOutputTokens generation settings"
     )
-    @PluginProperty
+    @PluginProperty(group = "advanced")
     private ModelParameter parameters = ModelParameter.builder().build();
 
     @Schema(
         title = "Model ID",
         description = "Vertex model name (e.g., gemini-1.5-flash); defaults to gemini-pro"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     @Builder.Default
     private Property<String> modelId = Property.ofValue("gemini-pro");
 
@@ -86,7 +87,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     @Getter
     public static class ModelParameter {
         @Builder.Default
-        @PluginProperty
+        @PluginProperty(group = "advanced")
         @Positive
         @Max(1)
         @Schema(
@@ -96,7 +97,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         private Float temperature = 0.2F;
 
         @Builder.Default
-        @PluginProperty
+        @PluginProperty(group = "execution")
         @Min(1)
         @Max(1024)
         @Schema(
@@ -108,7 +109,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         private Integer maxOutputTokens = 128;
 
         @Builder.Default
-        @PluginProperty
+        @PluginProperty(group = "advanced")
         @Min(1)
         @Max(40)
         @Schema(
@@ -121,7 +122,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         private Integer topK = 40;
 
         @Builder.Default
-        @PluginProperty
+        @PluginProperty(group = "advanced")
         @Positive
         @Max(1)
         @Schema(

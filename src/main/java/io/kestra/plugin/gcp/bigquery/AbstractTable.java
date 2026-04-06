@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -29,6 +30,7 @@ abstract public class AbstractTable extends AbstractBigquery {
         title = "Dataset ID",
         description = "Target dataset name"
     )
+    @PluginProperty(group = "main")
     protected Property<String> dataset;
 
     @NotNull
@@ -36,6 +38,7 @@ abstract public class AbstractTable extends AbstractBigquery {
         title = "Table ID",
         description = "Target table name"
     )
+    @PluginProperty(group = "main")
     protected Property<String> table;
 
     protected TableId tableId(RunContext runContext) throws IllegalVariableEvaluationException {

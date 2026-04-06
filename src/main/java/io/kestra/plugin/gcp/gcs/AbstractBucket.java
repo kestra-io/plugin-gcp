@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -28,100 +29,117 @@ public abstract class AbstractBucket extends AbstractGcs implements RunnableTask
         title = "Bucket name",
         description = "Globally unique bucket ID"
     )
+    @PluginProperty(group = "main")
     protected Property<String> name;
 
     @Schema(
         title = "Requester pays",
         description = "If true, requester bears access egress charges"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Boolean> requesterPays;
 
     @Schema(
         title = "Versioning enabled",
         description = "Enable object versioning; if true, previous versions are retained"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Boolean> versioningEnabled;
 
     @Schema(
         title = "Website index page",
         description = "Served as directory index for static website hosting"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> indexPage;
 
     @Schema(
         title = "Website not-found page",
         description = "Custom 404 page for static website hosting"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> notFoundPage;
 
     @Schema(
         title = "Lifecycle rules",
         description = "List of lifecycle actions and conditions (age/delete/storage class supported)"
     )
+    @PluginProperty(group = "advanced")
     protected List<BucketLifecycleRule> lifecycleRules;
 
     @Schema(
         title = "Storage class",
         description = "Bucket storage class (cost/SLA); see Cloud Storage docs for values"
     )
+    @PluginProperty(group = "advanced")
     protected Property<StorageClass> storageClass;
 
     @Schema(
         title = "Location",
         description = "Bucket data location (region or dual-region)"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> location;
 
     @Schema(
         title = "CORS rules",
         description = "Cross-Origin Resource Sharing configuration"
     )
+    @PluginProperty(group = "advanced")
     protected List<Cors> cors;
 
     @Schema(
         title = "ACL",
         description = "Bucket-level access control list"
     )
+    @PluginProperty(group = "advanced")
     protected List<AccessControl> acl;
 
     @Schema(
         title = "Default object ACL",
         description = "Default ACL applied to new objects"
     )
+    @PluginProperty(group = "advanced")
     protected List<AccessControl> defaultAcl;
 
     @Schema(
         title = "Labels"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Map<String, String>> labels;
 
     @Schema(
         title = "Default KMS key"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> defaultKmsKeyName;
 
     @Schema(
         title = "Default event-based hold",
         description = "If true, new objects are event-based held"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Boolean> defaultEventBasedHold;
 
     @Schema(
         title = "Retention period (seconds)",
         description = "Bucket retention duration; can be reduced only if policy is unlocked"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Long> retentionPeriod;
 
     @Schema(
         title = "IAM configuration",
         description = "Uniform bucket-level access and related settings"
     )
+    @PluginProperty(group = "advanced")
     protected IamConfiguration iamConfiguration;
 
     @Schema(
         title = "Logging",
         description = "Destination bucket and prefix for access logs"
     )
+    @PluginProperty(group = "advanced")
     protected Logging logging;
 
     protected BucketInfo bucketInfo(RunContext runContext) throws Exception {

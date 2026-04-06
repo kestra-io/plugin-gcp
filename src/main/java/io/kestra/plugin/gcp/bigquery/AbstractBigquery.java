@@ -37,13 +37,14 @@ abstract public class AbstractBigquery extends AbstractTask {
         title = "Dataset location",
         description = "Optional BigQuery location for created or targeted resources. Experimental and may change; see BigQuery dataset location documentation."
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> location;
 
     @Schema(
         title = "Automatic BigQuery retry policy",
         description = "Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s, up to 15m, max 10 attempts."
     )
-    @PluginProperty
+    @PluginProperty(group = "advanced")
     protected AbstractRetry retryAuto;
 
     @Builder.Default
@@ -51,6 +52,7 @@ abstract public class AbstractBigquery extends AbstractTask {
         title = "Retry reasons",
         description = "BigQuery error reasons that trigger an automatic retry; evaluated against error reason strings"
     )
+    @PluginProperty(group = "advanced")
     protected Property<List<String>> retryReasons = Property.ofValue(
         Arrays.asList(
             "rateLimitExceeded",
@@ -66,6 +68,7 @@ abstract public class AbstractBigquery extends AbstractTask {
         title = "Retry message substrings",
         description = "Case-insensitive substrings that, if found in the error message, trigger an automatic retry"
     )
+    @PluginProperty(group = "advanced")
     protected Property<List<String>> retryMessages = Property.ofValue(
         Arrays.asList(
             "due to concurrent update",

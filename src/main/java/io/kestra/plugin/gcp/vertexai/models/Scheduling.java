@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -20,6 +21,7 @@ public class Scheduling {
         title = "The maximum job running time. The default is 7 days."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<Duration> timeOut;
 
     @Schema(
@@ -27,6 +29,7 @@ public class Scheduling {
         description = "This feature can be used by distributed training jobs that are not resilient to workers leaving and joining a job."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<Boolean> restartJobOnWorkerRestart;
 
     public com.google.cloud.aiplatform.v1.Scheduling to(RunContext runContext) throws IllegalVariableEvaluationException {

@@ -31,7 +31,7 @@ public abstract class AbstractDataForm extends AbstractTask {
         example = "us-central1"
     )
     @NotNull
-    @PluginProperty
+    @PluginProperty(group = "main")
     protected Property<String> location;
 
     @Schema(
@@ -39,7 +39,7 @@ public abstract class AbstractDataForm extends AbstractTask {
         description = "Repository name (not full path); used to build projects/{projectId}/locations/{location}/repositories/{repositoryId}"
     )
     @NotNull
-    @PluginProperty
+    @PluginProperty(group = "main")
     protected Property<String> repositoryId;
 
     protected DataformClient dataformClient(RunContext runContext) throws Exception {

@@ -54,7 +54,7 @@ public class Delete extends AbstractTask implements RunnableTask<Delete.Output> 
         title = "Cluster name"
     )
     @NotBlank
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     private String clusterName;
 
     @Schema(
@@ -62,7 +62,7 @@ public class Delete extends AbstractTask implements RunnableTask<Delete.Output> 
         description = "Dataproc region endpoint (e.g., europe-west3)"
     )
     @NotBlank
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     private String region;
 
     @Override

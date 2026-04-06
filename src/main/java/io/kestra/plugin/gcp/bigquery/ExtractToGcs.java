@@ -23,6 +23,7 @@ import io.kestra.core.serializers.JacksonMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -65,53 +66,62 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         title = "Source table",
         description = "Fully-qualified table (optionally partition) to export"
     )
+    @PluginProperty(group = "source")
     private Property<String> sourceTable;
 
     @Schema(
         title = "Destination URIs",
         description = "One or more gs:// URIs to receive the export; wildcards allowed"
     )
+    @PluginProperty(group = "connection")
     private Property<List<String>> destinationUris;
 
     @Schema(
         title = "Compression",
         description = "Optional compression; if unset, files are uncompressed"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> compression;
 
     @Schema(
         title = "Field delimiter",
         description = "Delimiter between fields; defaults to comma"
     )
+    @PluginProperty(group = "processing")
     private Property<String> fieldDelimiter;
 
     @Schema(
         title = "Export format",
         description = "CSV by default; AVRO and other formats supported"
     )
+    @PluginProperty(group = "processing")
     private Property<String> format;
 
     @Schema(
         title = "Use AVRO logical types",
         description = "For AVRO exports, map supported columns to AVRO logical types"
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> useAvroLogicalTypes;
 
     @Schema(
         title = "Job timeout (ms)",
         description = "Optional timeout; BigQuery may terminate the job if exceeded"
     )
+    @PluginProperty(group = "execution")
     private Property<Long> jobTimeoutMs;
 
     @Schema(
         title = "Job labels"
     )
+    @PluginProperty(group = "advanced")
     private Property<Map<String, String>> labels;
 
     @Schema(
         title = "Print header",
         description = "If true (default), include a header row in the export"
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> printHeader;
 
     @Override

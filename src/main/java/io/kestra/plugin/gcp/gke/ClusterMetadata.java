@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -56,18 +57,21 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
         title = "Cluster ID",
         description = "Name of the cluster to query"
     )
+    @PluginProperty(group = "main")
     private Property<String> clusterId;
 
     @Schema(
         title = "Cluster location",
         description = "Zone or region where the cluster resides"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> clusterZone;
 
     @Schema(
         title = "Cluster project ID",
         description = "Project that owns the cluster"
     )
+    @PluginProperty(group = "connection")
     private Property<String> clusterProjectId;
 
     @Override

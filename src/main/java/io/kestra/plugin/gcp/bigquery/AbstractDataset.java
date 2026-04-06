@@ -34,55 +34,61 @@ abstract public class AbstractDataset extends AbstractBigquery implements Runnab
         title = "Dataset ID",
         description = "Required dataset identifier"
     )
+    @PluginProperty(group = "main")
     protected Property<String> name;
 
     @Schema(
         title = "Access controls",
         description = "List of dataset ACL entries (see AccessControl)"
     )
-    @PluginProperty
+    @PluginProperty(group = "advanced")
     protected List<AccessControl> acl;
 
     @Schema(
         title = "Default table expiration (ms)",
         description = "Minimum 3,600,000 ms (1h). Applies to new tables only; existing tables keep their own expiration. Experimental."
     )
+    @PluginProperty(group = "advanced")
     protected Property<Long> defaultTableLifetime;
 
     @Schema(
         title = "Dataset description",
         description = "User-friendly description; supports templating"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     protected String description;
 
     @Schema(
         title = "Dataset display name"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> friendlyName;
 
     @Schema(
         title = "Dataset location",
         description = "Optional BigQuery location; experimental and may change. See BigQuery dataset location docs."
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> location;
 
     @Schema(
         title = "Default table encryption key",
         description = "CMEK applied to newly created tables unless overridden"
     )
-    @PluginProperty
+    @PluginProperty(group = "advanced")
     protected EncryptionConfiguration defaultEncryptionConfiguration;
 
     @Schema(
         title = "Default partition expiration (ms)",
         description = "Applied to new partitioned tables only; overrides defaultTableLifetime for partitions"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Long> defaultPartitionExpirationMs;
 
     @Schema(
         title = "Dataset labels"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Map<String, String>> labels;
 
     protected DatasetInfo datasetInfo(RunContext runContext) throws Exception {

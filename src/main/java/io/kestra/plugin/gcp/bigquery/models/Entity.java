@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -16,6 +17,7 @@ public class Entity {
     @Schema(
         title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)."
     )
+    @PluginProperty(group = "main")
     private final Property<Type> type;
 
     @NotNull
@@ -23,6 +25,7 @@ public class Entity {
         title = "The value for the entity.",
         description = "For example, user email if the type is USER."
     )
+    @PluginProperty(group = "main")
     private final Property<String> value;
 
     @SuppressWarnings("unused")

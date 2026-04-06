@@ -24,7 +24,7 @@ public class CustomJobSpec {
         title = "Worker pool specs",
         description = "At least one worker pool; define machine type, replica count, and container/package."
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     @NotNull
     @NotEmpty
     private List<WorkerPoolSpec> workerPoolSpecs;
@@ -33,38 +33,42 @@ public class CustomJobSpec {
         title = "Service account",
         description = "Run-as service account; submitters need act-as on this account. Defaults to Vertex AI Custom Code Service Agent."
     )
+    @PluginProperty(group = "execution")
     private Property<String> serviceAccount;
 
     @Schema(
         title = "VPC network",
         description = "Full network name (projects/{project}/global/networks/{network}); requires Vertex AI VPC peering"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> network;
 
     @Schema(
         title = "Tensorboard",
         description = "Tensorboard resource for logs, format projects/{project}/locations/{location}/tensorboards/{tensorboard}"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> tensorboard;
 
     @Schema(
         title = "Enable web access",
         description = "Enable interactive shell access to training containers"
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> enableWebAccess;
 
     @Schema(
         title = "Scheduling",
         description = "Optional scheduling options (timeout, restart, etc.)"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(dynamic = false, group = "advanced")
     private Scheduling scheduling;
 
     @Schema(
         title = "Base output directory",
         description = "GCS location for job outputs"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(dynamic = false, group = "advanced")
     private GcsDestination baseOutputDirectory;
 
     public com.google.cloud.aiplatform.v1.CustomJobSpec to(RunContext runContext) throws IllegalVariableEvaluationException {

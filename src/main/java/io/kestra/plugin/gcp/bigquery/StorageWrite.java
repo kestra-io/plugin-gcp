@@ -42,6 +42,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -82,6 +83,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Schema(
         title = "The fully-qualified URIs that point to source data"
     )
+    @PluginProperty(group = "source")
     private Property<String> from;
 
     @NotNull
@@ -89,6 +91,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
         title = "The table where to load data",
         description = "The table must be created before."
     )
+    @PluginProperty(group = "main")
     private Property<String> destinationTable;
 
     @NotNull
@@ -96,6 +99,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Schema(
         title = "The type of write stream to use"
     )
+    @PluginProperty(group = "destination")
     private final Property<WriteStreamType> writeStreamType = Property.ofValue(WriteStreamType.DEFAULT);
 
     @NotNull
@@ -103,6 +107,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
     @Schema(
         title = "The number of records to send on each query"
     )
+    @PluginProperty(group = "advanced")
     protected final Property<Integer> bufferSize = Property.ofValue(1000);
 
     @Schema(
@@ -112,6 +117,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             " \n" +
             " See <a href=\"https://cloud.google.com/bigquery/docs/reference/v2/datasets#location\">Dataset Location</a>"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> location;
 
     @Override
