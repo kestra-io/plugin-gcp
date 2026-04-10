@@ -260,7 +260,12 @@ idea {
 }
 
 // Build the UI module before packaging
+tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmInstallTask) {
+    workingDir = file('ui')
+}
+
 tasks.register('buildUI', com.github.gradle.node.npm.task.NpmTask) {
+    dependsOn 'npmInstallUI'
     args = ['run', 'build', '--', '--outDir', '../src/main/resources/plugin-ui']
     workingDir = file('ui')
 }
