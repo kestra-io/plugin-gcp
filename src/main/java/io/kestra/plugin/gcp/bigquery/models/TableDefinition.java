@@ -7,27 +7,33 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
 @Jacksonized
 public class TableDefinition {
     @Schema(title = "The table's type.")
+    @PluginProperty(group = "advanced")
     private final Property<Type> type;
 
     @Schema(title = "The table's schema.")
     private final io.kestra.plugin.gcp.bigquery.models.Schema schema;
 
     @Schema(title = "The table definition if the type is `TABLE`.")
+    @PluginProperty(group = "advanced")
     private final StandardTableDefinition standardTableDefinition;
 
     @Schema(title = "The materialized view definition if the type is `MATERIALIZED_VIEW`.")
+    @PluginProperty(group = "advanced")
     private final MaterializedViewDefinition materializedViewDefinition;
 
     @Schema(title = "The view definition if the type is `VIEW`.")
+    @PluginProperty(group = "advanced")
     private final ViewDefinition viewDefinition;
 
     @Schema(title = "The external table definition if the type is `EXTERNAL`.")
+    @PluginProperty(group = "advanced")
     private final ExternalTableDefinition externalTableDefinition;
 
     public static <T extends com.google.cloud.bigquery.TableDefinition> TableDefinition.Output of(T tableDefinition) {

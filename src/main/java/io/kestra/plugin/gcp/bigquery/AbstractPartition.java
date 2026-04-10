@@ -23,6 +23,7 @@ import lombok.experimental.SuperBuilder;
 
 import static io.kestra.plugin.gcp.bigquery.AbstractPartition.PartitionType.*;
 import static io.kestra.plugin.gcp.bigquery.AbstractPartition.PartitionType.YEAR;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -42,6 +43,7 @@ abstract public class AbstractPartition extends AbstractTable {
         title = "Partition type",
         description = "DAY, HOUR, MONTH, YEAR, or RANGE"
     )
+    @PluginProperty(group = "main")
     protected Property<PartitionType> partitionType;
 
     @NotNull
@@ -49,6 +51,7 @@ abstract public class AbstractPartition extends AbstractTable {
         title = "Partition start",
         description = "Inclusive start value. Use an integer for RANGE partitions or an ISO datetime for date/time partitions."
     )
+    @PluginProperty(group = "main")
     protected Property<String> from;
 
     @NotNull
@@ -56,6 +59,7 @@ abstract public class AbstractPartition extends AbstractTable {
         title = "Partition end",
         description = "Inclusive end value. Use an integer for RANGE partitions or an ISO datetime for date/time partitions."
     )
+    @PluginProperty(group = "main")
     protected Property<String> to;
 
     protected TableId tableId(RunContext runContext, String partition) throws IllegalVariableEvaluationException {

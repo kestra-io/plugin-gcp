@@ -12,12 +12,14 @@ public interface QueryInterface {
     @Schema(
         title = "SQL query"
     )
+    @PluginProperty(group = "processing")
     Property<String> getSql();
 
     @Schema(
         title = "Use legacy SQL",
         description = "Default false; when true, runs the query with the legacy dialect"
     )
+    @PluginProperty(group = "advanced")
     Property<Boolean> getLegacySql();
 
     @Schema(
@@ -48,6 +50,7 @@ public interface QueryInterface {
         title = "Fetch type",
         description = "Controls result handling: FETCH_ONE, FETCH, STORE, or NONE."
     )
+    @PluginProperty(group = "execution")
     Property<FetchType> getFetchType();
 
     default FetchType computeFetchType(RunContext runContext) throws IllegalVariableEvaluationException {

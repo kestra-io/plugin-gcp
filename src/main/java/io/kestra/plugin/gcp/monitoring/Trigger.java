@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -62,18 +63,21 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         description = "Duration between query runs; defaults to 60 seconds"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private final Duration interval = Duration.ofSeconds(60);
 
     @Schema(
         title = "Project ID",
         description = "Google Cloud project that holds the monitored metrics"
     )
+    @PluginProperty(group = "connection")
     private Property<String> projectId;
 
     @Schema(
         title = "Service account",
         description = "Optional service account email to authenticate the Monitoring client; falls back to application default credentials"
     )
+    @PluginProperty(group = "execution")
     protected Property<String> serviceAccount;
 
     @Schema(
@@ -88,6 +92,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Filter expression",
         description = "Cloud Monitoring filter string evaluated each poll; the trigger fires only when it returns at least one time series"
     )
+    @PluginProperty(group = "main")
     private Property<String> filter;
 
     @Schema(
@@ -95,6 +100,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         description = "Lookback duration for the filter; defaults to 5 minutes"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(5));
 
     @Override

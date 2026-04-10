@@ -17,6 +17,7 @@ import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -51,6 +52,7 @@ public class TableMetadata extends AbstractTable implements RunnableTask<Abstrac
         title = "Missing table policy",
         description = "`ERROR` by default. Use `SKIP` to return an empty output when the table does not exist."
     )
+    @PluginProperty(group = "advanced")
     private final Property<IfNotExists> ifNotExists = Property.ofValue(IfNotExists.ERROR);
 
     @Override

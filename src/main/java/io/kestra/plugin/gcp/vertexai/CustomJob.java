@@ -74,6 +74,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
         description = "Vertex AI region for the job endpoint"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> region;
 
     @Schema(
@@ -81,13 +82,14 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
         description = "Human-friendly name for the job"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> displayName;
 
     @Schema(
         title = "Job spec",
         description = "CustomJobSpec defining worker pools, container/package, scheduling, etc."
     )
-    @PluginProperty
+    @PluginProperty(group = "main")
     @NotNull
     private CustomJobSpec spec;
 
@@ -97,6 +99,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     )
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<Boolean> wait = Property.ofValue(true);
 
     @Schema(
@@ -105,6 +108,7 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     )
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> delete = Property.ofValue(true);
 
     @JsonIgnore

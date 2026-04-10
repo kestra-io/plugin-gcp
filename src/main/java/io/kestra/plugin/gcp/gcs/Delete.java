@@ -17,6 +17,7 @@ import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -48,6 +49,7 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
         title = "Object URI",
         description = "gs:// path to delete"
     )
+    @PluginProperty(group = "connection")
     private Property<String> uri;
 
     @Schema(
@@ -55,6 +57,7 @@ public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
         description = "If true, throw when the object is not found; default false"
     )
     @Builder.Default
+    @PluginProperty(group = "reliability")
     private final Property<Boolean> errorOnMissing = Property.ofValue(false);
 
     @Override

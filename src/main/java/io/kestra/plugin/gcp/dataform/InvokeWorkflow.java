@@ -57,7 +57,7 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
         title = "Workflow config ID",
         description = "ID of the workflow config inside the repository"
     )
-    @PluginProperty
+    @PluginProperty(group = "main")
     protected Property<String> workflowConfigId;
 
     @Builder.Default
@@ -65,7 +65,7 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
         title = "Wait for completion",
         description = "If true (default), polls the invocation until it leaves RUNNING"
     )
-    @PluginProperty
+    @PluginProperty(group = "execution")
     protected Boolean wait = true;;
 
     @Override

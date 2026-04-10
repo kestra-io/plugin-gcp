@@ -76,18 +76,20 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         description = "FETCH_ONE returns first row; FETCH returns all rows in output; STORE writes rows to a file; NONE returns nothing."
     )
     @Builder.Default
+    @PluginProperty(group = "processing")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Schema(
         title = "Filters",
         description = "List of field/operator/value filters applied as where clauses"
     )
-    @PluginProperty
+    @PluginProperty(group = "processing")
     private List<Filter> filters;
 
     @Schema(
         title = "Order by field"
     )
+    @PluginProperty(group = "processing")
     private Property<String> orderBy;
 
     @Schema(
@@ -95,18 +97,21 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         description = "ASCENDING by default"
     )
     @Builder.Default
+    @PluginProperty(group = "processing")
     private Property<Direction> orderDirection = Property.ofValue(Direction.ASCENDING);
 
     @Schema(
         title = "Offset",
         description = "Start offset for paginating results"
     )
+    @PluginProperty(group = "processing")
     private Property<Integer> offset;
 
     @Schema(
         title = "Limit",
         description = "Maximum number of results"
     )
+    @PluginProperty(group = "processing")
     private Property<Integer> limit;
 
     @Override

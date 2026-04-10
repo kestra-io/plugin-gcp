@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -63,6 +64,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         description = "Rendered verb used for the request (e.g., GET, POST)"
     )
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<String> httpMethod;
 
     @Schema(
@@ -70,6 +72,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         description = "Fully qualified HTTPS URL of the Cloud Run service"
     )
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<String> url;
 
     @Schema(
@@ -77,6 +80,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         description = "JSON request payload sent to the function; empty by default"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     protected Property<Map<String, Object>> httpBody = Property.ofValue(new HashMap<>());
 
     @Schema(
@@ -84,6 +88,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
         description = "Maximum wait time for the HTTP call; defaults to 60 minutes"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     protected Property<Duration> maxDuration = Property.ofValue(Duration.ofMinutes(60));
 
     @Override

@@ -29,6 +29,7 @@ import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.models.triggers.StatefulTriggerService.*;
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -112,6 +113,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Source prefix",
         description = "gs:// path to poll for new or updated objects"
     )
+    @PluginProperty(group = "source")
     private Property<String> from;
 
     @Schema(
@@ -124,6 +126,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Move destination",
         description = "Target gs:// prefix when action is MOVE"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> moveDirectory;
 
     @Builder.Default
@@ -138,12 +141,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "State key",
         description = "Override key used to persist trigger state; defaults to namespace/flow/id"
     )
+    @PluginProperty(group = "connection")
     private Property<String> stateKey;
 
     @Schema(
         title = "State TTL",
         description = "Optional TTL for trigger state entries"
     )
+    @PluginProperty(group = "advanced")
     private Property<Duration> stateTtl;
 
     @Schema(
@@ -153,6 +158,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             """
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<Integer> maxFiles = Property.ofValue(25);
 
     @Override

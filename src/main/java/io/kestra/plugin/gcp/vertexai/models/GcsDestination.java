@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -19,6 +20,7 @@ public class GcsDestination {
         description = "If the uri doesn't end with '/', a '/' will be automatically appended. The directory is created if it doesn't exist."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> outputUriPrefix;
 
     public com.google.cloud.aiplatform.v1.GcsDestination to(RunContext runContext) throws IllegalVariableEvaluationException {

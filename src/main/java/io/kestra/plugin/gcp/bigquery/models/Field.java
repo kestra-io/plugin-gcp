@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -24,16 +25,19 @@ public class Field {
     @Schema(
         title = "The field name."
     )
+    @PluginProperty(group = "advanced")
     private final Property<String> name;
 
     @Schema(
         title = "The field type."
     )
+    @PluginProperty(group = "advanced")
     private final Property<StandardSQLTypeName> type;
 
     @Schema(
         title = "The list of sub-fields if `type` is a `LegacySQLType.RECORD`. Returns null otherwise."
     )
+    @PluginProperty(group = "advanced")
     private final List<Field> subFields;
 
     @Schema(
@@ -45,11 +49,13 @@ public class Field {
     @Schema(
         title = "The field description."
     )
+    @PluginProperty(group = "advanced")
     private final Property<String> description;
 
     @Schema(
         title = "The policy tags for the field."
     )
+    @PluginProperty(group = "advanced")
     private final PolicyTags policyTags;
 
     public static Field.Output of(com.google.cloud.bigquery.Field field) {

@@ -81,7 +81,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
         title = "Source listing",
         description = "Listing definition used to select source objects (files only)"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "main")
     @NotNull
     private List list;
 
@@ -89,13 +89,14 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
         title = "Destination object URI",
         description = "gs:// path for the composed object"
     )
+    @PluginProperty(group = "destination")
     private Property<String> to;
 
     @Schema(
         title = "Allow empty source",
         description = "If true, succeed with empty sources; otherwise fail when no files are found"
     )
-    @PluginProperty
+    @PluginProperty(group = "advanced")
     @Builder.Default
     private Property<Boolean> allowEmpty = Property.ofValue(false);
 

@@ -25,6 +25,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -129,6 +130,7 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
             " gs://bucket/path). Each URI can contain one '*' wildcard character and it must come after the" +
             " 'bucket' name."
     )
+    @PluginProperty(group = "source")
     private Property<List<String>> from;
 
     @Override

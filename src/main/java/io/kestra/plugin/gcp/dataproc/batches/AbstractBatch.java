@@ -36,6 +36,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
         description = "Region endpoint used for the batch controller"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> region;
 
     @Schema(
@@ -43,6 +44,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
         description = "Base name; a slugified suffix with execution id is appended and truncated to 63 chars"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> name;
 
     @Schema(
@@ -192,30 +194,35 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Network URI",
             description = "VPC network URI for the workload"
         )
+        @PluginProperty(group = "advanced")
         private Property<String> networkUri;
 
         @Schema(
             title = "Subnetwork URI",
             description = "Optional subnetwork URI for the workload"
         )
+        @PluginProperty(group = "advanced")
         private Property<String> subnetworkUri;
 
         @Schema(
             title = "Network tags",
             description = "Applied to workload for network control"
         )
+        @PluginProperty(group = "advanced")
         private Property<List<String>> networkTags;
 
         @Schema(
             title = "Service account",
             description = "Email of the service account used to run the batch"
         )
+        @PluginProperty(group = "advanced")
         private Property<String> serviceAccountEmail;
 
         @Schema(
             title = "KMS key",
             description = "Cloud KMS key for encryption"
         )
+        @PluginProperty(group = "connection")
         private Property<String> kmsKey;
     }
 
@@ -226,13 +233,14 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Metastore service",
             description = "Resource name of an existing Dataproc Metastore service (projects/{project}/locations/{region}/services/{id})"
         )
+        @PluginProperty(group = "advanced")
         private Property<String> metastoreService;
 
         @Schema(
             title = "Spark History Server",
             description = "Optional Dataproc cluster to serve Spark History for the workload"
         )
-        @PluginProperty(dynamic = true)
+        @PluginProperty(dynamic = true, group = "advanced")
         private SparkHistoryServerConfiguration sparkHistoryServer;
     }
 
@@ -243,6 +251,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Spark History Server cluster",
             description = "Dataproc cluster resource name (projects/{project}/regions/{region}/clusters/{name})"
         )
+        @PluginProperty(group = "connection")
         private Property<String> dataprocCluster;
     }
 
@@ -253,18 +262,21 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Container image",
             description = "Optional custom runtime image; defaults to Dataproc image when unset"
         )
+        @PluginProperty(group = "execution")
         private Property<String> containerImage;
 
         @Schema(
             title = "Runtime version",
             description = "Optional Dataproc runtime version string"
         )
+        @PluginProperty(group = "advanced")
         private Property<String> version;
 
         @Schema(
             title = "Runtime properties",
             description = "Key/value pairs passed to the runtime"
         )
+        @PluginProperty(group = "advanced")
         private Property<Map<String, String>> properties;
     }
 

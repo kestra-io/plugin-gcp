@@ -24,6 +24,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -58,11 +59,13 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         title = "Source prefix",
         description = "gs:// bucket path to list and download from"
     )
+    @PluginProperty(group = "main")
     private Property<String> from;
 
     @Schema(
         title = "If set to `true`, lists all versions of a blob. The default is `false`."
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> allVersions;
 
     @Builder.Default
@@ -72,6 +75,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         title = "Regex filter",
         description = "Optional regex applied to object names"
     )
+    @PluginProperty(group = "processing")
     private Property<String> regExp;
 
     @Schema(
@@ -84,6 +88,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         title = "Move destination",
         description = "Required when action is MOVE; gs:// prefix for moved objects"
     )
+    @PluginProperty(group = "destination")
     private Property<String> moveDirectory;
 
     @Schema(
@@ -91,6 +96,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         description = "Maximum number of files to list and download"
     )
     @Builder.Default
+    @PluginProperty(group = "processing")
     private Property<Integer> maxFiles = Property.ofValue(25);
 
     static void performAction(

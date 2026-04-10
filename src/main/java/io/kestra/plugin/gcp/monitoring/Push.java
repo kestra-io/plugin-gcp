@@ -21,6 +21,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -58,6 +59,7 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
         title = "Metrics",
         description = "List of metric payloads, each with metricType, value, and optional labels/kind"
     )
+    @PluginProperty(group = "advanced")
     private Property<List<MetricValue>> metrics;
 
     @Schema(
@@ -65,6 +67,7 @@ public class Push extends AbstractMonitoringTask implements RunnableTask<Push.Ou
         description = "Lookback duration used for DELTA/CUMULATIVE intervals; default 1 minute"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Duration> window = Property.ofValue(Duration.ofMinutes(1));
 
     @Override

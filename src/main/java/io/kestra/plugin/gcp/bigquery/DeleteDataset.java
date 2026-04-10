@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -49,12 +50,14 @@ public class DeleteDataset extends AbstractBigquery implements RunnableTask<Dele
         title = "Dataset ID",
         description = "Required dataset name to delete"
     )
+    @PluginProperty(group = "main")
     private Property<String> name;
 
     @Schema(
         title = "Delete non-empty dataset",
         description = "If true, deletes contents before removing the dataset; default false"
     )
+    @PluginProperty(group = "advanced")
     private Property<Boolean> deleteContents;
 
     @Override

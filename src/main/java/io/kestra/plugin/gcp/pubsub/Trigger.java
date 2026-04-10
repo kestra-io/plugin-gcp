@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -71,6 +72,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Subscription",
         description = "Subscription name; auto-created if `autoCreateSubscription` is true"
     )
+    @PluginProperty(group = "advanced")
     private Property<String> subscription;
 
     @Schema(
@@ -78,6 +80,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         description = "Create the subscription when missing; default true"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
     @Builder.Default
@@ -87,12 +90,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Max records",
         description = "Stop polling iteration after this many messages"
     )
+    @PluginProperty(group = "execution")
     private Property<Integer> maxRecords;
 
     @Schema(
         title = "Max duration",
         description = "Duration limit for a polling run (ISO-8601); optional"
     )
+    @PluginProperty(group = "execution")
     private Property<Duration> maxDuration;
 
     @Builder.Default
@@ -101,6 +106,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Serde type",
         description = "Serializer/deserializer for message payloads; defaults to STRING"
     )
+    @PluginProperty(group = "main")
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override

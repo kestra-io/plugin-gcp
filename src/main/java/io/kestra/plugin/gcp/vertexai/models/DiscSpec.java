@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
@@ -21,12 +22,14 @@ public class DiscSpec {
         title = "Type of the boot disk."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<DiskType> bootDiskType = Property.ofValue(DiskType.PD_SSD);
 
     @Schema(
         title = "Size in GB of the boot disk."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Integer> bootDiskSizeGb = Property.ofValue(100);
 
     public com.google.cloud.aiplatform.v1.DiskSpec to(RunContext runContext) throws IllegalVariableEvaluationException {

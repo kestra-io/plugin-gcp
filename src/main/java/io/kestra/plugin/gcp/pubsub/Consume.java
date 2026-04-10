@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -72,6 +73,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         description = "Subscription name; auto-created when `autoCreateSubscription` is true"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> subscription;
 
     @Schema(
@@ -79,18 +81,21 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         description = "Create the subscription if missing; default true"
     )
     @Builder.Default
+    @PluginProperty(group = "destination")
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
     @Schema(
         title = "Max records",
         description = "Stop after this many messages"
     )
+    @PluginProperty(group = "advanced")
     private Property<Integer> maxRecords;
 
     @Schema(
         title = "Max duration",
         description = "Duration limit (ISO-8601); stop when reached"
     )
+    @PluginProperty(group = "execution")
     private Property<Duration> maxDuration;
 
     @Builder.Default
@@ -99,6 +104,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         title = "Serde type",
         description = "Serializer/deserializer for message payloads; defaults to STRING"
     )
+    @PluginProperty(group = "advanced")
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
     @Override

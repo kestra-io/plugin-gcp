@@ -11,21 +11,26 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @Getter
 @Builder
 @Jacksonized
 public class MaterializedViewDefinition {
     @Schema(title = "Date when this materialized view was last modified.")
+    @PluginProperty(group = "advanced")
     private final Instant lastRefreshDate;
 
     @Schema(title = "The query whose result is persisted.")
+    @PluginProperty(group = "processing")
     public final Property<String> query;
 
     @Schema(title = "Whether automatic refresh is enabled for the materialized view when the base table is updated.")
+    @PluginProperty(group = "advanced")
     private final Property<Boolean> enableRefresh;
 
     @Schema(title = "The maximum frequency at which this materialized view will be refreshed.")
+    @PluginProperty(group = "advanced")
     private final Property<Duration> refreshInterval;
 
     public static MaterializedViewDefinition.Output of(com.google.cloud.bigquery.MaterializedViewDefinition materializedViewDefinition) {

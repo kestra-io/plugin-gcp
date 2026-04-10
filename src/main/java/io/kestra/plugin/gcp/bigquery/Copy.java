@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -63,6 +64,7 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
         description = "Tables or partitions to copy; accepts partition decorators"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<List<String>> sourceTables;
 
     @Schema(
@@ -70,12 +72,14 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
         description = "Target table for the operation; must match the selected operation type"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> destinationTable;
 
     @Schema(
         title = "Copy operation type",
         description = "`COPY` (default), `SNAPSHOT`, `RESTORE`, or `CLONE`"
     )
+    @PluginProperty(group = "advanced")
     private Property<OperationType> operationType;
 
     @Override

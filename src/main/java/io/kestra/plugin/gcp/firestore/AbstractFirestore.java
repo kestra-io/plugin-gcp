@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -30,6 +31,7 @@ abstract class AbstractFirestore extends AbstractTask {
         title = "Collection path",
         description = "Target collection name or path"
     )
+    @PluginProperty(group = "advanced")
     protected Property<String> collection;
 
     @Schema(
@@ -37,6 +39,7 @@ abstract class AbstractFirestore extends AbstractTask {
         description = "Defaults to `(default)` if not provided"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     protected Property<String> databaseId = Property.ofValue("(default)");
 
     Firestore connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
