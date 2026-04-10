@@ -19,3 +19,6 @@ src/test/java/io/kestra/plugin/gcp/vertexai/bin/
 
 .factorypath
 bin/
+
+# UI build artifact
+src/main/resources/plugin-ui/
