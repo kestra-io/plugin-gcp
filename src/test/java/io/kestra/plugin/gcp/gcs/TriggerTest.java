@@ -62,9 +62,9 @@ class TriggerTest {
             .moveDirectory(Property.ofValue(String.format("gs://%s/%s", bucket, moveDir)))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -88,8 +88,8 @@ class TriggerTest {
 
         Upload.Output upload = testUtils.upload("trigger/" + out + "/" + fileId);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -133,8 +133,8 @@ class TriggerTest {
 
         Upload.Output upload = testUtils.upload(file);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -174,10 +174,10 @@ class TriggerTest {
 
         var upload = testUtils.upload(file);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue().context()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -208,9 +208,9 @@ class TriggerTest {
             .interval(Duration.ofSeconds(10))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-        trigger.evaluate(context.getKey(), context.getValue());
+        trigger.evaluate(context.getKey(), context.getValue().context());
 
         // we update the file to trigger the update event
         testUtils.update(file);
@@ -218,7 +218,7 @@ class TriggerTest {
 
         Optional<Execution> execution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue().context()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -249,8 +249,8 @@ class TriggerTest {
 
         var upload = testUtils.upload(file);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> createExecution = trigger.evaluate(context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> createExecution = trigger.evaluate(context.getKey(), context.getValue().context());
 
         assertThat(createExecution.isPresent(), is(true));
 
@@ -259,7 +259,7 @@ class TriggerTest {
 
         Optional<Execution> updateExecution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue().context()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
