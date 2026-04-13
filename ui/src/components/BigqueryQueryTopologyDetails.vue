@@ -14,33 +14,40 @@ import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
 const props = defineProps<TopologyDetailsProps>();
 
 // ---------------------------------------------------------------------------
-// Modal state
+// Label (étiquette) state
 // ---------------------------------------------------------------------------
 
-const sqlModalOpen = ref(false);
-const resultsModalOpen = ref(false);
+const containerRef = ref<HTMLElement | null>(null);
+const activeLabelType = ref<"sql" | "results" | null>(null);
+const labelStyle = ref<Record<string, string>>({});
 
-function openSqlModal() {
-  sqlModalOpen.value = true;
+function openLabel(type: "sql" | "results") {
+  if (!containerRef.value) return;
+  const rect = containerRef.value.getBoundingClientRect();
+  const maxWidth = Math.min(480, window.innerWidth - rect.right - 40);
+  labelStyle.value = {
+    top: `${rect.top + rect.height / 2}px`,
+    left: `${rect.right + 20}px`,
+    transform: "translateY(-50%)",
+    width: `${maxWidth}px`,
+  };
+  activeLabelType.value = type;
 }
 
-function closeSqlModal() {
-  sqlModalOpen.value = false;
+function closeLabel() {
+  activeLabelType.value = null;
 }
 
-function openResultsModal() {
-  resultsModalOpen.value = true;
-}
-
-function closeResultsModal() {
-  resultsModalOpen.value = false;
+function toggleLabel(type: "sql" | "results") {
+  if (activeLabelType.value === type) {
+    closeLabel();
+  } else {
+    openLabel(type);
+  }
 }
 
 function onEscape(e: KeyboardEvent) {
-  if (e.key === "Escape") {
-    sqlModalOpen.value = false;
-    resultsModalOpen.value = false;
-  }
+  if (e.key === "Escape") closeLabel();
 }
 
 onMounted(() => window.addEventListener("keydown", onEscape));
@@ -169,14 +176,14 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 </script>
 
 <template>
-  <div class="bq-details">
-    <!-- Action buttons row -->
+  <div class="bq-details" ref="containerRef">
+    <!-- Button row -->
     <div class="bq-details__actions">
       <button
         v-if="sqlText"
         class="bq-btn"
         type="button"
-        @click="openSqlModal"
+        @click="toggleLabel('sql')"
       >
         SQL
       </button>
@@ -184,94 +191,83 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
         v-if="hasExecution"
         class="bq-btn"
         type="button"
-        @click="openResultsModal"
+        @click="toggleLabel('results')"
       >
         Results
       </button>
     </div>
 
-    <!-- SQL modal -->
     <Teleport to="body">
-      <div
-        v-if="sqlModalOpen"
-        class="bq-modal-backdrop"
-        @click.self="closeSqlModal"
-      >
-        <div class="bq-modal" role="dialog" aria-modal="true" aria-labelledby="bq-sql-modal-title">
-          <div class="bq-modal__header">
-            <span id="bq-sql-modal-title" class="bq-modal__title">SQL Query</span>
-            <button class="bq-modal__close" type="button" @click="closeSqlModal" aria-label="Close">✕</button>
+      <template v-if="activeLabelType">
+        <!-- Transparent full-screen overlay — catches outside clicks -->
+        <div class="bq-label-overlay" @click="closeLabel" />
+
+        <!-- Étiquette panel -->
+        <div class="bq-label" :style="labelStyle" role="dialog" aria-modal="true">
+          <div class="bq-label__header">
+            <span class="bq-label__title">
+              {{ activeLabelType === "sql" ? "SQL Query" : "Query Results" }}
+            </span>
+            <button class="bq-label__close" type="button" @click="closeLabel" aria-label="Close">✕</button>
           </div>
-          <div class="bq-modal__body">
-            <pre class="bq-modal__pre">{{ sqlText }}</pre>
+
+          <div class="bq-label__body">
+            <!-- SQL content -->
+            <pre v-if="activeLabelType === 'sql'" class="bq-label__pre">{{ sqlText }}</pre>
+
+            <!-- Results content -->
+            <template v-if="activeLabelType === 'results'">
+              <!-- Cache badge -->
+              <div v-if="isCached" class="bq-cached-badge">Cached ✓</div>
+
+              <!-- Outputs: job, rows, destination -->
+              <dl v-if="hasOutputs" class="bq-grid">
+                <template v-if="outputs?.jobId">
+                  <dt>Job ID</dt>
+                  <dd class="bq-mono">{{ outputs.jobId }}</dd>
+                </template>
+                <template v-if="outputs?.size != null">
+                  <dt>Rows</dt>
+                  <dd>{{ outputs.size.toLocaleString() }}</dd>
+                </template>
+                <template v-if="outputs?.destinationTable">
+                  <dt>Destination</dt>
+                  <dd class="bq-mono">
+                    {{ outputs.destinationTable.project }}.{{ outputs.destinationTable.dataset }}.{{ outputs.destinationTable.table }}
+                  </dd>
+                </template>
+              </dl>
+
+              <!-- Metrics: bytes, cost, slot time, duration -->
+              <dl v-if="hasMetrics" class="bq-grid">
+                <template v-if="durationNs != null">
+                  <dt>Duration</dt>
+                  <dd>{{ formatDurationNs(durationNs) }}</dd>
+                </template>
+                <template v-if="totalBytesBilled != null">
+                  <dt>Bytes billed</dt>
+                  <dd>
+                    {{ formatBytes(totalBytesBilled) }}
+                    <span class="bq-cost">({{ formatCost(totalBytesBilled) }})</span>
+                  </dd>
+                </template>
+                <template v-if="totalBytesProcessed != null">
+                  <dt>Bytes processed</dt>
+                  <dd>{{ formatBytes(totalBytesProcessed) }}</dd>
+                </template>
+                <template v-if="estimatedBytesProcessed != null">
+                  <dt>Est. bytes</dt>
+                  <dd>{{ formatBytes(estimatedBytesProcessed) }}</dd>
+                </template>
+                <template v-if="totalSlotMs != null">
+                  <dt>Slot time</dt>
+                  <dd>{{ formatSlotMs(totalSlotMs) }}</dd>
+                </template>
+              </dl>
+            </template>
           </div>
         </div>
-      </div>
-    </Teleport>
-
-    <!-- Results modal -->
-    <Teleport to="body">
-      <div
-        v-if="resultsModalOpen"
-        class="bq-modal-backdrop"
-        @click.self="closeResultsModal"
-      >
-        <div class="bq-modal" role="dialog" aria-modal="true" aria-labelledby="bq-results-modal-title">
-          <div class="bq-modal__header">
-            <span id="bq-results-modal-title" class="bq-modal__title">Query Results</span>
-            <button class="bq-modal__close" type="button" @click="closeResultsModal" aria-label="Close">✕</button>
-          </div>
-          <div class="bq-modal__body">
-            <!-- Cache badge -->
-            <div v-if="isCached" class="bq-cached-badge">Cached ✓</div>
-
-            <!-- Outputs: job, rows, destination -->
-            <dl v-if="hasOutputs" class="bq-grid">
-              <template v-if="outputs?.jobId">
-                <dt>Job ID</dt>
-                <dd class="bq-mono">{{ outputs.jobId }}</dd>
-              </template>
-              <template v-if="outputs?.size != null">
-                <dt>Rows</dt>
-                <dd>{{ outputs.size.toLocaleString() }}</dd>
-              </template>
-              <template v-if="outputs?.destinationTable">
-                <dt>Destination</dt>
-                <dd class="bq-mono">
-                  {{ outputs.destinationTable.project }}.{{ outputs.destinationTable.dataset }}.{{ outputs.destinationTable.table }}
-                </dd>
-              </template>
-            </dl>
-
-            <!-- Metrics: bytes, cost, slot time, duration -->
-            <dl v-if="hasMetrics" class="bq-grid">
-              <template v-if="durationNs != null">
-                <dt>Duration</dt>
-                <dd>{{ formatDurationNs(durationNs) }}</dd>
-              </template>
-              <template v-if="totalBytesBilled != null">
-                <dt>Bytes billed</dt>
-                <dd>
-                  {{ formatBytes(totalBytesBilled) }}
-                  <span class="bq-cost">({{ formatCost(totalBytesBilled) }})</span>
-                </dd>
-              </template>
-              <template v-if="totalBytesProcessed != null">
-                <dt>Bytes processed</dt>
-                <dd>{{ formatBytes(totalBytesProcessed) }}</dd>
-              </template>
-              <template v-if="estimatedBytesProcessed != null">
-                <dt>Est. bytes</dt>
-                <dd>{{ formatBytes(estimatedBytesProcessed) }}</dd>
-              </template>
-              <template v-if="totalSlotMs != null">
-                <dt>Slot time</dt>
-                <dd>{{ formatSlotMs(totalSlotMs) }}</dd>
-              </template>
-            </dl>
-          </div>
-        </div>
-      </div>
+      </template>
     </Teleport>
   </div>
 </template>
@@ -312,47 +308,72 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   color: var(--ks-color-text, #111827);
 }
 
-/* Modal backdrop --------------------------------------------------------- */
+/* Overlay — transparent, only catches outside clicks -------------------- */
 
-.bq-modal-backdrop {
+.bq-label-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: 9998;
 }
 
-/* Modal box -------------------------------------------------------------- */
+/* Étiquette panel ------------------------------------------------------- */
 
-.bq-modal {
-  width: min(640px, 90vw);
-  max-height: 80vh;
-  overflow: hidden;
+.bq-label {
+  position: fixed;
+  z-index: 9999;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
-  background: var(--ks-color-surface, #ffffff);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-height: 70vh;
+  overflow: hidden;
 }
 
-.bq-modal__header {
+/* Left-pointing arrow beak (fill) */
+.bq-label::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 12px solid transparent;
+  border-right: 12px solid #dbeafe;
+  /* sit above the border arrow */
+  z-index: 1;
+}
+
+/* Left-pointing arrow beak (border outline, sits behind ::before) */
+.bq-label::after {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 13px solid transparent;
+  border-right: 13px solid #93c5fd;
+  z-index: 0;
+}
+
+/* Header ----------------------------------------------------------------- */
+
+.bq-label__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid var(--ks-color-border, #e5e7eb);
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid #93c5fd;
   flex-shrink: 0;
 }
 
-.bq-modal__title {
-  font-size: 0.9rem;
+.bq-label__title {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--ks-color-text, #111827);
+  color: #1e3a5f;
 }
 
-.bq-modal__close {
+.bq-label__close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -362,32 +383,34 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--ks-color-text-secondary, #6b7280);
+  color: #3b82f6;
   cursor: pointer;
   font-size: 0.875rem;
   transition: background-color 0.1s;
 }
 
-.bq-modal__close:hover {
-  background: var(--ks-color-surface-subtle, #f3f4f6);
-  color: var(--ks-color-text, #111827);
+.bq-label__close:hover {
+  background: #bfdbfe;
+  color: #1e3a5f;
 }
 
-.bq-modal__body {
+/* Body ------------------------------------------------------------------- */
+
+.bq-label__body {
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0.875rem;
   flex: 1;
 }
 
 /* SQL pre ---------------------------------------------------------------- */
 
-.bq-modal__pre {
+.bq-label__pre {
   margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.8125rem;
   line-height: 1.6;
   white-space: pre;
-  color: var(--ks-color-text, #111827);
+  color: #1e3a5f;
 }
 
 /* Results content -------------------------------------------------------- */
@@ -417,7 +440,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 .bq-grid dt {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--ks-color-text-secondary, #6b7280);
+  color: #3b82f6;
   white-space: nowrap;
 }
 
@@ -425,7 +448,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   margin: 0;
   font-size: 0.8125rem;
   word-break: break-all;
-  color: var(--ks-color-text, #111827);
+  color: #1e3a5f;
 }
 
 .bq-mono {
@@ -435,6 +458,6 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 
 .bq-cost {
   font-size: 0.75rem;
-  color: var(--ks-color-text-secondary, #6b7280);
+  color: #3b82f6;
 }
 </style>
