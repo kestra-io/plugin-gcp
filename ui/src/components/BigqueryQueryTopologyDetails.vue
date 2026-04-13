@@ -8,13 +8,46 @@
  *
  * Props are injected by the Kestra runtime via @kestra-io/artifact-sdk.
  */
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
 
 const props = defineProps<TopologyDetailsProps>();
 
 // ---------------------------------------------------------------------------
-// SQL toggle
+// Modal state
+// ---------------------------------------------------------------------------
+
+const sqlModalOpen = ref(false);
+const resultsModalOpen = ref(false);
+
+function openSqlModal() {
+  sqlModalOpen.value = true;
+}
+
+function closeSqlModal() {
+  sqlModalOpen.value = false;
+}
+
+function openResultsModal() {
+  resultsModalOpen.value = true;
+}
+
+function closeResultsModal() {
+  resultsModalOpen.value = false;
+}
+
+function onEscape(e: KeyboardEvent) {
+  if (e.key === "Escape") {
+    sqlModalOpen.value = false;
+    resultsModalOpen.value = false;
+  }
+}
+
+onMounted(() => window.addEventListener("keydown", onEscape));
+onUnmounted(() => window.removeEventListener("keydown", onEscape));
+
+// ---------------------------------------------------------------------------
+// SQL
 // ---------------------------------------------------------------------------
 
 /**
@@ -31,12 +64,6 @@ const sqlText = computed<string | null>(() => {
   }
   return null;
 });
-
-const sqlVisible = ref(false);
-
-function toggleSql() {
-  sqlVisible.value = !sqlVisible.value;
-}
 
 // ---------------------------------------------------------------------------
 // Execution — typed access helpers
@@ -143,99 +170,130 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 
 <template>
   <div class="bq-details">
-    <!-- Header: SQL toggle (Kestra already renders task-id + task-type above this slot) -->
-    <div class="bq-details__header">
+    <!-- Action buttons row -->
+    <div class="bq-details__actions">
       <button
         v-if="sqlText"
-        class="bq-details__sql-toggle"
-        :class="{ 'bq-details__sql-toggle--active': sqlVisible }"
+        class="bq-btn"
         type="button"
-        @click="toggleSql"
+        @click="openSqlModal"
       >
         SQL
-        <span class="bq-details__sql-toggle-caret">{{ sqlVisible ? "▲" : "▼" }}</span>
+      </button>
+      <button
+        v-if="hasExecution"
+        class="bq-btn"
+        type="button"
+        @click="openResultsModal"
+      >
+        Results
       </button>
     </div>
 
-    <!-- Collapsible SQL block — floats as an overlay so it doesn't push card height -->
-    <div v-if="sqlText && sqlVisible" class="bq-details__sql-block">
-      <pre class="bq-details__sql-pre">{{ sqlText }}</pre>
-    </div>
+    <!-- SQL modal -->
+    <Teleport to="body">
+      <div
+        v-if="sqlModalOpen"
+        class="bq-modal-backdrop"
+        @click.self="closeSqlModal"
+      >
+        <div class="bq-modal" role="dialog" aria-modal="true" aria-labelledby="bq-sql-modal-title">
+          <div class="bq-modal__header">
+            <span id="bq-sql-modal-title" class="bq-modal__title">SQL Query</span>
+            <button class="bq-modal__close" type="button" @click="closeSqlModal" aria-label="Close">✕</button>
+          </div>
+          <div class="bq-modal__body">
+            <pre class="bq-modal__pre">{{ sqlText }}</pre>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
-    <!-- Post-execution stats -->
-    <template v-if="hasExecution">
-      <div class="bq-details__section-label">Execution</div>
+    <!-- Results modal -->
+    <Teleport to="body">
+      <div
+        v-if="resultsModalOpen"
+        class="bq-modal-backdrop"
+        @click.self="closeResultsModal"
+      >
+        <div class="bq-modal" role="dialog" aria-modal="true" aria-labelledby="bq-results-modal-title">
+          <div class="bq-modal__header">
+            <span id="bq-results-modal-title" class="bq-modal__title">Query Results</span>
+            <button class="bq-modal__close" type="button" @click="closeResultsModal" aria-label="Close">✕</button>
+          </div>
+          <div class="bq-modal__body">
+            <!-- Cache badge -->
+            <div v-if="isCached" class="bq-cached-badge">Cached ✓</div>
 
-      <!-- Cache badge — prominent when cached -->
-      <div v-if="isCached" class="bq-details__cached-badge">Cached ✓</div>
+            <!-- Outputs: job, rows, destination -->
+            <dl v-if="hasOutputs" class="bq-grid">
+              <template v-if="outputs?.jobId">
+                <dt>Job ID</dt>
+                <dd class="bq-mono">{{ outputs.jobId }}</dd>
+              </template>
+              <template v-if="outputs?.size != null">
+                <dt>Rows</dt>
+                <dd>{{ outputs.size.toLocaleString() }}</dd>
+              </template>
+              <template v-if="outputs?.destinationTable">
+                <dt>Destination</dt>
+                <dd class="bq-mono">
+                  {{ outputs.destinationTable.project }}.{{ outputs.destinationTable.dataset }}.{{ outputs.destinationTable.table }}
+                </dd>
+              </template>
+            </dl>
 
-      <dl v-if="hasOutputs" class="bq-details__grid">
-        <template v-if="outputs?.jobId">
-          <dt>Job ID</dt>
-          <dd class="bq-details__monospace">{{ outputs.jobId }}</dd>
-        </template>
-        <template v-if="outputs?.size != null">
-          <dt>Rows</dt>
-          <dd>{{ outputs.size.toLocaleString() }}</dd>
-        </template>
-        <template v-if="outputs?.destinationTable">
-          <dt>Destination</dt>
-          <dd class="bq-details__monospace">
-            {{ outputs.destinationTable.project }}.{{ outputs.destinationTable.dataset }}.{{ outputs.destinationTable.table }}
-          </dd>
-        </template>
-      </dl>
-
-      <dl v-if="hasMetrics" class="bq-details__grid">
-        <template v-if="durationNs != null">
-          <dt>Duration</dt>
-          <dd>{{ formatDurationNs(durationNs) }}</dd>
-        </template>
-        <template v-if="totalBytesBilled != null">
-          <dt>Bytes billed</dt>
-          <dd>
-            {{ formatBytes(totalBytesBilled) }}
-            <span class="bq-details__cost">({{ formatCost(totalBytesBilled) }})</span>
-          </dd>
-        </template>
-        <template v-if="totalBytesProcessed != null">
-          <dt>Bytes processed</dt>
-          <dd>{{ formatBytes(totalBytesProcessed) }}</dd>
-        </template>
-        <template v-if="estimatedBytesProcessed != null">
-          <dt>Est. bytes</dt>
-          <dd>{{ formatBytes(estimatedBytesProcessed) }}</dd>
-        </template>
-        <template v-if="totalSlotMs != null">
-          <dt>Slot time</dt>
-          <dd>{{ formatSlotMs(totalSlotMs) }}</dd>
-        </template>
-      </dl>
-    </template>
+            <!-- Metrics: bytes, cost, slot time, duration -->
+            <dl v-if="hasMetrics" class="bq-grid">
+              <template v-if="durationNs != null">
+                <dt>Duration</dt>
+                <dd>{{ formatDurationNs(durationNs) }}</dd>
+              </template>
+              <template v-if="totalBytesBilled != null">
+                <dt>Bytes billed</dt>
+                <dd>
+                  {{ formatBytes(totalBytesBilled) }}
+                  <span class="bq-cost">({{ formatCost(totalBytesBilled) }})</span>
+                </dd>
+              </template>
+              <template v-if="totalBytesProcessed != null">
+                <dt>Bytes processed</dt>
+                <dd>{{ formatBytes(totalBytesProcessed) }}</dd>
+              </template>
+              <template v-if="estimatedBytesProcessed != null">
+                <dt>Est. bytes</dt>
+                <dd>{{ formatBytes(estimatedBytesProcessed) }}</dd>
+              </template>
+              <template v-if="totalSlotMs != null">
+                <dt>Slot time</dt>
+                <dd>{{ formatSlotMs(totalSlotMs) }}</dd>
+              </template>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
+/* Container — deliberately compact so it does not affect node height */
 .bq-details {
-  padding: 0.5rem 1rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
-  position: relative;
 }
 
-/* Header ------------------------------------------------------------------ */
+/* Button row ------------------------------------------------------------- */
 
-.bq-details__header {
+.bq-details__actions {
   display: flex;
   align-items: center;
-  margin-bottom: 0.25rem;
+  gap: 0.375rem;
 }
 
-/* SQL toggle button ------------------------------------------------------- */
-
-.bq-details__sql-toggle {
+.bq-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
   padding: 0.2rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
@@ -246,64 +304,97 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   color: var(--ks-color-text-secondary, #6b7280);
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
   transition: background-color 0.1s, color 0.1s;
 }
 
-.bq-details__sql-toggle:hover {
+.bq-btn:hover {
   background: var(--ks-color-surface-subtle, #f3f4f6);
+  color: var(--ks-color-text, #111827);
 }
 
-.bq-details__sql-toggle--active {
-  background: var(--ks-color-surface-subtle, #f3f4f6);
-  color: inherit;
-}
+/* Modal backdrop --------------------------------------------------------- */
 
-.bq-details__sql-toggle-caret {
-  font-size: 0.6rem;
-}
-
-/* SQL block --------------------------------------------------------------- */
-/* Rendered as an absolute overlay so it floats over nodes below and does   */
-/* not push the card height (which is fixed by additionalProperties.height). */
-
-.bq-details__sql-block {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  min-width: 100%;
+.bq-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
   z-index: 9999;
-  border: 1px solid var(--ks-color-border, #d1d5db);
-  border-radius: 4px;
-  background: var(--ks-color-surface-subtle, #f3f4f6);
-  overflow: auto;
-  max-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.bq-details__sql-pre {
+/* Modal box -------------------------------------------------------------- */
+
+.bq-modal {
+  width: min(640px, 90vw);
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  background: var(--ks-color-surface, #ffffff);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.bq-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--ks-color-border, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.bq-modal__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ks-color-text, #111827);
+}
+
+.bq-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ks-color-text-secondary, #6b7280);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.1s;
+}
+
+.bq-modal__close:hover {
+  background: var(--ks-color-surface-subtle, #f3f4f6);
+  color: var(--ks-color-text, #111827);
+}
+
+.bq-modal__body {
+  overflow-y: auto;
+  padding: 1rem;
+  flex: 1;
+}
+
+/* SQL pre ---------------------------------------------------------------- */
+
+.bq-modal__pre {
   margin: 0;
-  padding: 0.625rem 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.6;
   white-space: pre;
+  color: var(--ks-color-text, #111827);
 }
 
-/* Stats ------------------------------------------------------------------- */
+/* Results content -------------------------------------------------------- */
 
-.bq-details__section-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ks-color-text-secondary, #6b7280);
-  margin-bottom: 0.5rem;
-}
-
-.bq-details__cached-badge {
+.bq-cached-badge {
   display: inline-block;
-  margin-bottom: 0.625rem;
+  margin-bottom: 0.75rem;
   padding: 0.15rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -312,30 +403,37 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   color: #15803d;
 }
 
-.bq-details__grid {
+.bq-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.3rem 1rem;
-  margin: 0 0 0.75rem;
+  gap: 0.35rem 1.25rem;
+  margin: 0 0 0.875rem;
 }
 
-.bq-details__grid dt {
+.bq-grid:last-child {
+  margin-bottom: 0;
+}
+
+.bq-grid dt {
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--ks-color-text-secondary, #6b7280);
   white-space: nowrap;
 }
 
-.bq-details__grid dd {
+.bq-grid dd {
   margin: 0;
+  font-size: 0.8125rem;
   word-break: break-all;
+  color: var(--ks-color-text, #111827);
 }
 
-.bq-details__monospace {
+.bq-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.75rem;
 }
 
-.bq-details__cost {
+.bq-cost {
   font-size: 0.75rem;
   color: var(--ks-color-text-secondary, #6b7280);
 }
