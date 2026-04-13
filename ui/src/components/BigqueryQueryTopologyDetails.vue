@@ -143,12 +143,8 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 
 <template>
   <div class="bq-details">
-    <!-- Header: task id + optional SQL toggle -->
+    <!-- Header: SQL toggle (Kestra already renders task-id + task-type above this slot) -->
     <div class="bq-details__header">
-      <div class="bq-details__title-row">
-        <span class="bq-details__task-id">{{ (props.task?.id as string) ?? "Task" }}</span>
-        <span class="bq-details__task-type">{{ props.task?.type ?? "" }}</span>
-      </div>
       <button
         v-if="sqlText"
         class="bq-details__sql-toggle"
@@ -161,7 +157,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
       </button>
     </div>
 
-    <!-- Collapsible SQL block -->
+    <!-- Collapsible SQL block — floats as an overlay so it doesn't push card height -->
     <div v-if="sqlText && sqlVisible" class="bq-details__sql-block">
       <pre class="bq-details__sql-pre">{{ sqlText }}</pre>
     </div>
@@ -221,41 +217,17 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 
 <style scoped>
 .bq-details {
-  padding: 1rem;
+  padding: 0.5rem 1rem 0.5rem;
   font-size: 0.875rem;
+  position: relative;
 }
 
 /* Header ------------------------------------------------------------------ */
 
 .bq-details__header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.bq-details__title-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.bq-details__task-id {
-  font-weight: 600;
-  font-size: 1rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bq-details__task-type {
-  font-size: 0.75rem;
-  color: var(--ks-color-text-secondary, #6b7280);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  align-items: center;
+  margin-bottom: 0.25rem;
 }
 
 /* SQL toggle button ------------------------------------------------------- */
@@ -292,9 +264,16 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 }
 
 /* SQL block --------------------------------------------------------------- */
+/* Rendered as an absolute overlay so it floats over nodes below and does   */
+/* not push the card height (which is fixed by additionalProperties.height). */
 
 .bq-details__sql-block {
-  margin-bottom: 1rem;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  min-width: 100%;
+  z-index: 9999;
   border: 1px solid var(--ks-color-border, #d1d5db);
   border-radius: 4px;
   background: var(--ks-color-surface-subtle, #f3f4f6);
