@@ -321,17 +321,17 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 .bq-label {
   position: fixed;
   z-index: 9999;
-  background: #dbeafe;
-  border: 1px solid #93c5fd;
+  background: var(--ks-color-surface, #ffffff);
+  border: 1px solid var(--ks-color-border, #e5e7eb);
   border-radius: 8px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   max-height: 70vh;
   overflow: hidden;
 }
 
-/* Left-pointing arrow beak (fill) */
+/* Left-pointing arrow beak (fill — matches surface) */
 .bq-label::before {
   content: "";
   position: absolute;
@@ -339,8 +339,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   top: 50%;
   transform: translateY(-50%);
   border: 12px solid transparent;
-  border-right: 12px solid #dbeafe;
-  /* sit above the border arrow */
+  border-right: 12px solid var(--ks-color-surface, #ffffff);
   z-index: 1;
 }
 
@@ -352,7 +351,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   top: 50%;
   transform: translateY(-50%);
   border: 13px solid transparent;
-  border-right: 13px solid #93c5fd;
+  border-right: 13px solid var(--ks-color-border, #e5e7eb);
   z-index: 0;
 }
 
@@ -363,14 +362,15 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   align-items: center;
   justify-content: space-between;
   padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid #93c5fd;
+  border-bottom: 1px solid var(--ks-color-border, #e5e7eb);
+  background: var(--ks-color-surface-subtle, #f9fafb);
   flex-shrink: 0;
 }
 
 .bq-label__title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #1e3a5f;
+  color: var(--ks-color-text, #111827);
 }
 
 .bq-label__close {
@@ -383,15 +383,15 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: #3b82f6;
+  color: var(--ks-color-text-secondary, #6b7280);
   cursor: pointer;
   font-size: 0.875rem;
-  transition: background-color 0.1s;
+  transition: background-color 0.1s, color 0.1s;
 }
 
 .bq-label__close:hover {
-  background: #bfdbfe;
-  color: #1e3a5f;
+  background: var(--ks-color-surface-subtle, #f3f4f6);
+  color: var(--ks-color-text, #111827);
 }
 
 /* Body ------------------------------------------------------------------- */
@@ -410,7 +410,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   font-size: 0.8125rem;
   line-height: 1.6;
   white-space: pre;
-  color: #1e3a5f;
+  color: var(--ks-color-text, #111827);
 }
 
 /* Results content -------------------------------------------------------- */
@@ -422,8 +422,8 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 999px;
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--ks-color-success-subtle, #dcfce7);
+  color: var(--ks-color-success, #15803d);
 }
 
 .bq-grid {
@@ -440,7 +440,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 .bq-grid dt {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #3b82f6;
+  color: var(--ks-color-text-secondary, #6b7280);
   white-space: nowrap;
 }
 
@@ -448,7 +448,7 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
   margin: 0;
   font-size: 0.8125rem;
   word-break: break-all;
-  color: #1e3a5f;
+  color: var(--ks-color-text, #111827);
 }
 
 .bq-mono {
@@ -458,6 +458,6 @@ const hasExecution = computed(() => !!props.execution && (hasMetrics.value || ha
 
 .bq-cost {
   font-size: 0.75rem;
-  color: #3b82f6;
+  color: var(--ks-color-text-secondary, #6b7280);
 }
 </style>
