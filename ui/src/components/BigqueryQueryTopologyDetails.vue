@@ -208,6 +208,8 @@ taskRun (from props): {{ JSON.stringify(taskRun, null, 2) }}</pre>
 
 <style scoped>
 .bq-details {
+  position: relative;
+  z-index: 1;
   padding: 0.5rem 0.75rem;
   font-size: 0.75rem;
   line-height: 1.5;
