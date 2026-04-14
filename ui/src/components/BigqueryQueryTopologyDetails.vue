@@ -4,6 +4,13 @@ import { computed, ref, watch } from "vue";
 
 const props = defineProps<TopologyDetailsProps>();
 
+// Extract tenant from the URL path: /ui/{tenant}/... (empty string for CE without tenant)
+const tenant = (() => {
+  const m = window.location.pathname.match(/^\/ui\/([^/]+)\//);
+  return m ? m[1] : "";
+})();
+const apiBase = tenant ? `/api/v1/${tenant}` : "/api/v1";
+
 // Task fields — props.task is minimal (id + type only), fetch full flow for real config
 const taskId = computed(() => props.task?.id as string | undefined);
 
@@ -12,7 +19,7 @@ const flowTask = ref<Record<string, any> | null>(null);
 
 async function fetchFlow() {
   try {
-    const res = await fetch(`/api/v1/flows/${props.namespace}/${props.flowId}`, { credentials: "include" });
+    const res = await fetch(`${apiBase}/flows/${props.namespace}/${props.flowId}`, { credentials: "include" });
     if (!res.ok) return;
     const flow = await res.json();
     const tasks = flow.tasks as any[] | undefined;
@@ -44,7 +51,7 @@ const fetchedOutputs = ref<Record<string, any> | null>(null);
 
 async function fetchTaskOutputs(execId: string) {
   try {
-    const res = await fetch(`/api/v1/executions/${execId}`, { credentials: "include" });
+    const res = await fetch(`${apiBase}/executions/${execId}`, { credentials: "include" });
     if (!res.ok) return;
     const data = await res.json();
     const list = data.taskRunList as any[] | undefined;
@@ -192,17 +199,6 @@ function formatSlotMs(v?: number): string {
       </section>
     </template>
 
-    <!-- DEBUG: remove before shipping -->
-    <details style="margin-top:0.5rem">
-      <summary style="font-size:0.65rem;cursor:pointer">debug</summary>
-      <pre style="font-size:0.6rem;overflow:auto;max-height:200px;white-space:pre-wrap">props.task: {{ JSON.stringify(props.task, null, 2) }}
-
-flowTask: {{ JSON.stringify(flowTask, null, 2) }}
-
-fetchedOutputs: {{ JSON.stringify(fetchedOutputs, null, 2) }}
-
-taskRun (from props): {{ JSON.stringify(taskRun, null, 2) }}</pre>
-    </details>
   </div>
 </template>
 
