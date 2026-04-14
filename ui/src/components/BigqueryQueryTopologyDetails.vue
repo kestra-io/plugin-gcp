@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
-import { ElPopover } from "element-plus";
-import "element-plus/es/components/popover/style/css";
-import "element-plus/es/components/popper/style/css";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, useAttrs } from "vue";
 
 const props = defineProps<TopologyDetailsProps>();
+const attrs = useAttrs();
+const isFullView = computed(() => attrs.displayMode === "full");
 
 // Extract tenant from the URL path: /ui/{tenant}/... (empty string for CE without tenant)
 const tenant = (() => {
@@ -149,82 +148,63 @@ function formatSlotMs(v?: number): string {
 
 <template>
   <div class="bq-details">
-    <!-- Always visible: task config -->
-    <section class="bq-section">
-      <dl class="bq-grid">
-        <dt>Project</dt>
-        <dd>{{ resolvedProject ?? "—" }}</dd>
-        <dt>Location</dt>
-        <dd>{{ resolvedLocation ?? "—" }}</dd>
-      </dl>
-    </section>
+    <!-- Single unified grid: always shows Project + Location; adds Duration + Estimated Cost post-execution -->
+    <dl class="bq-grid">
+      <dt>Project</dt>
+      <dd>{{ resolvedProject ?? "—" }}</dd>
+      <dt>Location</dt>
+      <dd>{{ resolvedLocation ?? "—" }}</dd>
+      <template v-if="hasExecution">
+        <dt>Duration</dt>
+        <dd>{{ formatDuration(durationMs) }}</dd>
+        <dt>Estimated cost</dt>
+        <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
+      </template>
+    </dl>
 
     <!-- Post-execution only -->
     <template v-if="hasExecution">
-      <!-- Summary: Duration + Estimated Cost -->
-      <section class="bq-section">
-        <dl class="bq-grid">
-          <dt>Duration</dt>
-          <dd>{{ formatDuration(durationMs) }}</dd>
-          <dt>Estimated cost</dt>
-          <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
-        </dl>
-      </section>
 
-      <!-- Details popover -->
-      <ElPopover
-        trigger="click"
-        placement="right"
-        :width="280"
-        :teleported="true"
-        :popper-style="{ zIndex: 200000 }"
-      >
-        <template #reference>
-          <button class="bq-details-btn">Details ↗</button>
-        </template>
-
-        <div class="bq-popover">
-          <!-- Job details -->
-          <section class="bq-pop-section">
-            <h4 class="bq-section__title">Job Details</h4>
-            <dl class="bq-grid">
-              <dt>Job ID</dt>
-              <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
-              <dt>Rows</dt>
-              <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
-              <template v-if="taskOutputs?.destinationTable">
-                <dt>Destination</dt>
-                <dd class="bq-mono">
-                  {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
-                </dd>
-              </template>
-            </dl>
-          </section>
-
-          <!-- Cost & Performance -->
-          <section class="bq-pop-section">
-            <h4 class="bq-section__title">Cost &amp; Performance</h4>
-            <dl class="bq-grid">
-              <dt>Bytes billed</dt>
-              <dd>{{ formatBytes(bytesBilled) }}</dd>
-              <dt>Estimated cost</dt>
-              <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
-              <dt>Bytes processed</dt>
-              <dd>{{ formatBytes(bytesProcessed) }}</dd>
-              <dt>Slot time</dt>
-              <dd>{{ formatSlotMs(slotMs) }}</dd>
-              <dt>Duration</dt>
-              <dd>{{ formatDuration(durationMs) }}</dd>
-              <dt>Cache hit</dt>
-              <dd>
-                <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
-                  {{ cacheHit ? "Yes" : "No" }}
-                </span>
+      <!-- Full details: only when displayMode="full" (rendered in the drawer) -->
+      <template v-if="isFullView">
+        <section class="bq-section">
+          <h4 class="bq-section__title">Job Details</h4>
+          <dl class="bq-grid">
+            <dt>Job ID</dt>
+            <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
+            <dt>Rows</dt>
+            <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
+            <template v-if="taskOutputs?.destinationTable">
+              <dt>Destination</dt>
+              <dd class="bq-mono">
+                {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
               </dd>
-            </dl>
-          </section>
-        </div>
-      </ElPopover>
+            </template>
+          </dl>
+        </section>
+
+        <section class="bq-section">
+          <h4 class="bq-section__title">Cost &amp; Performance</h4>
+          <dl class="bq-grid">
+            <dt>Bytes billed</dt>
+            <dd>{{ formatBytes(bytesBilled) }}</dd>
+            <dt>Estimated cost</dt>
+            <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
+            <dt>Bytes processed</dt>
+            <dd>{{ formatBytes(bytesProcessed) }}</dd>
+            <dt>Slot time</dt>
+            <dd>{{ formatSlotMs(slotMs) }}</dd>
+            <dt>Duration</dt>
+            <dd>{{ formatDuration(durationMs) }}</dd>
+            <dt>Cache hit</dt>
+            <dd>
+              <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
+                {{ cacheHit ? "Yes" : "No" }}
+              </span>
+            </dd>
+          </dl>
+        </section>
+      </template>
     </template>
 
   </div>
@@ -235,8 +215,8 @@ function formatSlotMs(v?: number): string {
   position: relative;
   z-index: 1;
   padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
-  line-height: 1.5;
+  font-size: 0.7rem;
+  line-height: 1.4;
 }
 
 .bq-section {
@@ -278,7 +258,7 @@ function formatSlotMs(v?: number): string {
 
 .bq-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 
 .bq-hint {
@@ -302,31 +282,5 @@ function formatSlotMs(v?: number): string {
 .bq-badge--miss {
   background: var(--ks-color-surface-subtle, #f3f4f6);
   color: var(--ks-color-text-secondary, #6b7280);
-}
-
-.bq-details-btn {
-  display: inline-block;
-  background: none;
-  border: 1px solid var(--ks-color-border, #e5e7eb);
-  border-radius: 4px;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.7rem;
-  color: var(--ks-color-text-secondary, #6b7280);
-  cursor: pointer;
-  line-height: 1.6;
-}
-
-.bq-details-btn:hover {
-  color: var(--ks-color-text-primary, #111827);
-  border-color: var(--ks-color-border-hover, #9ca3af);
-}
-
-/* Popover inner layout — not scoped since it renders in a teleport */
-.bq-pop-section {
-  margin-bottom: 0.75rem;
-}
-
-.bq-pop-section:last-child {
-  margin-bottom: 0;
 }
 </style>
