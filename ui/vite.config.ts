@@ -9,7 +9,8 @@ export default defaultViteConfig({
         slotName: "topology-details",
         path: "./src/components/BigqueryQueryTopologyDetails.vue",
         additionalProperties: {
-          "height": 80
+          "height": 108,
+          "heightWithExecution": 340
         },
       },
     ],
