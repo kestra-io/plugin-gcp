@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.enums.MonacoLanguages;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 
@@ -23,7 +22,7 @@ public class MaterializedViewDefinition {
     private final Instant lastRefreshDate;
 
     @Schema(title = "The query whose result is persisted.")
-    @PluginProperty(language = MonacoLanguages.SQL, group = "processing")
+    @PluginProperty(group = "processing")
     public final Property<String> query;
 
     @Schema(title = "Whether automatic refresh is enabled for the materialized view when the base table is updated.")

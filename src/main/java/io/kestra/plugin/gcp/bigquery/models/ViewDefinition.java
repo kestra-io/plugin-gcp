@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.enums.MonacoLanguages;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 
@@ -21,7 +20,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class ViewDefinition {
     @Schema(title = "The query whose result is persisted.")
-    @PluginProperty(language = MonacoLanguages.SQL, group = "processing")
+    @PluginProperty(group = "processing")
     public final Property<String> query;
 
     @Schema(title = "User defined functions that can be used by query. Returns {@code null} if not set.")
