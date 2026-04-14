@@ -2,7 +2,6 @@ package io.kestra.plugin.gcp.bigquery;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.enums.MonacoLanguages;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
@@ -13,7 +12,7 @@ public interface QueryInterface {
     @Schema(
         title = "SQL query"
     )
-    @PluginProperty(language = MonacoLanguages.SQL, group = "processing")
+    @PluginProperty(group = "processing")
     Property<String> getSql();
 
     @Schema(
