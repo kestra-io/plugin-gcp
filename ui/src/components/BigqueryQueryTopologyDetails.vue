@@ -2,6 +2,8 @@
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch } from "vue";
 
+const isExpanded = ref(false);
+
 const props = defineProps<TopologyDetailsProps>();
 
 // Extract tenant from the URL path: /ui/{tenant}/... (empty string for CE without tenant)
@@ -158,45 +160,71 @@ function formatSlotMs(v?: number): string {
 
     <!-- Post-execution only -->
     <template v-if="hasExecution">
-      <!-- Job details -->
-      <section class="bq-section">
-        <h4 class="bq-section__title">Job Details</h4>
-        <dl class="bq-grid">
-          <dt>Job ID</dt>
-          <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
-          <dt>Rows</dt>
-          <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
-          <template v-if="taskOutputs?.destinationTable">
-            <dt>Destination</dt>
-            <dd class="bq-mono">
-              {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
+      <!-- Collapsed: 3-row summary -->
+      <template v-if="!isExpanded">
+        <section class="bq-section">
+          <dl class="bq-grid">
+            <dt>Duration</dt>
+            <dd>{{ formatDuration(durationMs) }}</dd>
+            <dt>Bytes billed</dt>
+            <dd>{{ formatBytes(bytesBilled) }}</dd>
+            <dt>Cache hit</dt>
+            <dd>
+              <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
+                {{ cacheHit ? "Yes" : "No" }}
+              </span>
             </dd>
-          </template>
-        </dl>
-      </section>
+          </dl>
+        </section>
+      </template>
 
-      <!-- Cost & Performance -->
-      <section class="bq-section">
-        <h4 class="bq-section__title">Cost &amp; Performance</h4>
-        <dl class="bq-grid">
-          <dt>Bytes billed</dt>
-          <dd>{{ formatBytes(bytesBilled) }}</dd>
-          <dt>Estimated cost</dt>
-          <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
-          <dt>Bytes processed</dt>
-          <dd>{{ formatBytes(bytesProcessed) }}</dd>
-          <dt>Slot time</dt>
-          <dd>{{ formatSlotMs(slotMs) }}</dd>
-          <dt>Duration</dt>
-          <dd>{{ formatDuration(durationMs) }}</dd>
-          <dt>Cache hit</dt>
-          <dd>
-            <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
-              {{ cacheHit ? "Yes" : "No" }}
-            </span>
-          </dd>
-        </dl>
-      </section>
+      <!-- Expanded: full detail -->
+      <template v-else>
+        <!-- Job details -->
+        <section class="bq-section">
+          <h4 class="bq-section__title">Job Details</h4>
+          <dl class="bq-grid">
+            <dt>Job ID</dt>
+            <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
+            <dt>Rows</dt>
+            <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
+            <template v-if="taskOutputs?.destinationTable">
+              <dt>Destination</dt>
+              <dd class="bq-mono">
+                {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
+              </dd>
+            </template>
+          </dl>
+        </section>
+
+        <!-- Cost & Performance -->
+        <section class="bq-section">
+          <h4 class="bq-section__title">Cost &amp; Performance</h4>
+          <dl class="bq-grid">
+            <dt>Bytes billed</dt>
+            <dd>{{ formatBytes(bytesBilled) }}</dd>
+            <dt>Estimated cost</dt>
+            <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
+            <dt>Bytes processed</dt>
+            <dd>{{ formatBytes(bytesProcessed) }}</dd>
+            <dt>Slot time</dt>
+            <dd>{{ formatSlotMs(slotMs) }}</dd>
+            <dt>Duration</dt>
+            <dd>{{ formatDuration(durationMs) }}</dd>
+            <dt>Cache hit</dt>
+            <dd>
+              <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
+                {{ cacheHit ? "Yes" : "No" }}
+              </span>
+            </dd>
+          </dl>
+        </section>
+      </template>
+
+      <!-- Toggle -->
+      <button class="bq-toggle" @click="isExpanded = !isExpanded">
+        {{ isExpanded ? "Show less ↑" : "Show more ↓" }}
+      </button>
     </template>
 
   </div>
@@ -274,5 +302,21 @@ function formatSlotMs(v?: number): string {
 .bq-badge--miss {
   background: var(--ks-color-surface-subtle, #f3f4f6);
   color: var(--ks-color-text-secondary, #6b7280);
+}
+
+.bq-toggle {
+  display: block;
+  background: none;
+  border: none;
+  padding: 0.2rem 0 0;
+  font-size: 0.7rem;
+  color: var(--ks-color-text-secondary, #6b7280);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.bq-toggle:hover {
+  color: var(--ks-color-text-primary, #111827);
 }
 </style>
