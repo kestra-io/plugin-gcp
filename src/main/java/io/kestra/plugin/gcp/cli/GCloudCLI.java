@@ -10,6 +10,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.enums.MonacoLanguages;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.models.tasks.runners.TaskRunner;
@@ -134,7 +135,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         description = "Shell commands executed with `/bin/sh -c`; rendered before execution"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(language = MonacoLanguages.SHELL, group = "main")
     protected Property<List<String>> commands;
 
     @Schema(
