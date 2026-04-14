@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
+import io.kestra.core.models.enums.MonacoLanguages;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -76,7 +77,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "SQL query",
         description = "Rendered SQL string executed on each poll"
     )
-    @PluginProperty(group = "processing")
+    @PluginProperty(language = MonacoLanguages.SQL, group = "processing")
     private Property<String> sql;
 
     @Builder.Default

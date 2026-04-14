@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.enums.MonacoLanguages;
 
 @Getter
 @Builder
@@ -24,7 +25,7 @@ public class UserDefinedFunction {
         description = "If `type` is UserDefinedFunction.Type.INLINE, this method returns a code blob.\n" +
             "If `type` is UserDefinedFunction.Type.FROM_URI, the method returns a Google Cloud Storage URI (e.g. gs://bucket/path)."
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(language = MonacoLanguages.JAVASCRIPT, group = "advanced")
     private final Property<String> content;
 
     public static UserDefinedFunction.Output of(com.google.cloud.bigquery.UserDefinedFunction userDefinedFunction) {
