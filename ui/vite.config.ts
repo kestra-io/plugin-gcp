@@ -13,7 +13,8 @@ export default defaultViteConfig({
           "height": 108,
           // Height with execution: above + Job Details + Cost & Performance sections (~265)
           // Add ~26px if destinationTable is shown (rare for plain SELECT queries)
-          "heightWithExecution": 320
+          "heightWithExecution": 320,
+          "customAction": { "label": "Show SQL", "taskProp": "sql", "lang": "sql" }
         },
       },
     ],
