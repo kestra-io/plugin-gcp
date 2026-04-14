@@ -259,10 +259,18 @@ idea {
     }
 }
 
-// Build the UI module before packaging
-tasks.register('buildUI', com.github.gradle.node.npm.task.NpmTask) {
-    args = ['run', 'build', '--', '--outDir', '../src/main/resources/plugin-ui']
-    workingDir = file('ui')
+// Build the UI module before packaging (only if ui/ directory exists)
+if (file('ui').exists()) {
+    tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmTask) {
+        args = ['install']
+        workingDir = file('ui')
+    }
+
+    tasks.register('buildUI', com.github.gradle.node.npm.task.NpmTask) {
+        dependsOn 'npmInstallUI'
+        args = ['run', 'build', '--', '--outDir', '../src/main/resources/plugin-ui']
+        workingDir = file('ui')
+    }
+    processResources.dependsOn 'buildUI'
+    shadowJar.dependsOn 'buildUI'
 }
-processResources.dependsOn 'buildUI'
-shadowJar.dependsOn 'buildUI'
