@@ -1,0 +1,25 @@
+{
+  "name": "io.kestra.plugin.gcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "add": "artifact-sdk",
+    "storybook": "storybook dev -p 6006"
+  },
+  "dependencies": {
+    "@kestra-io/artifact-sdk": "0.0.16",
+    "vue": "^3.5.32"
+  },
+  "devDependencies": {
+    "@storybook/addon-docs": "^10.3.4",
+    "@storybook/addon-themes": "^10.3.4",
+    "@storybook/vue3-vite": "^10.3.4",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "storybook": "^10.3.4",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3"
+  }
+}
