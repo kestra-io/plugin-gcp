@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
+import { ElPopover } from "element-plus";
+import "element-plus/es/components/popover/style/css";
+import "element-plus/es/components/popper/style/css";
 import { computed, ref, watch } from "vue";
-
-const isExpanded = ref(false);
 
 const props = defineProps<TopologyDetailsProps>();
 
@@ -160,71 +161,70 @@ function formatSlotMs(v?: number): string {
 
     <!-- Post-execution only -->
     <template v-if="hasExecution">
-      <!-- Collapsed: 3-row summary -->
-      <template v-if="!isExpanded">
-        <section class="bq-section">
-          <dl class="bq-grid">
-            <dt>Duration</dt>
-            <dd>{{ formatDuration(durationMs) }}</dd>
-            <dt>Bytes billed</dt>
-            <dd>{{ formatBytes(bytesBilled) }}</dd>
-            <dt>Cache hit</dt>
-            <dd>
-              <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
-                {{ cacheHit ? "Yes" : "No" }}
-              </span>
-            </dd>
-          </dl>
-        </section>
-      </template>
+      <!-- Summary: Duration + Estimated Cost -->
+      <section class="bq-section">
+        <dl class="bq-grid">
+          <dt>Duration</dt>
+          <dd>{{ formatDuration(durationMs) }}</dd>
+          <dt>Estimated cost</dt>
+          <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
+        </dl>
+      </section>
 
-      <!-- Expanded: full detail -->
-      <template v-else>
-        <!-- Job details -->
-        <section class="bq-section">
-          <h4 class="bq-section__title">Job Details</h4>
-          <dl class="bq-grid">
-            <dt>Job ID</dt>
-            <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
-            <dt>Rows</dt>
-            <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
-            <template v-if="taskOutputs?.destinationTable">
-              <dt>Destination</dt>
-              <dd class="bq-mono">
-                {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
+      <!-- Details popover -->
+      <ElPopover
+        trigger="click"
+        placement="right"
+        :width="280"
+        :teleported="true"
+        :popper-style="{ zIndex: 200000 }"
+      >
+        <template #reference>
+          <button class="bq-details-btn">Details ↗</button>
+        </template>
+
+        <div class="bq-popover">
+          <!-- Job details -->
+          <section class="bq-pop-section">
+            <h4 class="bq-section__title">Job Details</h4>
+            <dl class="bq-grid">
+              <dt>Job ID</dt>
+              <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
+              <dt>Rows</dt>
+              <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
+              <template v-if="taskOutputs?.destinationTable">
+                <dt>Destination</dt>
+                <dd class="bq-mono">
+                  {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
+                </dd>
+              </template>
+            </dl>
+          </section>
+
+          <!-- Cost & Performance -->
+          <section class="bq-pop-section">
+            <h4 class="bq-section__title">Cost &amp; Performance</h4>
+            <dl class="bq-grid">
+              <dt>Bytes billed</dt>
+              <dd>{{ formatBytes(bytesBilled) }}</dd>
+              <dt>Estimated cost</dt>
+              <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
+              <dt>Bytes processed</dt>
+              <dd>{{ formatBytes(bytesProcessed) }}</dd>
+              <dt>Slot time</dt>
+              <dd>{{ formatSlotMs(slotMs) }}</dd>
+              <dt>Duration</dt>
+              <dd>{{ formatDuration(durationMs) }}</dd>
+              <dt>Cache hit</dt>
+              <dd>
+                <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
+                  {{ cacheHit ? "Yes" : "No" }}
+                </span>
               </dd>
-            </template>
-          </dl>
-        </section>
-
-        <!-- Cost & Performance -->
-        <section class="bq-section">
-          <h4 class="bq-section__title">Cost &amp; Performance</h4>
-          <dl class="bq-grid">
-            <dt>Bytes billed</dt>
-            <dd>{{ formatBytes(bytesBilled) }}</dd>
-            <dt>Estimated cost</dt>
-            <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
-            <dt>Bytes processed</dt>
-            <dd>{{ formatBytes(bytesProcessed) }}</dd>
-            <dt>Slot time</dt>
-            <dd>{{ formatSlotMs(slotMs) }}</dd>
-            <dt>Duration</dt>
-            <dd>{{ formatDuration(durationMs) }}</dd>
-            <dt>Cache hit</dt>
-            <dd>
-              <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
-                {{ cacheHit ? "Yes" : "No" }}
-              </span>
-            </dd>
-          </dl>
-        </section>
-      </template>
-
-      <!-- Toggle -->
-      <button class="bq-toggle" @click="isExpanded = !isExpanded">
-        {{ isExpanded ? "Show less ↑" : "Show more ↓" }}
-      </button>
+            </dl>
+          </section>
+        </div>
+      </ElPopover>
     </template>
 
   </div>
@@ -304,19 +304,29 @@ function formatSlotMs(v?: number): string {
   color: var(--ks-color-text-secondary, #6b7280);
 }
 
-.bq-toggle {
-  display: block;
+.bq-details-btn {
+  display: inline-block;
   background: none;
-  border: none;
-  padding: 0.2rem 0 0;
+  border: 1px solid var(--ks-color-border, #e5e7eb);
+  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
   font-size: 0.7rem;
   color: var(--ks-color-text-secondary, #6b7280);
   cursor: pointer;
-  width: 100%;
-  text-align: left;
+  line-height: 1.6;
 }
 
-.bq-toggle:hover {
+.bq-details-btn:hover {
   color: var(--ks-color-text-primary, #111827);
+  border-color: var(--ks-color-border-hover, #9ca3af);
+}
+
+/* Popover inner layout — not scoped since it renders in a teleport */
+.bq-pop-section {
+  margin-bottom: 0.75rem;
+}
+
+.bq-pop-section:last-child {
+  margin-bottom: 0;
 }
 </style>
