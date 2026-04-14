@@ -13,34 +13,12 @@ const location = computed(() => props.task?.location as string | undefined);
 const hasExecution = computed(() => !!props.execution?.id);
 const executionId = computed(() => props.execution?.id as string | undefined);
 
-const taskRunId = computed(() => {
+const taskRun = computed(() => {
   const list = props.execution?.taskRunList as any[] | undefined;
-  return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1)?.id as string | undefined;
+  return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
 });
 
-// Task outputs: fetched from the v2 OutputController endpoint
-const taskOutputs = ref<Record<string, any> | null>(null);
-
-async function fetchOutputs(execId: string, trId: string) {
-  try {
-    const tenant = props.execution?.tenantId as string | undefined;
-    const base = tenant ? `/api/v1/${tenant}/outputs` : "/api/v1/outputs";
-    const res = await fetch(`${base}/${execId}/${trId}`, { credentials: "include" });
-    if (!res.ok) return;
-    taskOutputs.value = await res.json();
-  } catch {
-    // silently ignore — outputs are best-effort
-  }
-}
-
-watch(
-  [executionId, taskRunId],
-  ([execId, trId]) => {
-    taskOutputs.value = null;
-    if (execId && trId) fetchOutputs(execId, trId);
-  },
-  { immediate: true }
-);
+const taskOutputs = computed(() => taskRun.value?.outputs ?? null);
 
 // Metrics (best-effort fetch)
 interface MetricEntry {
@@ -115,14 +93,14 @@ function formatSlotMs(v?: number): string {
     <!-- Post-execution only -->
     <template v-if="hasExecution">
       <!-- Job details -->
-      <section v-if="taskOutputs" class="bq-section">
+      <section class="bq-section">
         <h4 class="bq-section__title">Job Details</h4>
         <dl class="bq-grid">
           <dt>Job ID</dt>
-          <dd class="bq-mono">{{ taskOutputs.jobId ?? "—" }}</dd>
+          <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
           <dt>Rows</dt>
-          <dd>{{ taskOutputs.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
-          <template v-if="taskOutputs.destinationTable">
+          <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
+          <template v-if="taskOutputs?.destinationTable">
             <dt>Destination</dt>
             <dd class="bq-mono">
               {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
@@ -159,13 +137,13 @@ function formatSlotMs(v?: number): string {
 
 <style scoped>
 .bq-details {
-  padding: 0.75rem 1rem;
-  font-size: 0.8125rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 
 .bq-section {
-  margin-bottom: 0.875rem;
+  margin-bottom: 0.5rem;
 }
 
 .bq-section:last-child {
@@ -173,8 +151,8 @@ function formatSlotMs(v?: number): string {
 }
 
 .bq-section__title {
-  margin: 0 0 0.375rem;
-  font-size: 0.75rem;
+  margin: 0 0 0.25rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -184,7 +162,7 @@ function formatSlotMs(v?: number): string {
 .bq-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.2rem 0.875rem;
+  gap: 0.15rem 0.625rem;
   margin: 0;
 }
 
