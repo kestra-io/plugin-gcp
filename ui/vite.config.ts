@@ -11,12 +11,10 @@ export default defaultViteConfig({
         additionalProperties: {
           // Height without execution: header (44) + Project/Location rows (~64)
           "height": 108,
-          // Height with execution: sized for the COLLAPSED state (~192px content).
-          // The expanded state overflows the layout box but renders above the canvas
-          // (node-wrapper z-index: 150000, no overflow:hidden on vue-flow__node).
-          // In default horizontal layout this is always safe; vertical flows may see
-          // the expanded content touch the next node, which is an acceptable edge case.
-          "heightWithExecution": 200,
+          // Height with execution: sized for 4 rows (Project, Location, Duration,
+          // Estimated Cost) plus the "Details" button. The popover teleports to <body>
+          // so it never affects node height.
+          "heightWithExecution": 165,
           "customAction": { "label": "Show SQL", "taskProp": "sql", "lang": "sql" }
         },
       },
