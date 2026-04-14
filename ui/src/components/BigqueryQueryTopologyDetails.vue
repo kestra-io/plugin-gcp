@@ -4,10 +4,31 @@ import { computed, ref, watch } from "vue";
 
 const props = defineProps<TopologyDetailsProps>();
 
-// Task fields
+// Task fields — props.task is minimal (id + type only), fetch full flow for real config
 const taskId = computed(() => props.task?.id as string | undefined);
-const projectId = computed(() => props.task?.projectId as string | undefined);
-const location = computed(() => props.task?.location as string | undefined);
+
+// Full flow task config (fetched)
+const flowTask = ref<Record<string, any> | null>(null);
+
+async function fetchFlow() {
+  try {
+    const res = await fetch(`/api/v1/flows/${props.namespace}/${props.flowId}`, { credentials: "include" });
+    if (!res.ok) return;
+    const flow = await res.json();
+    const tasks = flow.tasks as any[] | undefined;
+    flowTask.value = tasks?.find((t: any) => t.id === taskId.value) ?? null;
+  } catch { /* best-effort */ }
+}
+
+// Fetch once on mount (flow definition is static)
+fetchFlow();
+
+const projectId = computed(() =>
+  (props.task?.projectId ?? flowTask.value?.projectId) as string | undefined
+);
+const location = computed(() =>
+  (props.task?.location ?? flowTask.value?.location) as string | undefined
+);
 
 // Execution state
 const hasExecution = computed(() => !!props.execution?.id);
@@ -18,7 +39,7 @@ const taskRun = computed(() => {
   return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
 });
 
-// Fetch the full execution to get outputs (the lightweight props.execution may lack them)
+// Fetch the full execution to get outputs (props.execution has task runs but no outputs)
 const fetchedOutputs = ref<Record<string, any> | null>(null);
 
 async function fetchTaskOutputs(execId: string) {
@@ -29,9 +50,7 @@ async function fetchTaskOutputs(execId: string) {
     const list = data.taskRunList as any[] | undefined;
     const tr = list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
     fetchedOutputs.value = tr?.outputs ?? null;
-  } catch {
-    // best-effort
-  }
+  } catch { /* best-effort */ }
 }
 
 watch(executionId, (id) => { if (id) fetchTaskOutputs(id); }, { immediate: true });
@@ -176,11 +195,13 @@ function formatSlotMs(v?: number): string {
     <!-- DEBUG: remove before shipping -->
     <details style="margin-top:0.5rem">
       <summary style="font-size:0.65rem;cursor:pointer">debug</summary>
-      <pre style="font-size:0.6rem;overflow:auto;max-height:200px;white-space:pre-wrap">task: {{ JSON.stringify(props.task, null, 2) }}
+      <pre style="font-size:0.6rem;overflow:auto;max-height:200px;white-space:pre-wrap">props.task: {{ JSON.stringify(props.task, null, 2) }}
 
-taskRun outputs: {{ JSON.stringify(taskRun?.outputs, null, 2) }}
+flowTask: {{ JSON.stringify(flowTask, null, 2) }}
 
-execution keys: {{ Object.keys(props.execution ?? {}).join(', ') }}</pre>
+fetchedOutputs: {{ JSON.stringify(fetchedOutputs, null, 2) }}
+
+taskRun (from props): {{ JSON.stringify(taskRun, null, 2) }}</pre>
     </details>
   </div>
 </template>
