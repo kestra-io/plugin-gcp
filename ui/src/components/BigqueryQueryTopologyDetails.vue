@@ -18,7 +18,47 @@ const taskRun = computed(() => {
   return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
 });
 
-const taskOutputs = computed(() => taskRun.value?.outputs ?? null);
+// Fetch the full execution to get outputs (the lightweight props.execution may lack them)
+const fetchedOutputs = ref<Record<string, any> | null>(null);
+
+async function fetchTaskOutputs(execId: string) {
+  try {
+    const res = await fetch(`/api/v1/executions/${execId}`, { credentials: "include" });
+    if (!res.ok) return;
+    const data = await res.json();
+    const list = data.taskRunList as any[] | undefined;
+    const tr = list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
+    fetchedOutputs.value = tr?.outputs ?? null;
+  } catch {
+    // best-effort
+  }
+}
+
+watch(executionId, (id) => { if (id) fetchTaskOutputs(id); }, { immediate: true });
+
+const taskOutputs = computed(() =>
+  fetchedOutputs.value ?? taskRun.value?.outputs ?? null
+);
+
+// Parse project and location from the job ID as fallback.
+// BigQuery job IDs have the format: project:location.jobname
+const resolvedProject = computed(() => {
+  if (projectId.value) return projectId.value;
+  const jid = taskOutputs.value?.jobId as string | undefined;
+  if (!jid) return undefined;
+  const colonIdx = jid.indexOf(":");
+  return colonIdx > 0 ? jid.slice(0, colonIdx) : undefined;
+});
+
+const resolvedLocation = computed(() => {
+  if (location.value) return location.value;
+  const jid = taskOutputs.value?.jobId as string | undefined;
+  if (!jid) return undefined;
+  const colonIdx = jid.indexOf(":");
+  const dotIdx = jid.indexOf(".", colonIdx);
+  if (colonIdx < 0 || dotIdx < 0) return undefined;
+  return jid.slice(colonIdx + 1, dotIdx);
+});
 
 // Metrics (best-effort fetch)
 interface MetricEntry {
@@ -84,9 +124,9 @@ function formatSlotMs(v?: number): string {
     <section class="bq-section">
       <dl class="bq-grid">
         <dt>Project</dt>
-        <dd>{{ projectId ?? "—" }}</dd>
+        <dd>{{ resolvedProject ?? "—" }}</dd>
         <dt>Location</dt>
-        <dd>{{ location ?? "—" }}</dd>
+        <dd>{{ resolvedLocation ?? "—" }}</dd>
       </dl>
     </section>
 
@@ -132,6 +172,16 @@ function formatSlotMs(v?: number): string {
         </dl>
       </section>
     </template>
+
+    <!-- DEBUG: remove before shipping -->
+    <details style="margin-top:0.5rem">
+      <summary style="font-size:0.65rem;cursor:pointer">debug</summary>
+      <pre style="font-size:0.6rem;overflow:auto;max-height:200px;white-space:pre-wrap">task: {{ JSON.stringify(props.task, null, 2) }}
+
+taskRun outputs: {{ JSON.stringify(taskRun?.outputs, null, 2) }}
+
+execution keys: {{ Object.keys(props.execution ?? {}).join(', ') }}</pre>
+    </details>
   </div>
 </template>
 
