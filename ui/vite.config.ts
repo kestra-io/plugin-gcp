@@ -11,8 +11,9 @@ export default defaultViteConfig({
         additionalProperties: {
           // Height without execution: header (44) + Project/Location rows (~64)
           "height": 108,
-          // Height with execution: above (108) + 3 compact rows (~48) + toggle button (~20)
-          "heightWithExecution": 180,
+          // Height with execution: sized for the expanded state so layout is never broken.
+          // Collapsed (3 rows) leaves whitespace inside the node border, which is acceptable.
+          "heightWithExecution": 320,
           "customAction": { "label": "Show SQL", "taskProp": "sql", "lang": "sql" }
         },
       },
