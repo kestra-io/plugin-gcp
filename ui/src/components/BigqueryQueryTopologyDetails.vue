@@ -1,71 +1,31 @@
 <script setup lang="ts">
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
-import { computed, ref, watch, useAttrs } from "vue";
+import { computed, useAttrs } from "vue";
 
-const props = defineProps<TopologyDetailsProps>();
+interface BigqueryQueryTopologyDetailsProps extends TopologyDetailsProps {
+  outputs?: Record<string, unknown> | null;
+  metrics?: Array<{ name: string; value: number; taskId?: string }> | null;
+}
+
+const props = defineProps<BigqueryQueryTopologyDetailsProps>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
 
-// Extract tenant from the URL path: /ui/{tenant}/... (empty string for CE without tenant)
-const tenant = (() => {
-  const m = window.location.pathname.match(/^\/ui\/([^/]+)\//);
-  return m ? m[1] : "";
-})();
-const apiBase = tenant ? `/api/v1/${tenant}` : "/api/v1";
-
-// Task fields — props.task is minimal (id + type only), fetch full flow for real config
 const taskId = computed(() => props.task?.id as string | undefined);
 
-// Full flow task config (fetched)
-const flowTask = ref<Record<string, any> | null>(null);
-
-async function fetchFlow() {
-  try {
-    const res = await fetch(`${apiBase}/flows/${props.namespace}/${props.flowId}`, { credentials: "include" });
-    if (!res.ok) return;
-    const flow = await res.json();
-    const tasks = flow.tasks as any[] | undefined;
-    flowTask.value = tasks?.find((t: any) => t.id === taskId.value) ?? null;
-  } catch { /* best-effort */ }
-}
-
-// Fetch once on mount (flow definition is static)
-fetchFlow();
-
-const projectId = computed(() =>
-  (props.task?.projectId ?? flowTask.value?.projectId) as string | undefined
-);
-const location = computed(() =>
-  (props.task?.location ?? flowTask.value?.location) as string | undefined
-);
+const projectId = computed(() => props.task?.projectId as string | undefined);
+const location = computed(() => props.task?.location as string | undefined);
 
 // Execution state
 const hasExecution = computed(() => !!props.execution?.id);
-const executionId = computed(() => props.execution?.id as string | undefined);
 
 const taskRun = computed(() => {
   const list = props.execution?.taskRunList as any[] | undefined;
   return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
 });
 
-// Fetch the full execution to get outputs (props.execution has task runs but no outputs)
-const fetchedOutputs = ref<Record<string, any> | null>(null);
-
-async function fetchTaskOutputs(execId: string) {
-  try {
-    const res = await fetch(`${apiBase}/executions/${execId}`, { credentials: "include" });
-    if (!res.ok) return;
-    const data = await res.json();
-    const list = data.taskRunList as any[] | undefined;
-    const tr = list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
-    fetchedOutputs.value = tr?.outputs ?? null;
-  } catch { /* best-effort */ }
-}
-
-watch(executionId, (id) => { if (id) fetchTaskOutputs(id); }, { immediate: true });
-
 const taskOutputs = computed(() =>
-  fetchedOutputs.value ?? taskRun.value?.outputs ?? null
+  props.outputs ?? taskRun.value?.outputs ?? null
 );
 
 // Parse project and location from the job ID as fallback.
@@ -88,31 +48,20 @@ const resolvedLocation = computed(() => {
   return jid.slice(colonIdx + 1, dotIdx);
 });
 
-// Metrics (best-effort fetch)
+// Metrics
 interface MetricEntry {
   name: string;
   value: number;
   taskId?: string;
 }
 
-const metrics = ref<MetricEntry[]>([]);
+const filteredMetrics = computed(() =>
+  (props.metrics ?? []).filter(
+    (m) => !m.taskId || m.taskId === taskId.value
+  )
+);
 
-async function fetchMetrics(execId: string) {
-  try {
-    const res = await fetch(`/api/v1/metrics/${execId}`, { credentials: "include" });
-    if (!res.ok) return;
-    const data = await res.json();
-    metrics.value = ((data.results as MetricEntry[]) ?? []).filter(
-      (m) => !m.taskId || m.taskId === taskId.value
-    );
-  } catch {
-    // silently ignore — metrics are best-effort
-  }
-}
-
-watch(executionId, (id) => { if (id) fetchMetrics(id); }, { immediate: true });
-
-const getMetric = (name: string) => metrics.value.find((m) => m.name === name)?.value;
+const getMetric = (name: string) => filteredMetrics.value.find((m) => m.name === name)?.value;
 
 const bytesBilled = computed(() => getMetric("total.bytes.billed"));
 const bytesProcessed = computed(() => getMetric("total.bytes.processed"));
