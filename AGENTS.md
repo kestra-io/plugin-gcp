@@ -2,11 +2,13 @@
 
 ## What
 
-Integrate Google Cloud Platform services with Kestra data workflows. Exposes 54 plugin components (tasks, triggers, and/or conditions).
+- Provides plugin components under `io.kestra.plugin.gcp`.
+- Includes classes such as `CredentialService`, `StoreFetchDestinationValidator`, `LoadCsvValidator`, `StoreFetchValidator`.
 
 ## Why
 
-Enables Kestra workflows to interact with Google Cloud, allowing orchestration of Google Cloud-based operations as part of data pipelines and automation workflows.
+- This plugin integrates Kestra with Dataproc Batches.
+- It provides run Spark and Hadoop jobs on-demand without managing clusters. Process large-scale data with Dataproc Batches.
 
 ## How
 
@@ -83,24 +85,7 @@ plugin-gcp/
 └── README.md
 ```
 
-### Important Commands
+## References
 
-```bash
-# Build the plugin
-./gradlew shadowJar
-
-# Run tests
-./gradlew test
-
-# Build without tests
-./gradlew shadowJar -x test
-```
-
-### Configuration
-
-All tasks and triggers accept standard Kestra plugin properties. Credentials should use
-`{{ secret('SECRET_NAME') }}` — never hardcode real values.
-
-## Agents
-
-**IMPORTANT:** This is a Kestra plugin repository (prefixed by `plugin-`, `storage-`, or `secret-`). You **MUST** delegate all coding tasks to the `kestra-plugin-developer` agent. Do NOT implement code changes directly — always use this agent.
+- https://kestra.io/docs/plugin-developer-guide
+- https://kestra.io/docs/plugin-developer-guide/contribution-guidelines
