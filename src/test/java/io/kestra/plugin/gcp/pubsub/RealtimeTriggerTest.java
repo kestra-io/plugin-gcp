@@ -66,9 +66,9 @@ class RealtimeTriggerTest {
             .topic(Property.ofValue("test-topic"))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         try {
-            Mono<Execution> executionMono = Mono.from(trigger.evaluate(context.getKey(), context.getValue()));
+            Mono<Execution> executionMono = Mono.from(trigger.evaluate(context.getKey(), context.getValue().context()));
 
             Execution execution = executionMono.timeout(Duration.ofSeconds(30)).block();
 
