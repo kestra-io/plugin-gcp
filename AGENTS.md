@@ -7,8 +7,9 @@
 
 ## Why
 
-- This plugin integrates Kestra with Dataproc Batches.
-- It provides run Spark and Hadoop jobs on-demand without managing clusters. Process large-scale data with Dataproc Batches.
+- What user problem does this solve? Teams need to execute tasks and orchestrate workflows across Google Cloud Platform services. Centralize authentication and resource management for seamless GCP integration from orchestrated workflows instead of relying on manual console work, ad hoc scripts, or disconnected schedulers.
+- Why would a team adopt this plugin in a workflow? It keeps Google Cloud steps in the same Kestra flow as upstream preparation, approvals, retries, notifications, and downstream systems.
+- What operational/business outcome does it enable? It reduces manual handoffs and fragmented tooling while improving reliability, traceability, and delivery speed for processes that depend on Google Cloud.
 
 ## How
 
