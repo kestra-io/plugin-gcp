@@ -35,13 +35,18 @@
 </p>
 <p align="center" style="color:grey;"><i>Get started with Kestra in 4 minutes.</i></p>
 
-
 # Kestra Google Cloud Platform Plugin
 
-> Plugin to interact with Google Cloud Platform (GCP)
+## Why
 
-![Kestra orchestrator](https://kestra.io/video.gif)
+- What user problem does this solve? Teams need to execute tasks and orchestrate workflows across Google Cloud Platform services. Centralize authentication and resource management for seamless GCP integration from orchestrated workflows instead of relying on manual console work, ad hoc scripts, or disconnected schedulers.
+- Why would a team adopt this plugin in a workflow? It keeps Google Cloud steps in the same Kestra flow as upstream preparation, approvals, retries, notifications, and downstream systems.
+- What operational/business outcome does it enable? It reduces manual handoffs and fragmented tooling while improving reliability, traceability, and delivery speed for processes that depend on Google Cloud.
 
+## What
+
+- Provides plugin components under `io.kestra.plugin.gcp`.
+- Includes classes such as `CredentialService`, `StoreFetchDestinationValidator`, `LoadCsvValidator`, `StoreFetchValidator`.
 
 ## Documentation
 * Full documentation can be found under [kestra.io/docs](https://kestra.io/docs)
