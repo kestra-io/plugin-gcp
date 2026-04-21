@@ -13,7 +13,7 @@ export default defaultViteConfig({
           "height": 108,
           // Height with execution: header (44) + 4 rows (~64) + 3 gaps (~7) + padding (~16) + small buffer (~4)
           "heightWithExecution": 135,
-          "customAction": { "label": "Show SQL", "taskProp": "sql", "lang": "sql" }
+          "customAction": { "label": "Show Details", "taskProp": "sql", "lang": "sql" }
         },
       },
     ],
