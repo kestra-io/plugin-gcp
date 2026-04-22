@@ -59,8 +59,10 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
     private Property<String> projectId;
 
+    @PluginProperty(secret = true)
     private Property<String> serviceAccount;
 
+    @PluginProperty(secret = true)
     private Property<String> impersonatedServiceAccount;
 
     @Builder.Default

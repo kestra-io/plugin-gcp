@@ -103,8 +103,10 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
 
     private Property<String> projectId;
 
+    @PluginProperty(secret = true)
     private Property<String> serviceAccount;
 
+    @PluginProperty(secret = true)
     private Property<String> impersonatedServiceAccount;
 
     @Builder.Default

@@ -33,7 +33,7 @@ public class CustomJobSpec {
         title = "Service account",
         description = "Run-as service account; submitters need act-as on this account. Defaults to Vertex AI Custom Code Service Agent."
     )
-    @PluginProperty(group = "execution")
+    @PluginProperty(secret = true, group = "execution")
     private Property<String> serviceAccount;
 
     @Schema(
