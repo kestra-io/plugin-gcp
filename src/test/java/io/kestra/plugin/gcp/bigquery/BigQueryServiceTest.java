@@ -30,7 +30,7 @@ class BigQueryServiceTest {
             .fetch(true)
             .build();
 
-        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+        var runContext = TestsUtils.mockRunContext("main", runContextFactory, task, ImmutableMap.of());
         var labels = BigQueryService.labels(runContext);
 
         assertThat(labels.get("kestra_namespace"), is("io_kestra_plugin_gcp_bigquery_bigqueryservicetest"));

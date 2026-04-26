@@ -50,7 +50,7 @@ public class CopyConfigTest {
             .labels(Property.ofValue(initialLabels))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext("main", runContextFactory, task, ImmutableMap.of());
 
         var labels = task.jobConfiguration(runContext).getLabels();
 
