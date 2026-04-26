@@ -1,6 +1,5 @@
 package io.kestra.plugin.gcp;
 
-import io.kestra.core.models.annotations.PluginProperty;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -24,10 +23,8 @@ import lombok.experimental.SuperBuilder;
 public abstract class AbstractTask extends Task implements GcpInterface {
     protected Property<String> projectId;
 
-    @PluginProperty(secret = true)
     protected Property<String> serviceAccount;
 
-    @PluginProperty(secret = true)
     protected Property<String> impersonatedServiceAccount;
 
     @Builder.Default
