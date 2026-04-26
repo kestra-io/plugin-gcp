@@ -14,6 +14,15 @@ plugins {
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
 
+configurations.all {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'com.google.protobuf' &&
+                (details.requested.name == 'protobuf-java' || details.requested.name == 'protobuf-java-util')) {
+            details.useVersion '4.33.2'
+        }
+    }
+}
+
 repositories {
     mavenLocal()
     google()

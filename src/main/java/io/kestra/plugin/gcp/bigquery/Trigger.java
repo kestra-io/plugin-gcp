@@ -68,6 +68,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     private final Duration interval = Duration.ofSeconds(60);
 
     protected Property<String> projectId;
+    @PluginProperty(secret = true)
     protected Property<String> serviceAccount;
     @Builder.Default
     protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
