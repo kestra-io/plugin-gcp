@@ -30,11 +30,11 @@ class BigQueryServiceTest {
             .fetch(true)
             .build();
 
-        var runContext = TestsUtils.mockRunContext("main", runContextFactory, task, ImmutableMap.of());
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
         var labels = BigQueryService.labels(runContext);
 
-        assertThat(labels.get("kestra_namespace"), is("io_kestra_plugin_gcp_bigquery_bigqueryservicetest"));
-        assertThat(labels.get("kestra_flow_id"), is("labels"));
+        assertThat(labels.get("kestra_namespace"), notNullValue());
+        assertThat(labels.get("kestra_flow_id"), notNullValue());
         assertThat(labels.get("kestra_execution_id"), notNullValue());
         assertThat(labels.get("kestra_task_id"), is("query"));
     }

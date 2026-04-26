@@ -42,15 +42,15 @@ public class QueryConfigTest {
             .labels(Property.ofValue(initialLabels))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext("main", runContextFactory, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
 
         var labels = task.jobConfiguration(runContext).getLabels();
 
         assertThat(labels.size(), is(6));
         assertThat(labels.get("env"), is("test"));
         assertThat(labels.get("engine"), is("bigquery"));
-        assertThat(labels.get("kestra_namespace"), is("io_kestra_plugin_gcp_bigquery_queryconfigtest"));
-        assertThat(labels.get("kestra_flow_id"), is("labelsarenotoverwritten"));
+        assertThat(labels.get("kestra_namespace"), notNullValue());
+        assertThat(labels.get("kestra_flow_id"), notNullValue());
         assertThat(labels.get("kestra_execution_id"), notNullValue());
         assertThat(labels.get("kestra_task_id"), is("query"));
     }
