@@ -119,7 +119,7 @@ dependencies {
     testImplementation group: "io.kestra", name: "script", version: kestraVersion
     testImplementation group: "io.kestra", name: "repository-memory", version: kestraVersion
     testImplementation group: "io.kestra", name: "runner-memory", version: kestraVersion
-    testImplementation group: "io.kestra", name: "storage-local", version: kestraVersion
+    testImplementation group: "io.kestra", name: "storage-local"
     testImplementation group: "io.kestra", name: "scheduler", version: kestraVersion
     testImplementation group: "io.kestra", name: "worker", version: kestraVersion
 
