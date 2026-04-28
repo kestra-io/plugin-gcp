@@ -46,7 +46,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
 @SuperBuilder
@@ -661,21 +660,10 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         try (
             var output = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)
         ) {
-            Flux<Object> flowable = Flux
-                .create(
-                    s ->
-                    {
-                        StreamSupport
-                            .stream(result.iterateAll().spliterator(), false)
-                            .forEach(fieldValues ->
-                            {
-                                s.next(this.convertRows(result, fieldValues));
-                            });
-
-                        s.complete();
-                    },
-                    FluxSink.OverflowStrategy.BUFFER
-                );
+            Flux<Object> flowable = Flux.fromStream(
+                StreamSupport.stream(result.iterateAll().spliterator(), false)
+                    .map(fieldValues -> (Object) this.convertRows(result, fieldValues))
+            );
             Mono<Long> longMono = FileSerde.writeAll(output, flowable);
 
             // metrics & finalize
