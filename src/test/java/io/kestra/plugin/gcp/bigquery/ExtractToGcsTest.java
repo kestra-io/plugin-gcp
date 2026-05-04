@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.is;
 
 @KestraTest
 @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-public class ExtractToGcsTest extends AbstractBigquery {
+public class ExtractToGcsTest {
     @Inject
     private RunContextFactory runContextFactory;
 
