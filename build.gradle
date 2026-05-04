@@ -14,15 +14,6 @@ plugins {
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
 
-configurations.all {
-    resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == 'com.google.protobuf' &&
-                (details.requested.name == 'protobuf-java' || details.requested.name == 'protobuf-java-util')) {
-            details.useVersion '4.33.2'
-        }
-    }
-}
-
 repositories {
     mavenLocal()
     google()
@@ -45,6 +36,18 @@ description 'Integrate Google Cloud Platform services with Kestra data workflows
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+}
+
+// Temporary: align protobuf with com.google.cloud:libraries-bom (4.33.2) which the GCP client libs are
+// built against. Kestra's platform enforces protobuf 3.25.x (historical pin for mysql-connector-j /
+// micronaut-grpc-bom). Constraints can't override an enforcedPlatform pin, so a force is required.
+// The proper fix is in kestra core PR https://github.com/kestra-io/kestra/pull/15719 which bumps the
+// platform's protobuf to 4.33.2. Remove this block once a kestra release containing that PR ships.
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.protobuf:protobuf-java:4.33.2'
+        force 'com.google.protobuf:protobuf-java-util:4.33.2'
+    }
 }
 
 dependencies {
