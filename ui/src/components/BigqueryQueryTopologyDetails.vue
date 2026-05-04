@@ -1,31 +1,59 @@
 <script setup lang="ts">
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
-import { computed, useAttrs } from "vue";
+import { computed, ref, watch, useAttrs } from "vue";
+import { execution as fetchExecution, flow as fetchFlowDef, searchByExecution } from "@kestra-io/kestra-sdk";
 
-interface BigqueryQueryTopologyDetailsProps extends TopologyDetailsProps {
-  outputs?: Record<string, unknown> | null;
-  metrics?: Array<{ name: string; value: number; taskId?: string }> | null;
-}
-
-const props = defineProps<BigqueryQueryTopologyDetailsProps>();
+const props = defineProps<TopologyDetailsProps>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
 
 const taskId = computed(() => props.task?.id as string | undefined);
 
-const projectId = computed(() => props.task?.projectId as string | undefined);
-const location = computed(() => props.task?.location as string | undefined);
+// Full flow task config (fetched via SDK — inherits host EE auth automatically)
+const flowTask = ref<Record<string, any> | null>(null);
+
+async function loadFlowTask() {
+  try {
+    const f = await fetchFlowDef({ path: { namespace: props.namespace, id: props.flowId } });
+    const tasks = (f as any).tasks as any[] | undefined;
+    flowTask.value = tasks?.find((t: any) => t.id === taskId.value) ?? null;
+  } catch { /* best-effort */ }
+}
+
+loadFlowTask();
+
+const projectId = computed(() =>
+  (props.task?.projectId ?? flowTask.value?.projectId) as string | undefined
+);
+const location = computed(() =>
+  (props.task?.location ?? flowTask.value?.location) as string | undefined
+);
 
 // Execution state
 const hasExecution = computed(() => !!props.execution?.id);
+const executionId = computed(() => props.execution?.id as string | undefined);
 
 const taskRun = computed(() => {
   const list = props.execution?.taskRunList as any[] | undefined;
   return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
 });
 
+// Fetch the full execution to get outputs (props.execution has task runs but no outputs)
+const fetchedOutputs = ref<Record<string, any> | null>(null);
+
+async function loadTaskOutputs(execId: string) {
+  try {
+    const exec = await fetchExecution({ path: { executionId: execId } });
+    const list = exec.taskRunList as any[] | undefined;
+    const tr = list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
+    fetchedOutputs.value = (tr as any)?.outputs ?? null;
+  } catch { /* best-effort */ }
+}
+
+watch(executionId, (id) => { if (id) loadTaskOutputs(id); }, { immediate: true });
+
 const taskOutputs = computed(() =>
-  props.outputs ?? taskRun.value?.outputs ?? null
+  fetchedOutputs.value ?? taskRun.value?.outputs ?? null
 );
 
 // Parse project and location from the job ID as fallback.
@@ -48,20 +76,27 @@ const resolvedLocation = computed(() => {
   return jid.slice(colonIdx + 1, dotIdx);
 });
 
-// Metrics
+// Metrics (fetched via SDK — best-effort)
 interface MetricEntry {
   name: string;
   value: number;
   taskId?: string;
 }
 
-const filteredMetrics = computed(() =>
-  (props.metrics ?? []).filter(
-    (m) => !m.taskId || m.taskId === taskId.value
-  )
-);
+const metrics = ref<MetricEntry[]>([]);
 
-const getMetric = (name: string) => filteredMetrics.value.find((m) => m.name === name)?.value;
+async function loadMetrics(execId: string) {
+  try {
+    const resp = await searchByExecution({ path: { executionId: execId } });
+    metrics.value = ((resp.results as MetricEntry[]) ?? []).filter(
+      (m) => !m.taskId || m.taskId === taskId.value
+    );
+  } catch { /* best-effort */ }
+}
+
+watch(executionId, (id) => { if (id) loadMetrics(id); }, { immediate: true });
+
+const getMetric = (name: string) => metrics.value.find((m) => m.name === name)?.value;
 
 const bytesBilled = computed(() => getMetric("total.bytes.billed"));
 const bytesProcessed = computed(() => getMetric("total.bytes.processed"));
