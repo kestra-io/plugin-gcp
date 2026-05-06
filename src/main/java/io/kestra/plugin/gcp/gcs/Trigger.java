@@ -51,12 +51,12 @@ import io.kestra.core.models.annotations.PluginProperty;
 
                 tasks:
                   - id: each
-                    type: io.kestra.plugin.core.flow.ForEach
+                    type: io.kestra.plugin.core.flow.Loop
                     values: "{{ trigger.blobs | jq('.[].uri') }}"
                     tasks:
                       - id: return
                         type: io.kestra.plugin.core.debug.Return
-                        format: "{{ taskrun.value }}"
+                        format: "{{ item.value }}"
 
                 triggers:
                   - id: watch
@@ -81,10 +81,10 @@ import io.kestra.core.models.annotations.PluginProperty;
                     tasks:
                       - id: return
                         type: io.kestra.plugin.core.debug.Return
-                        format: "{{ taskrun.value }}"
+                        format: "{{ item.value }}"
                       - id: delete
                         type: io.kestra.plugin.gcp.gcs.Delete
-                        uri: "{{ taskrun.value }}"
+                        uri: "{{ item.value }}"
 
                 triggers:
                   - id: watch

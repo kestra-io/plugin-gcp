@@ -39,12 +39,12 @@ import io.kestra.core.models.annotations.PluginProperty;
                 namespace: company.team
                 tasks:
                   - id: each
-                    type: io.kestra.plugin.core.flow.ForEach
+                    type: io.kestra.plugin.core.flow.Loop
                     values: "{{ trigger.series }}"
                     tasks:
                       - id: log
                         type: io.kestra.plugin.core.log.Log
-                        message: "Metric: {{ json(taskrun.value) }}"
+                        message: "Metric: {{ json(item.value) }}"
 
                 triggers:
                   - id: watch
