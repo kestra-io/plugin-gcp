@@ -44,7 +44,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     tasks:
                       - id: log
                         type: io.kestra.plugin.core.log.Log
-                        message: "Metric: {{ json(item.value) }}"
+                        message: "Metric: {{ fromJson(item.value) }}"
 
                 triggers:
                   - id: watch
