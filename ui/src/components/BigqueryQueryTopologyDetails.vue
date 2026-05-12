@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, useAttrs } from "vue";
+import { useI18n } from "vue-i18n";
 import { execution as fetchExecution, flow as fetchFlowDef, searchByExecution } from "@kestra-io/kestra-sdk";
+
+const { t } = useI18n({
+  inheritLocale: true,
+  useScope: "local",
+});
 
 const props = defineProps<TopologyDetailsProps>();
 const attrs = useAttrs();
@@ -134,14 +140,14 @@ function formatSlotMs(v?: number): string {
   <div class="bq-details">
     <!-- Single unified grid: always shows Project + Location; adds Duration + Estimated Cost post-execution -->
     <dl class="bq-grid">
-      <dt>Project</dt>
+      <dt>{{ t("project") }}</dt>
       <dd>{{ resolvedProject ?? "—" }}</dd>
-      <dt>Location</dt>
+      <dt>{{ t("location") }}</dt>
       <dd>{{ resolvedLocation ?? "—" }}</dd>
       <template v-if="hasExecution">
-        <dt>Duration</dt>
+        <dt>{{ t("duration") }}</dt>
         <dd>{{ formatDuration(durationMs) }}</dd>
-        <dt>Estimated cost</dt>
+        <dt>{{ t("estimatedCost") }}</dt>
         <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
       </template>
     </dl>
@@ -152,14 +158,14 @@ function formatSlotMs(v?: number): string {
       <!-- Full details: only when displayMode="full" (rendered in the drawer) -->
       <template v-if="isFullView">
         <section class="bq-section">
-          <h4 class="bq-section__title">Job Details</h4>
+          <h4 class="bq-section__title">{{ t("jobDetails") }}</h4>
           <dl class="bq-grid">
-            <dt>Job ID</dt>
+            <dt>{{ t("jobId") }}</dt>
             <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
-            <dt>Rows</dt>
+            <dt>{{ t("rows") }}</dt>
             <dd>{{ taskOutputs?.size !== undefined ? taskOutputs.size.toLocaleString() : "—" }}</dd>
             <template v-if="taskOutputs?.destinationTable">
-              <dt>Destination</dt>
+              <dt>{{ t("destination") }}</dt>
               <dd class="bq-mono">
                 {{ [taskOutputs.destinationTable.project, taskOutputs.destinationTable.dataset, taskOutputs.destinationTable.table].join(".") }}
               </dd>
@@ -168,22 +174,22 @@ function formatSlotMs(v?: number): string {
         </section>
 
         <section class="bq-section">
-          <h4 class="bq-section__title">Cost &amp; Performance</h4>
+          <h4 class="bq-section__title">{{ t("costAndPerformance") }}</h4>
           <dl class="bq-grid">
-            <dt>Bytes billed</dt>
+            <dt>{{ t("bytesBilled") }}</dt>
             <dd>{{ formatBytes(bytesBilled) }}</dd>
-            <dt>Estimated cost</dt>
+            <dt>{{ t("estimatedCost") }}</dt>
             <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
-            <dt>Bytes processed</dt>
+            <dt>{{ t("bytesProcessed") }}</dt>
             <dd>{{ formatBytes(bytesProcessed) }}</dd>
-            <dt>Slot time</dt>
+            <dt>{{ t("slotTime") }}</dt>
             <dd>{{ formatSlotMs(slotMs) }}</dd>
-            <dt>Duration</dt>
+            <dt>{{ t("duration") }}</dt>
             <dd>{{ formatDuration(durationMs) }}</dd>
-            <dt>Cache hit</dt>
+            <dt>{{ t("cacheHit") }}</dt>
             <dd>
               <span :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']">
-                {{ cacheHit ? "Yes" : "No" }}
+                {{ cacheHit ? t("yes") : t("no") }}
               </span>
             </dd>
           </dl>
@@ -268,3 +274,25 @@ function formatSlotMs(v?: number): string {
   color: var(--ks-color-text-secondary, #6b7280);
 }
 </style>
+
+<i18n lang="json">
+{
+  "en": {
+    "project": "Project",
+    "location": "Location",
+    "duration": "Duration",
+    "estimatedCost": "Estimated cost",
+    "jobDetails": "Job Details",
+    "jobId": "Job ID",
+    "rows": "Rows",
+    "destination": "Destination",
+    "costAndPerformance": "Cost & Performance",
+    "bytesBilled": "Bytes billed",
+    "bytesProcessed": "Bytes processed",
+    "slotTime": "Slot time",
+    "cacheHit": "Cache hit",
+    "yes": "Yes",
+    "no": "No"
+  }
+}
+</i18n>
