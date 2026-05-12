@@ -16,6 +16,10 @@ export default defaultViteConfig({
           "customAction": { "label": "Show Details", "taskProp": "sql", "lang": "sql" }
         },
       },
+      {
+        slotName: "topology-task-drawer",
+        path: "./src/components/BigqueryQueryTopologyDetails.vue",
+      },
     ],
   },
   
