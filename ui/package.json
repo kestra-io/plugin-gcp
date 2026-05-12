@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "add": "artifact-sdk",
-    "storybook": "storybook dev -p 6006"
+    "storybook": "storybook dev -p 6006",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt --write"
   },
   "dependencies": {
     "@kestra-io/artifact-sdk": "^0.0.18",
@@ -20,6 +24,8 @@
     "@storybook/addon-themes": "^10.3.4",
     "@storybook/vue3-vite": "^10.3.4",
     "@vitejs/plugin-vue": "^6.0.5",
+    "oxfmt": "^0.49.0",
+    "oxlint": "^1.64.0",
     "storybook": "^10.3.4",
     "typescript": "^6.0.2",
     "vite": "^8.0.3"
