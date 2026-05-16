@@ -71,8 +71,8 @@ class TriggerTest {
                 .maxRecords(Property.ofValue(2))
                 .build();
 
-            Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-            Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+            Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+            Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue().context());
 
             assertThat(execution.isPresent(), is(true));
 
