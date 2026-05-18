@@ -23,8 +23,12 @@ const taskId = computed(() => props.task?.id as string | undefined);
 const flowTask = ref<Record<string, any> | null>(null);
 
 async function loadFlowTask() {
+    if (!props.namespace || !props.flowId) return;
     try {
-        const f = await fetchFlowDef({ path: { namespace: props.namespace, id: props.flowId } });
+        const f = await fetchFlowDef(
+            { path: { namespace: props.namespace, id: props.flowId } },
+            { showMessageOnError: false },
+        );
         const tasks = (f as any).tasks as any[] | undefined;
         flowTask.value = tasks?.find((t: any) => t.id === taskId.value) ?? null;
     } catch {
@@ -55,7 +59,10 @@ const fetchedOutputs = ref<Record<string, any> | null>(null);
 
 async function loadTaskOutputs(execId: string) {
     try {
-        const exec = await fetchExecution({ path: { executionId: execId } });
+        const exec = await fetchExecution(
+            { path: { executionId: execId } },
+            { showMessageOnError: false },
+        );
         const list = exec.taskRunList as any[] | undefined;
         const tr = list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
         fetchedOutputs.value = (tr as any)?.outputs ?? null;
@@ -105,7 +112,10 @@ const metrics = ref<MetricEntry[]>([]);
 
 async function loadMetrics(execId: string) {
     try {
-        const resp = await searchByExecution({ path: { executionId: execId } });
+        const resp = await searchByExecution(
+            { path: { executionId: execId } },
+            { showMessageOnError: false },
+        );
         metrics.value = ((resp.results as MetricEntry[]) ?? []).filter(
             (m) => !m.taskId || m.taskId === taskId.value,
         );
