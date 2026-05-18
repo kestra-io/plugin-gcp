@@ -14,10 +14,11 @@
     "format:fix": "oxfmt --write"
   },
   "dependencies": {
-    "@kestra-io/artifact-sdk": "^0.0.18",
+    "@kestra-io/artifact-sdk": "^0.0.19",
     "@kestra-io/kestra-sdk": "^2.0.0-dev.2e43ff28.eb2705ef",
     "element-plus": "^2.9.0",
-    "vue": "^3.5.32"
+    "vue": "^3.5.32",
+    "vue-i18n": "^11.4.4"
   },
   "devDependencies": {
     "@storybook/addon-docs": "^10.3.4",
