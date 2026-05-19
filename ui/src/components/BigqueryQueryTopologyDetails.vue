@@ -30,7 +30,7 @@ async function loadFlowTask() {
     try {
         const f = await fetchFlowDef(
             { path: { namespace: namespace.value, id: flowId.value } },
-            { showMessageOnError: false },
+            { showMessageOnError: false, validateStatus: (s: number) => s === 200 || s === 404 },
         );
         const tasks = (f as any).tasks as any[] | undefined;
         flowTask.value = tasks?.find((t: any) => t.id === taskId.value) ?? null;
@@ -66,7 +66,7 @@ async function loadTaskOutputs(execId: string) {
     try {
         const exec = await fetchExecution(
             { path: { executionId: execId } },
-            { showMessageOnError: false },
+            { showMessageOnError: false, validateStatus: (s: number) => s === 200 || s === 404 },
         );
         const list = exec.taskRunList as any[] | undefined;
         const tr = list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
@@ -119,7 +119,7 @@ async function loadMetrics(execId: string) {
     try {
         const resp = await searchByExecution(
             { path: { executionId: execId } },
-            { showMessageOnError: false },
+            { showMessageOnError: false, validateStatus: (s: number) => s === 200 || s === 404 },
         );
         metrics.value = ((resp.results as MetricEntry[]) ?? []).filter(
             (m) => !m.taskId || m.taskId === taskId.value,
