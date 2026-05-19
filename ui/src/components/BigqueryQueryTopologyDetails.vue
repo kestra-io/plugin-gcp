@@ -16,6 +16,8 @@ const { t } = useI18n({
 const props = defineProps<TopologyDetailsProps>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
+const namespace = computed(() => attrs.namespace as string | undefined);
+const flowId = computed(() => attrs.flowId as string | undefined);
 
 const taskId = computed(() => props.task?.id as string | undefined);
 
@@ -23,10 +25,10 @@ const taskId = computed(() => props.task?.id as string | undefined);
 const flowTask = ref<Record<string, any> | null>(null);
 
 async function loadFlowTask() {
-    if (!props.namespace || !props.flowId) return;
+    if (!namespace.value || !flowId.value) return;
     try {
         const f = await fetchFlowDef(
-            { path: { namespace: props.namespace, id: props.flowId } },
+            { path: { namespace: namespace.value, id: flowId.value } },
             { showMessageOnError: false },
         );
         const tasks = (f as any).tasks as any[] | undefined;
@@ -36,7 +38,9 @@ async function loadFlowTask() {
     }
 }
 
-loadFlowTask();
+watch([namespace, flowId], ([ns, fid]) => {
+    if (ns && fid) loadFlowTask();
+}, { immediate: true });
 
 const projectId = computed(
     () => (props.task?.projectId ?? flowTask.value?.projectId) as string | undefined,
