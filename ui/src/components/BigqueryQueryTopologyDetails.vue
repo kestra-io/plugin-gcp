@@ -26,6 +26,7 @@ const flowTask = ref<Record<string, any> | null>(null);
 
 async function loadFlowTask() {
     if (!namespace.value || !flowId.value) return;
+    if (namespace.value.startsWith("{") || flowId.value.startsWith("{")) return;
     try {
         const f = await fetchFlowDef(
             { path: { namespace: namespace.value, id: flowId.value } },
@@ -39,7 +40,7 @@ async function loadFlowTask() {
 }
 
 watch([namespace, flowId], ([ns, fid]) => {
-    if (ns && fid) loadFlowTask();
+    if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{")) loadFlowTask();
 }, { immediate: true });
 
 const projectId = computed(
