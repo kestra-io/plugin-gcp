@@ -13,7 +13,9 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -47,6 +49,28 @@ import io.kestra.core.models.annotations.PluginProperty;
                     action: MOVE
                     moveDirectory: gs://my-bucket/kestra/archive/
                 """
+        ),
+        @Example(
+            title = "Download a list of files with end-to-end checksum validation",
+            full = true,
+            code = """
+                id: gcp_gcs_downloads_validated
+                namespace: company.team
+
+                tasks:
+                  - id: downloads
+                    type: io.kestra.plugin.gcp.gcs.Downloads
+                    from: gs://my-bucket/kestra/files/
+                    action: DELETE
+                    validateChecksum: true
+                """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "checksum.validated",
+            type = Counter.TYPE,
+            description = "Number of files whose checksum was successfully validated after download."
         )
     }
 )
@@ -98,6 +122,14 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
     @Builder.Default
     @PluginProperty(group = "processing")
     private Property<Integer> maxFiles = Property.ofValue(25);
+
+    @Schema(
+        title = "Validate each downloaded file against the GCS checksum",
+        description = "When `true`, every downloaded file is streamed through a CRC32C hasher (or MD5 if the object has no CRC32C) and compared to the checksum reported by Google Cloud Storage. If any file mismatches, the task fails. Used for end-to-end integrity, not for security/authentication."
+    )
+    @PluginProperty(group = "advanced")
+    @Builder.Default
+    private Property<Boolean> validateChecksum = Property.ofValue(false);
 
     static void performAction(
         java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
@@ -160,6 +192,8 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
         Storage connection = this.connection(runContext);
 
+        boolean rValidateChecksum = runContext.render(this.validateChecksum).as(Boolean.class).orElse(false);
+
         java.util.List<Blob> list = run
             .getBlobs()
             .stream()
@@ -169,7 +203,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                     blob.getBucket(),
                     blob.getName()
                 );
-                File tempFile = Download.download(runContext, connection, source);
+                File tempFile = Download.download(runContext, connection, source, rValidateChecksum);
 
                 return blob.withUri(runContext.storage().putFile(tempFile));
             }))
