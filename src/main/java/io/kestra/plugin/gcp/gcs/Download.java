@@ -95,7 +95,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
         title = "Validate the downloaded file against the GCS checksum",
         description = "When `true`, the file is streamed through a CRC32C hasher (or MD5 if the object has no CRC32C) and compared to the checksum reported by Google Cloud Storage. If the values differ, the task fails and the temporary file is deleted. Used for end-to-end integrity, not for security/authentication."
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "reliability")
     @Builder.Default
     private Property<Boolean> validateChecksum = Property.ofValue(false);
 
