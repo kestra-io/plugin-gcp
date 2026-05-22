@@ -211,7 +211,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                         var changeType = update.isNew() ? ChangeType.CREATE : ChangeType.UPDATE;
                         actionBlobs.add(blob);
 
-                        File downloaded = Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName()));
+                        File downloaded = Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName()), false);
                         URI kestraUri = runContext.storage().putFile(downloaded);
 
                         return Stream.of(
