@@ -3,10 +3,16 @@ package io.kestra.plugin.gcp.gcs;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.util.Base64;
+import java.util.zip.CRC32C;
 
 import org.slf4j.Logger;
 
 import com.google.cloud.WriteChannel;
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
@@ -120,6 +126,28 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
     @PluginProperty(group = "advanced")
     private Property<String> cacheControl;
 
+    @Schema(
+        title = "Validate checksum after upload",
+        description = "When true (default), compute MD5 and CRC32C client-side while streaming and compare them against what GCS reports server-side once the upload completes. When false, the implicit transit integrity check is skipped; explicit `expectedMd5`/`expectedCrc32c` assertions are still honored when set."
+    )
+    @PluginProperty(group = "reliability")
+    @Builder.Default
+    private Property<Boolean> validateChecksum = Property.ofValue(true);
+
+    @Schema(
+        title = "Expected MD5 of the source",
+        description = "Optional base64-encoded MD5 digest. When set, the task fails if the source data read from Kestra internal storage does not match this digest. Use this to assert end-to-end integrity against a checksum produced upstream."
+    )
+    @PluginProperty(group = "reliability")
+    private Property<String> expectedMd5;
+
+    @Schema(
+        title = "Expected CRC32C of the source",
+        description = "Optional base64-encoded big-endian CRC32C. When set, the task fails if the source data read from Kestra internal storage does not match this checksum."
+    )
+    @PluginProperty(group = "reliability")
+    private Property<String> expectedCrc32c;
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Storage connection = this.connection(runContext);
@@ -154,17 +182,69 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
 
         BlobInfo destination = builder.build();
 
+        boolean rValidateChecksum = runContext.render(this.validateChecksum).as(Boolean.class).orElse(true);
+        String rExpectedMd5 = runContext.render(this.expectedMd5).as(String.class).orElse(null);
+        String rExpectedCrc32c = runContext.render(this.expectedCrc32c).as(String.class).orElse(null);
+        boolean computeLocally = rValidateChecksum || rExpectedMd5 != null || rExpectedCrc32c != null;
+
         logger.debug("Upload from '{}' to '{}'", from, to);
 
-        try (InputStream data = runContext.storage().getFile(from)) {
+        MessageDigest md5Digest = computeLocally ? MessageDigest.getInstance("MD5") : null;
+        CRC32C crc32c = computeLocally ? new CRC32C() : null;
+
+        try (InputStream rawData = runContext.storage().getFile(from);
+             InputStream data = computeLocally ? new DigestInputStream(rawData, md5Digest) : rawData) {
             long size = 0;
             try (WriteChannel writer = connection.writer(destination)) {
                 byte[] buffer = new byte[10_240];
 
                 int limit;
                 while ((limit = data.read(buffer)) >= 0) {
+                    if (computeLocally) {
+                        crc32c.update(buffer, 0, limit);
+                    }
                     writer.write(ByteBuffer.wrap(buffer, 0, limit));
                     size += limit;
+                }
+            }
+
+            String computedMd5 = null;
+            String computedCrc32c = null;
+            if (computeLocally) {
+                computedMd5 = Base64.getEncoder().encodeToString(md5Digest.digest());
+                computedCrc32c = Base64.getEncoder().encodeToString(
+                    ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int) crc32c.getValue()).array()
+                );
+
+                if (rExpectedMd5 != null && !rExpectedMd5.equals(computedMd5)) {
+                    throw new IllegalStateException(
+                        "Source MD5 mismatch: expected=" + rExpectedMd5 + ", computed=" + computedMd5
+                    );
+                }
+                if (rExpectedCrc32c != null && !rExpectedCrc32c.equals(computedCrc32c)) {
+                    throw new IllegalStateException(
+                        "Source CRC32C mismatch: expected=" + rExpectedCrc32c + ", computed=" + computedCrc32c
+                    );
+                }
+
+                if (rValidateChecksum) {
+                    Blob uploaded = connection.get(destination.getBlobId());
+                    if (uploaded == null) {
+                        throw new IllegalStateException("Uploaded blob not found for integrity check: " + destination.getBlobId());
+                    }
+
+                    if (!computedMd5.equals(uploaded.getMd5())) {
+                        throw new IllegalStateException(
+                            "MD5 mismatch between client and GCS: client=" + computedMd5 + ", gcs=" + uploaded.getMd5()
+                        );
+                    }
+                    if (!computedCrc32c.equals(uploaded.getCrc32c())) {
+                        throw new IllegalStateException(
+                            "CRC32C mismatch between client and GCS: client=" + computedCrc32c + ", gcs=" + uploaded.getCrc32c()
+                        );
+                    }
+
+                    logger.debug("Upload integrity verified (md5={}, crc32c={})", computedMd5, computedCrc32c);
                 }
             }
 
@@ -173,6 +253,8 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
             return Output
                 .builder()
                 .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
+                .md5(computedMd5)
+                .crc32c(computedCrc32c)
                 .build();
         }
     }
@@ -180,6 +262,13 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(title = "Uploaded object URI")
         private URI uri;
+
+        @Schema(title = "Base64-encoded MD5 of the uploaded data")
+        private String md5;
+
+        @Schema(title = "Base64-encoded big-endian CRC32C of the uploaded data")
+        private String crc32c;
     }
 }
