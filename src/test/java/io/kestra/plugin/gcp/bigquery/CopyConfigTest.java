@@ -18,6 +18,7 @@ import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -50,15 +51,15 @@ public class CopyConfigTest {
             .labels(Property.ofValue(initialLabels))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext(MAIN_TENANT, runContextFactory, task, ImmutableMap.of());
 
         var labels = task.jobConfiguration(runContext).getLabels();
 
         assertThat(labels.size(), is(6));
         assertThat(labels.get("env"), is("test"));
         assertThat(labels.get("engine"), is("bigquery"));
-        assertThat(labels.get("kestra_namespace"), notNullValue());
-        assertThat(labels.get("kestra_flow_id"), notNullValue());
+        assertThat(labels.get("kestra_namespace"), is("io_kestra_plugin_gcp_bigquery_copyconfigtest"));
+        assertThat(labels.get("kestra_flow_id"), is("labelsarenotoverwritten"));
         assertThat(labels.get("kestra_execution_id"), notNullValue());
         assertThat(labels.get("kestra_task_id"), is("copy"));
     }
