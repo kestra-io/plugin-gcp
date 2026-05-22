@@ -11,6 +11,7 @@ import io.kestra.core.utils.TestsUtils;
 
 import jakarta.inject.Inject;
 
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -30,7 +31,7 @@ class BigQueryServiceTest {
             .fetch(true)
             .build();
 
-        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+        var runContext = TestsUtils.mockRunContext(MAIN_TENANT, runContextFactory, task, ImmutableMap.of());
         var labels = BigQueryService.labels(runContext);
 
         assertThat(labels.get("kestra_namespace"), is("io_kestra_plugin_gcp_bigquery_bigqueryservicetest"));

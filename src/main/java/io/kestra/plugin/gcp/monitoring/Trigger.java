@@ -77,7 +77,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Service account",
         description = "Optional service account email to authenticate the Monitoring client; falls back to application default credentials"
     )
-    @PluginProperty(group = "execution")
+    @PluginProperty(secret = true, group = "execution")
     protected Property<String> serviceAccount;
 
     @Schema(
