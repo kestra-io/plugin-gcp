@@ -2,11 +2,9 @@
 import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
-import {
-    execution as fetchExecution,
-    flow as fetchFlowDef,
-    searchByExecution,
-} from "@kestra-io/kestra-sdk";
+import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
+import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
+import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -28,9 +26,12 @@ async function loadFlowTask() {
     if (!namespace.value || !flowId.value) return;
     if (namespace.value.startsWith("{") || flowId.value.startsWith("{")) return;
     try {
-        const f = await fetchFlowDef(
-            { path: { namespace: namespace.value, id: flowId.value } },
-            { showMessageOnError: false, validateStatus: (s: number) => s === 200 || s === 404 },
+        const f = await FlowAPI.flow(
+            { namespace: namespace.value, id: flowId.value },
+            {
+                showMessageOnError: false,
+                validateStatus: (s: number) => s === 200 || s === 404,
+            },
         );
         const tasks = (f as any).tasks as any[] | undefined;
         flowTask.value = tasks?.find((t: any) => t.id === taskId.value) ?? null;
@@ -39,15 +40,26 @@ async function loadFlowTask() {
     }
 }
 
-watch([namespace, flowId], ([ns, fid]) => {
-    if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{")) loadFlowTask();
-}, { immediate: true });
+watch(
+    [namespace, flowId],
+    ([ns, fid]) => {
+        if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{"))
+            loadFlowTask();
+    },
+    { immediate: true },
+);
 
 const projectId = computed(
-    () => (props.task?.projectId ?? flowTask.value?.projectId) as string | undefined,
+    () =>
+        (props.task?.projectId ?? flowTask.value?.projectId) as
+            | string
+            | undefined,
 );
 const location = computed(
-    () => (props.task?.location ?? flowTask.value?.location) as string | undefined,
+    () =>
+        (props.task?.location ?? flowTask.value?.location) as
+            | string
+            | undefined,
 );
 
 // Execution state
@@ -64,12 +76,15 @@ const fetchedOutputs = ref<Record<string, any> | null>(null);
 
 async function loadTaskOutputs(execId: string) {
     try {
-        const exec = await fetchExecution(
-            { path: { executionId: execId } },
-            { showMessageOnError: false, validateStatus: (s: number) => s === 200 || s === 404 },
+        const exec = await ExecutionAPI.execution(
+            { executionId: execId },
+            {
+                showMessageOnError: false,
+                validateStatus: (s: number) => s === 200 || s === 404,
+            },
         );
         const list = exec.taskRunList as any[] | undefined;
-        const tr = list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
+        const tr = list?.filter((tr) => tr.taskId === taskId.value).at(-1);
         fetchedOutputs.value = (tr as any)?.outputs ?? null;
     } catch {
         /* best-effort */
@@ -84,7 +99,9 @@ watch(
     { immediate: true },
 );
 
-const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.outputs ?? null);
+const taskOutputs = computed(
+    () => fetchedOutputs.value ?? taskRun.value?.outputs ?? null,
+);
 
 // Parse project and location from the job ID as fallback.
 // BigQuery job IDs have the format: project:location.jobname
@@ -117,9 +134,12 @@ const metrics = ref<MetricEntry[]>([]);
 
 async function loadMetrics(execId: string) {
     try {
-        const resp = await searchByExecution(
-            { path: { executionId: execId } },
-            { showMessageOnError: false, validateStatus: (s: number) => s === 200 || s === 404 },
+        const resp = await MetricsAPI.searchByExecution(
+            { executionId: execId },
+            {
+                showMessageOnError: false,
+                validateStatus: (s: number) => s === 200 || s === 404,
+            },
         );
         metrics.value = ((resp.results as MetricEntry[]) ?? []).filter(
             (m) => !m.taskId || m.taskId === taskId.value,
@@ -137,7 +157,8 @@ watch(
     { immediate: true },
 );
 
-const getMetric = (name: string) => metrics.value.find((m) => m.name === name)?.value;
+const getMetric = (name: string) =>
+    metrics.value.find((m) => m.name === name)?.value;
 
 const bytesBilled = computed(() => getMetric("total.bytes.billed"));
 const bytesProcessed = computed(() => getMetric("total.bytes.processed"));
@@ -185,7 +206,10 @@ function formatSlotMs(v?: number): string {
                 <dt>{{ t("duration") }}</dt>
                 <dd>{{ formatDuration(durationMs) }}</dd>
                 <dt>{{ t("estimatedCost") }}</dt>
-                <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
+                <dd>
+                    {{ formatCost(bytesBilled) }}
+                    <span class="bq-hint">@$5/TB</span>
+                </dd>
             </template>
         </dl>
 
@@ -222,12 +246,17 @@ function formatSlotMs(v?: number): string {
                 </section>
 
                 <section class="bq-section">
-                    <h4 class="bq-section__title">{{ t("costAndPerformance") }}</h4>
+                    <h4 class="bq-section__title">
+                        {{ t("costAndPerformance") }}
+                    </h4>
                     <dl class="bq-grid">
                         <dt>{{ t("bytesBilled") }}</dt>
                         <dd>{{ formatBytes(bytesBilled) }}</dd>
                         <dt>{{ t("estimatedCost") }}</dt>
-                        <dd>{{ formatCost(bytesBilled) }} <span class="bq-hint">@$5/TB</span></dd>
+                        <dd>
+                            {{ formatCost(bytesBilled) }}
+                            <span class="bq-hint">@$5/TB</span>
+                        </dd>
                         <dt>{{ t("bytesProcessed") }}</dt>
                         <dd>{{ formatBytes(bytesProcessed) }}</dd>
                         <dt>{{ t("slotTime") }}</dt>
@@ -237,7 +266,12 @@ function formatSlotMs(v?: number): string {
                         <dt>{{ t("cacheHit") }}</dt>
                         <dd>
                             <span
-                                :class="['bq-badge', cacheHit ? 'bq-badge--hit' : 'bq-badge--miss']"
+                                :class="[
+                                    'bq-badge',
+                                    cacheHit
+                                        ? 'bq-badge--hit'
+                                        : 'bq-badge--miss',
+                                ]"
                             >
                                 {{ cacheHit ? t("yes") : t("no") }}
                             </span>
