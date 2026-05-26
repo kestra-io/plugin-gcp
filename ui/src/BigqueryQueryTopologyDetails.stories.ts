@@ -38,23 +38,14 @@ export const WithExecution: Story = {
             id: "exec-abc123",
             namespace: "company.team",
             flowId: "bq-pipeline",
-            state: { current: "SUCCESS", startDate: "2024-01-15T10:00:00Z" },
+            state: { current: "SUCCESS", startDate: "2024-01-15T10:00:00Z" } as any,
             taskRunList: [
                 {
                     id: "tr-001",
                     taskId: "query-bq",
                     executionId: "exec-abc123",
-                    outputs: {
-                        jobId: "my-gcp-project:US.bqjob_r1234abcd_56789xyz",
-                        size: 42500,
-                        destinationTable: {
-                            project: "my-gcp-project",
-                            dataset: "_tmp_results",
-                            table: "_anon_abc123def456",
-                        },
-                    },
                 },
             ],
-        },
+        } as any,
     },
 };
