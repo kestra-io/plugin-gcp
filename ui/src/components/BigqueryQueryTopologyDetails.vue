@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import type { TopologyDetailsProps } from "@kestra-io/artifact-sdk";
+import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
 import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
 import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
 import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
+import * as OutputsAPI from "@kestra-io/kestra-sdk/outputs";
 
 const { t } = useI18n({
     inheritLocale: true,
     useScope: "local",
 });
 
-const props = defineProps<TopologyDetailsProps>();
+const props = defineProps<KnownSlotProps["topology-details"]>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
 const namespace = computed(() => attrs.namespace as string | undefined);
@@ -51,13 +52,13 @@ watch(
 
 const projectId = computed(
     () =>
-        (props.task?.projectId ?? flowTask.value?.projectId) as
+        ((props.task as any).projectId ?? flowTask.value?.projectId) as
             | string
             | undefined,
 );
 const location = computed(
     () =>
-        (props.task?.location ?? flowTask.value?.location) as
+        ((props.task as any).location ?? flowTask.value?.location) as
             | string
             | undefined,
 );
@@ -85,7 +86,16 @@ async function loadTaskOutputs(execId: string) {
         );
         const list = exec.taskRunList as any[] | undefined;
         const tr = list?.filter((tr) => tr.taskId === taskId.value).at(-1);
+        // for 1.3
         fetchedOutputs.value = (tr as any)?.outputs ?? null;
+
+        // for 1.4+, fetch via dedicated API if not present in execution response
+        if (!fetchedOutputs.value) {
+            fetchedOutputs.value = await OutputsAPI.taskRunOutputs({
+                executionId: execId,
+                taskRunId: tr?.id,
+            });
+        }
     } catch {
         /* best-effort */
     }
