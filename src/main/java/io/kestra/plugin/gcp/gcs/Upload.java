@@ -216,36 +216,16 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
                     ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt((int) crc32c.getValue()).array()
                 );
 
-                if (rExpectedMd5 != null && !rExpectedMd5.equals(computedMd5)) {
-                    throw new IllegalStateException(
-                        "Source MD5 mismatch: expected=" + rExpectedMd5 + ", computed=" + computedMd5
-                    );
-                }
-                if (rExpectedCrc32c != null && !rExpectedCrc32c.equals(computedCrc32c)) {
-                    throw new IllegalStateException(
-                        "Source CRC32C mismatch: expected=" + rExpectedCrc32c + ", computed=" + computedCrc32c
-                    );
-                }
-
-                if (rValidateChecksum) {
-                    Blob uploaded = connection.get(destination.getBlobId());
-                    if (uploaded == null) {
-                        throw new IllegalStateException("Uploaded blob not found for integrity check: " + destination.getBlobId());
-                    }
-
-                    if (!computedMd5.equals(uploaded.getMd5())) {
-                        throw new IllegalStateException(
-                            "MD5 mismatch between client and GCS: client=" + computedMd5 + ", gcs=" + uploaded.getMd5()
-                        );
-                    }
-                    if (!computedCrc32c.equals(uploaded.getCrc32c())) {
-                        throw new IllegalStateException(
-                            "CRC32C mismatch between client and GCS: client=" + computedCrc32c + ", gcs=" + uploaded.getCrc32c()
-                        );
-                    }
-
-                    logger.debug("Upload integrity verified (md5={}, crc32c={})", computedMd5, computedCrc32c);
-                }
+                verifyChecksums(
+                    computedMd5,
+                    computedCrc32c,
+                    rExpectedMd5,
+                    rExpectedCrc32c,
+                    rValidateChecksum,
+                    connection,
+                    destination.getBlobId(),
+                    logger
+                );
             }
 
             runContext.metric(Counter.of("file.size", size));
@@ -256,6 +236,48 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
                 .md5(computedMd5)
                 .crc32c(computedCrc32c)
                 .build();
+        }
+    }
+
+    private void verifyChecksums(
+        String computedMd5,
+        String computedCrc32c,
+        String rExpectedMd5,
+        String rExpectedCrc32c,
+        boolean rValidateChecksum,
+        Storage connection,
+        BlobId blobId,
+        Logger logger
+    ) {
+        if (rExpectedMd5 != null && !rExpectedMd5.equals(computedMd5)) {
+            throw new IllegalStateException(
+                "Source MD5 mismatch: expected=" + rExpectedMd5 + ", computed=" + computedMd5
+            );
+        }
+        if (rExpectedCrc32c != null && !rExpectedCrc32c.equals(computedCrc32c)) {
+            throw new IllegalStateException(
+                "Source CRC32C mismatch: expected=" + rExpectedCrc32c + ", computed=" + computedCrc32c
+            );
+        }
+
+        if (rValidateChecksum) {
+            Blob uploaded = connection.get(blobId);
+            if (uploaded == null) {
+                throw new IllegalStateException("Uploaded blob not found for integrity check: " + blobId);
+            }
+
+            if (!computedMd5.equals(uploaded.getMd5())) {
+                throw new IllegalStateException(
+                    "MD5 mismatch between client and GCS: client=" + computedMd5 + ", gcs=" + uploaded.getMd5()
+                );
+            }
+            if (!computedCrc32c.equals(uploaded.getCrc32c())) {
+                throw new IllegalStateException(
+                    "CRC32C mismatch between client and GCS: client=" + computedCrc32c + ", gcs=" + uploaded.getCrc32c()
+                );
+            }
+
+            logger.debug("Upload integrity verified (md5={}, crc32c={})", computedMd5, computedCrc32c);
         }
     }
 
