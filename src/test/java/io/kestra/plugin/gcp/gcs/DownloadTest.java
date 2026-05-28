@@ -87,6 +87,52 @@ class DownloadTest {
         );
     }
 
+    @Test
+    void fromStorageWithChecksumValidation() throws Exception {
+        File file = new File(
+            Objects.requireNonNull(
+                DownloadTest.class.getClassLoader()
+                    .getResource("application.yml")
+            )
+                .toURI()
+        );
+
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            new URI("/" + FriendlyId.createFriendlyId()),
+            new FileInputStream(file)
+        );
+
+        String out = FriendlyId.createFriendlyId();
+
+        Upload upload = Upload.builder()
+            .id(UploadTest.class.getSimpleName())
+            .type(Upload.class.getName())
+            .from(Property.ofValue(source.toString()))
+            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
+            .build();
+
+        Upload.Output uploadOutput = upload.run(runContext(upload));
+
+        Download task = Download.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .from(Property.ofValue(uploadOutput.getUri().toString()))
+            .validateChecksum(Property.ofValue(true))
+            .build();
+
+        Download.Output run = task.run(runContext(task));
+        assertThat(run.getUri().toString(), endsWith(".yml"));
+
+        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri());
+
+        assertThat(
+            CharStreams.toString(new InputStreamReader(get)),
+            is(CharStreams.toString(new InputStreamReader(new FileInputStream(file))))
+        );
+    }
+
     private RunContext runContext(Task task) {
         return TestsUtils.mockRunContext(
             this.runContextFactory,

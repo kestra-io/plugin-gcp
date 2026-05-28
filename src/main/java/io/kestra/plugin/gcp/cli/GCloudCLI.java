@@ -119,7 +119,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         title = "Service account key",
         description = "Full JSON key content written to a temp file and wired to `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE`"
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(secret = true, group = "connection")
     protected Property<String> serviceAccount;
 
     @Schema(

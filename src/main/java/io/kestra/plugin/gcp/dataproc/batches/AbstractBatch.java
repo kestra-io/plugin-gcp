@@ -215,7 +215,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             title = "Service account",
             description = "Email of the service account used to run the batch"
         )
-        @PluginProperty(group = "advanced")
+        @PluginProperty(secret = true, group = "advanced")
         private Property<String> serviceAccountEmail;
 
         @Schema(
