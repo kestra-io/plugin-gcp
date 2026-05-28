@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 import io.kestra.core.models.annotations.PluginProperty;
+
 @Getter
 @Builder
 @Jacksonized
