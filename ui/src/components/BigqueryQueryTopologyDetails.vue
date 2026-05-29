@@ -15,8 +15,8 @@ const { t } = useI18n({
 const props = defineProps<KnownSlotProps["topology-details"]>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
-const namespace = computed(() => attrs.namespace as string | undefined);
-const flowId = computed(() => attrs.flowId as string | undefined);
+const namespace = computed(() => props.namespace);
+const flowId = computed(() => props.flowId);
 
 const taskId = computed(() => props.task?.id as string | undefined);
 
