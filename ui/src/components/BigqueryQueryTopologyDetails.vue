@@ -352,7 +352,7 @@ function formatSlotMs(v?: number): string {
 
 .bq-grid {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 9rem 1fr;
     gap: 0.3rem 1rem;
     margin: 0;
 }
