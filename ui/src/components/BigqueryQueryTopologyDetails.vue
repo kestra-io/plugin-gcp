@@ -11,6 +11,26 @@ import * as OutputsAPI from "@kestra-io/kestra-sdk/outputs";
 const { t } = useI18n({
     inheritLocale: true,
     useScope: "local",
+    messages: {
+        en: {
+            project: "Project",
+            location: "Location",
+            duration: "Duration",
+            estimatedCost: "Estimated cost",
+            jobDetails: "Job details",
+            jobId: "Job ID",
+            rows: "Rows",
+            destination: "Destination",
+            costAndPerformance: "Cost and performance",
+            bytesBilled: "Bytes billed",
+            bytesProcessed: "Bytes processed",
+            slotTime: "Slot time",
+            cacheHit: "Cache hit",
+            yes: "Yes",
+            no: "No",
+            sql: "SQL",
+        },
+    },
 });
 
 const props = defineProps<KnownSlotProps["topology-details"]>();
@@ -390,25 +410,3 @@ function formatSlotMs(v?: number): string {
 }
 </style>
 
-<i18n lang="json">
-{
-    "en": {
-        "project": "Project",
-        "location": "Location",
-        "duration": "Duration",
-        "estimatedCost": "Estimated cost",
-        "jobDetails": "Job Details",
-        "jobId": "Job ID",
-        "rows": "Rows",
-        "destination": "Destination",
-        "costAndPerformance": "Cost & Performance",
-        "bytesBilled": "Bytes billed",
-        "bytesProcessed": "Bytes processed",
-        "slotTime": "Slot time",
-        "cacheHit": "Cache hit",
-        "yes": "Yes",
-        "no": "No",
-        "sql": "SQL"
-    }
-}
-</i18n>
