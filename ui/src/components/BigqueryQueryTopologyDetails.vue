@@ -236,13 +236,13 @@ function formatSlotMs(v?: number): string {
 
 <template>
     <div class="bq-details">
-        <dl class="bq-grid">
+        <dl :class="['bq-grid', isFullView && 'bq-grid--full']">
             <dt>{{ t("project") }}</dt>
             <dd>{{ resolvedProject ?? "—" }}</dd>
             <dt>{{ t("location") }}</dt>
             <dd>{{ resolvedLocation ?? "—" }}</dd>
         </dl>
-        <dl v-if="hasExecution" class="bq-grid">
+        <dl v-if="hasExecution" :class="['bq-grid', isFullView && 'bq-grid--full']">
             <dt>{{ t("duration") }}</dt>
             <dd>{{ formatDuration(durationMs) }}</dd>
             <dt>{{ t("estimatedCost") }}</dt>
@@ -352,9 +352,13 @@ function formatSlotMs(v?: number): string {
 
 .bq-grid {
     display: grid;
-    grid-template-columns: 9rem 1fr;
+    grid-template-columns: auto 1fr;
     gap: 0.3rem 1rem;
     margin: 0;
+}
+
+.bq-grid--full {
+    grid-template-columns: 9rem 1fr;
 }
 
 .bq-grid > div {
