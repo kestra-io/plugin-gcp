@@ -50,6 +50,11 @@ watch(
     { immediate: true },
 );
 
+const sql = computed(
+    () =>
+        ((props.task as any).sql ?? flowTask.value?.sql) as string | undefined,
+);
+
 const projectId = computed(
     () =>
         ((props.task as any).projectId ?? flowTask.value?.projectId) as
@@ -223,6 +228,14 @@ function formatSlotMs(v?: number): string {
             </template>
         </dl>
 
+        <!-- SQL: full view only, pre- and post-execution -->
+        <template v-if="isFullView && sql">
+            <section class="bq-section bq-section--sql">
+                <h4 class="bq-section__title">{{ t("sql") }}</h4>
+                <pre class="bq-sql">{{ sql }}</pre>
+            </section>
+        </template>
+
         <!-- Post-execution only -->
         <template v-if="hasExecution">
             <!-- Full details: only when displayMode="full" (rendered in the drawer) -->
@@ -310,13 +323,17 @@ function formatSlotMs(v?: number): string {
     margin-bottom: 0;
 }
 
+.bq-section--sql {
+    margin-top: 0.75rem;
+}
+
 .bq-section__title {
     margin: 0 0 0.25rem;
     font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--ks-color-text-secondary, #6b7280);
+    color: var(--ks-text-secondary, #9797a6);
 }
 
 .bq-grid {
@@ -328,7 +345,7 @@ function formatSlotMs(v?: number): string {
 
 .bq-grid dt {
     font-weight: 500;
-    color: var(--ks-color-text-secondary, #6b7280);
+    color: var(--ks-text-secondary, #9797a6);
     white-space: nowrap;
 }
 
@@ -346,7 +363,7 @@ function formatSlotMs(v?: number): string {
 
 .bq-hint {
     font-size: 0.7rem;
-    color: var(--ks-color-text-secondary, #6b7280);
+    color: var(--ks-text-secondary, #9797a6);
 }
 
 .bq-badge {
@@ -363,8 +380,24 @@ function formatSlotMs(v?: number): string {
 }
 
 .bq-badge--miss {
-    background: var(--ks-color-surface-subtle, #f3f4f6);
-    color: var(--ks-color-text-secondary, #6b7280);
+    background: var(--ks-bg-base, #14181f);
+    color: var(--ks-text-secondary, #9797a6);
+}
+
+.bq-sql {
+    margin: 0;
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+    border-left: 2px solid var(--ks-border-default, #2c303f);
+    background: var(--ks-bg-input, #14181f);
+    color: var(--ks-text-primary, #ffffff);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
 }
 </style>
 
@@ -385,7 +418,8 @@ function formatSlotMs(v?: number): string {
         "slotTime": "Slot time",
         "cacheHit": "Cache hit",
         "yes": "Yes",
-        "no": "No"
+        "no": "No",
+        "sql": "SQL"
     }
 }
 </i18n>
