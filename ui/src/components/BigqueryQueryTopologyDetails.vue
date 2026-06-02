@@ -2,6 +2,7 @@
 import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
+import { KsMarkdown } from "@kestra-io/design-system";
 import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
 import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
 import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
@@ -53,6 +54,10 @@ watch(
 const sql = computed(
     () =>
         ((props.task as any).sql ?? flowTask.value?.sql) as string | undefined,
+);
+
+const sqlMarkdown = computed(() =>
+    sql.value ? "```sql\n" + sql.value + "\n```" : "",
 );
 
 const projectId = computed(
@@ -211,98 +216,89 @@ function formatSlotMs(v?: number): string {
 
 <template>
     <div class="bq-details">
-        <!-- Single unified grid: always shows Project + Location; adds Duration + Estimated Cost post-execution -->
         <dl class="bq-grid">
             <dt>{{ t("project") }}</dt>
             <dd>{{ resolvedProject ?? "—" }}</dd>
             <dt>{{ t("location") }}</dt>
             <dd>{{ resolvedLocation ?? "—" }}</dd>
-            <template v-if="hasExecution">
-                <dt>{{ t("duration") }}</dt>
-                <dd>{{ formatDuration(durationMs) }}</dd>
+        </dl>
+        <dl v-if="hasExecution" class="bq-grid">
+            <dt>{{ t("duration") }}</dt>
+            <dd>{{ formatDuration(durationMs) }}</dd>
+            <dt>{{ t("estimatedCost") }}</dt>
+            <dd>
+                {{ formatCost(bytesBilled) }}
+                <span class="bq-hint">@$5/TB</span>
+            </dd>
+        </dl>
+
+        <!-- SQL: full view only, pre- and post-execution -->
+        <section v-if="isFullView && sql" class="bq-section bq-section--sql">
+            <h4 class="bq-section__title">{{ t("sql") }}</h4>
+            <div class="bq-sql">
+                <KsMarkdown :content="sqlMarkdown" />
+            </div>
+        </section>
+
+        <!-- Job details: full view, post-execution only -->
+        <section v-if="hasExecution && isFullView" class="bq-section">
+            <h4 class="bq-section__title">{{ t("jobDetails") }}</h4>
+            <dl class="bq-grid">
+                <dt>{{ t("jobId") }}</dt>
+                <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
+                <dt>{{ t("rows") }}</dt>
+                <dd>
+                    {{
+                        taskOutputs?.size !== undefined
+                            ? taskOutputs.size.toLocaleString()
+                            : "—"
+                    }}
+                </dd>
+                <div v-if="taskOutputs?.destinationTable">
+                    <dt>{{ t("destination") }}</dt>
+                    <dd class="bq-mono">
+                        {{
+                            [
+                                taskOutputs.destinationTable.project,
+                                taskOutputs.destinationTable.dataset,
+                                taskOutputs.destinationTable.table,
+                            ].join(".")
+                        }}
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <!-- Cost & performance: full view, post-execution only -->
+        <section v-if="hasExecution && isFullView" class="bq-section">
+            <h4 class="bq-section__title">{{ t("costAndPerformance") }}</h4>
+            <dl class="bq-grid">
+                <dt>{{ t("bytesBilled") }}</dt>
+                <dd>{{ formatBytes(bytesBilled) }}</dd>
                 <dt>{{ t("estimatedCost") }}</dt>
                 <dd>
                     {{ formatCost(bytesBilled) }}
                     <span class="bq-hint">@$5/TB</span>
                 </dd>
-            </template>
-        </dl>
-
-        <!-- SQL: full view only, pre- and post-execution -->
-        <template v-if="isFullView && sql">
-            <section class="bq-section bq-section--sql">
-                <h4 class="bq-section__title">{{ t("sql") }}</h4>
-                <pre class="bq-sql">{{ sql }}</pre>
-            </section>
-        </template>
-
-        <!-- Post-execution only -->
-        <template v-if="hasExecution">
-            <!-- Full details: only when displayMode="full" (rendered in the drawer) -->
-            <template v-if="isFullView">
-                <section class="bq-section">
-                    <h4 class="bq-section__title">{{ t("jobDetails") }}</h4>
-                    <dl class="bq-grid">
-                        <dt>{{ t("jobId") }}</dt>
-                        <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
-                        <dt>{{ t("rows") }}</dt>
-                        <dd>
-                            {{
-                                taskOutputs?.size !== undefined
-                                    ? taskOutputs.size.toLocaleString()
-                                    : "—"
-                            }}
-                        </dd>
-                        <template v-if="taskOutputs?.destinationTable">
-                            <dt>{{ t("destination") }}</dt>
-                            <dd class="bq-mono">
-                                {{
-                                    [
-                                        taskOutputs.destinationTable.project,
-                                        taskOutputs.destinationTable.dataset,
-                                        taskOutputs.destinationTable.table,
-                                    ].join(".")
-                                }}
-                            </dd>
-                        </template>
-                    </dl>
-                </section>
-
-                <section class="bq-section">
-                    <h4 class="bq-section__title">
-                        {{ t("costAndPerformance") }}
-                    </h4>
-                    <dl class="bq-grid">
-                        <dt>{{ t("bytesBilled") }}</dt>
-                        <dd>{{ formatBytes(bytesBilled) }}</dd>
-                        <dt>{{ t("estimatedCost") }}</dt>
-                        <dd>
-                            {{ formatCost(bytesBilled) }}
-                            <span class="bq-hint">@$5/TB</span>
-                        </dd>
-                        <dt>{{ t("bytesProcessed") }}</dt>
-                        <dd>{{ formatBytes(bytesProcessed) }}</dd>
-                        <dt>{{ t("slotTime") }}</dt>
-                        <dd>{{ formatSlotMs(slotMs) }}</dd>
-                        <dt>{{ t("duration") }}</dt>
-                        <dd>{{ formatDuration(durationMs) }}</dd>
-                        <dt>{{ t("cacheHit") }}</dt>
-                        <dd>
-                            <span
-                                :class="[
-                                    'bq-badge',
-                                    cacheHit
-                                        ? 'bq-badge--hit'
-                                        : 'bq-badge--miss',
-                                ]"
-                            >
-                                {{ cacheHit ? t("yes") : t("no") }}
-                            </span>
-                        </dd>
-                    </dl>
-                </section>
-            </template>
-        </template>
+                <dt>{{ t("bytesProcessed") }}</dt>
+                <dd>{{ formatBytes(bytesProcessed) }}</dd>
+                <dt>{{ t("slotTime") }}</dt>
+                <dd>{{ formatSlotMs(slotMs) }}</dd>
+                <dt>{{ t("duration") }}</dt>
+                <dd>{{ formatDuration(durationMs) }}</dd>
+                <dt>{{ t("cacheHit") }}</dt>
+                <dd>
+                    <span
+                        :class="[
+                            'bq-badge',
+                            cacheHit ? 'bq-badge--hit' : 'bq-badge--miss',
+                        ]"
+                    >
+                        {{ cacheHit ? t("yes") : t("no") }}
+                    </span>
+                </dd>
+            </dl>
+        </section>
     </div>
 </template>
 
@@ -310,13 +306,13 @@ function formatSlotMs(v?: number): string {
 .bq-details {
     position: relative;
     z-index: 1;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.7rem;
-    line-height: 1.4;
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
 }
 
 .bq-section {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .bq-section:last-child {
@@ -324,23 +320,25 @@ function formatSlotMs(v?: number): string {
 }
 
 .bq-section--sql {
-    margin-top: 0.75rem;
+    margin-top: 1rem;
 }
 
 .bq-section__title {
-    margin: 0 0 0.25rem;
-    font-size: 0.6875rem;
+    margin: 0 0 0.375rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--ks-text-secondary, #9797a6);
 }
 
 .bq-grid {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 0.15rem 0.625rem;
+    gap: 0.3rem 1rem;
     margin: 0;
+}
+
+.bq-grid > div {
+    display: contents;
 }
 
 .bq-grid dt {
@@ -385,19 +383,10 @@ function formatSlotMs(v?: number): string {
 }
 
 .bq-sql {
-    margin: 0;
-    padding: 0.4rem 0.5rem;
-    border-radius: 4px;
-    border-left: 2px solid var(--ks-border-default, #2c303f);
-    background: var(--ks-bg-input, #14181f);
-    color: var(--ks-text-primary, #ffffff);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.7rem;
-    white-space: pre-wrap;
-    word-break: break-all;
-    overflow-x: auto;
     max-height: 300px;
     overflow-y: auto;
+    border-radius: 4px;
+    font-size: 0.8125rem;
 }
 </style>
 
