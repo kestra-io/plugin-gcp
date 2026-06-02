@@ -16,6 +16,7 @@ import io.kestra.core.utils.TestsUtils;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -42,7 +43,7 @@ public class QueryConfigTest {
             .labels(Property.ofValue(initialLabels))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+        RunContext runContext = TestsUtils.mockRunContext(MAIN_TENANT, runContextFactory, task, ImmutableMap.of());
 
         var labels = task.jobConfiguration(runContext).getLabels();
 
