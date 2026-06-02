@@ -44,7 +44,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     tasks:
                       - id: log
                         type: io.kestra.plugin.core.log.Log
-                        message: "Metric: {{ json(taskrun.value) }}"
+                        message: "Metric: {{ fromJson(taskrun.value) }}"
 
                 triggers:
                   - id: watch
@@ -77,7 +77,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Service account",
         description = "Optional service account email to authenticate the Monitoring client; falls back to application default credentials"
     )
-    @PluginProperty(secret = true, group = "execution")
+    @PluginProperty(group = "execution")
     protected Property<String> serviceAccount;
 
     @Schema(
