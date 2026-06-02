@@ -65,7 +65,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                   - id: storage_write
                     type: io.kestra.plugin.gcp.bigquery.StorageWrite
                     from: "{{ outputs.read_data.uri }}"
-                    destinationTable: "my_project.my_dataset.my_table"
+                    destinationTable: "my-project.my_dataset.my_table"
                     writeStreamType: DEFAULT
                 """
         )
