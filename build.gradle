@@ -23,7 +23,7 @@ repositories {
     }
 }
 
-final targetJavaVersion = JavaVersion.VERSION_21
+final targetJavaVersion = JavaVersion.VERSION_25
 
 java {
     sourceCompatibility = targetJavaVersion
@@ -139,29 +139,6 @@ dependencies {
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id'
     testImplementation 'org.mockito:mockito-junit-jupiter'
-}
-
-/**********************************************************************************************************************\
- * Allure Reports
- **********************************************************************************************************************/
-dependencies {
-    testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
-    testImplementation "io.qameta.allure:allure-junit5"
-}
-
-configurations {
-    agent {
-        canBeResolved = true
-        canBeConsumed = true
-    }
-}
-
-dependencies {
-    agent "org.aspectj:aspectjweaver:1.9.25.1"
-}
-
-test {
-    jvmArgs = [ "-javaagent:${configurations.agent.singleFile}" ]
 }
 
 /**********************************************************************************************************************\
