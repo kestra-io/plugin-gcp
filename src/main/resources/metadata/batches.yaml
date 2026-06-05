@@ -1,6 +1,6 @@
 group: io.kestra.plugin.gcp.dataproc.batches
 name: "batches"
-title: "Dataproc Batches"
+title: "Google Cloud Dataproc Batches"
 description: "Run Spark and Hadoop jobs on-demand without managing clusters. Process large-scale data with Dataproc Batches."
 body: ""
 videos:
