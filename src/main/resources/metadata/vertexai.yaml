@@ -1,6 +1,6 @@
 group: io.kestra.plugin.gcp.vertexai
 name: "vertexai"
-title: "Vertex AI"
+title: "Google Cloud Vertex AI"
 description: "Integrate machine learning models into your workflows. Train, deploy, and invoke ML models with Vertex AI."
 body: ""
 videos:

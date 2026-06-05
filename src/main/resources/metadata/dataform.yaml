@@ -1,6 +1,6 @@
 group: io.kestra.plugin.gcp.dataform
 name: "dataform"
-title: "DataForm"
+title: "Google Cloud DataForm"
 description: "Automate data transformation workflows with DataForm. Execute SQL-based ELT pipelines with built-in lineage and testing."
 body: ""
 videos: []
