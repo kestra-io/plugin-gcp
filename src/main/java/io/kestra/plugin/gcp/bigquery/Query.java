@@ -658,7 +658,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
 
         try (
-            var output = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)
+            var output = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)
         ) {
             Flux<Object> flowable = Flux.fromStream(
                 StreamSupport.stream(result.iterateAll().spliterator(), false)

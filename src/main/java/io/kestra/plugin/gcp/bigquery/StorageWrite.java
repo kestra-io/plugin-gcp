@@ -1,8 +1,8 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -136,7 +136,7 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
         try (
             BigQueryWriteClient connection = this.connection(runContext);
-            BufferedReader inputStream = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE)
+            InputStream inputStream = new BufferedInputStream(runContext.storage().getFile(from), FileSerde.BUFFER_SIZE)
         ) {
             try (JsonStreamWriter writer = this.jsonStreamWriter(runContext, parentTable, connection).build()) {
                 Integer count = FileSerde.readAll(inputStream)
