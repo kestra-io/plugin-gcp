@@ -9,10 +9,11 @@ export default defaultViteConfig({
                 slotName: "topology-details",
                 path: "./src/components/BigqueryQueryTopologyDetails.vue",
                 additionalProperties: {
-                    // Height without execution: header (44) + Project/Location rows (~64)
-                    height: 108,
-                    // Height with execution: header (44) + 4 rows (~64) + 3 gaps (~7) + padding (~16) + small buffer (~4)
-                    heightWithExecution: 135,
+                    // node base (56) + KsTopologyDetails rows (~31px each)
+                    // no execution: Project + Location (2 rows)
+                    height: 120,
+                    // with execution: + Duration + Estimated cost (4 rows)
+                    heightWithExecution: 185,
                     customAction: { label: "Show Details", taskProp: "sql", lang: "sql" },
                 },
             },
