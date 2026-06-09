@@ -2,7 +2,7 @@
 import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
-import { KsMarkdown } from "@kestra-io/design-system";
+import { KsMarkdown, KsTopologyDetails } from "@kestra-io/design-system";
 import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
 import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
 import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
@@ -232,185 +232,78 @@ function formatDuration(ms?: number): string {
 function formatSlotMs(v?: number): string {
     return v === undefined ? "—" : `${v.toLocaleString()} slot·ms`;
 }
+
+const summaryRows = computed(() => {
+    const rows = [
+        { label: t("project"), value: resolvedProject.value ?? "—" },
+        { label: t("location"), value: resolvedLocation.value ?? "—" },
+    ];
+    if (hasExecution.value) {
+        rows.push({ label: t("duration"), value: formatDuration(durationMs.value) });
+        rows.push({ label: t("estimatedCost"), value: `${formatCost(bytesBilled.value)} @$5/TB` });
+    }
+    return rows;
+});
+
+const jobRows = computed(() => {
+    const rows = [
+        { label: t("jobId"), value: (taskOutputs.value?.jobId as string) ?? "—" },
+        {
+            label: t("rows"),
+            value: taskOutputs.value?.size !== undefined ? taskOutputs.value.size.toLocaleString() : "—",
+        },
+    ];
+    const dt = taskOutputs.value?.destinationTable;
+    if (dt) {
+        rows.push({ label: t("destination"), value: [dt.project, dt.dataset, dt.table].join(".") });
+    }
+    return rows;
+});
+
+const perfRows = computed(() => [
+    { label: t("bytesBilled"), value: formatBytes(bytesBilled.value) },
+    { label: t("estimatedCost"), value: `${formatCost(bytesBilled.value)} @$5/TB` },
+    { label: t("bytesProcessed"), value: formatBytes(bytesProcessed.value) },
+    { label: t("slotTime"), value: formatSlotMs(slotMs.value) },
+    { label: t("duration"), value: formatDuration(durationMs.value) },
+    { label: t("cacheHit"), value: cacheHit.value ? t("yes") : t("no") },
+]);
 </script>
 
 <template>
     <div class="bq-details">
-        <dl :class="['bq-grid', isFullView && 'bq-grid--full']">
-            <dt>{{ t("project") }}</dt>
-            <dd>{{ resolvedProject ?? "—" }}</dd>
-            <dt>{{ t("location") }}</dt>
-            <dd>{{ resolvedLocation ?? "—" }}</dd>
-        </dl>
-        <dl v-if="hasExecution" :class="['bq-grid', isFullView && 'bq-grid--full']">
-            <dt>{{ t("duration") }}</dt>
-            <dd>{{ formatDuration(durationMs) }}</dd>
-            <dt>{{ t("estimatedCost") }}</dt>
-            <dd>
-                {{ formatCost(bytesBilled) }}
-                <span class="bq-hint">@$5/TB</span>
-            </dd>
-        </dl>
+        <KsTopologyDetails :rows="summaryRows" />
 
         <!-- SQL: full view only, pre- and post-execution -->
-        <section v-if="isFullView && sql" class="bq-section bq-section--sql">
+        <section v-if="isFullView && sql" class="bq-section">
             <h4 class="bq-section__title">{{ t("sql") }}</h4>
-            <div class="bq-sql">
-                <KsMarkdown :content="sqlMarkdown" />
-            </div>
+            <KsMarkdown :content="sqlMarkdown" />
         </section>
 
         <!-- Job details: full view, post-execution only -->
         <section v-if="hasExecution && isFullView" class="bq-section">
             <h4 class="bq-section__title">{{ t("jobDetails") }}</h4>
-            <dl class="bq-grid">
-                <dt>{{ t("jobId") }}</dt>
-                <dd class="bq-mono">{{ taskOutputs?.jobId ?? "—" }}</dd>
-                <dt>{{ t("rows") }}</dt>
-                <dd>
-                    {{
-                        taskOutputs?.size !== undefined
-                            ? taskOutputs.size.toLocaleString()
-                            : "—"
-                    }}
-                </dd>
-                <div v-if="taskOutputs?.destinationTable">
-                    <dt>{{ t("destination") }}</dt>
-                    <dd class="bq-mono">
-                        {{
-                            [
-                                taskOutputs.destinationTable.project,
-                                taskOutputs.destinationTable.dataset,
-                                taskOutputs.destinationTable.table,
-                            ].join(".")
-                        }}
-                    </dd>
-                </div>
-            </dl>
+            <KsTopologyDetails :rows="jobRows" />
         </section>
 
         <!-- Cost & performance: full view, post-execution only -->
         <section v-if="hasExecution && isFullView" class="bq-section">
             <h4 class="bq-section__title">{{ t("costAndPerformance") }}</h4>
-            <dl class="bq-grid">
-                <dt>{{ t("bytesBilled") }}</dt>
-                <dd>{{ formatBytes(bytesBilled) }}</dd>
-                <dt>{{ t("estimatedCost") }}</dt>
-                <dd>
-                    {{ formatCost(bytesBilled) }}
-                    <span class="bq-hint">@$5/TB</span>
-                </dd>
-                <dt>{{ t("bytesProcessed") }}</dt>
-                <dd>{{ formatBytes(bytesProcessed) }}</dd>
-                <dt>{{ t("slotTime") }}</dt>
-                <dd>{{ formatSlotMs(slotMs) }}</dd>
-                <dt>{{ t("duration") }}</dt>
-                <dd>{{ formatDuration(durationMs) }}</dd>
-                <dt>{{ t("cacheHit") }}</dt>
-                <dd>
-                    <span
-                        :class="[
-                            'bq-badge',
-                            cacheHit ? 'bq-badge--hit' : 'bq-badge--miss',
-                        ]"
-                    >
-                        {{ cacheHit ? t("yes") : t("no") }}
-                    </span>
-                </dd>
-            </dl>
+            <KsTopologyDetails :rows="perfRows" />
         </section>
     </div>
 </template>
 
 <style scoped>
-.bq-details {
-    position: relative;
-    z-index: 1;
-    padding: 0.75rem 1rem;
-    font-size: 0.8125rem;
-    line-height: 1.5;
-}
-
 .bq-section {
-    margin-bottom: 0.75rem;
-}
-
-.bq-section:last-child {
-    margin-bottom: 0;
-}
-
-.bq-section--sql {
-    margin-top: 1rem;
+    margin: var(--ks-spacing-3) var(--ks-spacing-3) 0;
 }
 
 .bq-section__title {
-    margin: 0 0 0.375rem;
-    font-size: 0.75rem;
+    margin: 0 0 var(--ks-spacing-2);
+    font-size: var(--ks-font-size-xs);
     font-weight: 600;
-    color: var(--ks-text-secondary, #9797a6);
-}
-
-.bq-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.3rem 1rem;
-    margin: 0;
-}
-
-.bq-grid--full {
-    grid-template-columns: 9rem 1fr;
-}
-
-.bq-grid > div {
-    display: contents;
-}
-
-.bq-grid dt {
-    font-weight: 500;
-    color: var(--ks-text-secondary, #9797a6);
-    white-space: nowrap;
-}
-
-.bq-grid dd {
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.bq-mono {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.7rem;
-}
-
-.bq-hint {
-    font-size: 0.7rem;
-    color: var(--ks-text-secondary, #9797a6);
-}
-
-.bq-badge {
-    display: inline-block;
-    padding: 0.1rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.7rem;
-    font-weight: 600;
-}
-
-.bq-badge--hit {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.bq-badge--miss {
-    background: var(--ks-bg-base, #14181f);
-    color: var(--ks-text-secondary, #9797a6);
-}
-
-.bq-sql {
-    max-height: 300px;
-    overflow-y: auto;
-    border-radius: 4px;
-    font-size: 0.8125rem;
+    color: var(--ks-text-secondary);
 }
 </style>
 
