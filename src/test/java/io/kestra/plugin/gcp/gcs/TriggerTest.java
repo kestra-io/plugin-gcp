@@ -159,6 +159,41 @@ class TriggerTest {
     }
 
     @Test
+    void shouldFireWhenActionNotConfigured() throws Exception {
+        // Regression test for Pylon #1888: when no `action` is set, evaluating a trigger
+        // that detects files must not fail with "No value present" (NoSuchElementException).
+        String base = "trigger/no-action/" + IdUtils.create() + "/";
+        String file = base + FriendlyId.createFriendlyId();
+
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
+            .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
+            .build();
+
+        Upload.Output upload = testUtils.upload(file);
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = Assertions.assertDoesNotThrow(
+            () -> trigger.evaluate(context.getKey(), context.getValue())
+        );
+
+        assertThat(execution.isPresent(), is(true));
+
+        @SuppressWarnings("unchecked")
+        java.util.List<Blob> urls = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
+        assertThat(urls.size(), is(1));
+
+        Delete delete = Delete.builder()
+            .id(DownloadTest.class.getSimpleName())
+            .type(Download.class.getName())
+            .uri(Property.ofValue(upload.getUri().toString()))
+            .build();
+        delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
+    }
+
+    @Test
     void shouldExecuteOnCreate() throws Exception {
         String base = "trigger/on-create/" + IdUtils.create() + "/";
         String file = base + FriendlyId.createFriendlyId();
