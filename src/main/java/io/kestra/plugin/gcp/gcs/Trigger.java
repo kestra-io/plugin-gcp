@@ -120,7 +120,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         title = "Post-detection action",
         description = "NONE (default), MOVE (requires moveDirectory), or DELETE on source objects after download"
     )
-    private Property<ActionInterface.Action> action;
+    @Builder.Default
+    private final Property<ActionInterface.Action> action = Property.ofValue(ActionInterface.Action.NONE);
 
     @Schema(
         title = "Move destination",

@@ -104,9 +104,10 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
     @Schema(
         title = "Post-download action",
-        description = "DELETE or MOVE (copy to moveDirectory then delete source)"
+        description = "NONE (default), DELETE, or MOVE (copy to moveDirectory then delete source)"
     )
-    private Property<ActionInterface.Action> action;
+    @Builder.Default
+    private final Property<ActionInterface.Action> action = Property.ofValue(ActionInterface.Action.NONE);
 
     @Schema(
         title = "Move destination",
