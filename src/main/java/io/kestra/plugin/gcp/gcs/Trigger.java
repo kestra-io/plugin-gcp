@@ -106,7 +106,8 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
     private Property<String> from;
 
-    private Property<ActionInterface.Action> action;
+    @Builder.Default
+    private final Property<ActionInterface.Action> action = Property.of(ActionInterface.Action.NONE);
 
     private Property<String> moveDirectory;
 

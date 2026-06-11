@@ -64,7 +64,8 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
     private Property<String> regExp;
 
-    private Property<ActionInterface.Action> action;
+    @Builder.Default
+    private final Property<ActionInterface.Action> action = Property.of(ActionInterface.Action.NONE);
 
     private Property<String> moveDirectory;
 
