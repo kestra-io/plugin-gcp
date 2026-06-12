@@ -44,8 +44,8 @@ import io.kestra.core.models.annotations.PluginProperty;
                     type: io.kestra.plugin.gcp.bigquery.Copy
                     operationType: COPY
                     sourceTables:
-                      - "my_project.my_dataset.my_table$20130908"
-                    destinationTable: "my_project.my_dataset.my_table"
+                      - "my-project.my_dataset.my_table$20130908"
+                    destinationTable: "my-project.my_dataset.my_table"
                 """
         )
     },
