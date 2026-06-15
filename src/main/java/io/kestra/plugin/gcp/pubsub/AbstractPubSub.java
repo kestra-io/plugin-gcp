@@ -14,6 +14,7 @@ import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
 import com.google.pubsub.v1.*;
 
+import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -45,21 +46,34 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
      * Returns an emulator channel provider when PUBSUB_EMULATOR_HOST is set, null otherwise.
      * The Java Pub/Sub SDK does not honor PUBSUB_EMULATOR_HOST automatically — we must
      * configure the transport channel and credentials explicitly for every client type.
+     *
+     * The singleton is initialized once per JVM from the env var value at first call.
+     * The no-op path (env unset) returns null without creating any channel.
      */
     static EmulatorConfig emulatorConfig() {
-        var host = System.getenv("PUBSUB_EMULATOR_HOST");
-        if (host == null || host.isBlank()) {
-            return null;
-        }
-        var channel = ManagedChannelBuilder.forTarget(host).usePlaintext().build();
-        var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
-        return new EmulatorConfig(channelProvider, NoCredentialsProvider.create());
+        return EmulatorConfigHolder.INSTANCE;
     }
 
     record EmulatorConfig(
         FixedTransportChannelProvider channelProvider,
         NoCredentialsProvider credentialsProvider
     ) {}
+
+    // Initialization-on-demand holder: the JVM guarantees this inner class is loaded lazily
+    // and initialized exactly once, with no explicit synchronization needed.
+    private static final class EmulatorConfigHolder {
+        static final EmulatorConfig INSTANCE = buildConfig();
+
+        private static EmulatorConfig buildConfig() {
+            var host = System.getenv("PUBSUB_EMULATOR_HOST");
+            if (host == null || host.isBlank()) {
+                return null;
+            }
+            ManagedChannel channel = ManagedChannelBuilder.forTarget(host).usePlaintext().build();
+            var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
+            return new EmulatorConfig(channelProvider, NoCredentialsProvider.create());
+        }
+    }
 
     Publisher createPublisher(PublisherOptions options) throws IOException, IllegalVariableEvaluationException {
         RunContext runContext = options.getRunContext();

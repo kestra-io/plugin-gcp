@@ -189,8 +189,9 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
             runContext.render(subscription).as(String.class).orElse(null),
             runContext.render(autoCreateSubscription).as(Boolean.class).orElse(true)
         );
+        var emulator = AbstractPubSub.emulatorConfig();
         // credentials are only needed when not running against the emulator
-        GoogleCredentials credentials = AbstractPubSub.emulatorConfig() == null ? task.credentials(runContext) : null;
+        GoogleCredentials credentials = emulator == null ? task.credentials(runContext) : null;
 
         var serdeTypeRendered = runContext.render(serdeType).as(SerdeType.class).orElseThrow();
         return Flux.create(
@@ -210,7 +211,6 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
                 };
 
                 var subscriberBuilder = Subscriber.newBuilder(subscriptionName, receiver);
-                var emulator = AbstractPubSub.emulatorConfig();
                 if (emulator != null) {
                     subscriberBuilder
                         .setChannelProvider(emulator.channelProvider())

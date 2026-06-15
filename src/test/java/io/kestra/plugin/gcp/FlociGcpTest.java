@@ -67,6 +67,10 @@ public abstract class FlociGcpTest {
 
     private static final AtomicBoolean started = new AtomicBoolean(false);
 
+    // Shared gRPC channel for the emulator admin clients — created once per JVM, never closed.
+    // Closing it while any admin client is still open would break subsequent test classes.
+    private static volatile io.grpc.ManagedChannel emulatorAdminChannel;
+
     @BeforeAll
     static synchronized void startEmulator() {
         if (started.compareAndSet(false, true)) {
@@ -126,7 +130,15 @@ public abstract class FlociGcpTest {
             EMULATOR_IMAGE
         ).redirectErrorStream(true).start();
 
-        process.waitFor(30, TimeUnit.SECONDS);
+        boolean exited = process.waitFor(30, TimeUnit.SECONDS);
+        if (!exited || process.exitValue() != 0) {
+            var output = new String(process.getInputStream().readAllBytes());
+            throw new IllegalStateException(
+                "docker run failed (exited=%s, code=%s): %s".formatted(
+                    exited, exited ? process.exitValue() : "timeout", output
+                )
+            );
+        }
 
         // Wait up to 60 seconds for the /health endpoint to respond.
         var deadline = System.currentTimeMillis() + 60_000;
@@ -140,14 +152,19 @@ public abstract class FlociGcpTest {
     }
 
     private static boolean isEmulatorHealthy() {
+        HttpURLConnection conn = null;
         try {
-            var conn = (HttpURLConnection) new URL("http://localhost:" + EMULATOR_PORT + "/health").openConnection();
+            conn = (HttpURLConnection) new URL("http://localhost:" + EMULATOR_PORT + "/health").openConnection();
             conn.setConnectTimeout(1_000);
             conn.setReadTimeout(1_000);
             conn.connect();
             return conn.getResponseCode() == 200;
         } catch (IOException e) {
             return false;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
@@ -171,17 +188,27 @@ public abstract class FlociGcpTest {
     }
 
     /**
+     * Returns a lazily-initialized shared gRPC channel targeting the Pub/Sub emulator.
+     * Shared across all admin client calls to avoid per-call channel leaks.
+     */
+    private static synchronized FixedTransportChannelProvider emulatorChannelProvider() {
+        if (emulatorAdminChannel == null) {
+            var host = System.getenv("PUBSUB_EMULATOR_HOST");
+            emulatorAdminChannel = ManagedChannelBuilder.forTarget(host).usePlaintext().build();
+        }
+        return FixedTransportChannelProvider.create(GrpcTransportChannel.create(emulatorAdminChannel));
+    }
+
+    /**
      * Creates a TopicAdminClient configured for the local Pub/Sub emulator.
      * The Java Pub/Sub SDK does not read PUBSUB_EMULATOR_HOST automatically.
      */
     public static TopicAdminClient topicAdminClient() throws IOException {
         var emulatorHost = System.getenv("PUBSUB_EMULATOR_HOST");
         if (emulatorHost != null && !emulatorHost.isBlank()) {
-            var channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext().build();
-            var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
             return TopicAdminClient.create(
                 TopicAdminSettings.newBuilder()
-                    .setTransportChannelProvider(channelProvider)
+                    .setTransportChannelProvider(emulatorChannelProvider())
                     .setCredentialsProvider(NoCredentialsProvider.create())
                     .build()
             );
@@ -196,11 +223,9 @@ public abstract class FlociGcpTest {
     public static SubscriptionAdminClient subscriptionAdminClient() throws IOException {
         var emulatorHost = System.getenv("PUBSUB_EMULATOR_HOST");
         if (emulatorHost != null && !emulatorHost.isBlank()) {
-            var channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext().build();
-            var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
             return SubscriptionAdminClient.create(
                 SubscriptionAdminSettings.newBuilder()
-                    .setTransportChannelProvider(channelProvider)
+                    .setTransportChannelProvider(emulatorChannelProvider())
                     .setCredentialsProvider(NoCredentialsProvider.create())
                     .build()
             );
