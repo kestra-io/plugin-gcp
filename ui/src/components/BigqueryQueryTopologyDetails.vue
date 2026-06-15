@@ -2,7 +2,7 @@
 import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
-import { KsMarkdown, KsTopologyDetails } from "@kestra-io/design-system";
+import { KsTopologyDetails } from "@kestra-io/design-system";
 import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
 import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
 import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
@@ -28,7 +28,6 @@ const { t } = useI18n({
             cacheHit: "Cache hit",
             yes: "Yes",
             no: "No",
-            sql: "SQL",
         },
     },
 });
@@ -69,15 +68,6 @@ watch(
             loadFlowTask();
     },
     { immediate: true },
-);
-
-const sql = computed(
-    () =>
-        ((props.task as any).sql ?? flowTask.value?.sql) as string | undefined,
-);
-
-const sqlMarkdown = computed(() =>
-    sql.value ? "```sql\n" + sql.value + "\n```" : "",
 );
 
 const projectId = computed(
@@ -273,12 +263,6 @@ const perfRows = computed(() => [
 <template>
     <div class="bq-details">
         <KsTopologyDetails :rows="summaryRows" />
-
-        <!-- SQL: full view only, pre- and post-execution -->
-        <section v-if="isFullView && sql" class="bq-section">
-            <h4 class="bq-section__title">{{ t("sql") }}</h4>
-            <KsMarkdown :content="sqlMarkdown" />
-        </section>
 
         <!-- Job details: full view, post-execution only -->
         <section v-if="hasExecution && isFullView" class="bq-section">
