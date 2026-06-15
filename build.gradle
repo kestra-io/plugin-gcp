@@ -43,8 +43,8 @@ tasks.withType(JavaCompile) {
 // enforcedPlatform can't be overridden by constraints, so force at the plugin level.
 configurations.all {
     resolutionStrategy {
-        force 'com.google.protobuf:protobuf-java:4.35.0'
-        force 'com.google.protobuf:protobuf-java-util:4.35.0'
+        force 'com.google.protobuf:protobuf-java:4.35.1'
+        force 'com.google.protobuf:protobuf-java-util:4.35.1'
     }
 }
 
