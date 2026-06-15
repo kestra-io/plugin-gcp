@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.gcs;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.devskiller.friendly_id.FriendlyId;
@@ -22,6 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@Tag("floci")
 class DownloadsTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;

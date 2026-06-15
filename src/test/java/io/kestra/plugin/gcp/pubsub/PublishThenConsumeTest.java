@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
@@ -35,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
+@Tag("floci")
 class PublishThenConsumeTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;

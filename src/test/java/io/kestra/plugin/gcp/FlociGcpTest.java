@@ -169,19 +169,20 @@ public abstract class FlociGcpTest {
     }
 
     /**
-     * Creates the shared GCS test bucket if it does not already exist.
-     * Routes to STORAGE_EMULATOR_HOST explicitly — the Java SDK does not honor
-     * that env var automatically, so we must call setHost().
+     * Creates the shared GCS test bucket against the emulator.
+     * Skipped when STORAGE_EMULATOR_HOST is not set — the bucket is only needed by emulator-backed tests.
      */
     private static void ensureGcsBucket() {
         var emulatorHost = System.getenv("STORAGE_EMULATOR_HOST");
-        var builder = StorageOptions.newBuilder()
-            .setCredentials(com.google.cloud.NoCredentials.getInstance())
-            .setProjectId(PROJECT_ID);
-        if (emulatorHost != null && !emulatorHost.isBlank()) {
-            builder.setHost(emulatorHost);
+        if (emulatorHost == null || emulatorHost.isBlank()) {
+            return;
         }
-        var storage = builder.build().getService();
+        var storage = StorageOptions.newBuilder()
+            .setCredentials(com.google.cloud.NoCredentials.getInstance())
+            .setProjectId(PROJECT_ID)
+            .setHost(emulatorHost)
+            .build()
+            .getService();
         if (storage.get(GCS_BUCKET) == null) {
             storage.create(BucketInfo.of(GCS_BUCKET));
         }

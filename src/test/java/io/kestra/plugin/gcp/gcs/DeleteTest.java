@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.net.URI;
 import java.util.Objects;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.devskiller.friendly_id.FriendlyId;
@@ -27,6 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@Tag("floci")
 class DeleteTest extends FlociGcpTest {
     @Inject
     private StorageInterface storageInterface;

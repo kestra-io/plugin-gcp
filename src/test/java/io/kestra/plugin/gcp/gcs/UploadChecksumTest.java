@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.zip.CRC32C;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
@@ -51,7 +52,8 @@ class UploadChecksumTest extends FlociGcpTest {
     // comparison step of validateChecksum=true would fail. Keep this test credential-gated.
     void defaultValidationPopulatesOutputChecksums() throws Exception {
         byte[] content = ("kestra-" + FriendlyId.createFriendlyId()).getBytes(StandardCharsets.UTF_8);
-        Upload task = uploadOf(content).build();
+        // No serviceAccount — falls back to ADC (GOOGLE_APPLICATION_CREDENTIALS) for real GCP.
+        Upload task = uploadWithoutServiceAccount(content).build();
 
         Upload.Output run = task.run(mockRunContext(task));
 
@@ -61,6 +63,7 @@ class UploadChecksumTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     void disablingValidationSkipsChecksumComputation() throws Exception {
         byte[] content = "no-checksum".getBytes(StandardCharsets.UTF_8);
         Upload task = uploadOf(content)
@@ -75,6 +78,7 @@ class UploadChecksumTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     void expectedMd5StillEnforcedWhenValidationDisabled() throws Exception {
         byte[] content = "explicit-assertion".getBytes(StandardCharsets.UTF_8);
         Upload task = uploadOf(content)
@@ -88,6 +92,7 @@ class UploadChecksumTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     void expectedMd5MismatchThrowsBeforeServerCheck() throws Exception {
         byte[] content = "mismatch".getBytes(StandardCharsets.UTF_8);
         Upload task = uploadOf(content)
@@ -99,6 +104,7 @@ class UploadChecksumTest extends FlociGcpTest {
         assertThat(ex.getMessage(), containsString("Source MD5 mismatch"));
     }
 
+    // Uses the fake service account so the emulator env vars route the call to the local container.
     private Upload.UploadBuilder<?, ?> uploadOf(byte[] content) throws Exception {
         URI source = storageInterface.put(
             TenantService.MAIN_TENANT,
@@ -111,6 +117,22 @@ class UploadChecksumTest extends FlociGcpTest {
             .id(UploadChecksumTest.class.getSimpleName())
             .type(Upload.class.getName())
             .serviceAccount(SERVICE_ACCOUNT)
+            .from(Property.ofValue(source.toString()))
+            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload-checksum/" + FriendlyId.createFriendlyId() + ".bin"));
+    }
+
+    // No serviceAccount — falls back to ADC for use against real GCP.
+    private Upload.UploadBuilder<?, ?> uploadWithoutServiceAccount(byte[] content) throws Exception {
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            new URI("/" + FriendlyId.createFriendlyId()),
+            new ByteArrayInputStream(content)
+        );
+
+        return Upload.builder()
+            .id(UploadChecksumTest.class.getSimpleName())
+            .type(Upload.class.getName())
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload-checksum/" + FriendlyId.createFriendlyId() + ".bin"));
     }

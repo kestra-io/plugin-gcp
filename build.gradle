@@ -91,13 +91,30 @@ dependencies {
 /**********************************************************************************************************************\
  * Test
  **********************************************************************************************************************/
+
+// Credential-gated suite: real GCP calls, no emulator env vars.
 test {
-    useJUnitPlatform()
-    // Point GCP SDK env vars at the fixed floci-gcp emulator port so GCS/Pub/Sub/Firestore
-    // tests use the local emulator without production credentials.
+    useJUnitPlatform {
+        excludeTags 'floci'
+    }
+}
+
+// Emulator-backed suite: runs @Tag("floci") tests against the local floci-gcp container.
+// Isolated in its own forked JVM so the emulator env vars cannot leak into the credential-gated suite.
+tasks.register('flociTest', Test) {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'floci'
+    }
     environment "STORAGE_EMULATOR_HOST", "http://localhost:4588"
     environment "PUBSUB_EMULATOR_HOST", "localhost:4588"
     environment "FIRESTORE_EMULATOR_HOST", "localhost:4588"
+}
+
+// Both suites must run under `check` (the command CI invokes via ./gradlew check).
+tasks.named('check') {
+    dependsOn 'flociTest'
 }
 
 testlogger {
@@ -166,6 +183,10 @@ dependencies {
 }
 
 test {
+    jvmArgs = [ "-javaagent:${configurations.agent.singleFile}" ]
+}
+
+flociTest {
     jvmArgs = [ "-javaagent:${configurations.agent.singleFile}" ]
 }
 

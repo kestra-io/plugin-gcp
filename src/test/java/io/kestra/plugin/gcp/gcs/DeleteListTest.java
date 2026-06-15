@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.gcs;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.devskiller.friendly_id.FriendlyId;
@@ -20,6 +21,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@Tag("floci")
 class DeleteListTest extends FlociGcpTest {
     @Inject
     private StorageInterface storageInterface;

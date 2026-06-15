@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
@@ -31,6 +32,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
+@Tag("floci")
 class TriggerTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;

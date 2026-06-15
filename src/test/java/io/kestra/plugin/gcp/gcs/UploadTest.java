@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.gcs;
 
 import java.net.URI;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.devskiller.friendly_id.FriendlyId;
@@ -16,6 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@Tag("floci")
 class UploadTest extends FlociGcpTest {
     @Inject
     private GcsTestUtils testUtils;

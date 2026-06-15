@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.firestore;
 
 import java.util.Map;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -17,6 +18,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
+@Tag("floci")
 class SetTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;

@@ -8,6 +8,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -62,6 +63,7 @@ class BucketTest extends FlociGcpTest {
         );
     }
 
+    // Builder for emulator-backed tests — uses the fake service account so AbstractGcs routes to the emulator.
     private CreateBucket.CreateBucketBuilder<?, ?> createBuilder() {
         return CreateBucket.builder()
             .id(BucketTest.class.getSimpleName())
@@ -71,7 +73,17 @@ class BucketTest extends FlociGcpTest {
             .projectId(Property.ofValue(project));
     }
 
+    // Builder for credential-gated tests — no service account, so AbstractGcs falls back to ADC.
+    private CreateBucket.CreateBucketBuilder<?, ?> createRealGcpBuilder() {
+        return CreateBucket.builder()
+            .id(BucketTest.class.getSimpleName())
+            .type(CreateBucket.class.getName())
+            .name(Property.ofExpression("{{bucket}}"))
+            .projectId(Property.ofValue(project));
+    }
+
     @Test
+    @Tag("floci")
     @Order(1)
     void create() throws Exception {
         CreateBucket task = createBuilder().build();
@@ -81,6 +93,7 @@ class BucketTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     @Order(2)
     void createException() {
         CreateBucket task = createBuilder().build();
@@ -92,6 +105,7 @@ class BucketTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     @Order(3)
     void createNoException() throws Exception {
         CreateBucket task = createBuilder()
@@ -107,9 +121,8 @@ class BucketTest extends FlociGcpTest {
     @Test
     @Order(4)
     @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-    // floci-gcp does not implement GCS website configuration (indexPage); skip against emulator.
     void createUpdate() throws Exception {
-        CreateBucket task = createBuilder()
+        CreateBucket task = createRealGcpBuilder()
             .indexPage(Property.ofValue("createUpdate"))
             .ifExists(Property.ofValue(CreateBucket.IfExists.UPDATE))
             .build();
@@ -123,12 +136,10 @@ class BucketTest extends FlociGcpTest {
     @Test
     @Order(5)
     @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-    // floci-gcp does not implement GCS website configuration (indexPage); skip against emulator.
     void update() throws Exception {
         UpdateBucket task = UpdateBucket.builder()
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
-            .serviceAccount(SERVICE_ACCOUNT)
             .name(Property.ofExpression("{{bucket}}"))
             .projectId(Property.ofExpression("{{project}}"))
             .indexPage(Property.ofValue("update"))
@@ -145,7 +156,7 @@ class BucketTest extends FlociGcpTest {
     @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
     void acl() throws Exception {
         // ACL operations require real GCP — not supported by floci-gcp emulator
-        CreateBucket task = createBuilder()
+        CreateBucket task = createRealGcpBuilder()
             .indexPage(Property.ofValue("createUpdate"))
             .acl(
                 Collections.singletonList(
@@ -189,7 +200,6 @@ class BucketTest extends FlociGcpTest {
         CreateBucketIamPolicy.CreateBucketIamPolicyBuilder<?, ?> builder = CreateBucketIamPolicy.builder()
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
-            .serviceAccount(SERVICE_ACCOUNT)
             .name(Property.ofExpression("{{bucket}}"))
             .projectId(Property.ofExpression("{{project}}"))
             .member(Property.ofValue("domain:kestra.io"))
@@ -208,6 +218,7 @@ class BucketTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     @Order(8)
     void delete() throws Exception {
         RunContext runContext = runContext();
@@ -284,6 +295,7 @@ class BucketTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     @Order(9)
     void createBucketWithDeleteLifecycleRule() throws Exception {
         String bucketId = "tu_lc_rule_delete_" + FriendlyId.createFriendlyId().toLowerCase();
@@ -305,6 +317,7 @@ class BucketTest extends FlociGcpTest {
     }
 
     @Test
+    @Tag("floci")
     @Order(10)
     void createBucketWithSetStorageClassLifecycleRule() throws Exception {
         String bucketId = "tu_lc_rule_class_" + FriendlyId.createFriendlyId().toLowerCase();
