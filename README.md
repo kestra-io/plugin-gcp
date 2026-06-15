@@ -48,6 +48,29 @@
 - Provides plugin components under `io.kestra.plugin.gcp`.
 - Includes classes such as `CredentialService`, `StoreFetchDestinationValidator`, `LoadCsvValidator`, `StoreFetchValidator`.
 
+## Running Tests
+
+### GCS, Pub/Sub, and Firestore — no GCP credentials needed
+
+These suites run against the [floci-gcp](https://github.com/floci-io/floci-gcp) local emulator.
+Docker must be available; the image is pulled automatically on first run.
+
+```bash
+./gradlew test
+```
+
+The Gradle test task sets `STORAGE_EMULATOR_HOST`, `PUBSUB_EMULATOR_HOST`, and
+`FIRESTORE_EMULATOR_HOST` automatically. No Google credentials are required.
+
+### BigQuery, Dataproc, Dataform, Monitoring, GKE, CLI, VertexAI
+
+These suites require a real GCP project. Export the path to a service-account key:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+./gradlew test
+```
+
 ## Documentation
 * Full documentation can be found under [kestra.io/docs](https://kestra.io/docs)
 * Documentation for developing a plugin is included in the [Plugin Developer Guide](https://kestra.io/docs/plugin-developer-guide/).

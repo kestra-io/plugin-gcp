@@ -1,12 +1,10 @@
 package io.kestra.plugin.gcp.pubsub;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.TopicAdminClient;
@@ -22,6 +20,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 
 import io.micronaut.context.annotation.Value;
@@ -32,12 +31,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class TriggerTest {
+class TriggerTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
-    @Value("${kestra.variables.globals.project}")
+    @Value("${kestra.tasks.pubsub.project}")
     private String project;
 
     @Test
@@ -49,6 +47,7 @@ class TriggerTest {
             var task = Publish.builder()
                 .id(Publish.class.getSimpleName())
                 .type(Publish.class.getName())
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .projectId(Property.ofValue(project))
                 .from(
@@ -64,6 +63,7 @@ class TriggerTest {
             var trigger = io.kestra.plugin.gcp.pubsub.Trigger.builder()
                 .id("watch")
                 .type(io.kestra.plugin.gcp.pubsub.Trigger.class.getName())
+                .serviceAccount(SERVICE_ACCOUNT)
                 .projectId(Property.ofValue(project))
                 .subscription(Property.ofValue(subscription))
                 .topic(Property.ofValue(topic))
@@ -92,7 +92,7 @@ class TriggerTest {
         ProjectTopicName topicName = ProjectTopicName.of(project, topicId);
         ProjectSubscriptionName subName = ProjectSubscriptionName.of(project, subId);
 
-        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
+        try (SubscriptionAdminClient subAdmin = subscriptionAdminClient()) {
             subAdmin.createSubscription(
                 subName,
                 topicName,
@@ -104,15 +104,15 @@ class TriggerTest {
     }
 
     private void deleteTopic(String topic) {
-        try (TopicAdminClient client = TopicAdminClient.create()) {
+        try (TopicAdminClient client = topicAdminClient()) {
             client.deleteTopic(ProjectTopicName.of(project, topic));
-        } catch (IOException e) {
+        } catch (Exception e) {
         }
     }
 
     private String createTopic() throws Exception {
         String topicId = "test-topic-" + IdUtils.create();
-        try (TopicAdminClient client = TopicAdminClient.create()) {
+        try (TopicAdminClient client = topicAdminClient()) {
             client.createTopic(ProjectTopicName.of(project, topicId));
         }
         return topicId;

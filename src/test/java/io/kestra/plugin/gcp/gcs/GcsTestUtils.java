@@ -21,6 +21,7 @@ import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -60,6 +61,7 @@ class GcsTestUtils {
         Upload task = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
+            .serviceAccount(FlociGcpTest.SERVICE_ACCOUNT)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource)))
             .build();
@@ -82,6 +84,7 @@ class GcsTestUtils {
         Upload task = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
+            .serviceAccount(FlociGcpTest.SERVICE_ACCOUNT)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
             .build();

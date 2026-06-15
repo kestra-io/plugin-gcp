@@ -8,7 +8,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -22,6 +21,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -31,8 +31,7 @@ import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class DownloadTest {
+class DownloadTest extends FlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -64,6 +63,7 @@ class DownloadTest {
         Upload upload = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
             .build();
@@ -73,6 +73,7 @@ class DownloadTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(uploadOutput.getUri().toString()))
             .build();
 
@@ -109,6 +110,7 @@ class DownloadTest {
         Upload upload = Upload.builder()
             .id(UploadTest.class.getSimpleName())
             .type(Upload.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
             .build();
@@ -118,6 +120,7 @@ class DownloadTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(uploadOutput.getUri().toString()))
             .validateChecksum(Property.ofValue(true))
             .build();

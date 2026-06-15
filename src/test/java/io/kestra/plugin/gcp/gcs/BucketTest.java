@@ -25,6 +25,7 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.plugin.gcp.FlociGcpTest;
 import io.kestra.plugin.gcp.gcs.models.AccessControl;
 import io.kestra.plugin.gcp.gcs.models.BucketLifecycleRule;
 import io.kestra.plugin.gcp.gcs.models.Entity;
@@ -37,9 +38,8 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class BucketTest {
+class BucketTest extends FlociGcpTest {
     private static final String RANDOM_ID = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
     private static final String RANDOM_ID_2 = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
 
@@ -66,6 +66,7 @@ class BucketTest {
         return CreateBucket.builder()
             .id(BucketTest.class.getSimpleName())
             .type(CreateBucket.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .name(Property.ofExpression("{{bucket}}"))
             .projectId(Property.ofValue(project));
     }
@@ -105,6 +106,8 @@ class BucketTest {
 
     @Test
     @Order(4)
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
+    // floci-gcp does not implement GCS website configuration (indexPage); skip against emulator.
     void createUpdate() throws Exception {
         CreateBucket task = createBuilder()
             .indexPage(Property.ofValue("createUpdate"))
@@ -119,10 +122,13 @@ class BucketTest {
 
     @Test
     @Order(5)
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
+    // floci-gcp does not implement GCS website configuration (indexPage); skip against emulator.
     void update() throws Exception {
         UpdateBucket task = UpdateBucket.builder()
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .name(Property.ofExpression("{{bucket}}"))
             .projectId(Property.ofExpression("{{project}}"))
             .indexPage(Property.ofValue("update"))
@@ -136,7 +142,9 @@ class BucketTest {
 
     @Test
     @Order(6)
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
     void acl() throws Exception {
+        // ACL operations require real GCP — not supported by floci-gcp emulator
         CreateBucket task = createBuilder()
             .indexPage(Property.ofValue("createUpdate"))
             .acl(
@@ -175,10 +183,13 @@ class BucketTest {
 
     @Test
     @Order(7)
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
     void iamPolicy() throws Exception {
+        // IAM policy operations require real GCP — not supported by floci-gcp emulator
         CreateBucketIamPolicy.CreateBucketIamPolicyBuilder<?, ?> builder = CreateBucketIamPolicy.builder()
             .id(UpdateBucket.class.getSimpleName())
             .type(CreateBucket.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .name(Property.ofExpression("{{bucket}}"))
             .projectId(Property.ofExpression("{{project}}"))
             .member(Property.ofValue("domain:kestra.io"))
@@ -204,6 +215,7 @@ class BucketTest {
         DeleteBucket task = DeleteBucket.builder()
             .id(BucketTest.class.getSimpleName())
             .type(DeleteBucket.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .name(Property.ofExpression("{{bucket}}"))
             .projectId(Property.ofExpression("{{project}}"))
             .build();
@@ -211,17 +223,20 @@ class BucketTest {
         DeleteBucket.Output run = task.run(runContext);
         assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
 
+        // RANDOM_ID_2 bucket may not exist if acl() test was skipped; ignore failure
         runContext = runContext(RANDOM_ID_2);
-
-        task = DeleteBucket.builder()
-            .id(BucketTest.class.getSimpleName())
-            .type(DeleteBucket.class.getName())
-            .name(Property.ofExpression("{{bucket}}"))
-            .projectId(Property.ofExpression("{{project}}"))
-            .build();
-
-        run = task.run(runContext);
-        assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
+        try {
+            task = DeleteBucket.builder()
+                .id(BucketTest.class.getSimpleName())
+                .type(DeleteBucket.class.getName())
+                .serviceAccount(SERVICE_ACCOUNT)
+                .name(Property.ofExpression("{{bucket}}"))
+                .projectId(Property.ofExpression("{{project}}"))
+                .build();
+            task.run(runContext);
+        } catch (Exception ignored) {
+            // bucket may not exist if acl() test was credential-gated and skipped
+        }
     }
 
     @SuppressWarnings("unchecked")

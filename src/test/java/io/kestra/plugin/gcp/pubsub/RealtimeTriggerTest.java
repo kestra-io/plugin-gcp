@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.common.collect.ImmutableMap;
@@ -21,6 +20,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 
 import io.micronaut.context.annotation.Value;
@@ -32,22 +32,24 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class RealtimeTriggerTest {
+class RealtimeTriggerTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
-    @Value("${kestra.variables.globals.project}")
+    @Value("${kestra.tasks.pubsub.project}")
     private String project;
 
     @Test
     void flow() throws Exception {
-        var subscription = createSubscription("test-topic");
+        String topicId = "test-topic-" + IdUtils.create();
+        createTopic(topicId);
+        var subscription = createSubscription(topicId);
 
         var task = Publish.builder()
             .id(Publish.class.getSimpleName())
             .type(Publish.class.getName())
-            .topic(Property.ofValue("test-topic"))
+            .serviceAccount(SERVICE_ACCOUNT)
+            .topic(Property.ofValue(topicId))
             .projectId(Property.ofValue(this.project))
             .from(
                 List.of(
@@ -61,9 +63,10 @@ class RealtimeTriggerTest {
         var trigger = RealtimeTrigger.builder()
             .id("watch")
             .type(RealtimeTrigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .projectId(Property.ofValue(project))
             .subscription(Property.ofValue(subscription))
-            .topic(Property.ofValue("test-topic"))
+            .topic(Property.ofValue(topicId))
             .build();
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
@@ -81,13 +84,19 @@ class RealtimeTriggerTest {
         }
     }
 
+    private void createTopic(String topicId) throws Exception {
+        try (var client = topicAdminClient()) {
+            client.createTopic(ProjectTopicName.of(project, topicId));
+        }
+    }
+
     private String createSubscription(String topicId) throws Exception {
         String subId = "test-subscription-" + IdUtils.create();
 
         ProjectTopicName topicName = ProjectTopicName.of(project, topicId);
         ProjectSubscriptionName subName = ProjectSubscriptionName.of(project, subId);
 
-        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
+        try (SubscriptionAdminClient subAdmin = subscriptionAdminClient()) {
             subAdmin.createSubscription(
                 subName,
                 topicName,
@@ -96,12 +105,5 @@ class RealtimeTriggerTest {
             );
         }
         return subId;
-    }
-
-    private void deleteSubscription(String subscriptionId) {
-        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
-            subAdmin.deleteSubscription(ProjectSubscriptionName.of(project, subscriptionId));
-        } catch (Exception ignored) {
-        }
     }
 }

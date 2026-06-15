@@ -11,7 +11,7 @@ kestra:
       base-path: /tmp/unittest
   tasks:
     gcs:
-      project: "kestra-unit-test"
+      project: "floci-local"
       bucket: "kestra-unit-test"
       filename: "${random.shortuuid}"
     dataform:
@@ -24,12 +24,12 @@ kestra:
       dataset: "kestra_unit_test"
       table: "${random.shortuuid}"
     firestore:
-      project: "kestra-unit-test"
+      project: "floci-local"
     monitoring:
       project: "kestra-unit-test"
       resourceType: "global"
     pubsub:
-      project: "kestra-unit-test"
+      project: "floci-local"
     dataproc:
       project: "kestra-unit-test"
       region: "us-central1"

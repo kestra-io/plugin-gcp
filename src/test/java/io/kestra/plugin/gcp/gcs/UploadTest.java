@@ -3,11 +3,11 @@ package io.kestra.plugin.gcp.gcs;
 import java.net.URI;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -16,8 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class UploadTest {
+class UploadTest extends FlociGcpTest {
     @Inject
     private GcsTestUtils testUtils;
 

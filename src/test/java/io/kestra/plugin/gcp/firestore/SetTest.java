@@ -3,11 +3,11 @@ package io.kestra.plugin.gcp.firestore;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -17,8 +17,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class SetTest {
+class SetTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -31,6 +30,7 @@ class SetTest {
 
         var set = Set.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue("persons"))
             .childPath(Property.ofValue("1"))
             .document(
@@ -57,6 +57,7 @@ class SetTest {
 
         var set = Set.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue("persons"))
             .childPath(Property.ofValue("2"))
             .document("{\"firstname\":\"Jane\",\"lastname\":\"Doe\"}")
@@ -78,6 +79,7 @@ class SetTest {
 
         var set = Set.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue("persons"))
             .childPath(Property.ofValue("3"))
             .document(null)

@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.gcs;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -13,6 +12,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 import io.kestra.plugin.gcp.gcs.Upload.Output;
 
 import io.micronaut.context.annotation.Value;
@@ -22,8 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class DownloadsTest {
+class DownloadsTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -45,6 +44,7 @@ class DownloadsTest {
         Downloads task = Downloads.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Downloads.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + random + "/"))
             .action(Property.ofValue(ActionInterface.Action.DELETE))
             .build();

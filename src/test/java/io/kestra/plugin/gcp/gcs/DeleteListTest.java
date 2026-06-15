@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.gcs;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -11,6 +10,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -20,8 +20,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class DeleteListTest {
+class DeleteListTest extends FlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -36,12 +35,13 @@ class DeleteListTest {
         String dir = FriendlyId.createFriendlyId();
 
         for (int i = 0; i < 10; i++) {
-            ListTest.upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+            ListTest.upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir, SERVICE_ACCOUNT);
         }
 
         DeleteList task = DeleteList.builder()
             .id(DeleteList.class.getSimpleName())
             .type(DeleteList.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .concurrent(8)
             .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .build();

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -13,6 +12,7 @@ import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -22,8 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class QueryTest {
+class QueryTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -37,6 +36,7 @@ class QueryTest {
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue(collectionName))
             .filters(
                 List.of(
@@ -58,7 +58,7 @@ class QueryTest {
             throwSupplier(() ->
             {
                 try (var firestore = query.connection(runContext)) {
-                    return firestore.collection("persons").get().get().size() == 3;
+                    return firestore.collection(collectionName).get().get().size() == 3;
                 }
             }),
             Duration.ofMillis(100),
@@ -84,6 +84,7 @@ class QueryTest {
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue(collectionName))
             .filters(
                 List.of(
@@ -121,6 +122,7 @@ class QueryTest {
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue(collectionName))
             .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
@@ -152,6 +154,7 @@ class QueryTest {
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue(collectionName))
             .filters(
                 List.of(
@@ -189,6 +192,7 @@ class QueryTest {
 
         var query = Query.builder()
             .projectId(Property.ofValue(project))
+            .serviceAccount(SERVICE_ACCOUNT)
             .collection(Property.ofValue(collectionName))
             .filters(
                 List.of(
@@ -214,7 +218,7 @@ class QueryTest {
 
         // clear the collection
         try (var firestore = query.connection(runContext)) {
-            FirestoreTestUtil.clearCollection(firestore, "persons");
+            FirestoreTestUtil.clearCollection(firestore, collectionName);
         }
     }
 }

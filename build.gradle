@@ -93,6 +93,11 @@ dependencies {
  **********************************************************************************************************************/
 test {
     useJUnitPlatform()
+    // Point GCP SDK env vars at the fixed floci-gcp emulator port so GCS/Pub/Sub/Firestore
+    // tests use the local emulator without production credentials.
+    environment "STORAGE_EMULATOR_HOST", "http://localhost:4588"
+    environment "PUBSUB_EMULATOR_HOST", "localhost:4588"
+    environment "FIRESTORE_EMULATOR_HOST", "localhost:4588"
 }
 
 testlogger {
@@ -139,6 +144,7 @@ dependencies {
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id'
     testImplementation 'org.mockito:mockito-junit-jupiter'
+    testImplementation "org.testcontainers:testcontainers:1.20.6"
 }
 
 /**********************************************************************************************************************\

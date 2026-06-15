@@ -86,6 +86,39 @@ plugin-gcp/
 └── README.md
 ```
 
+## Testing
+
+### GCS, Pub/Sub, and Firestore (no GCP credentials required)
+
+These test suites run against the [floci-gcp](https://github.com/floci-io/floci-gcp) local emulator
+started automatically via `docker run`. Docker must be available and the image `floci/floci-gcp:latest`
+must be accessible.
+
+The Gradle test task sets three environment variables that activate the emulator routing:
+
+```
+STORAGE_EMULATOR_HOST=http://localhost:4588
+PUBSUB_EMULATOR_HOST=localhost:4588
+FIRESTORE_EMULATOR_HOST=localhost:4588
+```
+
+The Firestore Java SDK reads `FIRESTORE_EMULATOR_HOST` natively. The GCS and Pub/Sub Java SDKs do
+**not** read their emulator env vars automatically — `AbstractGcs` and `AbstractPubSub` detect these
+variables at runtime and configure the client to route requests to the local emulator instead of GCP.
+
+A WireMock server on port 4589 stubs the OAuth2 token endpoint so the fake service-account JSON in
+`FlociGcpTest` never makes a real Google token request.
+
+**Emulator feature gaps** (credential-gated, need `GOOGLE_APPLICATION_CREDENTIALS` to run):
+- `BucketTest.createUpdate`, `BucketTest.update` — GCS website configuration (indexPage) not implemented
+- `BucketTest.acl`, `BucketTest.iamPolicy` — ACL and IAM policy operations not implemented
+- `UploadChecksumTest.defaultValidationPopulatesOutputChecksums` — server-side MD5/CRC32C not returned
+
+### BigQuery, Dataproc, Dataform, Monitoring, GKE, CLI, VertexAI
+
+These tests require real GCP credentials. Set `GOOGLE_APPLICATION_CREDENTIALS` to a service-account
+key file path before running. Without it all tests in those suites are skipped.
+
 ## References
 
 - https://kestra.io/docs/plugin-developer-guide

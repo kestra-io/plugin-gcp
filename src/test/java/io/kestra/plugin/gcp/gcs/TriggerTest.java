@@ -7,7 +7,6 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -21,6 +20,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import io.micronaut.context.annotation.Value;
@@ -32,8 +32,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class TriggerTest {
+class TriggerTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -56,6 +55,7 @@ class TriggerTest {
         io.kestra.plugin.gcp.gcs.Trigger trigger = io.kestra.plugin.gcp.gcs.Trigger.builder()
             .id("watch")
             .type(io.kestra.plugin.gcp.gcs.Trigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(String.format("gs://%s/%s", bucket, fromDir)))
             .interval(java.time.Duration.ofSeconds(10))
             .action(Property.ofValue(io.kestra.plugin.gcp.gcs.Trigger.Action.MOVE))
@@ -81,6 +81,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/" + out + "/"))
             .action(Property.ofValue(ActionInterface.Action.MOVE))
             .moveDirectory(Property.ofValue("gs://" + bucket + "/test/move"))
@@ -102,6 +103,7 @@ class TriggerTest {
             Download task = Download.builder()
                 .id(DownloadTest.class.getSimpleName())
                 .type(Download.class.getName())
+                .serviceAccount(SERVICE_ACCOUNT)
                 .from(Property.ofValue(upload.getUri().toString()))
                 .build();
 
@@ -111,6 +113,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/test/move/" + fileId + ".yml"))
             .build();
 
@@ -126,6 +129,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
@@ -145,6 +149,7 @@ class TriggerTest {
         Download task = Download.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(upload.getUri().toString()))
             .build();
 
@@ -153,6 +158,7 @@ class TriggerTest {
         Delete delete = Delete.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
@@ -168,6 +174,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
             .build();
@@ -188,6 +195,7 @@ class TriggerTest {
         Delete delete = Delete.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
@@ -201,6 +209,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
@@ -223,6 +232,7 @@ class TriggerTest {
         Delete delete = Delete.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
@@ -237,6 +247,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .on(Property.ofValue(StatefulTriggerInterface.On.UPDATE))
@@ -264,6 +275,7 @@ class TriggerTest {
         Delete delete = Delete.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
@@ -277,6 +289,7 @@ class TriggerTest {
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
             .action(Property.ofValue(ActionInterface.Action.NONE))
             .interval(Duration.ofSeconds(10))
@@ -305,6 +318,7 @@ class TriggerTest {
         Delete delete = Delete.builder()
             .id(DownloadTest.class.getSimpleName())
             .type(Download.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .uri(Property.ofValue(upload.getUri().toString()))
             .build();
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));

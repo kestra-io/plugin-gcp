@@ -22,6 +22,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -34,8 +35,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class UploadChecksumTest {
+class UploadChecksumTest extends FlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -46,6 +46,9 @@ class UploadChecksumTest {
     private String bucket;
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
+    // floci-gcp does not return server-side MD5/CRC32C in blob metadata, so the server-side
+    // comparison step of validateChecksum=true would fail. Keep this test credential-gated.
     void defaultValidationPopulatesOutputChecksums() throws Exception {
         byte[] content = ("kestra-" + FriendlyId.createFriendlyId()).getBytes(StandardCharsets.UTF_8);
         Upload task = uploadOf(content).build();
@@ -107,6 +110,7 @@ class UploadChecksumTest {
         return Upload.builder()
             .id(UploadChecksumTest.class.getSimpleName())
             .type(Upload.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload-checksum/" + FriendlyId.createFriendlyId() + ".bin"));
     }

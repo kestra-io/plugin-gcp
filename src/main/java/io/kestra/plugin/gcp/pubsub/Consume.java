@@ -135,9 +135,16 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                     consumer.nack();
                 }
             };
-            var subscriber = Subscriber.newBuilder(subscriptionName, receiver)
-                .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
-                .build();
+            var subscriberBuilder = Subscriber.newBuilder(subscriptionName, receiver);
+            var emulator = emulatorConfig();
+            if (emulator != null) {
+                subscriberBuilder
+                    .setChannelProvider(emulator.channelProvider())
+                    .setCredentialsProvider(emulator.credentialsProvider());
+            } else {
+                subscriberBuilder.setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)));
+            }
+            var subscriber = subscriberBuilder.build();
             subscriber.startAsync().awaitRunning();
 
             while (!this.ended(total, started, runContext)) {

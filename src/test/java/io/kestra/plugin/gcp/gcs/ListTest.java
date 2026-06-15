@@ -7,7 +7,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -18,6 +17,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import io.micronaut.context.annotation.Value;
@@ -27,8 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class ListTest {
+class ListTest extends FlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -44,12 +43,13 @@ class ListTest {
         String lastFileName = null;
 
         for (int i = 0; i < 10; i++) {
-            lastFileName = upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+            lastFileName = upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir, SERVICE_ACCOUNT);
         }
-        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub");
+        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub", SERVICE_ACCOUNT);
 
         // directory listing
         List task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .build();
         List.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
@@ -58,6 +58,7 @@ class ListTest {
 
         // only dir
         task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .filter(Property.ofValue(ListInterface.Filter.DIRECTORY))
             .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
@@ -68,6 +69,7 @@ class ListTest {
 
         // files only
         task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .build();
@@ -76,6 +78,7 @@ class ListTest {
 
         // recursive
         task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
             .build();
@@ -85,6 +88,7 @@ class ListTest {
 
         // regexp
         task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
@@ -95,6 +99,7 @@ class ListTest {
 
         // regexp on file
         task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
@@ -108,13 +113,14 @@ class ListTest {
     void shouldListOnlyFilesWithFilesFilter() throws Exception {
         var dir = FriendlyId.createFriendlyId();
 
-        uploadFolderMarker(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+        uploadFolderMarker(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir, SERVICE_ACCOUNT);
 
-        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir, SERVICE_ACCOUNT);
 
-        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub");
+        upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub", SERVICE_ACCOUNT);
 
         var task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .build();
@@ -129,10 +135,11 @@ class ListTest {
         String dir = FriendlyId.createFriendlyId();
 
         for (int i = 0; i < 5; i++) {
-            upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+            upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir, SERVICE_ACCOUNT);
         }
 
         List task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .maxFiles(Property.ofValue(3))
@@ -148,10 +155,11 @@ class ListTest {
         String dir = FriendlyId.createFriendlyId();
 
         for (int i = 0; i < 5; i++) {
-            upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
+            upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir, SERVICE_ACCOUNT);
         }
 
         List task = task()
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
             .filter(Property.ofValue(ListInterface.Filter.FILES))
             .build();
@@ -167,7 +175,13 @@ class ListTest {
             .type(List.class.getName());
     }
 
-    static void uploadFolderMarker(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
+    static void uploadFolderMarker(
+        StorageInterface storageInterface,
+        String bucket,
+        RunContextFactory runContextFactory,
+        String dir,
+        Property<String> serviceAccount
+    ) throws Exception {
         var source = storageInterface.put(
             TenantService.MAIN_TENANT,
             null,
@@ -178,6 +192,7 @@ class ListTest {
         var task = Upload.builder()
             .id("folder-marker")
             .type(Upload.class.getName())
+            .serviceAccount(serviceAccount)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://" + bucket + dir + "/"))
             .build();
@@ -185,7 +200,13 @@ class ListTest {
         task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
     }
 
-    static String upload(StorageInterface storageInterface, String bucket, RunContextFactory runContextFactory, String dir) throws Exception {
+    static String upload(
+        StorageInterface storageInterface,
+        String bucket,
+        RunContextFactory runContextFactory,
+        String dir,
+        Property<String> serviceAccount
+    ) throws Exception {
         URI source = storageInterface.put(
             TenantService.MAIN_TENANT,
             null,
@@ -206,6 +227,7 @@ class ListTest {
         Upload task = Upload.builder()
             .id(ListTest.class.getSimpleName())
             .type(Upload.class.getName())
+            .serviceAccount(serviceAccount)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://" + bucket + dir + "/" + out + " (1).yml"))
             .build();

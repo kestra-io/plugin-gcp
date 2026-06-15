@@ -6,7 +6,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -19,6 +18,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -28,8 +28,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class CopyTest {
+class CopyTest extends FlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -62,6 +61,7 @@ class CopyTest {
         Upload upload = Upload.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Upload.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue(source.toString()))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .build();
@@ -71,6 +71,7 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml"))
             .build();
@@ -87,6 +88,7 @@ class CopyTest {
         Copy task = Copy.builder()
             .id(CopyTest.class.getSimpleName())
             .type(Copy.class.getName())
+            .serviceAccount(SERVICE_ACCOUNT)
             .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
             .build();

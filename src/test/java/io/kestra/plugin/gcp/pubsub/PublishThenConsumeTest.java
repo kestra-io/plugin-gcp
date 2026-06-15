@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.TopicAdminClient;
@@ -25,6 +24,7 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.gcp.FlociGcpTest;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 
@@ -35,8 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class PublishThenConsumeTest {
+class PublishThenConsumeTest extends FlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -55,6 +54,7 @@ class PublishThenConsumeTest {
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .from(
                     List.of(
@@ -69,10 +69,10 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(2))
-
                 .build();
 
             var consumeOutput = consume.run(runContextFactory.of());
@@ -91,6 +91,7 @@ class PublishThenConsumeTest {
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .serdeType(Property.ofValue(SerdeType.JSON))
                 .from(
@@ -106,6 +107,7 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .serdeType(Property.ofValue(SerdeType.JSON))
                 .subscription(Property.ofValue(subscription))
@@ -130,6 +132,7 @@ class PublishThenConsumeTest {
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .from(uri.toString())
                 .build();
@@ -139,6 +142,7 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(2))
@@ -160,6 +164,7 @@ class PublishThenConsumeTest {
         try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .from(
                     List.of(
@@ -190,6 +195,7 @@ class PublishThenConsumeTest {
 
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
+                .serviceAccount(SERVICE_ACCOUNT)
                 .topic(Property.ofValue(topic))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(4))
@@ -223,7 +229,7 @@ class PublishThenConsumeTest {
         ProjectTopicName topicName = ProjectTopicName.of(project, topicId);
         ProjectSubscriptionName subName = ProjectSubscriptionName.of(project, subId);
 
-        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
+        try (SubscriptionAdminClient subAdmin = subscriptionAdminClient()) {
             subAdmin.createSubscription(
                 subName,
                 topicName,
@@ -236,14 +242,14 @@ class PublishThenConsumeTest {
 
     private String createTopic() throws Exception {
         String topicId = "test-topic-" + IdUtils.create();
-        try (TopicAdminClient client = TopicAdminClient.create()) {
+        try (TopicAdminClient client = topicAdminClient()) {
             client.createTopic(ProjectTopicName.of(project, topicId));
         }
         return topicId;
     }
 
     private void deleteTopic(String topic) throws Exception {
-        try (TopicAdminClient client = TopicAdminClient.create()) {
+        try (TopicAdminClient client = topicAdminClient()) {
             client.deleteTopic(ProjectTopicName.of(project, topic));
         }
     }

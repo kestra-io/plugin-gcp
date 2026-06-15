@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
+import com.google.cloud.NoCredentials;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 
@@ -25,13 +26,22 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public abstract class AbstractGcs extends AbstractTask {
     Storage connection(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
-        return StorageOptions
+        var builder = StorageOptions
             .newBuilder()
-            .setCredentials(this.credentials(runContext))
             .setProjectId(runContext.render(projectId).as(String.class).orElse(null))
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
-            .build()
-            .getService();
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()));
+
+        var emulatorHost = System.getenv("STORAGE_EMULATOR_HOST");
+        if (emulatorHost != null && !emulatorHost.isBlank()) {
+            // Route all GCS requests to the local emulator. The Java SDK does not honor
+            // STORAGE_EMULATOR_HOST automatically, so we call setHost() explicitly.
+            // NoCredentials avoids any token-refresh attempt against Google's auth endpoints.
+            builder.setHost(emulatorHost).setCredentials(NoCredentials.getInstance());
+        } else {
+            builder.setCredentials(this.credentials(runContext));
+        }
+
+        return builder.build().getService();
     }
 
     static URI encode(RunContext runContext, String blob) throws IllegalVariableEvaluationException, URISyntaxException {
