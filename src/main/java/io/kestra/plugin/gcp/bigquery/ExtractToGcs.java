@@ -44,7 +44,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     type: io.kestra.plugin.gcp.bigquery.ExtractToGcs
                     destinationUris:
                       - "gs://bucket_name/filename.csv"
-                    sourceTable: "my_project.my_dataset.my_table"
+                    sourceTable: "my-project.my_dataset.my_table"
                     format: CSV
                     fieldDelimiter: ';'
                     printHeader: true

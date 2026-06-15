@@ -65,7 +65,7 @@ import reactor.core.publisher.Mono;
                 tasks:
                   - id: query
                     type: io.kestra.plugin.gcp.bigquery.Query
-                    destinationTable: "my_project.my_dataset.my_table"
+                    destinationTable: "my-project.my_dataset.my_table"
                     writeDisposition: WRITE_APPEND
                     sql: |
                       SELECT

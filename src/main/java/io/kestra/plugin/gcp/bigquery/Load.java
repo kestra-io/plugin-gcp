@@ -46,7 +46,7 @@ import lombok.experimental.SuperBuilder;
                   - id: load
                     type: io.kestra.plugin.gcp.bigquery.Load
                     from: "{{ inputs.file }}"
-                    destinationTable: "my_project.my_dataset.my_table"
+                    destinationTable: "my-project.my_dataset.my_table"
                     format: CSV
                     csvOptions:
                       fieldDelimiter: ";"
