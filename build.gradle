@@ -110,6 +110,8 @@ tasks.register('flociTest', Test) {
     environment "STORAGE_EMULATOR_HOST", "http://localhost:4588"
     environment "PUBSUB_EMULATOR_HOST", "localhost:4588"
     environment "FIRESTORE_EMULATOR_HOST", "localhost:4588"
+    // Activate application-floci.yml so emulator project IDs override the kestra-unit-test defaults.
+    systemProperty 'micronaut.environments', 'floci'
 }
 
 // Both suites must run under `check` (the command CI invokes via ./gradlew check).

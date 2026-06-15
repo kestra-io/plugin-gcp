@@ -1,0 +1,8 @@
+kestra:
+  tasks:
+    gcs:
+      project: "floci-local"
+    firestore:
+      project: "floci-local"
+    pubsub:
+      project: "floci-local"
