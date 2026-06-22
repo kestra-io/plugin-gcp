@@ -67,7 +67,7 @@ public class CreateTable extends AbstractBigtable implements RunnableTask<Create
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String renderedTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
+        String rTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
         List<String> renderedFamilies = runContext.render(this.columnFamilies).asList(String.class);
 
         try (BigtableTableAdminClient client = this.adminClient(runContext)) {
