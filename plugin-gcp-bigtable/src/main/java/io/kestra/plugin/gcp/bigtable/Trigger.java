@@ -34,18 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Polling trigger that checks a Bigtable table for new rows at each interval and triggers a flow
- * execution when one or more rows match.
- *
- * Mirrors the pattern used by io.kestra.plugin.gcp.bigquery.Trigger: the trigger itself is a thin
- * poll-and-fetch wrapper with no built-in change-tracking state. "New since last execution" is
- * achieved the same way users do it for the BigQuery trigger's `sql` filter — by scoping
- * `rowKeyPrefix` / `rowKeyStart` / `rowKeyEnd` to a window that excludes already-processed rows
- * (e.g. a time-bucketed row key design), or by deleting/marking processed rows so they fall out
- * of the next poll's range, per the Kestra polling trigger contract: "the trigger must free the
- * resource for the next evaluation" (https://kestra.io/docs/plugin-developer-guide/trigger).
- */
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
