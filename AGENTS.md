@@ -86,10 +86,6 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 
 ```
 plugin-gcp/
-├── plugin-gcp-bigtable/
-│   ├── src/main/java/io/kestra/plugin/gcp/bigtable/
-│   ├── src/test/java/io/kestra/plugin/gcp/bigtable/
-│   └── build.gradle
 ├── src/main/java/io/kestra/plugin/gcp/
 ├── src/test/java/io/kestra/plugin/gcp/
 ├── build.gradle
