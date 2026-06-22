@@ -64,7 +64,7 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
 
     @NotNull
     @Schema(title = "The Bigtable table ID to delete rows from.")
-    @PluginProperty(group = "table")
+    @PluginProperty(group = "main")
     private Property<String> tableId;
 
     @Schema(title = "Exact row keys to delete.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix`.")
@@ -85,53 +85,53 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String renderedTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
-        var renderedRowKeys = runContext.render(this.rowKeys).asList(String.class);
-        var prefix = runContext.render(this.rowKeyPrefix).as(String.class);
-        var start = runContext.render(this.rowKeyStart).as(String.class);
-        var end = runContext.render(this.rowKeyEnd).as(String.class);
+        String rTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
+        var rRowKeys = runContext.render(this.rowKeys).asList(String.class);
+        var rPrefix = runContext.render(this.rowKeyPrefix).as(String.class);
+        var rStart = runContext.render(this.rowKeyStart).as(String.class);
+        var rEnd = runContext.render(this.rowKeyEnd).as(String.class);
 
         try (BigtableDataClient client = this.dataClient(runContext)) {
             long count;
 
-            if (!renderedRowKeys.isEmpty()) {
-                BulkMutation bulkMutation = BulkMutation.create(renderedTableId);
+            if (!rRowKeys.isEmpty()) {
+                BulkMutation bulkMutation = BulkMutation.create(rTableId);
                 long idx = 0;
-                for (String key : renderedRowKeys) {
+                for (String key : rRowKeys) {
                     bulkMutation.add(RowMutationEntry.create(key).deleteRow());
                     idx++;
                     if (idx % 1000 == 0) {
                         client.bulkMutateRows(bulkMutation);
-                        bulkMutation = BulkMutation.create(renderedTableId);
+                        bulkMutation = BulkMutation.create(rTableId);
                     }
                 }
                 if (idx % 1000 != 0) {
                     client.bulkMutateRows(bulkMutation);
                 }
-                count = renderedRowKeys.size();
-            } else if (prefix.isPresent() || start.isPresent() || end.isPresent()) {
-                Query query = Query.create(renderedTableId);
-                if (prefix.isPresent()) {
-                    query = query.prefix(prefix.get());
+                count = rRowKeys.size();
+            } else if (rPrefix.isPresent() || rStart.isPresent() || rEnd.isPresent()) {
+                Query query = Query.create(rTableId);
+                if (rPrefix.isPresent()) {
+                    query = query.prefix(rPrefix.get());
                 } else {
                     var range = com.google.cloud.bigtable.data.v2.models.Range.ByteStringRange.unbounded();
-                    if (start.isPresent()) {
-                        range = range.startClosed(start.get());
+                    if (rStart.isPresent()) {
+                        range = range.startClosed(rStart.get());
                     }
-                    if (end.isPresent()) {
-                        range = range.endOpen(end.get());
+                    if (rEnd.isPresent()) {
+                        range = range.endOpen(rEnd.get());
                     }
                     query = query.range(range);
                 }
 
-                BulkMutation bulkMutation = BulkMutation.create(renderedTableId);
+                BulkMutation bulkMutation = BulkMutation.create(rTableId);
                 long matched = 0;
                 for (Row row : client.readRows(query)) {
                     bulkMutation.add(RowMutationEntry.create(row.getKey()).deleteRow());
                     matched++;
                     if (matched % 1000 == 0) {
                         client.bulkMutateRows(bulkMutation);
-                        bulkMutation = BulkMutation.create(renderedTableId);
+                        bulkMutation = BulkMutation.create(rTableId);
                     }
                 }
                 if (matched % 1000 != 0) {

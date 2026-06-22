@@ -133,44 +133,44 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String renderedTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
-        FetchType renderedFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.STORE);
-        var renderedLimit = runContext.render(this.limit).as(Integer.class);
+        String rTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
+        FetchType rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.STORE);
+        var rLimit = runContext.render(this.limit).as(Integer.class);
 
         try (BigtableDataClient client = this.dataClient(runContext)) {
-            Query query = Query.create(renderedTableId);
+            Query query = Query.create(rTableId);
 
-            var prefix = runContext.render(this.rowKeyPrefix).as(String.class);
-            var start = runContext.render(this.rowKeyStart).as(String.class);
-            var end = runContext.render(this.rowKeyEnd).as(String.class);
+            var rPrefix = runContext.render(this.rowKeyPrefix).as(String.class);
+            var rStart = runContext.render(this.rowKeyStart).as(String.class);
+            var rEnd = runContext.render(this.rowKeyEnd).as(String.class);
 
-            if (prefix.isPresent()) {
-                query = query.prefix(prefix.get());
-            } else if (start.isPresent() || end.isPresent()) {
+            if (rPrefix.isPresent()) {
+                query = query.prefix(rPrefix.get());
+            } else if (rStart.isPresent() || rEnd.isPresent()) {
                 var range = com.google.cloud.bigtable.data.v2.models.Range.ByteStringRange.unbounded();
-                if (start.isPresent()) {
-                    range = range.startClosed(start.get());
+                if (rStart.isPresent()) {
+                    range = range.startClosed(rStart.get());
                 }
-                if (end.isPresent()) {
-                    range = range.endOpen(end.get());
+                if (rEnd.isPresent()) {
+                    range = range.endOpen(rEnd.get());
                 }
                 query = query.range(range);
             }
 
-            var family = runContext.render(this.columnFamily).as(String.class);
-            if (family.isPresent()) {
-                query = query.filter(Filters.FILTERS.family().exactMatch(family.get()));
+            var rFamily = runContext.render(this.columnFamily).as(String.class);
+            if (rFamily.isPresent()) {
+                query = query.filter(Filters.FILTERS.family().exactMatch(rFamily.get()));
             }
 
-            if (renderedLimit.isPresent()) {
-                query = query.limit(renderedLimit.get());
+            if (rLimit.isPresent()) {
+                query = query.limit(rLimit.get());
             }
 
             Output.OutputBuilder outputBuilder = Output.builder();
             long count = 0;
             Map<String, Object> firstRow = null;
 
-            switch (renderedFetchType) {
+            switch (rFetchType) {
                 case FETCH_ONE -> {
                     for (Row row : client.readRows(query)) {
                         firstRow = rowToMap(row);
@@ -181,8 +181,8 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
                 }
                 case FETCH -> {
                     List<Map<String, Object>> rows = new ArrayList<>();
-                    int maxFetch = renderedLimit.orElse(5000);
-                    if (!renderedLimit.isPresent()) {
+                    int maxFetch = rLimit.orElse(5000);
+                    if (!rLimit.isPresent()) {
                         query = query.limit(maxFetch);
                     }
                     for (Row row : client.readRows(query)) {
@@ -199,7 +199,7 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
                             count++;
                         }
                     }
-                    if (renderedFetchType == FetchType.STORE) {
+                    if (rFetchType == FetchType.STORE) {
                         outputBuilder.uri(runContext.storage().putFile(tempFile));
                     }
                 }

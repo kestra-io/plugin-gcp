@@ -55,32 +55,32 @@ public class CreateTable extends AbstractBigtable implements RunnableTask<Create
     @Schema(
         title = "The Bigtable table ID to create."
     )
-    @PluginProperty(group = "table")
+    @PluginProperty(group = "main")
     private Property<String> tableId;
 
     @Schema(
         title = "Column family names to create on the table.",
         description = "If empty, the table is created with no column families."
     )
-    @PluginProperty(group = "table")
+    @PluginProperty(group = "main")
     private Property<List<String>> columnFamilies;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         String rTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
-        List<String> renderedFamilies = runContext.render(this.columnFamilies).asList(String.class);
+        List<String> rFamilies = runContext.render(this.columnFamilies).asList(String.class);
 
         try (BigtableTableAdminClient client = this.adminClient(runContext)) {
-            CreateTableRequest request = CreateTableRequest.of(renderedTableId);
-            for (String family : renderedFamilies) {
+            CreateTableRequest request = CreateTableRequest.of(rTableId);
+            for (String family : rFamilies) {
                 request = request.addFamily(family);
             }
             client.createTable(request);
         }
 
         return Output.builder()
-            .tableId(renderedTableId)
-            .columnFamilyCount((long) renderedFamilies.size())
+            .tableId(rTableId)
+            .columnFamilyCount((long) rFamilies.size())
             .build();
     }
 

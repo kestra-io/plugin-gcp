@@ -48,19 +48,19 @@ public class DeleteTable extends AbstractBigtable implements RunnableTask<Delete
     @Schema(
         title = "The Bigtable table ID to delete."
     )
-    @PluginProperty(group = "table")
+    @PluginProperty(group = "main")
     private Property<String> tableId;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String renderedTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
+        String rTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
 
         try (BigtableTableAdminClient client = this.adminClient(runContext)) {
-            client.deleteTable(renderedTableId);
+            client.deleteTable(rTableId);
         }
 
         return Output.builder()
-            .tableId(renderedTableId)
+            .tableId(rTableId)
             .build();
     }
 
