@@ -22,17 +22,11 @@ import java.util.List;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Delete rows from a Google Cloud Bigtable table.",
-    description = "Deletes rows either by an explicit list of row keys, or by a row key range " +
-        "(`rowKeyStart`/`rowKeyEnd`) or prefix (`rowKeyPrefix`). Exactly one mode must be configured."
-)
-@Plugin(
-    examples = {
-        @Example(
-            title = "Delete rows by exact row keys.",
-            full = true,
-            code = """
+@Schema(title = "Delete rows from a Google Cloud Bigtable table.", description = "Deletes rows either by an explicit list of row keys, or by a row key range "
+        +
+        "(`rowKeyStart`/`rowKeyEnd`) or prefix (`rowKeyPrefix`). Exactly one mode must be configured.")
+@Plugin(examples = {
+        @Example(title = "Delete rows by exact row keys.", full = true, code = """
                 id: bigtable_delete_rows
                 namespace: company.team
 
@@ -45,12 +39,8 @@ import java.util.List;
                     rowKeys:
                       - row-001
                       - row-002
-                """
-        ),
-        @Example(
-            title = "Delete all rows matching a row key prefix.",
-            full = true,
-            code = """
+                """),
+        @Example(title = "Delete all rows matching a row key prefix.", full = true, code = """
                 id: bigtable_delete_rows_prefix
                 namespace: company.team
 
@@ -61,38 +51,24 @@ import java.util.List;
                     instanceId: my-instance
                     tableId: events
                     rowKeyPrefix: "stale-device#"
-                """
-        )
-    }
-)
+                """)
+})
 public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteRows.Output> {
 
-    @Schema(
-        title = "The Bigtable table ID to delete rows from."
-    )
+    @Schema(title = "The Bigtable table ID to delete rows from.")
     @PluginProperty(dynamic = false)
     private Property<String> tableId;
 
-    @Schema(
-        title = "Exact row keys to delete.",
-        description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix`."
-    )
+    @Schema(title = "Exact row keys to delete.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix`.")
     private Property<List<String>> rowKeys;
 
-    @Schema(
-        title = "Inclusive start of the row key range to delete."
-    )
+    @Schema(title = "Inclusive start of the row key range to delete.")
     private Property<String> rowKeyStart;
 
-    @Schema(
-        title = "Exclusive end of the row key range to delete."
-    )
+    @Schema(title = "Exclusive end of the row key range to delete.")
     private Property<String> rowKeyEnd;
 
-    @Schema(
-        title = "Row key prefix to match rows for deletion.",
-        description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeys`."
-    )
+    @Schema(title = "Row key prefix to match rows for deletion.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeys`.")
     private Property<String> rowKeyPrefix;
 
     @Override
@@ -127,8 +103,6 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
                     }
                     query = query.range(range);
                 }
-                // Bigtable has no native "delete by range" RPC; matching rows must be
-                // enumerated and deleted individually via a bulk mutation.
                 BulkMutation bulkMutation = BulkMutation.create(renderedTableId);
                 long matched = 0;
                 for (Row row : client.readRows(query)) {
@@ -141,8 +115,7 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
                 count = matched;
             } else {
                 throw new IllegalArgumentException(
-                    "One of `rowKeys`, `rowKeyPrefix`, or `rowKeyStart`/`rowKeyEnd` must be set."
-                );
+                        "One of `rowKeys`, `rowKeyPrefix`, or `rowKeyStart`/`rowKeyEnd` must be set.");
             }
 
             return Output.builder().rowCount(count).build();

@@ -34,35 +34,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Polling trigger that checks a Bigtable table for new rows at each interval and triggers a flow
- * execution when one or more rows match.
- *
- * Mirrors the pattern used by io.kestra.plugin.gcp.bigquery.Trigger: the trigger itself is a thin
- * poll-and-fetch wrapper with no built-in change-tracking state. "New since last execution" is
- * achieved the same way users do it for the BigQuery trigger's `sql` filter — by scoping
- * `rowKeyPrefix` / `rowKeyStart` / `rowKeyEnd` to a window that excludes already-processed rows
- * (e.g. a time-bucketed row key design), or by deleting/marking processed rows so they fall out
- * of the next poll's range, per the Kestra polling trigger contract: "the trigger must free the
- * resource for the next evaluation" (https://kestra.io/docs/plugin-developer-guide/trigger).
- */
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(
-    title = "Wait for new rows in a Google Cloud Bigtable table and trigger a flow execution.",
-    description = "Polls a Bigtable table at the configured interval and triggers a downstream execution " +
+@Schema(title = "Wait for new rows in a Google Cloud Bigtable table and trigger a flow execution.", description = "Polls a Bigtable table at the configured interval and triggers a downstream execution "
+        +
         "when rows matching the configured row key range/prefix are found. As with other Kestra polling " +
-        "triggers, scope the range/prefix to avoid re-triggering on the same rows across polls."
-)
-@Plugin(
-    examples = {
-        @Example(
-            title = "React to new Bigtable rows every 5 minutes.",
-            full = true,
-            code = """
+        "triggers, scope the range/prefix to avoid re-triggering on the same rows across polls.")
+@Plugin(examples = {
+        @Example(title = "React to new Bigtable rows every 5 minutes.", full = true, code = """
                 id: bigtable_new_rows_trigger
                 namespace: company.team
 
@@ -79,11 +61,10 @@ import java.util.Optional;
                   - id: process
                     type: io.kestra.plugin.core.log.Log
                     message: "{{ trigger.rowCount }} new rows detected"
-                """
-        )
-    }
-)
-public class Trigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, GcpInterface {
+                """)
+})
+public class Trigger extends AbstractTrigger
+        implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, GcpInterface {
 
     @NotNull
     @Schema(title = "The GCP project ID.")
@@ -112,11 +93,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @PluginProperty(group = "source")
     private Property<String> tableId;
 
-    @Schema(
-        title = "Row key prefix to scope the poll to.",
-        description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`. Scope this narrowly enough " +
-            "(e.g. to a time-bucketed key segment) to avoid matching rows already seen on a previous poll."
-    )
+    @Schema(title = "Row key prefix to scope the poll to.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`. Scope this narrowly enough "
+            +
+            "(e.g. to a time-bucketed key segment) to avoid matching rows already seen on a previous poll.")
     @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 
@@ -128,20 +107,16 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
-    @Schema(
-        title = "Only consider cells in this column family newer than the lookback window.",
-        description = "When set, only rows with at least one cell in this column family timestamped " +
-            "within the lookback window are returned. Requires `lookbackSeconds` to also be set."
-    )
+    @Schema(title = "Only consider cells in this column family newer than the lookback window.", description = "When set, only rows with at least one cell in this column family timestamped "
+            +
+            "within the lookback window are returned. Requires `lookbackSeconds` to also be set.")
     @PluginProperty(group = "processing")
     private Property<String> columnFamily;
 
-    @Schema(
-        title = "Lookback window, in seconds, applied to cell timestamps.",
-        description = "When set together with `columnFamily`, only rows with a cell newer than " +
+    @Schema(title = "Lookback window, in seconds, applied to cell timestamps.", description = "When set together with `columnFamily`, only rows with a cell newer than "
+            +
             "(now - lookbackSeconds) are returned. This re-fetches anything written within the window " +
-            "on every poll, so keep the window close to the polling `interval` to avoid duplicate executions."
-    )
+            "on every poll, so keep the window close to the polling `interval` to avoid duplicate executions.")
     @PluginProperty(group = "processing")
     private Property<Long> lookbackSeconds;
 
@@ -170,12 +145,11 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         Optional<Long> rLookbackSeconds = runContext.render(this.lookbackSeconds).as(Long.class);
 
         BigtableDataSettings settings = BigtableDataSettings.newBuilder()
-            .setProjectId(rProjectId)
-            .setInstanceId(rInstanceId)
-            .setCredentialsProvider(
-                FixedCredentialsProvider.create(CredentialService.credentials(runContext, this))
-            )
-            .build();
+                .setProjectId(rProjectId)
+                .setInstanceId(rInstanceId)
+                .setCredentialsProvider(
+                        FixedCredentialsProvider.create(CredentialService.credentials(runContext, this)))
+                .build();
 
         List<Row> matchedRows = new ArrayList<>();
 
@@ -198,10 +172,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             if (rColumnFamily.isPresent() && rLookbackSeconds.isPresent()) {
                 long sinceMicros = (System.currentTimeMillis() - (rLookbackSeconds.get() * 1000L)) * 1000L;
                 query = query.filter(
-                    Filters.FILTERS.chain()
-                        .filter(Filters.FILTERS.family().exactMatch(rColumnFamily.get()))
-                        .filter(Filters.FILTERS.timestamp().range().startClosed(sinceMicros))
-                );
+                        Filters.FILTERS.chain()
+                                .filter(Filters.FILTERS.family().exactMatch(rColumnFamily.get()))
+                                .filter(Filters.FILTERS.timestamp().range().startClosed(sinceMicros)));
             }
 
             for (Row row : client.readRows(query)) {
@@ -234,17 +207,17 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         }
 
         Output output = Output.builder()
-            .rowCount((long) matchedRows.size())
-            .rows(rows)
-            .build();
+                .rowCount((long) matchedRows.size())
+                .rows(rows)
+                .build();
 
         Execution execution = Execution.builder()
-            .id(runContext.getTriggerExecutionId())
-            .namespace(context.getNamespace())
-            .flowId(context.getFlowId())
-            .state(new State())
-            .trigger(ExecutionTrigger.of(this, output))
-            .build();
+                .id(runContext.getTriggerExecutionId())
+                .namespace(context.getNamespace())
+                .flowId(context.getFlowId())
+                .state(new State())
+                .trigger(ExecutionTrigger.of(this, output))
+                .build();
 
         return Optional.of(execution);
     }

@@ -17,16 +17,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 
-/**
- * Shared test fixtures backed by the official Bigtable emulator image.
- */
 public abstract class BigtableTestUtils {
 
     protected static final String PROJECT_ID = "test-project";
     protected static final String INSTANCE_ID = "test-instance";
 
-    protected static final GenericContainer<?> BIGTABLE_EMULATOR =
-        new GenericContainer<>("google/cloud-sdk:emulators")
+    protected static final GenericContainer<?> BIGTABLE_EMULATOR = new GenericContainer<>("google/cloud-sdk:emulators")
             .withCommand("gcloud", "beta", "emulators", "bigtable", "start", "--host-port=0.0.0.0:8086")
             .withExposedPorts(8086);
 
@@ -59,15 +55,14 @@ public abstract class BigtableTestUtils {
 
     protected static BigtableDataClient createDataClient() throws Exception {
         ManagedChannel channel = ManagedChannelBuilder.forTarget(getEmulatorHost())
-            .usePlaintext()
-            .build();
+                .usePlaintext()
+                .build();
         TransportChannelProvider channelProvider = FixedTransportChannelProvider.create(
-            GrpcTransportChannel.create(channel)
-        );
+                GrpcTransportChannel.create(channel));
 
         BigtableDataSettings.Builder settingsBuilder = BigtableDataSettings.newBuilder()
-            .setProjectId(PROJECT_ID)
-            .setInstanceId(INSTANCE_ID);
+                .setProjectId(PROJECT_ID)
+                .setInstanceId(INSTANCE_ID);
         settingsBuilder.setCredentialsProvider(NoCredentialsProvider.create());
         settingsBuilder.stubSettings().setTransportChannelProvider(channelProvider);
 
@@ -76,15 +71,14 @@ public abstract class BigtableTestUtils {
 
     protected static BigtableTableAdminClient createAdminClient() throws Exception {
         ManagedChannel channel = ManagedChannelBuilder.forTarget(getEmulatorHost())
-            .usePlaintext()
-            .build();
+                .usePlaintext()
+                .build();
         TransportChannelProvider channelProvider = FixedTransportChannelProvider.create(
-            GrpcTransportChannel.create(channel)
-        );
+                GrpcTransportChannel.create(channel));
 
         BigtableTableAdminSettings.Builder settingsBuilder = BigtableTableAdminSettings.newBuilder()
-            .setProjectId(PROJECT_ID)
-            .setInstanceId(INSTANCE_ID);
+                .setProjectId(PROJECT_ID)
+                .setInstanceId(INSTANCE_ID);
         settingsBuilder.setCredentialsProvider(NoCredentialsProvider.create());
         settingsBuilder.stubSettings().setTransportChannelProvider(channelProvider);
 

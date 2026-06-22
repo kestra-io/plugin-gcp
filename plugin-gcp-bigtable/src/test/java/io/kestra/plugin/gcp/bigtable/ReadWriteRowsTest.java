@@ -33,26 +33,24 @@ class ReadWriteRowsTest extends BigtableTestUtils {
 
     @Test
     void writeThenReadRow() throws Exception {
-        // Seed directly via the emulator client to validate ReadRows independently of WriteRows.
         try (BigtableDataClient client = createDataClient()) {
             client.mutateRow(
-                RowMutation.create(TABLE_ID, "row-001")
-                    .setCell(COLUMN_FAMILY, "value", "42")
-            );
+                    RowMutation.create(TABLE_ID, "row-001")
+                            .setCell(COLUMN_FAMILY, "value", "42"));
         }
 
         RunContext runContext = runContextFactory.of();
 
         ReadRows task = ReadRows.builder()
-            .id("read")
-            .type(ReadRows.class.getName())
-            .projectId(Property.ofValue(PROJECT_ID))
-            .instanceId(Property.ofValue(INSTANCE_ID))
-            .tableId(Property.ofValue(TABLE_ID))
-            .rowKeyPrefix(Property.ofValue("row-001"))
-            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
-            .emulatorHost(Property.ofValue(getEmulatorHost()))
-            .build();
+                .id("read")
+                .type(ReadRows.class.getName())
+                .projectId(Property.ofValue(PROJECT_ID))
+                .instanceId(Property.ofValue(INSTANCE_ID))
+                .tableId(Property.ofValue(TABLE_ID))
+                .rowKeyPrefix(Property.ofValue("row-001"))
+                .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+                .emulatorHost(Property.ofValue(getEmulatorHost()))
+                .build();
 
         ReadRows.Output output = task.run(runContext);
 
@@ -65,20 +63,19 @@ class ReadWriteRowsTest extends BigtableTestUtils {
         RunContext runContext = runContextFactory.of();
 
         WriteRows task = WriteRows.builder()
-            .id("write")
-            .type(WriteRows.class.getName())
-            .projectId(Property.ofValue(PROJECT_ID))
-            .instanceId(Property.ofValue(INSTANCE_ID))
-            .tableId(Property.ofValue(TABLE_ID))
-            .columnFamily(Property.ofValue(COLUMN_FAMILY))
-            .rows(Property.ofValue(List.of(
-                WriteRows.RowInput.builder()
-                    .rowKey("row-100")
-                    .cells(Map.of("value", "100"))
-                    .build()
-            )))
-            .emulatorHost(Property.ofValue(getEmulatorHost()))
-            .build();
+                .id("write")
+                .type(WriteRows.class.getName())
+                .projectId(Property.ofValue(PROJECT_ID))
+                .instanceId(Property.ofValue(INSTANCE_ID))
+                .tableId(Property.ofValue(TABLE_ID))
+                .columnFamily(Property.ofValue(COLUMN_FAMILY))
+                .rows(Property.ofValue(List.of(
+                        WriteRows.RowInput.builder()
+                                .rowKey("row-100")
+                                .cells(Map.of("value", "100"))
+                                .build())))
+                .emulatorHost(Property.ofValue(getEmulatorHost()))
+                .build();
 
         WriteRows.Output output = task.run(runContext);
 
