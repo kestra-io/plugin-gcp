@@ -33,7 +33,6 @@ class ReadWriteRowsTest extends BigtableTestUtils {
 
     @Test
     void writeThenReadRow() throws Exception {
-        // Seed directly via the emulator client to validate ReadRows independently of WriteRows.
         try (BigtableDataClient client = createDataClient()) {
             client.mutateRow(
                 RowMutation.create(TABLE_ID, "row-001")
