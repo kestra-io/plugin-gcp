@@ -127,8 +127,6 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
                     }
                     query = query.range(range);
                 }
-                // Bigtable has no native "delete by range" RPC; matching rows must be
-                // enumerated and deleted individually via a bulk mutation.
                 BulkMutation bulkMutation = BulkMutation.create(renderedTableId);
                 long matched = 0;
                 for (Row row : client.readRows(query)) {
