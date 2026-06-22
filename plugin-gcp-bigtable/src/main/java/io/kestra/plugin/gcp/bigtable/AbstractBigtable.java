@@ -60,7 +60,6 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
             "Bigtable service, using plaintext transport and no credentials. Not intended for production use.")
     @PluginProperty(group = "advanced")
     protected Property<String> emulatorHost;
-
     protected BigtableDataClient dataClient(RunContext runContext)
             throws IllegalVariableEvaluationException, IOException {
         String rProjectId = runContext.render(this.projectId).as(String.class)
@@ -85,7 +84,6 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
 
         return BigtableDataClient.create(settingsBuilder.build());
     }
-
     protected BigtableTableAdminClient adminClient(RunContext runContext)
             throws IllegalVariableEvaluationException, IOException {
         String rProjectId = runContext.render(this.projectId).as(String.class)
@@ -110,7 +108,6 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
 
         return BigtableTableAdminClient.create(settingsBuilder.build());
     }
-
     private static com.google.api.gax.rpc.TransportChannelProvider emulatorTransportChannelProvider(
             String emulatorHost) {
         return com.google.api.gax.grpc.InstantiatingGrpcChannelProvider.newBuilder()
