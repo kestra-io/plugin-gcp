@@ -1,13 +1,16 @@
 package io.kestra.plugin.gcp.bigtable;
 
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -41,10 +44,11 @@ import lombok.experimental.SuperBuilder;
 )
 public class DeleteTable extends AbstractBigtable implements RunnableTask<DeleteTable.Output> {
 
+    @NotNull
     @Schema(
         title = "The Bigtable table ID to delete."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(group = "table")
     private Property<String> tableId;
 
     @Override

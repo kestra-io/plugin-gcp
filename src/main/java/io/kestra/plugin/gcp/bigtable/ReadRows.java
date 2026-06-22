@@ -1,10 +1,19 @@
 package io.kestra.plugin.gcp.bigtable;
 
+import java.io.OutputStream;
+import java.net.URI;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.Filters;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowCell;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -13,19 +22,11 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.io.BufferedWriter;
-import java.io.OutputStream;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -79,40 +80,46 @@ import java.util.Map;
 )
 public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.Output> {
 
+    @NotNull
     @Schema(
         title = "The Bigtable table ID to read from."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(group = "source")
     private Property<String> tableId;
 
     @Schema(
         title = "Inclusive start of the row key range to scan.",
         description = "Mutually exclusive with `rowKeyPrefix`. If neither is set, the full table is scanned."
     )
+    @PluginProperty(group = "source")
     private Property<String> rowKeyStart;
 
     @Schema(
         title = "Exclusive end of the row key range to scan.",
         description = "Used together with `rowKeyStart`. Ignored if `rowKeyPrefix` is set."
     )
+    @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
     @Schema(
         title = "Row key prefix to filter on.",
         description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`."
     )
+    @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 
     @Schema(
         title = "Only return cells from this column family.",
         description = "If not set, cells from all column families are returned."
     )
+    @PluginProperty(group = "processing")
     private Property<String> columnFamily;
 
     @Schema(
         title = "Maximum number of rows to read.",
         description = "If not set, all matching rows are read."
     )
+    @PluginProperty(group = "processing")
     private Property<Integer> limit;
 
     @Schema(
@@ -121,12 +128,14 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
             "STORE stores all rows to a file in internal storage and is recommended for large result sets."
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.STORE);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         String renderedTableId = runContext.render(this.tableId).as(String.class).orElseThrow();
         FetchType renderedFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.STORE);
+        var renderedLimit = runContext.render(this.limit).as(Integer.class);
 
         try (BigtableDataClient client = this.dataClient(runContext)) {
             Query query = Query.create(renderedTableId);
@@ -153,7 +162,6 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
                 query = query.filter(Filters.FILTERS.family().exactMatch(family.get()));
             }
 
-            var renderedLimit = runContext.render(this.limit).as(Integer.class);
             if (renderedLimit.isPresent()) {
                 query = query.limit(renderedLimit.get());
             }
@@ -173,6 +181,10 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
                 }
                 case FETCH -> {
                     List<Map<String, Object>> rows = new ArrayList<>();
+                    int maxFetch = renderedLimit.orElse(5000);
+                    if (!renderedLimit.isPresent()) {
+                        query = query.limit(maxFetch);
+                    }
                     for (Row row : client.readRows(query)) {
                         rows.add(rowToMap(row));
                     }
@@ -181,8 +193,7 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
                 }
                 case NONE, STORE -> {
                     java.io.File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (OutputStream output = Files.newOutputStream(tempFile.toPath());
-                         BufferedWriter writer = new BufferedWriter(new java.io.OutputStreamWriter(output, StandardCharsets.UTF_8))) {
+                    try (OutputStream output = Files.newOutputStream(tempFile.toPath())) {
                         for (Row row : client.readRows(query)) {
                             FileSerde.write(output, rowToMap(row));
                             count++;

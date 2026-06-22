@@ -1,18 +1,21 @@
 package io.kestra.plugin.gcp.bigtable;
 
+import java.util.List;
+
 import com.google.cloud.bigtable.admin.v2.BigtableTableAdminClient;
 import com.google.cloud.bigtable.admin.v2.models.CreateTableRequest;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @SuperBuilder
 @ToString
@@ -48,16 +51,18 @@ import java.util.List;
 )
 public class CreateTable extends AbstractBigtable implements RunnableTask<CreateTable.Output> {
 
+    @NotNull
     @Schema(
         title = "The Bigtable table ID to create."
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty(group = "table")
     private Property<String> tableId;
 
     @Schema(
         title = "Column family names to create on the table.",
         description = "If empty, the table is created with no column families."
     )
+    @PluginProperty(group = "table")
     private Property<List<String>> columnFamilies;
 
     @Override

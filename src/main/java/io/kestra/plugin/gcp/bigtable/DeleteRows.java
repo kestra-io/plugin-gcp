@@ -1,74 +1,86 @@
 package io.kestra.plugin.gcp.bigtable;
 
+import java.util.List;
+
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Schema(title = "Delete rows from a Google Cloud Bigtable table.", description = "Deletes rows either by an explicit list of row keys, or by a row key range "
+@Schema(
+    title = "Delete rows from a Google Cloud Bigtable table.", description = "Deletes rows either by an explicit list of row keys, or by a row key range "
         +
-        "(`rowKeyStart`/`rowKeyEnd`) or prefix (`rowKeyPrefix`). Exactly one mode must be configured.")
-@Plugin(examples = {
+        "(`rowKeyStart`/`rowKeyEnd`) or prefix (`rowKeyPrefix`). Exactly one mode must be configured."
+)
+@Plugin(
+    examples = {
         @Example(title = "Delete rows by exact row keys.", full = true, code = """
-                id: bigtable_delete_rows
-                namespace: company.team
+            id: bigtable_delete_rows
+            namespace: company.team
 
-                tasks:
-                  - id: delete
-                    type: io.kestra.plugin.gcp.bigtable.DeleteRows
-                    projectId: "{{ secret('GCP_PROJECT_ID') }}"
-                    instanceId: my-instance
-                    tableId: events
-                    rowKeys:
-                      - row-001
-                      - row-002
-                """),
+            tasks:
+              - id: delete
+                type: io.kestra.plugin.gcp.bigtable.DeleteRows
+                projectId: "{{ secret('GCP_PROJECT_ID') }}"
+                instanceId: my-instance
+                tableId: events
+                rowKeys:
+                  - row-001
+                  - row-002
+            """),
         @Example(title = "Delete all rows matching a row key prefix.", full = true, code = """
-                id: bigtable_delete_rows_prefix
-                namespace: company.team
+            id: bigtable_delete_rows_prefix
+            namespace: company.team
 
-                tasks:
-                  - id: delete
-                    type: io.kestra.plugin.gcp.bigtable.DeleteRows
-                    projectId: "{{ secret('GCP_PROJECT_ID') }}"
-                    instanceId: my-instance
-                    tableId: events
-                    rowKeyPrefix: "stale-device#"
-                """)
-})
+            tasks:
+              - id: delete
+                type: io.kestra.plugin.gcp.bigtable.DeleteRows
+                projectId: "{{ secret('GCP_PROJECT_ID') }}"
+                instanceId: my-instance
+                tableId: events
+                rowKeyPrefix: "stale-device#"
+            """)
+    }
+)
 public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteRows.Output> {
 
+    @NotNull
     @Schema(title = "The Bigtable table ID to delete rows from.")
-    @PluginProperty(dynamic = false)
+    @PluginProperty(group = "table")
     private Property<String> tableId;
 
     @Schema(title = "Exact row keys to delete.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix`.")
+    @PluginProperty(group = "source")
     private Property<List<String>> rowKeys;
 
     @Schema(title = "Inclusive start of the row key range to delete.")
+    @PluginProperty(group = "source")
     private Property<String> rowKeyStart;
 
     @Schema(title = "Exclusive end of the row key range to delete.")
+    @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
     @Schema(title = "Row key prefix to match rows for deletion.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeys`.")
+    @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 
     @Override
@@ -84,10 +96,18 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
 
             if (!renderedRowKeys.isEmpty()) {
                 BulkMutation bulkMutation = BulkMutation.create(renderedTableId);
+                long idx = 0;
                 for (String key : renderedRowKeys) {
                     bulkMutation.add(RowMutationEntry.create(key).deleteRow());
+                    idx++;
+                    if (idx % 1000 == 0) {
+                        client.bulkMutateRows(bulkMutation);
+                        bulkMutation = BulkMutation.create(renderedTableId);
+                    }
                 }
-                client.bulkMutateRows(bulkMutation);
+                if (idx % 1000 != 0) {
+                    client.bulkMutateRows(bulkMutation);
+                }
                 count = renderedRowKeys.size();
             } else if (prefix.isPresent() || start.isPresent() || end.isPresent()) {
                 Query query = Query.create(renderedTableId);
@@ -103,19 +123,25 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
                     }
                     query = query.range(range);
                 }
+
                 BulkMutation bulkMutation = BulkMutation.create(renderedTableId);
                 long matched = 0;
                 for (Row row : client.readRows(query)) {
                     bulkMutation.add(RowMutationEntry.create(row.getKey()).deleteRow());
                     matched++;
+                    if (matched % 1000 == 0) {
+                        client.bulkMutateRows(bulkMutation);
+                        bulkMutation = BulkMutation.create(renderedTableId);
+                    }
                 }
-                if (matched > 0) {
+                if (matched % 1000 != 0) {
                     client.bulkMutateRows(bulkMutation);
                 }
                 count = matched;
             } else {
                 throw new IllegalArgumentException(
-                        "One of `rowKeys`, `rowKeyPrefix`, or `rowKeyStart`/`rowKeyEnd` must be set.");
+                    "One of `rowKeys`, `rowKeyPrefix`, or `rowKeyStart`/`rowKeyEnd` must be set."
+                );
             }
 
             return Output.builder().rowCount(count).build();
