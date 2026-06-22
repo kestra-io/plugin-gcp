@@ -17,9 +17,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 
-/**
- * Shared test fixtures backed by the official Bigtable emulator image.
- */
 public abstract class BigtableTestUtils {
 
     protected static final String PROJECT_ID = "test-project";
