@@ -26,12 +26,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Shared base class for all Bigtable tasks: implements GcpInterface (projectId, serviceAccount,
- * impersonatedServiceAccount, scopes) confirmed against the real
- * io.kestra.plugin.gcp.GcpInterface / CredentialService, adds the Bigtable-specific instanceId
- * and an emulatorHost escape hatch for local testing, and builds the Bigtable data/admin clients.
- */
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -71,11 +65,6 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
     )
     @PluginProperty(group = "advanced")
     protected Property<String> emulatorHost;
-
-    /**
-     * Builds a BigtableDataClient for row-level read/write/delete operations.
-     * Caller is responsible for closing the returned client.
-     */
     protected BigtableDataClient dataClient(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         String rProjectId = runContext.render(this.projectId).as(String.class)
             .orElseThrow(() -> new IllegalVariableEvaluationException("Missing required projectId"));
@@ -100,11 +89,6 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
 
         return BigtableDataClient.create(settingsBuilder.build());
     }
-
-    /**
-     * Builds a BigtableTableAdminClient for table-level operations (create/delete table).
-     * Caller is responsible for closing the returned client.
-     */
     protected BigtableTableAdminClient adminClient(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         String rProjectId = runContext.render(this.projectId).as(String.class)
             .orElseThrow(() -> new IllegalVariableEvaluationException("Missing required projectId"));
@@ -129,14 +113,6 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
 
         return BigtableTableAdminClient.create(settingsBuilder.build());
     }
-
-    /**
-     * Plaintext (no TLS), no-auth gRPC transport channel provider pointed at a local Bigtable
-     * emulator host:port. Built directly via InstantiatingGrpcChannelProvider rather than any
-     * settings-class-specific "default emulator transport" static helper, since that helper's
-     * exact name/location varies across google-cloud-bigtable versions and isn't worth
-     * depending on.
-     */
     private static com.google.api.gax.rpc.TransportChannelProvider emulatorTransportChannelProvider(String emulatorHost) {
         return com.google.api.gax.grpc.InstantiatingGrpcChannelProvider.newBuilder()
             .setEndpoint(emulatorHost)
