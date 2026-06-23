@@ -53,7 +53,7 @@ public class CreateTable extends AbstractBigtable implements RunnableTask<Create
 
     @NotNull
     @Schema(
-        title = "The Bigtable table ID to create."
+        title = "The Bigtable table ID to create"
     )
     @PluginProperty(group = "main")
     private Property<String> tableId;
