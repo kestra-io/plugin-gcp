@@ -48,7 +48,7 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
     @PluginProperty(secret = true, group = "advanced")
     protected Property<String> impersonatedServiceAccount;
 
-    @Schema(title = "The GCP scopes to be used.")
+    @Schema(title = "The GCP scopes to be used")
     @PluginProperty(group = "advanced")
     protected Property<List<String>> scopes;
 
