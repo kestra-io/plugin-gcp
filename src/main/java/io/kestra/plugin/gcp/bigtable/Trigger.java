@@ -37,12 +37,12 @@ import lombok.experimental.SuperBuilder;
     title = "Wait for new rows in a Google Cloud Bigtable table and trigger a flow execution.",
     description = "Polls a Bigtable table at the configured interval and triggers a downstream execution " +
         "when rows matching the configured row key range/prefix are found. As with other Kestra polling " +
-        "triggers, scope the range/prefix to avoid re-triggering on the same rows across polls."
+        "triggers, scope the range/prefix to avoid re-triggering on the same rows across polls"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "React to new Bigtable rows every 5 minutes.",
+            title = "React to new Bigtable rows every 5 minutes",
             full = true,
             code = """
                 id: bigtable_new_rows_trigger
@@ -88,7 +88,7 @@ public class Trigger extends AbstractTrigger
     @NotNull
     @Schema(
         title = "The Bigtable instance ID",
-        description = "An instance is a container for your tables within a given GCP project."
+        description = "An instance is a container for your tables within a given GCP project"
     )
     @PluginProperty(group = "connection")
     private Property<String> instanceId;
@@ -101,7 +101,7 @@ public class Trigger extends AbstractTrigger
     @Schema(
         title = "Row key prefix to scope the poll to",
         description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`. Scope this narrowly enough " +
-            "(e.g. to a time-bucketed key segment) to avoid matching rows already seen on a previous poll."
+            "(e.g. to a time-bucketed key segment) to avoid matching rows already seen on a previous poll"
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
@@ -117,7 +117,7 @@ public class Trigger extends AbstractTrigger
     @Schema(
         title = "Only consider cells in this column family newer than the lookback window",
         description = "When set, only rows with at least one cell in this column family timestamped " +
-            "within the lookback window are returned. Requires `lookbackSeconds` to also be set."
+            "within the lookback window are returned. Requires `lookbackSeconds` to also be set"
     )
     @PluginProperty(group = "processing")
     private Property<String> columnFamily;
@@ -126,7 +126,7 @@ public class Trigger extends AbstractTrigger
         title = "Lookback window, in seconds, applied to cell timestamps",
         description = "When set together with `columnFamily`, only rows with a cell newer than " +
             "(now - lookbackSeconds) are returned. This re-fetches anything written within the window " +
-            "on every poll, so keep the window close to the polling `interval` to avoid duplicate executions."
+            "on every poll, so keep the window close to the polling `interval` to avoid duplicate executions"
     )
     @PluginProperty(group = "processing")
     private Property<Long> lookbackSeconds;
@@ -134,14 +134,14 @@ public class Trigger extends AbstractTrigger
     @Builder.Default
     @Schema(
         title = "The maximum number of rows to return on a single poll",
-        description = "Caps the size of matched rows returned in a single execution to prevent OOM errors."
+        description = "Caps the size of matched rows returned in a single execution to prevent OOM errors"
     )
     @PluginProperty(group = "processing")
     private Property<Integer> maxRows = Property.ofValue(1000);
 
     @Schema(
         title = "Bigtable emulator host (`host:port`), for local testing only",
-        description = "When set, the trigger connects to a local Bigtable emulator instead of the real Bigtable service."
+        description = "When set, the trigger connects to a local Bigtable emulator instead of the real Bigtable service"
     )
     @PluginProperty(group = "advanced")
     private Property<String> emulatorHost;
