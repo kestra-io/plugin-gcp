@@ -76,7 +76,7 @@ public class Execute extends AbstractSpanner implements RunnableTask<Execute.Out
                     List.of(rSql),
                     null
                 );
-                op.get(); // wait for the operation to complete
+                op.get();
             } else {
                 DatabaseClient dbClient = spanner.getDatabaseClient(this.databaseId(runContext));
                 affectedRows = dbClient.readWriteTransaction().run(transaction -> {

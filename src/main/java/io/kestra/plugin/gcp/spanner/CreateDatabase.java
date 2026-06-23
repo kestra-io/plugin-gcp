@@ -69,7 +69,7 @@ public class CreateDatabase extends AbstractSpanner implements RunnableTask<Crea
                 dbId.getDatabase(),
                 rExtraDdl
             );
-            op.get(); // wait for the operation to complete
+            op.get();
         }
 
         return Output.builder()

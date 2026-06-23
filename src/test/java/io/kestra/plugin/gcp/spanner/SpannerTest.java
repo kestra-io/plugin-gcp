@@ -74,7 +74,6 @@ class SpannerTest {
         try {
             instanceAdminClient.createInstance(instanceInfo).get();
         } catch (Exception e) {
-            // Ignore if already exists
         }
 
         DatabaseAdminClient databaseAdminClient = spanner.getDatabaseAdminClient();
@@ -88,7 +87,6 @@ class SpannerTest {
                 "CREATE CHANGE STREAM users_stream FOR users"
             )).get();
         } catch (Exception e) {
-            // Ignore if already exists
         }
     }
 
