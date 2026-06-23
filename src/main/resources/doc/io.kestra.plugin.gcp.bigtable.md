@@ -1,4 +1,4 @@
-# Google Cloud Bigtable
+# How to use the Google Cloud Bigtable plugin
 
 Google Cloud Bigtable is a fully managed, petabyte-scale, NoSQL database service for large analytical and operational workloads.
 
