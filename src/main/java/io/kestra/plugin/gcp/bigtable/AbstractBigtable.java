@@ -58,7 +58,7 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
     protected Property<String> instanceId;
 
     @Schema(
-        title = "Bigtable emulator host (`host:port`), for local testing only.", description = "When set, the task connects to a local Bigtable emulator instead of the real "
+        title = "Bigtable emulator host (`host:port`), for local testing only", description = "When set, the task connects to a local Bigtable emulator instead of the real "
             +
             "Bigtable service, using plaintext transport and no credentials. Not intended for production use."
     )
