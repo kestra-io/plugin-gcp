@@ -181,7 +181,7 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
         @Schema(title = "The row key.")
         private String rowKey;
 
-        @Schema(title = "The column family for this row.", description = "Overrides the task-level `columnFamily` if set.")
+        @Schema(title = "The column family for this row", description = "Overrides the task-level `columnFamily` if set.")
         private String columnFamily;
 
         @Schema(title = "Map of column qualifier to cell value to set on this row.")
