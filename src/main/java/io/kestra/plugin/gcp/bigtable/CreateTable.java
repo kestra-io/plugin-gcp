@@ -59,7 +59,7 @@ public class CreateTable extends AbstractBigtable implements RunnableTask<Create
     private Property<String> tableId;
 
     @Schema(
-        title = "Column family names to create on the table.",
+        title = "Column family names to create on the table",
         description = "If empty, the table is created with no column families."
     )
     @PluginProperty(group = "main")
@@ -87,10 +87,10 @@ public class CreateTable extends AbstractBigtable implements RunnableTask<Create
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The created table ID.")
+        @Schema(title = "The created table ID")
         private final String tableId;
 
-        @Schema(title = "Number of column families created.")
+        @Schema(title = "Number of column families created")
         private final Long columnFamilyCount;
     }
 }

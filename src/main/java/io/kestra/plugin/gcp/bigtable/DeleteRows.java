@@ -63,23 +63,23 @@ import lombok.experimental.SuperBuilder;
 public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteRows.Output> {
 
     @NotNull
-    @Schema(title = "The Bigtable table ID to delete rows from.")
+    @Schema(title = "The Bigtable table ID to delete rows from")
     @PluginProperty(group = "main")
     private Property<String> tableId;
 
-    @Schema(title = "Exact row keys to delete.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix`.")
+    @Schema(title = "Exact row keys to delete", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix`.")
     @PluginProperty(group = "source")
     private Property<List<String>> rowKeys;
 
-    @Schema(title = "Inclusive start of the row key range to delete.")
+    @Schema(title = "Inclusive start of the row key range to delete")
     @PluginProperty(group = "source")
     private Property<String> rowKeyStart;
 
-    @Schema(title = "Exclusive end of the row key range to delete.")
+    @Schema(title = "Exclusive end of the row key range to delete")
     @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
-    @Schema(title = "Row key prefix to match rows for deletion.", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeys`.")
+    @Schema(title = "Row key prefix to match rows for deletion", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeys`.")
     @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 
@@ -151,7 +151,7 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Number of rows deleted.")
+        @Schema(title = "Number of rows deleted")
         private final Long rowCount;
     }
 }

@@ -46,7 +46,7 @@ public class DeleteTable extends AbstractBigtable implements RunnableTask<Delete
 
     @NotNull
     @Schema(
-        title = "The Bigtable table ID to delete."
+        title = "The Bigtable table ID to delete"
     )
     @PluginProperty(group = "main")
     private Property<String> tableId;
@@ -67,7 +67,7 @@ public class DeleteTable extends AbstractBigtable implements RunnableTask<Delete
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The deleted table ID.")
+        @Schema(title = "The deleted table ID")
         private final String tableId;
     }
 }

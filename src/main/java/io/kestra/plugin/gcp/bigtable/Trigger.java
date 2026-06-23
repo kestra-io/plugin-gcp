@@ -69,53 +69,53 @@ public class Trigger extends AbstractTrigger
     implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, GcpInterface {
 
     @NotNull
-    @Schema(title = "The GCP project ID.")
+    @Schema(title = "The GCP project ID")
     @PluginProperty(group = "connection")
     private Property<String> projectId;
 
-    @Schema(title = "The GCP service account.")
+    @Schema(title = "The GCP service account")
     @PluginProperty(secret = true, group = "connection")
     private Property<String> serviceAccount;
 
-    @Schema(title = "The GCP service account to impersonate.")
+    @Schema(title = "The GCP service account to impersonate")
     @PluginProperty(secret = true, group = "advanced")
     private Property<String> impersonatedServiceAccount;
 
-    @Schema(title = "The GCP scopes to be used.")
+    @Schema(title = "The GCP scopes to be used")
     @PluginProperty(group = "advanced")
     private Property<List<String>> scopes;
 
     @NotNull
     @Schema(
-        title = "The Bigtable instance ID.",
+        title = "The Bigtable instance ID",
         description = "An instance is a container for your tables within a given GCP project."
     )
     @PluginProperty(group = "connection")
     private Property<String> instanceId;
 
     @NotNull
-    @Schema(title = "The Bigtable table ID to poll.")
+    @Schema(title = "The Bigtable table ID to poll")
     @PluginProperty(group = "source")
     private Property<String> tableId;
 
     @Schema(
-        title = "Row key prefix to scope the poll to.",
+        title = "Row key prefix to scope the poll to",
         description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`. Scope this narrowly enough " +
             "(e.g. to a time-bucketed key segment) to avoid matching rows already seen on a previous poll."
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 
-    @Schema(title = "Inclusive start of the row key range to scan.")
+    @Schema(title = "Inclusive start of the row key range to scan")
     @PluginProperty(group = "source")
     private Property<String> rowKeyStart;
 
-    @Schema(title = "Exclusive end of the row key range to scan.")
+    @Schema(title = "Exclusive end of the row key range to scan")
     @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
     @Schema(
-        title = "Only consider cells in this column family newer than the lookback window.",
+        title = "Only consider cells in this column family newer than the lookback window",
         description = "When set, only rows with at least one cell in this column family timestamped " +
             "within the lookback window are returned. Requires `lookbackSeconds` to also be set."
     )
@@ -123,7 +123,7 @@ public class Trigger extends AbstractTrigger
     private Property<String> columnFamily;
 
     @Schema(
-        title = "Lookback window, in seconds, applied to cell timestamps.",
+        title = "Lookback window, in seconds, applied to cell timestamps",
         description = "When set together with `columnFamily`, only rows with a cell newer than " +
             "(now - lookbackSeconds) are returned. This re-fetches anything written within the window " +
             "on every poll, so keep the window close to the polling `interval` to avoid duplicate executions."
@@ -133,21 +133,21 @@ public class Trigger extends AbstractTrigger
 
     @Builder.Default
     @Schema(
-        title = "The maximum number of rows to return on a single poll.",
+        title = "The maximum number of rows to return on a single poll",
         description = "Caps the size of matched rows returned in a single execution to prevent OOM errors."
     )
     @PluginProperty(group = "processing")
     private Property<Integer> maxRows = Property.ofValue(1000);
 
     @Schema(
-        title = "Bigtable emulator host (`host:port`), for local testing only.",
+        title = "Bigtable emulator host (`host:port`), for local testing only",
         description = "When set, the trigger connects to a local Bigtable emulator instead of the real Bigtable service."
     )
     @PluginProperty(group = "advanced")
     private Property<String> emulatorHost;
 
     @Builder.Default
-    @Schema(title = "The interval between polls.")
+    @Schema(title = "The interval between polls")
     @PluginProperty(group = "execution")
     private final Duration interval = Duration.ofSeconds(60);
 
@@ -252,10 +252,10 @@ public class Trigger extends AbstractTrigger
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Number of rows matched on this poll.")
+        @Schema(title = "Number of rows matched on this poll")
         private final Long rowCount;
 
-        @Schema(title = "The matched rows, each with its row key and cells.")
+        @Schema(title = "The matched rows, each with its row key and cells")
         private final List<Map<String, Object>> rows;
     }
 }

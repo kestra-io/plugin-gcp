@@ -99,13 +99,13 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
 
     @NotNull
     @Schema(
-        title = "The Bigtable table ID to write to."
+        title = "The Bigtable table ID to write to"
     )
     @PluginProperty(group = "destination")
     private Property<String> tableId;
 
     @Schema(
-        title = "The column family to write cells into.",
+        title = "The column family to write cells into",
         description = "Can be overridden per-row by setting `columnFamily` on an individual row entry."
     )
     @PluginProperty(group = "destination")
@@ -113,7 +113,7 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
 
     @NotNull
     @Schema(
-        title = "The rows to write.",
+        title = "The rows to write",
         description = "Each row has a row key, a map of column qualifier to cell value to set, and an " +
             "optional list of column qualifiers to delete."
     )
@@ -178,23 +178,23 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
     @AllArgsConstructor
     public static class RowInput {
         @NotNull
-        @Schema(title = "The row key.")
+        @Schema(title = "The row key")
         private String rowKey;
 
         @Schema(title = "The column family for this row", description = "Overrides the task-level `columnFamily` if set.")
         private String columnFamily;
 
-        @Schema(title = "Map of column qualifier to cell value to set on this row.")
+        @Schema(title = "Map of column qualifier to cell value to set on this row")
         private Map<String, String> cells;
 
-        @Schema(title = "Column qualifiers to delete on this row.")
+        @Schema(title = "Column qualifiers to delete on this row")
         private List<String> deleteCells;
     }
 
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Number of rows written.")
+        @Schema(title = "Number of rows written")
         private final Long rowCount;
     }
 }

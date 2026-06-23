@@ -82,48 +82,48 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
 
     @NotNull
     @Schema(
-        title = "The Bigtable table ID to read from."
+        title = "The Bigtable table ID to read from"
     )
     @PluginProperty(group = "source")
     private Property<String> tableId;
 
     @Schema(
-        title = "Inclusive start of the row key range to scan.",
+        title = "Inclusive start of the row key range to scan",
         description = "Mutually exclusive with `rowKeyPrefix`. If neither is set, the full table is scanned."
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyStart;
 
     @Schema(
-        title = "Exclusive end of the row key range to scan.",
+        title = "Exclusive end of the row key range to scan",
         description = "Used together with `rowKeyStart`. Ignored if `rowKeyPrefix` is set."
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
     @Schema(
-        title = "Row key prefix to filter on.",
+        title = "Row key prefix to filter on",
         description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`."
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 
     @Schema(
-        title = "Only return cells from this column family.",
+        title = "Only return cells from this column family",
         description = "If not set, cells from all column families are returned."
     )
     @PluginProperty(group = "processing")
     private Property<String> columnFamily;
 
     @Schema(
-        title = "Maximum number of rows to read.",
+        title = "Maximum number of rows to read",
         description = "If not set, all matching rows are read."
     )
     @PluginProperty(group = "processing")
     private Property<Integer> limit;
 
     @Schema(
-        title = "The way you want to store the data.",
+        title = "Data storage method",
         description = "FETCH_ONE outputs the first row, FETCH outputs all rows in the output variable, " +
             "STORE stores all rows to a file in internal storage and is recommended for large result sets."
     )
@@ -231,16 +231,16 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Number of rows read.")
+        @Schema(title = "Number of rows read")
         private final Long rowCount;
 
-        @Schema(title = "The first matching row (only set when fetchType is FETCH_ONE).")
+        @Schema(title = "The first matching row (only set when fetchType is FETCH_ONE)")
         private final Map<String, Object> row;
 
-        @Schema(title = "All matching rows (only set when fetchType is FETCH).")
+        @Schema(title = "All matching rows (only set when fetchType is FETCH)")
         private final List<Map<String, Object>> rows;
 
-        @Schema(title = "URI of the file storing all rows (only set when fetchType is STORE).")
+        @Schema(title = "URI of the file storing all rows (only set when fetchType is STORE)")
         private final URI uri;
     }
 }
