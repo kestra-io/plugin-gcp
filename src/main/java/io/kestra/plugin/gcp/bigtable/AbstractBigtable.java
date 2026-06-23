@@ -36,7 +36,7 @@ import lombok.experimental.SuperBuilder;
 public abstract class AbstractBigtable extends Task implements GcpInterface {
 
     @NotNull
-    @Schema(title = "The GCP project ID.")
+    @Schema(title = "The GCP project ID")
     @PluginProperty(group = "connection")
     protected Property<String> projectId;
 
