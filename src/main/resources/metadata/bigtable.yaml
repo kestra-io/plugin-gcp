@@ -1,0 +1,9 @@
+group: io.kestra.plugin.gcp.bigtable
+name: bigtable
+title: Google Cloud Bigtable
+
+description: "Tasks to read, write, and delete rows in Google Cloud Bigtable, the fully managed, petabyte-scale NoSQL database optimised for high-throughput, low-latency workloads."
+body: "Use these tasks to read, write, and delete rows or tables in Google Cloud Bigtable, and to trigger flows when new rows are detected. Authentication follows the same GCP service account pattern as the other plugin-gcp sub-plugins (CredentialService). Use ReadRows with the STORE fetch type for large result sets to avoid loading the full result set into memory."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

@@ -37,6 +37,12 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.bigquery.Trigger`
 - `io.kestra.plugin.gcp.bigquery.UpdateDataset`
 - `io.kestra.plugin.gcp.bigquery.UpdateTable`
+- `io.kestra.plugin.gcp.bigtable.CreateTable`
+- `io.kestra.plugin.gcp.bigtable.DeleteRows`
+- `io.kestra.plugin.gcp.bigtable.DeleteTable`
+- `io.kestra.plugin.gcp.bigtable.ReadRows`
+- `io.kestra.plugin.gcp.bigtable.Trigger`
+- `io.kestra.plugin.gcp.bigtable.WriteRows`
 - `io.kestra.plugin.gcp.cli.GCloudCLI`
 - `io.kestra.plugin.gcp.dataform.InvokeWorkflow`
 - `io.kestra.plugin.gcp.dataproc.batches.PySparkSubmit`
@@ -80,8 +86,8 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 
 ```
 plugin-gcp/
-├── src/main/java/io/kestra/plugin/gcp/vertexai/
-├── src/test/java/io/kestra/plugin/gcp/vertexai/
+├── src/main/java/io/kestra/plugin/gcp/
+├── src/test/java/io/kestra/plugin/gcp/
 ├── build.gradle
 └── README.md
 ```
