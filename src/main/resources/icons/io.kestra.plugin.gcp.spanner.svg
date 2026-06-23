@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<style>.cls-1{fill:#669df6;}.cls-2{fill:#aecbfa;}.cls-3{fill:#4285f4;}</style>
+</defs>
+<title>Icon_24px_Spanner_Color</title>
+<g data-name="colored-32/spanner">
+<path class="cls-3" d="M12,2L3,7v10l9,5l9-5V7L12,2z M12,4.3l7,3.9v7.6l-7,3.9l-7-3.9V8.2L12,4.3z"/>
+<polygon class="cls-1" points="12,6 5,10 12,14 19,10"/>
+<polygon class="cls-2" points="12,14 12,20 5,16 5,10"/>
+<polygon class="cls-3" points="19,10 19,16 12,20 12,14"/>
+</g>
+</svg>

@@ -43,6 +43,12 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.bigtable.ReadRows`
 - `io.kestra.plugin.gcp.bigtable.Trigger`
 - `io.kestra.plugin.gcp.bigtable.WriteRows`
+- `io.kestra.plugin.gcp.spanner.BatchDml`
+- `io.kestra.plugin.gcp.spanner.CreateDatabase`
+- `io.kestra.plugin.gcp.spanner.DeleteDatabase`
+- `io.kestra.plugin.gcp.spanner.Execute`
+- `io.kestra.plugin.gcp.spanner.Query`
+- `io.kestra.plugin.gcp.spanner.Trigger`
 - `io.kestra.plugin.gcp.cli.GCloudCLI`
 - `io.kestra.plugin.gcp.dataform.InvokeWorkflow`
 - `io.kestra.plugin.gcp.dataproc.batches.PySparkSubmit`
