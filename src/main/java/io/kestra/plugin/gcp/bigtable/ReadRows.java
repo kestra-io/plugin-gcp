@@ -37,12 +37,12 @@ import lombok.experimental.SuperBuilder;
     title = "Read rows from a Google Cloud Bigtable table.",
     description = "Reads rows from a Bigtable table using an optional row key range, row key prefix, or cell filter. " +
         "Supports FETCH (return all rows in the output), FETCH_ONE (return only the first row), and STORE " +
-        "(persist all rows to internal storage as ion, recommended for large result sets) fetch types."
+        "(persist all rows to internal storage as ion, recommended for large result sets) fetch types"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Read rows from Bigtable by row key prefix and store the result.",
+            title = "Read rows from Bigtable by row key prefix and store the result",
             full = true,
             code = """
                 id: bigtable_read_rows
@@ -59,7 +59,7 @@ import lombok.experimental.SuperBuilder;
                 """
         ),
         @Example(
-            title = "Read a single row by exact row key.",
+            title = "Read a single row by exact row key",
             full = true,
             code = """
                 id: bigtable_read_one_row
@@ -89,35 +89,35 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
 
     @Schema(
         title = "Inclusive start of the row key range to scan",
-        description = "Mutually exclusive with `rowKeyPrefix`. If neither is set, the full table is scanned."
+        description = "Mutually exclusive with `rowKeyPrefix`. If neither is set, the full table is scanned"
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyStart;
 
     @Schema(
         title = "Exclusive end of the row key range to scan",
-        description = "Used together with `rowKeyStart`. Ignored if `rowKeyPrefix` is set."
+        description = "Used together with `rowKeyStart`. Ignored if `rowKeyPrefix` is set"
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
     @Schema(
         title = "Row key prefix to filter on",
-        description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`."
+        description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd`"
     )
     @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 
     @Schema(
         title = "Only return cells from this column family",
-        description = "If not set, cells from all column families are returned."
+        description = "If not set, cells from all column families are returned"
     )
     @PluginProperty(group = "processing")
     private Property<String> columnFamily;
 
     @Schema(
         title = "Maximum number of rows to read",
-        description = "If not set, all matching rows are read."
+        description = "If not set, all matching rows are read"
     )
     @PluginProperty(group = "processing")
     private Property<Integer> limit;
@@ -125,7 +125,7 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
     @Schema(
         title = "Data storage method",
         description = "FETCH_ONE outputs the first row, FETCH outputs all rows in the output variable, " +
-            "STORE stores all rows to a file in internal storage and is recommended for large result sets."
+            "STORE stores all rows to a file in internal storage and is recommended for large result sets"
     )
     @Builder.Default
     @PluginProperty(group = "execution")
