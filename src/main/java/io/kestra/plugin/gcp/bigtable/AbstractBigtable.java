@@ -44,7 +44,7 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
     @PluginProperty(secret = true, group = "execution")
     protected Property<String> serviceAccount;
 
-    @Schema(title = "The GCP service account to impersonate.")
+    @Schema(title = "The GCP service account to impersonate")
     @PluginProperty(secret = true, group = "advanced")
     protected Property<String> impersonatedServiceAccount;
 
