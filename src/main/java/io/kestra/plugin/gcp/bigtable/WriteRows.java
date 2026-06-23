@@ -28,14 +28,14 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Write rows to a Google Cloud Bigtable table.",
+    title = "Write rows to a Google Cloud Bigtable table",
     description = "Writes one or more rows as a batch of mutations. Each row can set one or more cells " +
-        "(`cells`) and/or delete one or more cells (`deleteCells`) within the configured column family."
+        "(`cells`) and/or delete one or more cells (`deleteCells`) within the configured column family"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Write rows to Bigtable.",
+            title = "Write rows to Bigtable",
             full = true,
             code = """
                 id: bigtable_write_rows
@@ -64,7 +64,7 @@ import lombok.experimental.SuperBuilder;
                 """
         ),
         @Example(
-            title = "Set and delete cells on the same row.",
+            title = "Set and delete cells on the same row",
             full = true,
             code = """
                 id: bigtable_write_rows_with_delete
@@ -91,7 +91,7 @@ import lombok.experimental.SuperBuilder;
             name = "rows.written",
             type = Counter.TYPE,
             unit = "rows",
-            description = "Number of rows written."
+            description = "Number of rows written"
         )
     }
 )
@@ -106,7 +106,7 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
 
     @Schema(
         title = "The column family to write cells into",
-        description = "Can be overridden per-row by setting `columnFamily` on an individual row entry."
+        description = "Can be overridden per-row by setting `columnFamily` on an individual row entry"
     )
     @PluginProperty(group = "destination")
     private Property<String> columnFamily;
@@ -115,7 +115,7 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
     @Schema(
         title = "The rows to write",
         description = "Each row has a row key, a map of column qualifier to cell value to set, and an " +
-            "optional list of column qualifiers to delete."
+            "optional list of column qualifiers to delete"
     )
     @PluginProperty(group = "main")
     private Property<List<RowInput>> rows;
@@ -135,7 +135,7 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
             String family = rowInput.getColumnFamily() != null ? rowInput.getColumnFamily() : rDefaultFamily;
             if (family == null) {
                 throw new IllegalArgumentException(
-                    "No columnFamily defined for row '" + rowInput.getRowKey() + "' and no default columnFamily set on the task."
+                    "No columnFamily defined for row '" + rowInput.getRowKey() + "' and no default columnFamily set on the task"
                 );
             }
 
@@ -181,7 +181,7 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
         @Schema(title = "The row key")
         private String rowKey;
 
-        @Schema(title = "The column family for this row", description = "Overrides the task-level `columnFamily` if set.")
+        @Schema(title = "The column family for this row", description = "Overrides the task-level `columnFamily` if set")
         private String columnFamily;
 
         @Schema(title = "Map of column qualifier to cell value to set on this row")
