@@ -53,7 +53,7 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
     protected Property<List<String>> scopes;
 
     @NotNull
-    @Schema(title = "The Bigtable instance ID.", description = "An instance is a container for your tables within a given GCP project.")
+    @Schema(title = "The Bigtable instance ID", description = "An instance is a container for your tables within a given GCP project.")
     @PluginProperty(group = "connection")
     protected Property<String> instanceId;
 
