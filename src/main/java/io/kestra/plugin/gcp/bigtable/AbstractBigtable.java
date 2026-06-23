@@ -40,7 +40,7 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
     @PluginProperty(group = "connection")
     protected Property<String> projectId;
 
-    @Schema(title = "The GCP service account.")
+    @Schema(title = "The GCP service account")
     @PluginProperty(secret = true, group = "execution")
     protected Property<String> serviceAccount;
 
