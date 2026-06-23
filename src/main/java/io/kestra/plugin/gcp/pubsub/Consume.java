@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -124,15 +126,20 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
 
         try (var outputFile = new BufferedOutputStream(new FileOutputStream(tempFile))) {
             AtomicReference<Exception> threadException = new AtomicReference<>();
+            var latch = new CountDownLatch(1);
             MessageReceiver receiver = (message, consumer) ->
             {
                 try {
                     FileSerde.write(outputFile, Message.of(message, runContext.render(serdeType).as(SerdeType.class).orElseThrow()));
                     total.getAndIncrement();
                     consumer.ack();
+                    if (this.ended(total, started, runContext)) {
+                        latch.countDown();
+                    }
                 } catch (Exception e) {
                     threadException.set(e);
                     consumer.nack();
+                    latch.countDown();
                 }
             };
             var subscriber = Subscriber.newBuilder(subscriptionName, receiver)
@@ -140,14 +147,17 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                 .build();
             subscriber.startAsync().awaitRunning();
 
-            while (!this.ended(total, started, runContext)) {
-                if (threadException.get() != null) {
-                    subscriber.stopAsync().awaitTerminated();
-                    throw threadException.get();
-                }
-                Thread.sleep(100);
+            var maxDuration = runContext.render(this.maxDuration).as(Duration.class);
+            if (maxDuration.isPresent()) {
+                latch.await(maxDuration.get().toMillis(), TimeUnit.MILLISECONDS);
+            } else {
+                latch.await();
             }
             subscriber.stopAsync().awaitTerminated();
+
+            if (threadException.get() != null) {
+                throw threadException.get();
+            }
 
             runContext.metric(Counter.of("records", total.get(), "topic", runContext.render(this.getTopic()).as(String.class).orElseThrow()));
             outputFile.flush();

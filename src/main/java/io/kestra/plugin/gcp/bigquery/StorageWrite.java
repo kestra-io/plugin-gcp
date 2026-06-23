@@ -10,7 +10,8 @@ import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -18,7 +19,10 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutureCallback;
+import com.google.api.core.ApiFutures;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
@@ -80,6 +84,8 @@ import io.kestra.core.models.annotations.PluginProperty;
     description = "Reads a file from Kestra internal storage and writes rows with the BigQuery Storage Write API. Supports DEFAULT or PENDING streams (commit required for PENDING). Requires the destination table to exist."
 )
 public class StorageWrite extends AbstractTask implements RunnableTask<StorageWrite.Output> {
+    private static final int MAX_IN_FLIGHT_APPENDS = 20;
+
     @Schema(
         title = "The fully-qualified URIs that point to source data"
     )
@@ -139,6 +145,9 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
             InputStream inputStream = new BufferedInputStream(runContext.storage().getFile(from), FileSerde.BUFFER_SIZE)
         ) {
             try (JsonStreamWriter writer = this.jsonStreamWriter(runContext, parentTable, connection).build()) {
+                Semaphore inFlight = new Semaphore(MAX_IN_FLIGHT_APPENDS);
+                AtomicReference<Throwable> appendError = new AtomicReference<>();
+
                 Integer count = FileSerde.readAll(inputStream)
                     .map(this::map)
                     .buffer(runContext.render(this.bufferSize).as(Integer.class).orElseThrow())
@@ -151,20 +160,33 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
                     })
                     .map(throwFunction(o ->
                     {
-                        try {
-                            ApiFuture<AppendRowsResponse> future = writer.append(o);
-                            AppendRowsResponse response = future.get();
+                        throwIfAppendFailed(appendError);
 
-                            return o.length();
-                        } catch (ExecutionException e) {
-                            // If the wrapped exception is a StatusRuntimeException, check the state of the operation.
-                            // If the state is INTERNAL, CANCELLED, or ABORTED, you can retry. For more information, see:
-                            // https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
-                            throw new Exception("Failed to append records with error: " + e.getMessage(), e);
-                        }
+                        inFlight.acquire();
+                        ApiFuture<AppendRowsResponse> future = writer.append(o);
+                        ApiFutures.addCallback(future, new ApiFutureCallback<>() {
+                            @Override
+                            public void onFailure(Throwable t) {
+                                // If the wrapped exception is a StatusRuntimeException, check the state of the operation.
+                                // If the state is INTERNAL, CANCELLED, or ABORTED, you can retry. For more information, see:
+                                // https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
+                                appendError.compareAndSet(null, t);
+                                inFlight.release();
+                            }
+
+                            @Override
+                            public void onSuccess(AppendRowsResponse response) {
+                                inFlight.release();
+                            }
+                        }, MoreExecutors.directExecutor());
+
+                        return o.length();
                     }))
                     .reduce(Integer::sum)
                     .block();
+
+                inFlight.acquire(MAX_IN_FLIGHT_APPENDS);
+                throwIfAppendFailed(appendError);
 
                 Output.OutputBuilder builder = Output.builder()
                     .rows(count);
@@ -210,6 +232,13 @@ public class StorageWrite extends AbstractTask implements RunnableTask<StorageWr
 
                 return output;
             }
+        }
+    }
+
+    private static void throwIfAppendFailed(AtomicReference<Throwable> appendError) throws Exception {
+        Throwable error = appendError.get();
+        if (error != null) {
+            throw new Exception("Failed to append records with error: " + error.getMessage(), error);
         }
     }
 
