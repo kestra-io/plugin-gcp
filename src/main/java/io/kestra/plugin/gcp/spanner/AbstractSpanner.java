@@ -20,6 +20,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.gcp.CredentialService;
 import io.kestra.plugin.gcp.GcpInterface;
 import io.kestra.core.serializers.JacksonMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -149,7 +150,7 @@ public abstract class AbstractSpanner extends Task implements GcpInterface {
             try {
                 String json = JacksonMapper.ofJson().writeValueAsString(value);
                 binder.to(Value.json(json));
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 binder.to(Value.string(value.toString()));
             }
         }
