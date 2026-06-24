@@ -58,19 +58,23 @@ public class Execute extends AbstractSpanner implements RunnableTask<Execute.Out
     @PluginProperty(group = "main")
     private Property<Map<String, Object>> parameters;
 
+    @Builder.Default
+    @Schema(title = "Whether the statement is a DDL statement")
+    @PluginProperty(group = "main")
+    private Property<Boolean> isDdl = Property.ofValue(false);
+
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String rSql = runContext.render(this.sql).as(String.class).orElseThrow();
-        String cleanSql = rSql.trim().toLowerCase();
-        boolean isDdl = cleanSql.startsWith("create") || cleanSql.startsWith("alter") || cleanSql.startsWith("drop");
+        var rSql = runContext.render(this.sql).as(String.class).orElseThrow();
+        var rIsDdl = runContext.render(this.isDdl).as(Boolean.class).orElse(false);
 
-        Long affectedRows = 0L;
+        var affectedRows = 0L;
 
-        try (Spanner spanner = this.spannerClient(runContext)) {
-            if (isDdl) {
-                DatabaseAdminClient adminClient = spanner.getDatabaseAdminClient();
-                DatabaseId dbId = this.databaseId(runContext);
-                OperationFuture<Void, UpdateDatabaseDdlMetadata> op = adminClient.updateDatabaseDdl(
+        try (var spanner = this.spannerClient(runContext)) {
+            if (rIsDdl) {
+                var adminClient = spanner.getDatabaseAdminClient();
+                var dbId = this.databaseId(runContext);
+                var op = adminClient.updateDatabaseDdl(
                     dbId.getInstanceId().getInstance(),
                     dbId.getDatabase(),
                     List.of(rSql),
@@ -78,12 +82,12 @@ public class Execute extends AbstractSpanner implements RunnableTask<Execute.Out
                 );
                 op.get();
             } else {
-                DatabaseClient dbClient = spanner.getDatabaseClient(this.databaseId(runContext));
+                var dbClient = spanner.getDatabaseClient(this.databaseId(runContext));
                 affectedRows = dbClient.readWriteTransaction().run(transaction -> {
-                    Statement.Builder stmtBuilder = Statement.newBuilder(rSql);
+                    var stmtBuilder = Statement.newBuilder(rSql);
                     if (this.parameters != null) {
-                        Map<String, Object> rParams = runContext.render(this.parameters).asMap(String.class, Object.class);
-                        for (Map.Entry<String, Object> entry : rParams.entrySet()) {
+                        var rParams = runContext.render(this.parameters).asMap(String.class, Object.class);
+                        for (var entry : rParams.entrySet()) {
                             bindParameter(stmtBuilder, entry.getKey(), entry.getValue());
                         }
                     }

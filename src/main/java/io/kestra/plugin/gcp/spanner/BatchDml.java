@@ -57,20 +57,20 @@ public class BatchDml extends AbstractSpanner implements RunnableTask<BatchDml.O
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        List<String> rStatements = runContext.render(this.statements).asList(String.class);
-        List<Long> affectedRows = new ArrayList<>();
+        var rStatements = runContext.render(this.statements).asList(String.class);
+        var affectedRows = new ArrayList<Long>();
         long totalAffectedRows = 0;
 
-        try (Spanner spanner = this.spannerClient(runContext)) {
-            DatabaseClient dbClient = spanner.getDatabaseClient(this.databaseId(runContext));
-            long[] results = dbClient.readWriteTransaction().run(transaction -> {
-                List<Statement> statementList = rStatements.stream()
+        try (var spanner = this.spannerClient(runContext)) {
+            var dbClient = spanner.getDatabaseClient(this.databaseId(runContext));
+            var results = dbClient.readWriteTransaction().run(transaction -> {
+                var statementList = rStatements.stream()
                     .map(Statement::of)
-                    .collect(Collectors.toList());
+                    .toList();
                 return transaction.batchUpdate(statementList);
             });
 
-            for (long result : results) {
+            for (var result : results) {
                 affectedRows.add(result);
                 totalAffectedRows += result;
             }

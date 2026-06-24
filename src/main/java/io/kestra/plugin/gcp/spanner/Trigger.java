@@ -1,5 +1,9 @@
 package io.kestra.plugin.gcp.spanner;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -14,6 +18,7 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
 import io.kestra.plugin.gcp.GcpInterface;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -117,19 +122,23 @@ public class Trigger extends AbstractTrigger
 
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
-        RunContext runContext = conditionContext.getRunContext();
+        var runContext = conditionContext.getRunContext();
         var logger = runContext.logger();
 
-        String rChangeStreamName = runContext.render(this.changeStreamName).as(String.class).orElseThrow();
-        Duration rLookback = runContext.render(this.lookback).as(Duration.class).orElse(this.interval);
+        var rChangeStreamName = runContext.render(this.changeStreamName).as(String.class).orElseThrow();
+        if (!rChangeStreamName.matches("^[a-zA-Z0-9_]+$")) {
+            throw new IllegalArgumentException("Invalid changeStreamName. Only alphanumeric characters and underscores are allowed.");
+        }
 
-        Instant end = Instant.now();
-        Instant start = end.minus(rLookback);
+        var rLookback = runContext.render(this.lookback).as(Duration.class).orElse(this.interval);
 
-        com.google.cloud.Timestamp startTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(start.getEpochSecond(), start.getNano());
-        com.google.cloud.Timestamp endTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(end.getEpochSecond(), end.getNano());
+        var end = Instant.now();
+        var start = end.minus(rLookback);
 
-        SpannerClientFactory clientFactory = SpannerClientFactory.builder()
+        var startTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(start.getEpochSecond(), start.getNano());
+        var endTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(end.getEpochSecond(), end.getNano());
+
+        var clientFactory = SpannerClientFactory.builder()
             .projectId(this.projectId)
             .serviceAccount(this.serviceAccount)
             .impersonatedServiceAccount(this.impersonatedServiceAccount)
@@ -139,105 +148,116 @@ public class Trigger extends AbstractTrigger
             .emulatorHost(this.emulatorHost)
             .build();
 
-        com.google.cloud.Timestamp finalStartTimestamp = startTimestamp;
-        List<String> partitionTokens = new ArrayList<>();
-        try {
-            partitionTokens = discoverPartitionTokens(runContext, clientFactory, rChangeStreamName, finalStartTimestamp, endTimestamp);
-        } catch (SpannerException e) {
-            if (e.getErrorCode() == ErrorCode.OUT_OF_RANGE && e.getMessage().contains("earliest read timestamp")) {
-                com.google.cloud.Timestamp earliestTimestamp = parseEarliestTimestamp(e, logger);
-                if (earliestTimestamp != null) {
-                    finalStartTimestamp = earliestTimestamp;
-                    partitionTokens = discoverPartitionTokens(runContext, clientFactory, rChangeStreamName, finalStartTimestamp, endTimestamp);
-                } else {
-                    throw e;
-                }
-            } else {
-                throw e;
-            }
-        }
+        var finalStartTimestamp = startTimestamp;
+        var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+        var rowCount = 0L;
+        var changeCount = 0L;
 
-        logger.info("Discovered Spanner change stream partition tokens: {}", partitionTokens);
+        try (var outputStream = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+            try (var spanner = clientFactory.spannerClient(runContext)) {
+                var dbClient = spanner.getDatabaseClient(clientFactory.databaseId(runContext));
 
-        List<Map<String, Object>> rows = new ArrayList<>();
-        long changeCount = 0;
-
-        for (String token : partitionTokens) {
-            String querySql = "SELECT * FROM READ_" + rChangeStreamName + "(" +
-                "start_timestamp => @startTimestamp, " +
-                "end_timestamp => @endTimestamp, " +
-                "partition_token => @partitionToken, " +
-                "heartbeat_milliseconds => 10000" +
-                ")";
-
-            Statement.Builder stmtBuilder = Statement.newBuilder(querySql);
-            clientFactory.bindParameter(stmtBuilder, "startTimestamp", finalStartTimestamp);
-            clientFactory.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
-            clientFactory.bindParameter(stmtBuilder, "partitionToken", token);
-
-            try {
-                changeCount += executeQuery(runContext, clientFactory, stmtBuilder.build(), rows);
-            } catch (SpannerException e) {
-                if (e.getErrorCode() == ErrorCode.OUT_OF_RANGE && e.getMessage().contains("earliest read timestamp")) {
-                    com.google.cloud.Timestamp earliestTimestamp = parseEarliestTimestamp(e, logger);
-                    if (earliestTimestamp != null) {
-                        Statement.Builder retryBuilder = Statement.newBuilder(querySql);
-                        clientFactory.bindParameter(retryBuilder, "startTimestamp", earliestTimestamp);
-                        clientFactory.bindParameter(retryBuilder, "endTimestamp", endTimestamp);
-                        clientFactory.bindParameter(retryBuilder, "partitionToken", token);
-                        changeCount += executeQuery(runContext, clientFactory, retryBuilder.build(), rows);
+                List<String> partitionTokens;
+                try {
+                    partitionTokens = discoverPartitionTokens(runContext, dbClient, clientFactory, rChangeStreamName, finalStartTimestamp, endTimestamp);
+                } catch (SpannerException e) {
+                    if (e.getErrorCode() == ErrorCode.OUT_OF_RANGE && e.getMessage().contains("earliest read timestamp")) {
+                        var earliestTimestamp = parseEarliestTimestamp(e, logger);
+                        if (earliestTimestamp != null) {
+                            finalStartTimestamp = earliestTimestamp;
+                            partitionTokens = discoverPartitionTokens(runContext, dbClient, clientFactory, rChangeStreamName, finalStartTimestamp, endTimestamp);
+                        } else {
+                            throw e;
+                        }
                     } else {
                         throw e;
                     }
-                } else {
-                    throw e;
+                }
+
+                logger.info("Discovered Spanner change stream partition tokens: {}", partitionTokens);
+
+                for (var token : partitionTokens) {
+                    var querySql = "SELECT * FROM READ_" + rChangeStreamName + "(" +
+                        "start_timestamp => @startTimestamp, " +
+                        "end_timestamp => @endTimestamp, " +
+                        "partition_token => @partitionToken, " +
+                        "heartbeat_milliseconds => 10000" +
+                        ")";
+
+                    var stmtBuilder = Statement.newBuilder(querySql);
+                    clientFactory.bindParameter(stmtBuilder, "startTimestamp", finalStartTimestamp);
+                    clientFactory.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
+                    clientFactory.bindParameter(stmtBuilder, "partitionToken", token);
+
+                    try {
+                        var result = executeQueryAndStore(runContext, dbClient, clientFactory, stmtBuilder.build(), outputStream);
+                        rowCount += result.getKey();
+                        changeCount += result.getValue();
+                    } catch (SpannerException e) {
+                        if (e.getErrorCode() == ErrorCode.OUT_OF_RANGE && e.getMessage().contains("earliest read timestamp")) {
+                            var earliestTimestamp = parseEarliestTimestamp(e, logger);
+                            if (earliestTimestamp != null) {
+                                var retryBuilder = Statement.newBuilder(querySql);
+                                clientFactory.bindParameter(retryBuilder, "startTimestamp", earliestTimestamp);
+                                clientFactory.bindParameter(retryBuilder, "endTimestamp", endTimestamp);
+                                clientFactory.bindParameter(retryBuilder, "partitionToken", token);
+                                var result = executeQueryAndStore(runContext, dbClient, clientFactory, retryBuilder.build(), outputStream);
+                                rowCount += result.getKey();
+                                changeCount += result.getValue();
+                            } else {
+                                throw e;
+                            }
+                        } else {
+                            throw e;
+                        }
+                    }
                 }
             }
         }
 
-        if (rows.isEmpty() || changeCount == 0) {
+        if (rowCount == 0 || changeCount == 0) {
+            tempFile.delete();
             return Optional.empty();
         }
 
-        Output output = Output.builder()
-            .rowCount((long) rows.size())
+        var storageUri = runContext.storage().putFile(tempFile);
+
+        var output = Output.builder()
+            .rowCount(rowCount)
             .changeCount(changeCount)
-            .rows(rows)
+            .uri(storageUri)
             .build();
 
-        Execution execution = TriggerService.generateExecution(this, conditionContext, context, output);
+        var execution = TriggerService.generateExecution(this, conditionContext, context, output);
         return Optional.of(execution);
     }
 
-    private List<String> discoverPartitionTokens(RunContext runContext, SpannerClientFactory clientFactory, String changeStreamName, com.google.cloud.Timestamp startTimestamp, com.google.cloud.Timestamp endTimestamp) throws Exception {
-        List<String> tokens = new ArrayList<>();
-        String querySql = "SELECT * FROM READ_" + changeStreamName + "(" +
+    private List<String> discoverPartitionTokens(RunContext runContext, DatabaseClient dbClient, SpannerClientFactory clientFactory, String changeStreamName, com.google.cloud.Timestamp startTimestamp, com.google.cloud.Timestamp endTimestamp) throws Exception {
+        var tokens = new ArrayList<String>();
+        var querySql = "SELECT * FROM READ_" + changeStreamName + "(" +
             "start_timestamp => @startTimestamp, " +
             "end_timestamp => @endTimestamp, " +
             "partition_token => NULL, " +
             "heartbeat_milliseconds => 10000" +
             ")";
 
-        Statement.Builder stmtBuilder = Statement.newBuilder(querySql);
+        var stmtBuilder = Statement.newBuilder(querySql);
         clientFactory.bindParameter(stmtBuilder, "startTimestamp", startTimestamp);
         clientFactory.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
 
-        try (Spanner spanner = clientFactory.spannerClient(runContext)) {
-            DatabaseClient dbClient = spanner.getDatabaseClient(clientFactory.databaseId(runContext));
-            try (ResultSet resultSet = dbClient.singleUse().executeQuery(stmtBuilder.build())) {
-                while (resultSet.next()) {
-                    if (!resultSet.isNull("ChangeRecord")) {
-                        List<Struct> changeRecords = resultSet.getStructList("ChangeRecord");
-                        for (Struct record : changeRecords) {
-                            if (!record.isNull("child_partitions_record")) {
-                                List<Struct> childPartitionsRecords = record.getStructList("child_partitions_record");
-                                for (Struct cpRecord : childPartitionsRecords) {
-                                    if (!cpRecord.isNull("child_partitions")) {
-                                        List<Struct> childPartitions = cpRecord.getStructList("child_partitions");
-                                        for (Struct cp : childPartitions) {
-                                            if (!cp.isNull("token")) {
-                                                tokens.add(cp.getString("token"));
-                                            }
+        try (var resultSet = dbClient.singleUse().executeQuery(stmtBuilder.build())) {
+            while (resultSet.next()) {
+                if (!resultSet.isNull("ChangeRecord")) {
+                    var changeRecords = resultSet.getStructList("ChangeRecord");
+                    for (var record : changeRecords) {
+                        if (!record.isNull("child_partitions_record")) {
+                            var childPartitionsRecords = record.getStructList("child_partitions_record");
+                            for (var cpRecord : childPartitionsRecords) {
+                                if (!cpRecord.isNull("child_partitions")) {
+                                    var childPartitions = cpRecord.getStructList("child_partitions");
+                                    for (var cp : childPartitions) {
+                                        if (!cp.isNull("token")) {
+                                            tokens.add(cp.getString("token"));
                                         }
                                     }
                                 }
@@ -251,11 +271,11 @@ public class Trigger extends AbstractTrigger
     }
 
     private com.google.cloud.Timestamp parseEarliestTimestamp(SpannerException e, org.slf4j.Logger logger) {
-        String msg = e.getMessage();
-        int idx = msg.indexOf("earliest read timestamp:");
+        var msg = e.getMessage();
+        var idx = msg.indexOf("earliest read timestamp:");
         if (idx != -1) {
-            String tsStr = msg.substring(idx + "earliest read timestamp:".length()).trim();
-            int spaceIdx = tsStr.indexOf(' ');
+            var tsStr = msg.substring(idx + "earliest read timestamp:".length()).trim();
+            var spaceIdx = tsStr.indexOf(' ');
             if (spaceIdx != -1) {
                 tsStr = tsStr.substring(0, spaceIdx);
             }
@@ -264,8 +284,8 @@ public class Trigger extends AbstractTrigger
                 tsStr = tsStr.substring(0, tsStr.length() - 1);
             }
             try {
-                Instant earliestInstant = Instant.parse(tsStr);
-                com.google.cloud.Timestamp earliestTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(earliestInstant.getEpochSecond(), earliestInstant.getNano());
+                var earliestInstant = Instant.parse(tsStr);
+                var earliestTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(earliestInstant.getEpochSecond(), earliestInstant.getNano());
                 logger.info("Provided startTimestamp was before stream creation. Retrying query with earliest read timestamp: {}", earliestTimestamp);
                 return earliestTimestamp;
             } catch (Exception ex) {
@@ -275,33 +295,26 @@ public class Trigger extends AbstractTrigger
         return null;
     }
 
+    private Map.Entry<Long, Long> executeQueryAndStore(RunContext runContext, DatabaseClient dbClient, SpannerClientFactory clientFactory, Statement statement, BufferedOutputStream outputStream) throws Exception {
+        var localRowCount = 0L;
+        var localChangeCount = 0L;
+        try (var resultSet = dbClient.singleUse().executeQuery(statement)) {
+            while (resultSet.next()) {
+                var rowMap = clientFactory.rowToMap(resultSet.getCurrentRowAsStruct());
+                FileSerde.write(outputStream, rowMap);
+                localRowCount++;
 
-    private long executeQuery(RunContext runContext, SpannerClientFactory clientFactory, Statement statement, List<Map<String, Object>> rows) throws Exception {
-        long changeCount = 0;
-        try (Spanner spanner = clientFactory.spannerClient(runContext)) {
-            DatabaseClient dbClient = spanner.getDatabaseClient(clientFactory.databaseId(runContext));
-            try (ResultSet resultSet = dbClient.singleUse().executeQuery(statement)) {
-                while (resultSet.next()) {
-                    Map<String, Object> rowMap = clientFactory.rowToMap(resultSet.getCurrentRowAsStruct());
-                    rows.add(rowMap);
-
-                    if (!resultSet.isNull("ChangeRecord")) {
-                        List<Struct> changeRecords = resultSet.getStructList("ChangeRecord");
-                        runContext.logger().info("ChangeRecords size: {}", changeRecords.size());
-                        for (Struct record : changeRecords) {
-                            runContext.logger().info("record: data_change_record null? {}, heartbeat null? {}, child_partitions null? {}",
-                                record.isNull("data_change_record"),
-                                record.isNull("heartbeat_record"),
-                                record.isNull("child_partitions_record"));
-                            if (!record.isNull("data_change_record")) {
-                                changeCount += record.getStructList("data_change_record").size();
-                            }
+                if (!resultSet.isNull("ChangeRecord")) {
+                    var changeRecords = resultSet.getStructList("ChangeRecord");
+                    for (var record : changeRecords) {
+                        if (!record.isNull("data_change_record")) {
+                            localChangeCount += record.getStructList("data_change_record").size();
                         }
                     }
                 }
             }
         }
-        return changeCount;
+        return new AbstractMap.SimpleEntry<>(localRowCount, localChangeCount);
     }
 
     @SuperBuilder
@@ -318,7 +331,7 @@ public class Trigger extends AbstractTrigger
         @Schema(title = "Total number of data modification changes detected")
         private final Long changeCount;
 
-        @Schema(title = "The retrieved change records")
-        private final List<Map<String, Object>> rows;
+        @Schema(title = "The URI of stored change records")
+        private final URI uri;
     }
 }

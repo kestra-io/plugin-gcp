@@ -1,14 +1,18 @@
 package io.kestra.plugin.gcp.spanner;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.net.URI;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 
@@ -20,6 +24,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.Await;
 import static io.kestra.core.utils.Rethrow.throwSupplier;
 
@@ -29,6 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
+@Execution(ExecutionMode.SAME_THREAD)
 class SpannerTest {
 
     @Inject
@@ -67,13 +73,19 @@ class SpannerTest {
         spanner = options.getService();
 
         InstanceAdminClient instanceAdminClient = spanner.getInstanceAdminClient();
+        InstanceConfigId instanceConfig = InstanceConfigId.of(PROJECT_ID, "emulator-config");
         InstanceInfo instanceInfo = InstanceInfo.newBuilder(InstanceId.of(PROJECT_ID, INSTANCE_ID))
+            .setInstanceConfigId(instanceConfig)
             .setDisplayName("Test Instance")
             .setNodeCount(1)
             .build();
         try {
             instanceAdminClient.createInstance(instanceInfo).get();
         } catch (Exception e) {
+            Throwable cause = e.getCause();
+            if (!(cause instanceof SpannerException && ((SpannerException) cause).getErrorCode() == ErrorCode.ALREADY_EXISTS)) {
+                throw e;
+            }
         }
 
         DatabaseAdminClient databaseAdminClient = spanner.getDatabaseAdminClient();
@@ -87,6 +99,10 @@ class SpannerTest {
                 "CREATE CHANGE STREAM users_stream FOR users"
             )).get();
         } catch (Exception e) {
+            Throwable cause = e.getCause();
+            if (!(cause instanceof SpannerException && ((SpannerException) cause).getErrorCode() == ErrorCode.ALREADY_EXISTS)) {
+                throw e;
+            }
         }
     }
 
@@ -148,6 +164,83 @@ class SpannerTest {
         assertThat(queryOutput.getRow(), is(notNullValue()));
         assertThat(queryOutput.getRow().get("name"), is("John Doe"));
         assertThat(queryOutput.getRow().get("age"), is(30L));
+
+        Query queryFetchTask = Query.builder()
+            .id("query-fetch")
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("SELECT * FROM users WHERE id = @id"))
+            .parameters(Property.ofValue(Map.of("id", 1L)))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        Query.Output queryFetchOutput = queryFetchTask.run(runContext);
+        assertThat(queryFetchOutput.getSize(), is(1L));
+        assertThat(queryFetchOutput.getRows(), is(notNullValue()));
+        assertThat(queryFetchOutput.getRows().size(), is(1));
+        assertThat(queryFetchOutput.getRows().get(0).get("name"), is("John Doe"));
+        assertThat(queryFetchOutput.getRows().get(0).get("age"), is(30L));
+
+        Query queryStoreTask = Query.builder()
+            .id("query-store")
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("SELECT * FROM users WHERE id = @id"))
+            .parameters(Property.ofValue(Map.of("id", 1L)))
+            .fetchType(Property.ofValue(FetchType.STORE))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        Query.Output queryStoreOutput = queryStoreTask.run(runContext);
+        assertThat(queryStoreOutput.getSize(), is(1L));
+        assertThat(queryStoreOutput.getUri(), is(notNullValue()));
+
+        List<Map<String, Object>> storedRows = new ArrayList<>();
+        try (var is = runContext.storage().getFile(queryStoreOutput.getUri())) {
+            FileSerde.readAll(is)
+                .doOnNext(row -> storedRows.add((Map<String, Object>) row))
+                .then()
+                .block();
+        }
+        assertThat(storedRows.size(), is(1));
+        assertThat(storedRows.get(0).get("name"), is("John Doe"));
+        assertThat(((Number) storedRows.get(0).get("age")).longValue(), is(30L));
+    }
+
+    @Test
+    void executeDdlTask() throws Exception {
+        RunContext runContext = runContextFactory.of();
+
+        Execute ddlTask = Execute.builder()
+            .id("execute-ddl")
+            .type(Execute.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("CREATE TABLE ddl_test_table (id INT64 NOT NULL) PRIMARY KEY (id)"))
+            .isDdl(Property.ofValue(true))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        Execute.Output ddlOutput = ddlTask.run(runContext);
+        assertThat(ddlOutput, is(notNullValue()));
+
+        Execute dropDdlTask = Execute.builder()
+            .id("execute-drop-ddl")
+            .type(Execute.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("DROP TABLE ddl_test_table"))
+            .isDdl(Property.ofValue(true))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+        dropDdlTask.run(runContext);
     }
 
     @Test
@@ -213,8 +306,6 @@ class SpannerTest {
             return null;
         });
 
-        Thread.sleep(2000);
-
         Trigger trigger = Trigger.builder()
             .id("trigger")
             .type(Trigger.class.getName())
@@ -240,6 +331,11 @@ class SpannerTest {
 
         Map<String, Object> variables = execution.get().getTrigger().getVariables();
         assertThat(variables.get("changeCount"), is(notNullValue()));
-        assertThat((Long) variables.get("changeCount"), is(greaterThanOrEqualTo(1L)));
+        assertThat(((Number) variables.get("changeCount")).longValue(), is(greaterThanOrEqualTo(1L)));
+
+        String uriString = (String) variables.get("uri");
+        assertThat(uriString, is(notNullValue()));
+        URI uri = URI.create(uriString);
+        assertThat(uri.getScheme(), is("kestra"));
     }
 }

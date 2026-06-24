@@ -128,21 +128,21 @@ public abstract class AbstractSpanner extends Task implements GcpInterface {
         } else if (value instanceof byte[]) {
             binder.to(Value.bytes(com.google.cloud.ByteArray.copyFrom((byte[]) value)));
         } else if (value instanceof List) {
-            List<?> list = (List<?>) value;
+            var list = (List<?>) value;
             if (list.isEmpty()) {
                 binder.to(Value.stringArray(null));
             } else {
-                Object first = list.get(0);
+                var first = list.get(0);
                 if (first instanceof String) {
-                    binder.to(Value.stringArray(list.stream().map(o -> (String) o).collect(Collectors.toList())));
+                    binder.to(Value.stringArray(list.stream().map(o -> (String) o).toList()));
                 } else if (first instanceof Boolean) {
-                    binder.to(Value.boolArray(list.stream().map(o -> (Boolean) o).collect(Collectors.toList())));
+                    binder.to(Value.boolArray(list.stream().map(o -> (Boolean) o).toList()));
                 } else if (first instanceof Long || first instanceof Integer) {
                     binder.to(Value.int64Array(list.stream().mapToLong(o -> ((Number) o).longValue()).toArray()));
                 } else if (first instanceof Double || first instanceof Float) {
                     binder.to(Value.float64Array(list.stream().mapToDouble(o -> ((Number) o).doubleValue()).toArray()));
                 } else {
-                    binder.to(Value.stringArray(list.stream().map(Object::toString).collect(Collectors.toList())));
+                    binder.to(Value.stringArray(list.stream().map(Object::toString).toList()));
                 }
             }
         } else {
@@ -222,15 +222,15 @@ public abstract class AbstractSpanner extends Task implements GcpInterface {
             case TIMESTAMP:
                 return row.getTimestampList(columnName).stream()
                     .map(t -> t.toSqlTimestamp().toInstant())
-                    .collect(Collectors.toList());
+                    .toList();
             case DATE:
                 return row.getDateList(columnName).stream()
                     .map(date -> java.time.LocalDate.of(date.getYear(), date.getMonth(), date.getDayOfMonth()))
-                    .collect(Collectors.toList());
+                    .toList();
             case STRUCT:
                 return row.getStructList(columnName).stream()
                     .map(this::rowToMap)
-                    .collect(Collectors.toList());
+                    .toList();
             default:
                 return row.getValue(columnName).toString();
         }
