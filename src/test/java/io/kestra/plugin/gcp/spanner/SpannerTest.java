@@ -338,4 +338,71 @@ class SpannerTest {
         URI uri = URI.create(uriString);
         assertThat(uri.getScheme(), is("kestra"));
     }
+
+    @Test
+    void executeWithArrayParameters() throws Exception {
+        RunContext runContext = runContextFactory.of();
+
+        Execute executeTask = Execute.builder()
+            .id("execute-array")
+            .type(Execute.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("INSERT INTO users (id, name, age) VALUES (100, 'User 100', 20), (101, 'User 101', 25)"))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+        executeTask.run(runContext);
+
+        Query queryTask = Query.builder()
+            .id("query-array")
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("SELECT * FROM users WHERE id IN UNNEST(@ids) ORDER BY id"))
+            .parameters(Property.ofValue(Map.of("ids", List.of(100L, 101L))))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        Query.Output queryOutput = queryTask.run(runContext);
+        assertThat(queryOutput.getSize(), is(2L));
+        assertThat(queryOutput.getRows().get(0).get("name"), is("User 100"));
+        assertThat(queryOutput.getRows().get(1).get("name"), is("User 101"));
+
+        Query queryEmptyTask = Query.builder()
+            .id("query-empty-array")
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("SELECT * FROM users WHERE id IN UNNEST(@ids)"))
+            .parameters(Property.ofValue(Map.of("ids", List.of())))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        Exception emptyException = org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
+            queryEmptyTask.run(runContext);
+        });
+        assertThat(emptyException.getMessage(), containsString("Cannot bind an empty list"));
+
+        Query queryMixedTask = Query.builder()
+            .id("query-mixed-array")
+            .type(Query.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .databaseId(Property.ofValue(DATABASE_ID))
+            .sql(Property.ofValue("SELECT * FROM users WHERE id IN UNNEST(@ids)"))
+            .parameters(Property.ofValue(Map.of("ids", List.of(100L, "hello"))))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        Exception mixedException = org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> {
+            queryMixedTask.run(runContext);
+        });
+        assertThat(mixedException.getMessage(), containsString("Mixed types in list parameter"));
+    }
 }

@@ -129,23 +129,7 @@ public abstract class AbstractSpanner extends Task implements GcpInterface {
         } else if (value instanceof byte[]) {
             binder.to(Value.bytes(com.google.cloud.ByteArray.copyFrom((byte[]) value)));
         } else if (value instanceof List) {
-            var list = (List<?>) value;
-            if (list.isEmpty()) {
-                binder.to(Value.stringArray(null));
-            } else {
-                var first = list.get(0);
-                if (first instanceof String) {
-                    binder.to(Value.stringArray(list.stream().map(o -> (String) o).toList()));
-                } else if (first instanceof Boolean) {
-                    binder.to(Value.boolArray(list.stream().map(o -> (Boolean) o).toList()));
-                } else if (first instanceof Long || first instanceof Integer) {
-                    binder.to(Value.int64Array(list.stream().mapToLong(o -> ((Number) o).longValue()).toArray()));
-                } else if (first instanceof Double || first instanceof Float) {
-                    binder.to(Value.float64Array(list.stream().mapToDouble(o -> ((Number) o).doubleValue()).toArray()));
-                } else {
-                    binder.to(Value.stringArray(list.stream().map(Object::toString).toList()));
-                }
-            }
+            bindList(binder, name, (List<?>) value);
         } else {
             try {
                 String json = JacksonMapper.ofJson().writeValueAsString(value);
@@ -235,5 +219,68 @@ public abstract class AbstractSpanner extends Task implements GcpInterface {
             default:
                 return row.getValue(columnName).toString();
         }
+    }
+
+    private void bindList(ValueBinder<Statement.Builder> binder, String name, List<?> list) {
+        if (list.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Cannot bind an empty list for parameter '" + name + "': "
+                + "Spanner arrays are typed and the element type cannot be inferred from an empty list. "
+                + "Omit the parameter or pass a typed/non-empty value.");
+        }
+        for (var obj : list) {
+            if (obj == null) {
+                throw new IllegalArgumentException("Null elements are not supported in array parameter '" + name + "'");
+            }
+        }
+        var first = list.get(0);
+        if (first instanceof String) {
+            binder.to(Value.stringArray(castList(list, String.class, name)));
+        } else if (first instanceof Boolean) {
+            binder.to(Value.boolArray(castList(list, Boolean.class, name)));
+        } else if (first instanceof Long || first instanceof Integer || first instanceof Short || first instanceof Byte) {
+            binder.to(Value.int64Array(toLongArray(list, name)));
+        } else if (first instanceof Double || first instanceof Float) {
+            binder.to(Value.float64Array(toDoubleArray(list, name)));
+        } else {
+            binder.to(Value.stringArray(list.stream().map(Object::toString).toList()));
+        }
+    }
+
+    private <T> List<T> castList(List<?> list, Class<T> clazz, String name) {
+        var result = new ArrayList<T>(list.size());
+        for (var obj : list) {
+            if (!clazz.isInstance(obj)) {
+                throw new IllegalArgumentException("Mixed types in list parameter '" + name + "': expected " + clazz.getSimpleName() + " but got " + obj.getClass().getSimpleName());
+            }
+            result.add(clazz.cast(obj));
+        }
+        return result;
+    }
+
+    private long[] toLongArray(List<?> list, String name) {
+        var result = new long[list.size()];
+        for (var i = 0; i < list.size(); i++) {
+            var obj = list.get(i);
+            if (obj instanceof Long || obj instanceof Integer || obj instanceof Short || obj instanceof Byte) {
+                result[i] = ((Number) obj).longValue();
+            } else {
+                throw new IllegalArgumentException("Mixed types in list parameter '" + name + "': expected integer element but got " + obj.getClass().getSimpleName());
+            }
+        }
+        return result;
+    }
+
+    private double[] toDoubleArray(List<?> list, String name) {
+        var result = new double[list.size()];
+        for (var i = 0; i < list.size(); i++) {
+            var obj = list.get(i);
+            if (obj instanceof Double || obj instanceof Float) {
+                result[i] = ((Number) obj).doubleValue();
+            } else {
+                throw new IllegalArgumentException("Mixed types in list parameter '" + name + "': expected floating-point element but got " + obj.getClass().getSimpleName());
+            }
+        }
+        return result;
     }
 }
