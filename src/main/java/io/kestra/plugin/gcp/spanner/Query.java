@@ -81,28 +81,28 @@ public class Query extends AbstractSpanner implements RunnableTask<Query.Output>
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String rSql = runContext.render(this.sql).as(String.class).orElseThrow();
-        FetchType rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.NONE);
+        var rSql = runContext.render(this.sql).as(String.class).orElseThrow();
+        var rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.NONE);
 
-        Statement.Builder stmtBuilder = Statement.newBuilder(rSql);
+        var stmtBuilder = Statement.newBuilder(rSql);
         if (this.parameters != null) {
-            Map<String, Object> rParams = runContext.render(this.parameters).asMap(String.class, Object.class);
-            for (Map.Entry<String, Object> entry : rParams.entrySet()) {
+            var rParams = runContext.render(this.parameters).asMap(String.class, Object.class);
+            for (var entry : rParams.entrySet()) {
                 bindParameter(stmtBuilder, entry.getKey(), entry.getValue());
             }
         }
 
-        Statement statement = stmtBuilder.build();
-        Output.OutputBuilder outputBuilder = Output.builder();
+        var statement = stmtBuilder.build();
+        var outputBuilder = Output.builder();
 
-        try (Spanner spanner = this.spannerClient(runContext)) {
-            DatabaseClient dbClient = spanner.getDatabaseClient(this.databaseId(runContext));
-            try (ResultSet resultSet = dbClient.singleUse().executeQuery(statement)) {
+        try (var spanner = this.spannerClient(runContext)) {
+            var dbClient = spanner.getDatabaseClient(this.databaseId(runContext));
+            try (var resultSet = dbClient.singleUse().executeQuery(statement)) {
                 if (FetchType.STORE.equals(rFetchType)) {
-                    Map.Entry<URI, Long> stored = this.storeResult(resultSet, runContext);
+                    var stored = this.storeResult(resultSet, runContext);
                     outputBuilder.uri(stored.getKey()).size(stored.getValue());
                 } else {
-                    List<Map<String, Object>> fetch = new ArrayList<>();
+                    var fetch = new ArrayList<Map<String, Object>>();
                     while (resultSet.next()) {
                         fetch.add(rowToMap(resultSet.getCurrentRowAsStruct()));
                     }
@@ -121,8 +121,8 @@ public class Query extends AbstractSpanner implements RunnableTask<Query.Output>
     }
 
     private Map.Entry<URI, Long> storeResult(ResultSet resultSet, RunContext runContext) throws IOException {
-        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-        long lineCount = 0;
+        var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+        var lineCount = 0L;
         try (
             var output = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)
         ) {

@@ -59,12 +59,12 @@ public class CreateDatabase extends AbstractSpanner implements RunnableTask<Crea
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        DatabaseId dbId = this.databaseId(runContext);
-        List<String> rExtraDdl = this.extraDdl != null ? runContext.render(this.extraDdl).asList(String.class) : List.of();
+        var dbId = this.databaseId(runContext);
+        var rExtraDdl = this.extraDdl != null ? runContext.render(this.extraDdl).asList(String.class) : List.<String>of();
 
-        try (Spanner spanner = this.spannerClient(runContext)) {
-            DatabaseAdminClient adminClient = spanner.getDatabaseAdminClient();
-            OperationFuture<Database, CreateDatabaseMetadata> op = adminClient.createDatabase(
+        try (var spanner = this.spannerClient(runContext)) {
+            var adminClient = spanner.getDatabaseAdminClient();
+            var op = adminClient.createDatabase(
                 dbId.getInstanceId().getInstance(),
                 dbId.getDatabase(),
                 rExtraDdl

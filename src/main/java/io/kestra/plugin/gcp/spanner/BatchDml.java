@@ -2,7 +2,6 @@ package io.kestra.plugin.gcp.spanner;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.google.cloud.spanner.*;
 
@@ -51,7 +50,10 @@ import lombok.experimental.SuperBuilder;
 public class BatchDml extends AbstractSpanner implements RunnableTask<BatchDml.Output> {
 
     @NotNull
-    @Schema(title = "The list of SQL DML statements to execute")
+    @Schema(
+        title = "The list of SQL DML statements to execute",
+        description = "Statements are executed sequentially without parameter bindings. Parameterized batch DML is not supported."
+    )
     @PluginProperty(group = "main")
     private Property<List<String>> statements;
 

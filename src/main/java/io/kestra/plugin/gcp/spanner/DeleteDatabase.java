@@ -42,10 +42,10 @@ public class DeleteDatabase extends AbstractSpanner implements RunnableTask<Dele
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        DatabaseId dbId = this.databaseId(runContext);
+        var dbId = this.databaseId(runContext);
 
-        try (Spanner spanner = this.spannerClient(runContext)) {
-            DatabaseAdminClient adminClient = spanner.getDatabaseAdminClient();
+        try (var spanner = this.spannerClient(runContext)) {
+            var adminClient = spanner.getDatabaseAdminClient();
             adminClient.dropDatabase(dbId.getInstanceId().getInstance(), dbId.getDatabase());
         }
 

@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URI;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -19,7 +20,6 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.kestra.plugin.gcp.GcpInterface;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -62,7 +62,9 @@ import lombok.experimental.SuperBuilder;
     }
 )
 public class Trigger extends AbstractTrigger
-    implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, GcpInterface {
+    implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, SpannerConnectionInterface {
+
+    private static final int HEARTBEAT_MILLISECONDS = 10000;
 
     @NotNull
     @Schema(title = "The GCP project ID")
@@ -104,7 +106,7 @@ public class Trigger extends AbstractTrigger
     private Property<String> changeStreamName;
 
     @Schema(
-        title = "Lookback window window applied to poll stream records.",
+        title = "Lookback window applied to poll stream records.",
         description = "Defaults to the polling interval if not specified."
     )
     @PluginProperty(group = "processing")
@@ -138,41 +140,23 @@ public class Trigger extends AbstractTrigger
         var startTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(start.getEpochSecond(), start.getNano());
         var endTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(end.getEpochSecond(), end.getNano());
 
-        var clientFactory = SpannerClientFactory.builder()
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .impersonatedServiceAccount(this.impersonatedServiceAccount)
-            .scopes(this.scopes)
-            .instanceId(this.instanceId)
-            .databaseId(this.databaseId)
-            .emulatorHost(this.emulatorHost)
-            .build();
-
-        var finalStartTimestamp = startTimestamp;
+        var activeStartTimestamp = new com.google.cloud.Timestamp[]{ startTimestamp };
         var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         var rowCount = 0L;
         var changeCount = 0L;
 
         try (var outputStream = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-            try (var spanner = clientFactory.spannerClient(runContext)) {
-                var dbClient = spanner.getDatabaseClient(clientFactory.databaseId(runContext));
+            try (var spanner = SpannerService.spannerClient(runContext, this)) {
+                var dbClient = spanner.getDatabaseClient(SpannerService.databaseId(runContext, this));
 
-                List<String> partitionTokens;
-                try {
-                    partitionTokens = discoverPartitionTokens(runContext, dbClient, clientFactory, rChangeStreamName, finalStartTimestamp, endTimestamp);
-                } catch (SpannerException e) {
-                    if (e.getErrorCode() == ErrorCode.OUT_OF_RANGE && e.getMessage().contains("earliest read timestamp")) {
-                        var earliestTimestamp = parseEarliestTimestamp(e, logger);
-                        if (earliestTimestamp != null) {
-                            finalStartTimestamp = earliestTimestamp;
-                            partitionTokens = discoverPartitionTokens(runContext, dbClient, clientFactory, rChangeStreamName, finalStartTimestamp, endTimestamp);
-                        } else {
-                            throw e;
-                        }
-                    } else {
-                        throw e;
-                    }
-                }
+                List<String> partitionTokens = executeWithRetry(
+                    startTimestamp,
+                    startVal -> {
+                        activeStartTimestamp[0] = startVal;
+                        return discoverPartitionTokens(runContext, dbClient, rChangeStreamName, startVal, endTimestamp);
+                    },
+                    logger
+                );
 
                 logger.info("Discovered Spanner change stream partition tokens: {}", partitionTokens);
 
@@ -181,42 +165,28 @@ public class Trigger extends AbstractTrigger
                         "start_timestamp => @startTimestamp, " +
                         "end_timestamp => @endTimestamp, " +
                         "partition_token => @partitionToken, " +
-                        "heartbeat_milliseconds => 10000" +
+                        "heartbeat_milliseconds => " + HEARTBEAT_MILLISECONDS +
                         ")";
 
-                    var stmtBuilder = Statement.newBuilder(querySql);
-                    clientFactory.bindParameter(stmtBuilder, "startTimestamp", finalStartTimestamp);
-                    clientFactory.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
-                    clientFactory.bindParameter(stmtBuilder, "partitionToken", token);
-
-                    try {
-                        var result = executeQueryAndStore(runContext, dbClient, clientFactory, stmtBuilder.build(), outputStream);
-                        rowCount += result.getKey();
-                        changeCount += result.getValue();
-                    } catch (SpannerException e) {
-                        if (e.getErrorCode() == ErrorCode.OUT_OF_RANGE && e.getMessage().contains("earliest read timestamp")) {
-                            var earliestTimestamp = parseEarliestTimestamp(e, logger);
-                            if (earliestTimestamp != null) {
-                                var retryBuilder = Statement.newBuilder(querySql);
-                                clientFactory.bindParameter(retryBuilder, "startTimestamp", earliestTimestamp);
-                                clientFactory.bindParameter(retryBuilder, "endTimestamp", endTimestamp);
-                                clientFactory.bindParameter(retryBuilder, "partitionToken", token);
-                                var result = executeQueryAndStore(runContext, dbClient, clientFactory, retryBuilder.build(), outputStream);
-                                rowCount += result.getKey();
-                                changeCount += result.getValue();
-                            } else {
-                                throw e;
-                            }
-                        } else {
-                            throw e;
-                        }
-                    }
+                    var result = executeWithRetry(
+                        activeStartTimestamp[0],
+                        startVal -> {
+                            var stmtBuilder = Statement.newBuilder(querySql);
+                            SpannerService.bindParameter(stmtBuilder, "startTimestamp", startVal);
+                            SpannerService.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
+                            SpannerService.bindParameter(stmtBuilder, "partitionToken", token);
+                            return executeQueryAndStore(runContext, dbClient, stmtBuilder.build(), outputStream);
+                        },
+                        logger
+                    );
+                    rowCount += result.getKey();
+                    changeCount += result.getValue();
                 }
             }
         }
 
         if (rowCount == 0 || changeCount == 0) {
-            tempFile.delete();
+            Files.deleteIfExists(tempFile.toPath());
             return Optional.empty();
         }
 
@@ -232,18 +202,18 @@ public class Trigger extends AbstractTrigger
         return Optional.of(execution);
     }
 
-    private List<String> discoverPartitionTokens(RunContext runContext, DatabaseClient dbClient, SpannerClientFactory clientFactory, String changeStreamName, com.google.cloud.Timestamp startTimestamp, com.google.cloud.Timestamp endTimestamp) throws Exception {
+    private List<String> discoverPartitionTokens(RunContext runContext, DatabaseClient dbClient, String changeStreamName, com.google.cloud.Timestamp startTimestamp, com.google.cloud.Timestamp endTimestamp) throws Exception {
         var tokens = new ArrayList<String>();
         var querySql = "SELECT * FROM READ_" + changeStreamName + "(" +
             "start_timestamp => @startTimestamp, " +
             "end_timestamp => @endTimestamp, " +
             "partition_token => NULL, " +
-            "heartbeat_milliseconds => 10000" +
+            "heartbeat_milliseconds => " + HEARTBEAT_MILLISECONDS +
             ")";
 
         var stmtBuilder = Statement.newBuilder(querySql);
-        clientFactory.bindParameter(stmtBuilder, "startTimestamp", startTimestamp);
-        clientFactory.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
+        SpannerService.bindParameter(stmtBuilder, "startTimestamp", startTimestamp);
+        SpannerService.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
 
         try (var resultSet = dbClient.singleUse().executeQuery(stmtBuilder.build())) {
             while (resultSet.next()) {
@@ -295,12 +265,12 @@ public class Trigger extends AbstractTrigger
         return null;
     }
 
-    private Map.Entry<Long, Long> executeQueryAndStore(RunContext runContext, DatabaseClient dbClient, SpannerClientFactory clientFactory, Statement statement, BufferedOutputStream outputStream) throws Exception {
+    private Map.Entry<Long, Long> executeQueryAndStore(RunContext runContext, DatabaseClient dbClient, Statement statement, BufferedOutputStream outputStream) throws Exception {
         var localRowCount = 0L;
         var localChangeCount = 0L;
         try (var resultSet = dbClient.singleUse().executeQuery(statement)) {
             while (resultSet.next()) {
-                var rowMap = clientFactory.rowToMap(resultSet.getCurrentRowAsStruct());
+                var rowMap = SpannerService.rowToMap(resultSet.getCurrentRowAsStruct());
                 FileSerde.write(outputStream, rowMap);
                 localRowCount++;
 
@@ -317,9 +287,23 @@ public class Trigger extends AbstractTrigger
         return new AbstractMap.SimpleEntry<>(localRowCount, localChangeCount);
     }
 
-    @SuperBuilder
-    @NoArgsConstructor
-    public static class SpannerClientFactory extends AbstractSpanner {
+    @FunctionalInterface
+    private interface SpannerQueryFunction<T> {
+        T apply(com.google.cloud.Timestamp start) throws Exception;
+    }
+
+    private <T> T executeWithRetry(com.google.cloud.Timestamp start, SpannerQueryFunction<T> queryFunc, org.slf4j.Logger logger) throws Exception {
+        try {
+            return queryFunc.apply(start);
+        } catch (SpannerException e) {
+            if (e.getErrorCode() == ErrorCode.OUT_OF_RANGE && e.getMessage().contains("earliest read timestamp")) {
+                var earliestTimestamp = parseEarliestTimestamp(e, logger);
+                if (earliestTimestamp != null) {
+                    return queryFunc.apply(earliestTimestamp);
+                }
+            }
+            throw e;
+        }
     }
 
     @Builder
