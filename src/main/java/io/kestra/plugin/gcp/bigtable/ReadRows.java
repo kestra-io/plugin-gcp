@@ -34,7 +34,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Read rows from a Google Cloud Bigtable table.",
+    title = "Read rows from a Google Cloud Bigtable table",
     description = "Reads rows from a Bigtable table using an optional row key range, row key prefix, or cell filter. " +
         "Supports FETCH (return all rows in the output), FETCH_ONE (return only the first row), and STORE " +
         "(persist all rows to internal storage as ion, recommended for large result sets) fetch types"

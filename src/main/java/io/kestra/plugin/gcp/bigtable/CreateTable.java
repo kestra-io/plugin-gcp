@@ -23,14 +23,14 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a Google Cloud Bigtable table.",
+    title = "Create a Google Cloud Bigtable table",
     description = "Creates a table with the given column families. If the table already exists, the task fails " +
         "unless the underlying client treats creation as idempotent for the given table ID."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Create a Bigtable table with two column families.",
+            title = "Create a Bigtable table with two column families",
             full = true,
             code = """
                 id: bigtable_create_table

@@ -17,7 +17,7 @@ public class Bucket {
     private String name;
 
     @Schema(
-        title = "The bucket's URI."
+        title = "The bucket's URI"
     )
     @PluginProperty(group = "advanced")
     private URI uri;
@@ -29,13 +29,13 @@ public class Bucket {
     private String location;
 
     @Schema(
-        title = "The bucket's website index page."
+        title = "The bucket's website index page"
     )
     @PluginProperty(group = "advanced")
     private String indexPage;
 
     @Schema(
-        title = "The custom object to return when a requested resource is not found."
+        title = "The custom object to return when a requested resource is not found"
     )
     @PluginProperty(group = "advanced")
     private String notFoundPage;

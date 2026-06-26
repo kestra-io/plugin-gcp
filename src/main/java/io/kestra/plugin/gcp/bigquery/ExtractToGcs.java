@@ -33,7 +33,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Extract a BigQuery table to a GCS bucket.",
+            title = "Extract a BigQuery table to a GCS bucket",
             full = true,
             code = """
                 id: gcp_bq_extract_to_gcs

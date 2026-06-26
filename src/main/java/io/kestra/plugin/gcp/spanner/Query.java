@@ -32,13 +32,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a Spanner SQL query.",
+    title = "Execute a Spanner SQL query",
     description = "Queries database tables and exposes results downstream or dumps to internal storage."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Query a Spanner table and store results.",
+            title = "Query a Spanner table and store results",
             full = true,
             code = """
                 id: spanner_query

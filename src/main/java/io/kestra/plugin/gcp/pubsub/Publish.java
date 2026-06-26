@@ -44,13 +44,13 @@ import io.kestra.core.models.annotations.PluginProperty;
                     topic: topic-test
                     from:
                       - data: "{{ 'base64-encoded-string-1' | base64encode }}"
-                         attributes:
-                             testAttribute: KestraTest
+                        attributes:
+                          testAttribute: KestraTest
                       - messageId: '1234'
                       - orderingKey: 'foo'
                       - data: "{{ 'base64-encoded-string-2' | base64encode }}"
                       - attributes:
-                             testAttribute: KestraTest
+                          testAttribute: KestraTest
                 """
         )
     },

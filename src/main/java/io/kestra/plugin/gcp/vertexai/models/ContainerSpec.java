@@ -21,7 +21,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class ContainerSpec {
     @Schema(
-        title = "The URI of a container image in the Container Registry that is to be run on each worker replica.",
+        title = "The URI of a container image in the Container Registry that is to be run on each worker replica",
         description = "Must be on google container registry, example: `gcr.io/{{ project }}/{{ dir }}/{{ image }}:{{ tag }}`"
     )
     @NotNull
@@ -29,20 +29,20 @@ public class ContainerSpec {
     private Property<String> imageUri;
 
     @Schema(
-        title = "The command to be invoked when the container is started.",
+        title = "The command to be invoked when the container is started",
         description = "It overrides the entrypoint instruction in Dockerfile when provided."
     )
     @PluginProperty(group = "advanced")
     private Property<List<String>> commands;
 
     @Schema(
-        title = "The arguments to be passed when starting the container."
+        title = "The arguments to be passed when starting the container"
     )
     @PluginProperty(group = "advanced")
     private Property<List<String>> args;
 
     @Schema(
-        title = "Environment variables to be passed to the container.",
+        title = "Environment variables to be passed to the container",
         description = "Maximum limit is 100."
     )
     @PluginProperty(group = "execution")

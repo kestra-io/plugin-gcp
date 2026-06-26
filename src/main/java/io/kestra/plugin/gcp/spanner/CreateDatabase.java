@@ -22,13 +22,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a Spanner database.",
+    title = "Create a Spanner database",
     description = "Creates a Spanner database with optional DDL statements."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Create a Spanner database with a table.",
+            title = "Create a Spanner database with a table",
             full = true,
             code = """
                 id: spanner_create_database

@@ -31,7 +31,7 @@ import lombok.experimental.SuperBuilder;
 @Plugin(
     examples = {
         @Example(
-            title = "Set a document from a map.",
+            title = "Set a document from a map",
             full = true,
             code = """
                 id: gcp_firestore_set
@@ -47,7 +47,7 @@ import lombok.experimental.SuperBuilder;
                 """
         ),
         @Example(
-            title = "Set a document from a JSON string.",
+            title = "Set a document from a JSON string",
             full = true,
             code = """
                 id: gcp_firestore_set
@@ -56,7 +56,7 @@ import lombok.experimental.SuperBuilder;
                 inputs:
                   - id: json_string
                     type: STRING
-                    default: "{\"firstname\": \"John\", \"lastname\": \"Doe\"}"
+                    default: '{"firstname": "John", "lastname": "Doe"}'
 
                 tasks:
                   - id: set

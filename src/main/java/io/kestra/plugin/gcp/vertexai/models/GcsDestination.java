@@ -16,7 +16,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class GcsDestination {
     @Schema(
-        title = "Google Cloud Storage URI to output directory.",
+        title = "Google Cloud Storage URI to output directory",
         description = "If the uri doesn't end with '/', a '/' will be automatically appended. The directory is created if it doesn't exist."
     )
     @NotNull

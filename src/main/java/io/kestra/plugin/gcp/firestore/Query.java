@@ -279,13 +279,13 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     )
     public static class Filter {
         @Schema(
-            title = "Field name for the filter."
+            title = "Field name for the filter"
         )
         @NotNull
         private Property<String> field;
 
         @Schema(
-            title = "Field value for the filter.",
+            title = "Field value for the filter",
             description = "Field value for the filter. Only strings are supported at the moment."
         )
         @NotNull

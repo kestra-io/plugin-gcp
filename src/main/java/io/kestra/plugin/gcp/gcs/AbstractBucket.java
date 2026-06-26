@@ -229,13 +229,13 @@ public abstract class AbstractBucket extends AbstractGcs implements RunnableTask
         private Bucket bucket;
 
         @Schema(
-            title = "If the bucket was updated."
+            title = "If the bucket was updated"
         )
         @Builder.Default
         private Boolean updated = false;
 
         @Schema(
-            title = "If the bucket was created."
+            title = "If the bucket was created"
         )
         @Builder.Default
         private Boolean created = false;

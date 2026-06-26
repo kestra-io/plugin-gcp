@@ -25,7 +25,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Delete a dataset.",
+            title = "Delete a dataset",
             full = true,
             code = """
                 id: gcp_bq_delete_dataset

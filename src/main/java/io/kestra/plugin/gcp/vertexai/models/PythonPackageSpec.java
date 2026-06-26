@@ -24,7 +24,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class PythonPackageSpec {
     @Schema(
-        title = "The Google Cloud Storage location of the Python package files which are the training program and its dependent packages.",
+        title = "The Google Cloud Storage location of the Python package files which are the training program and its dependent packages",
         description = "The maximum number of package URIs is 100."
     )
     @NotNull
@@ -32,7 +32,7 @@ public class PythonPackageSpec {
     private Property<List<String>> packageUris;
 
     @Schema(
-        title = "The Google Cloud Storage location of the Python package files which are the training program and its dependent packages.",
+        title = "The Google Cloud Storage location of the Python package files which are the training program and its dependent packages",
         description = "The maximum number of package URIs is 100."
     )
     @NotNull
@@ -40,7 +40,7 @@ public class PythonPackageSpec {
     private Property<List<String>> args;
 
     @Schema(
-        title = "Environment variables to be passed to the python module.",
+        title = "Environment variables to be passed to the python module",
         description = "Maximum limit is 100."
     )
     @NotNull

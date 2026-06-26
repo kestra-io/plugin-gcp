@@ -51,21 +51,21 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
         title = "Execution configuration",
         description = "Network, service account, and KMS settings for the workload"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     private AbstractBatch.ExecutionConfiguration execution;
 
     @Schema(
         title = "Peripherals configuration",
         description = "Optional Metastore and Spark History Server settings"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     private AbstractBatch.PeripheralsConfiguration peripherals;
 
     @Schema(
         title = "Runtime configuration",
         description = "Container image, runtime version, and properties"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     private AbstractBatch.RuntimeConfiguration runtime;
 
     abstract protected void buildBatch(Batch.Builder builder, RunContext runContext) throws IllegalVariableEvaluationException;

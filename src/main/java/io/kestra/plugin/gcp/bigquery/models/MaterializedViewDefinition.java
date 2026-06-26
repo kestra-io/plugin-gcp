@@ -17,19 +17,19 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Builder
 @Jacksonized
 public class MaterializedViewDefinition {
-    @Schema(title = "Date when this materialized view was last modified.")
+    @Schema(title = "Date when this materialized view was last modified")
     @PluginProperty(group = "advanced")
     private final Instant lastRefreshDate;
 
-    @Schema(title = "The query whose result is persisted.")
+    @Schema(title = "The query whose result is persisted")
     @PluginProperty(group = "processing")
     public final Property<String> query;
 
-    @Schema(title = "Whether automatic refresh is enabled for the materialized view when the base table is updated.")
+    @Schema(title = "Whether automatic refresh is enabled for the materialized view when the base table is updated")
     @PluginProperty(group = "advanced")
     private final Property<Boolean> enableRefresh;
 
-    @Schema(title = "The maximum frequency at which this materialized view will be refreshed.")
+    @Schema(title = "The maximum frequency at which this materialized view will be refreshed")
     @PluginProperty(group = "advanced")
     private final Property<Duration> refreshInterval;
 

@@ -293,7 +293,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     @AllArgsConstructor
     public static class CsvOptions {
         @Schema(
-            title = "Whether BigQuery should accept rows that are missing trailing optional columns.",
+            title = "Whether BigQuery should accept rows that are missing trailing optional columns",
             description = "If true, BigQuery treats missing trailing columns as null values. If {@code false}, records" +
                 " with missing trailing columns are treated as bad records, and if there are too many bad" +
                 " records, an invalid error is returned in the job result. By default, rows with missing" +
@@ -303,14 +303,14 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private Property<Boolean> allowJaggedRows;
 
         @Schema(
-            title = "Whether BigQuery should allow quoted data sections that contain newline characters in a CSV file.",
+            title = "Whether BigQuery should allow quoted data sections that contain newline characters in a CSV file",
             description = "By default quoted newline are not allowed."
         )
         @PluginProperty(group = "advanced")
         private Property<Boolean> allowQuotedNewLines;
 
         @Schema(
-            title = "The character encoding of the data.",
+            title = "The character encoding of the data",
             description = "The supported values are UTF-8 or ISO-8859-1. The" +
                 " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split" +
                 " using the values set in {@link #setQuote(String)} and {@link #setFieldDelimiter(String)}."
@@ -319,7 +319,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private Property<String> encoding;
 
         @Schema(
-            title = "The separator for fields in a CSV file.",
+            title = "The separator for fields in a CSV file",
             description = "BigQuery converts the string to ISO-8859-1" +
                 " encoding, and then uses the first byte of the encoded string to split the data in its raw," +
                 " binary state. BigQuery also supports the escape sequence \"\\t\" to specify a tab separator. The" +
@@ -329,7 +329,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         private Property<String> fieldDelimiter;
 
         @Schema(
-            title = "The value that is used to quote data sections in a CSV file.",
+            title = "The value that is used to quote data sections in a CSV file",
             description = "BigQuery converts the" +
                 " string to ISO-8859-1 encoding, and then uses the first byte of the encoded string to split" +
                 " the data in its raw, binary state. The default value is a double-quote ('\"'). If your data" +
