@@ -34,6 +34,7 @@ import io.kestra.core.models.annotations.PluginProperty;
     examples = {
         @Example(
             title = "Query CPU utilization over the last 5 minutes",
+            full = true,
             code = """
                 id: gcp_monitoring_query
                 namespace: company.team

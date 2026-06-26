@@ -87,7 +87,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
     private Property<String> from;
 
     @Schema(
-        title = "If set to `true`, lists all versions of a blob. The default is `false`."
+        title = "If set to `true`, lists all versions of a blob. The default is `false`"
     )
     @PluginProperty(group = "advanced")
     private Property<Boolean> allVersions;

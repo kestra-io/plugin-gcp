@@ -207,12 +207,12 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Value
     public static class Content {
         @Schema(
-            title = "Mime type of the content, use it only when the content is not text."
+            title = "Mime type of the content, use it only when the content is not text"
         )
         Property<String> mimeType;
 
         @Schema(
-            title = "The content itself, should be a string for text content or a Kestra internal storage URI for other content types.",
+            title = "The content itself, should be a string for text content or a Kestra internal storage URI for other content types",
             description = "If the content is not text, the `mimeType` property must be set."
         )
         @NotNull
@@ -222,17 +222,17 @@ public class MultimodalCompletion extends AbstractGenerativeAi implements Runnab
     @Value
     public static class SafetyRating {
         @Schema(
-            title = "Safety category."
+            title = "Safety category"
         )
         String category;
 
         @Schema(
-            title = "Safety rating probability."
+            title = "Safety rating probability"
         )
         String probability;
 
         @Schema(
-            title = "Whether the response has been blocked for safety reasons."
+            title = "Whether the response has been blocked for safety reasons"
         )
         boolean blocked;
     }

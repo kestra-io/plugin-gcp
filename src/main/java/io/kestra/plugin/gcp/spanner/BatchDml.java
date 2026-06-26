@@ -22,13 +22,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute multiple DML statements atomically.",
+    title = "Execute multiple DML statements atomically",
     description = "Executes multiple INSERT, UPDATE, or DELETE statements in a single read-write transaction."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Execute batch DML statements.",
+            title = "Execute batch DML statements",
             full = true,
             code = """
                 id: spanner_batch_dml

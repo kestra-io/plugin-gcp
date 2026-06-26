@@ -31,7 +31,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Fetch a GKE cluster's metadata.",
+            title = "Fetch a GKE cluster's metadata",
             full = true,
             code = """
                 id: gcp_gke_cluster_metadata
@@ -133,21 +133,37 @@ public class ClusterMetadata extends AbstractTask implements RunnableTask<Cluste
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(title = "Cluster location")
         private final String location;
+        @Schema(title = "Cluster network")
         private final String network;
+        @Schema(title = "Cluster name")
         private final String name;
+        @Schema(title = "Cluster description")
         private final String description;
+        @Schema(title = "Cluster IPv4 CIDR")
         private final String clusterIpv4Cidr;
+        @Schema(title = "Cluster subnetwork")
         private final String subNetwork;
+        @Schema(title = "Cluster endpoint")
         private final String endpoint;
+        @Schema(title = "Cluster zone")
         private final String zone;
+        @Schema(title = "Project id")
         private final String project;
+        @Schema(title = "Cluster creation time")
         private final String createTime;
+        @Schema(title = "Number of node pools")
         private final int nodePoolsCount;
+        @Schema(title = "Node pools")
         private final List<NodePool> nodePools;
+        @Schema(title = "Master authentication configuration")
         private final MasterAuth masterAuth;
+        @Schema(title = "Logging service")
         private final String loggingService;
+        @Schema(title = "Monitoring service")
         private final String monitoringService;
+        @Schema(title = "Self link to the cluster")
         private final String link;
     }
 

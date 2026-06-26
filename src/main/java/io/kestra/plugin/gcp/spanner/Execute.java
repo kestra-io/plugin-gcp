@@ -24,13 +24,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a DML or DDL statement.",
+    title = "Execute a DML or DDL statement",
     description = "Executes an INSERT, UPDATE, DELETE statement, or schema change DDL statement."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Execute DML to update records.",
+            title = "Execute DML to update records",
             full = true,
             code = """
                 id: spanner_execute_dml

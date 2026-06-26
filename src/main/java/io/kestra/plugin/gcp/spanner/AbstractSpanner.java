@@ -56,7 +56,7 @@ public abstract class AbstractSpanner extends Task implements GcpInterface, Span
     protected Property<String> databaseId;
 
     @Schema(
-        title = "Spanner emulator host (`host:port`), for local testing only.",
+        title = "Spanner emulator host (`host:port`), for local testing only",
         description = "When set, the task connects to a local Spanner emulator instead of the real Spanner service."
     )
     @PluginProperty(group = "advanced")

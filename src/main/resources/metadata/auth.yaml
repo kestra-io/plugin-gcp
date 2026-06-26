@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.auth
+name: "auth"
+title: "Google Cloud Auth"
+description: "Fetch Google Cloud OAuth access tokens for use by downstream tasks or external systems."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

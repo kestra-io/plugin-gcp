@@ -20,13 +20,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a Google Cloud Bigtable table.",
+    title = "Delete a Google Cloud Bigtable table",
     description = "Permanently deletes a table and all of its data. This action cannot be undone."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Delete a Bigtable table.",
+            title = "Delete a Bigtable table",
             full = true,
             code = """
                 id: bigtable_delete_table

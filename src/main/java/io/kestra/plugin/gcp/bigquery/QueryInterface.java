@@ -26,7 +26,7 @@ public interface QueryInterface {
         title = "Fetch output (deprecated)",
         description = "Deprecated. Use fetchType=FETCH instead."
     )
-    @PluginProperty
+    @PluginProperty(group = "deprecated")
     @Deprecated
     boolean isFetch();
 
@@ -34,7 +34,7 @@ public interface QueryInterface {
         title = "Store output (deprecated)",
         description = "Deprecated. Use fetchType=STORE instead."
     )
-    @PluginProperty
+    @PluginProperty(group = "deprecated")
     @Deprecated
     boolean isStore();
 
@@ -42,7 +42,7 @@ public interface QueryInterface {
         title = "Fetch one row (deprecated)",
         description = "Deprecated. Use fetchType=FETCH_ONE instead."
     )
-    @PluginProperty
+    @PluginProperty(group = "deprecated")
     @Deprecated
     boolean isFetchOne();
 

@@ -15,14 +15,14 @@ import io.kestra.core.models.annotations.PluginProperty;
 public class AccessControl {
     @NotNull
     @Schema(
-        title = "The GCP entity."
+        title = "The GCP entity"
     )
     @PluginProperty(group = "main")
     private final Entity entity;
 
     @NotNull
     @Schema(
-        title = "The role to assign to the entity."
+        title = "The role to assign to the entity"
     )
     @PluginProperty(group = "main")
     private final Property<Role> role;

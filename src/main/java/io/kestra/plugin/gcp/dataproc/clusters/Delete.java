@@ -32,7 +32,7 @@ import lombok.experimental.SuperBuilder;
 )
 @Plugin(
     examples = @Example(
-        title = "Deletes a cluster from Google Cloud Dataproc.",
+        title = "Deletes a cluster from Google Cloud Dataproc",
         full = true,
         code = """
             id: gcp_dataproc_cluster_delete

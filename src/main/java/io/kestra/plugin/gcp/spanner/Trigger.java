@@ -32,13 +32,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for new changes in a Spanner database and trigger a flow execution.",
+    title = "Wait for new changes in a Spanner database and trigger a flow execution",
     description = "Polls a Spanner Change Stream at the configured interval and triggers a downstream execution."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Trigger on database changes via Change Streams.",
+            title = "Trigger on database changes via Change Streams",
             full = true,
             code = """
                 id: spanner_change_trigger
@@ -94,7 +94,7 @@ public class Trigger extends AbstractTrigger
     private Property<String> databaseId;
 
     @Schema(
-        title = "Spanner emulator host (`host:port`), for local testing only.",
+        title = "Spanner emulator host (`host:port`), for local testing only",
         description = "When set, the trigger connects to a local Spanner emulator instead of the real Spanner service."
     )
     @PluginProperty(group = "advanced")
@@ -106,7 +106,7 @@ public class Trigger extends AbstractTrigger
     private Property<String> changeStreamName;
 
     @Schema(
-        title = "Lookback window applied to poll stream records.",
+        title = "Lookback window applied to poll stream records",
         description = "Defaults to the polling interval if not specified."
     )
     @PluginProperty(group = "processing")

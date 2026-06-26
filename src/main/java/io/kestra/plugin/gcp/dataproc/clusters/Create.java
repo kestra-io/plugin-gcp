@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 @Plugin(
     examples = {
         @Example(
-            title = "Creates a cluster in Google Cloud Dataproc.",
+            title = "Creates a cluster in Google Cloud Dataproc",
             full = true,
             code = """
                 id: gcp_dataproc_cluster_create
@@ -49,7 +49,7 @@ import lombok.experimental.SuperBuilder;
                 """
         ),
         @Example(
-            title = "Creates a cluster in Google Cloud Dataproc with specific disk size.",
+            title = "Creates a cluster in Google Cloud Dataproc with specific disk size",
             full = true,
             code = """
                 id: gcp_dataproc_cluster_create
@@ -249,12 +249,12 @@ public class Create extends AbstractTask implements RunnableTask<Create.Output> 
     public static class Output implements io.kestra.core.models.tasks.Output {
 
         @Schema(
-            title = "The cluster name."
+            title = "The cluster name"
         )
         private String clusterName;
 
         @Schema(
-            title = "Whether cluster was created successfully."
+            title = "Whether cluster was created successfully"
         )
         private boolean created;
 

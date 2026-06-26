@@ -40,7 +40,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Plugin(
     examples = {
         @Example(
-            title = "Chat completion using the Vertex AI Gemini API.",
+            title = "Chat completion using the Vertex AI Gemini API",
             full = true,
             code = """
                 id: gcp_vertexai_chat_completion
@@ -86,21 +86,21 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
 
     @PluginProperty(dynamic = true, group = "deprecated")
     @Schema(
-        title = "For backward compatibility, since migration to Gemini LLM this property will be the first message to be send to the chat."
+        title = "For backward compatibility, since migration to Gemini LLM this property will be the first message to be send to the chat"
     )
     @Deprecated
     private String context;
 
     @PluginProperty(dynamic = true, group = "deprecated")
     @Schema(
-        title = "This property is not used anymore since migration to Gemini LLM."
+        title = "This property is not used anymore since migration to Gemini LLM"
     )
     @Deprecated
     private List<Example> examples;
 
     @PluginProperty(dynamic = true, group = "main")
     @Schema(
-        title = "Chat messages.",
+        title = "Chat messages",
         description = "Messages appear in chronological order: oldest first, newest last. When the history of messages causes the input to exceed the maximum length, the oldest messages are removed until the entire prompt is within the allowed limit."
     )
     @NotEmpty
@@ -108,7 +108,7 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
 
     @PluginProperty(dynamic = true, group = "destination")
     @Schema(
-        title = "Conversation history provided to the model.",
+        title = "Conversation history provided to the model",
         description = "Messages appear in chronological order: oldest first, newest last. When the history of messages causes the input to exceed the maximum length, the oldest messages are removed until the entire prompt is within the allowed limit."
     )
     private List<Message> history;
@@ -177,7 +177,7 @@ public class ChatCompletion extends AbstractGenerativeAi implements RunnableTask
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "List of text predictions made by the model.")
+        @Schema(title = "List of text predictions made by the model")
         private List<Prediction> predictions;
     }
 }

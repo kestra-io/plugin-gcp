@@ -40,7 +40,7 @@ public class BucketLifecycleRule {
     public static class Condition {
         @NotNull
         @Schema(
-            title = "The Age condition is satisfied when an object reaches the specified age (in days). Age is measured from the object's creation time."
+            title = "The Age condition is satisfied when an object reaches the specified age (in days). Age is measured from the object's creation time"
         )
         @PluginProperty(group = "main")
         private final Property<Integer> age;

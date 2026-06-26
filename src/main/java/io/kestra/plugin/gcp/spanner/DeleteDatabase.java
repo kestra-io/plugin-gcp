@@ -16,13 +16,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete a Spanner database.",
+    title = "Delete a Spanner database",
     description = "Permanently deletes a Spanner database and all of its schema and cells."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Delete a Spanner database.",
+            title = "Delete a Spanner database",
             full = true,
             code = """
                 id: spanner_delete_database

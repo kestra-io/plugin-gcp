@@ -15,14 +15,14 @@ import io.kestra.core.models.annotations.PluginProperty;
 public class Entity {
     @NotNull
     @Schema(
-        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)."
+        title = "The type of the entity (USER, GROUP, DOMAIN or IAM_MEMBER)"
     )
     @PluginProperty(group = "main")
     private final Property<Type> type;
 
     @NotNull
     @Schema(
-        title = "The value for the entity.",
+        title = "The value for the entity",
         description = "For example, user email if the type is USER."
     )
     @PluginProperty(group = "main")

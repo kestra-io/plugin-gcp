@@ -26,7 +26,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Get a document from its path.",
+            title = "Get a document from its path",
             full = true,
             code = """
                 id: gcp_firestore_get

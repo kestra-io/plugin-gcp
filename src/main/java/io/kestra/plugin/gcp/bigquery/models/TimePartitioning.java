@@ -16,20 +16,20 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Builder
 @Jacksonized
 public class TimePartitioning {
-    @Schema(title = "The time partitioning type.")
+    @Schema(title = "The time partitioning type")
     private final Property<com.google.cloud.bigquery.TimePartitioning.Type> type;
 
     @Schema(
-        title = "The number of milliseconds for which to keep the storage for a partition. When expired, the storage for the partition is reclaimed. If null, the partition does not expire."
+        title = "The number of milliseconds for which to keep the storage for a partition. When expired, the storage for the partition is reclaimed. If null, the partition does not expire"
     )
     @PluginProperty(group = "advanced")
     private final Property<Duration> expiration;
 
-    @Schema(title = "If not set, the table is partitioned by pseudo column '_PARTITIONTIME'; if set, the table is partitioned by this field.")
+    @Schema(title = "If not set, the table is partitioned by pseudo column '_PARTITIONTIME'; if set, the table is partitioned by this field")
     @PluginProperty(group = "advanced")
     private final Property<String> field;
 
-    @Schema(title = "If set to true, queries over this table require a partition filter (that can be used for partition elimination) to be specified.")
+    @Schema(title = "If set to true, queries over this table require a partition filter (that can be used for partition elimination) to be specified")
     @PluginProperty(group = "advanced")
     private final Property<Boolean> requirePartitionFilter;
 

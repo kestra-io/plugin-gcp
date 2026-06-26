@@ -34,7 +34,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for new rows in a Google Cloud Bigtable table and trigger a flow execution.",
+    title = "Wait for new rows in a Google Cloud Bigtable table and trigger a flow execution",
     description = "Polls a Bigtable table at the configured interval and triggers a downstream execution " +
         "when rows matching the configured row key range/prefix are found. As with other Kestra polling " +
         "triggers, scope the range/prefix to avoid re-triggering on the same rows across polls"
@@ -246,6 +246,8 @@ public class Trigger extends AbstractTrigger
 
     @SuperBuilder
     @NoArgsConstructor
+    @Schema(title = "Internal Bigtable client factory", description = "Internal helper used by the trigger to build a Bigtable client. Not a user-facing task.")
+    @Plugin(internal = true)
     public static class BigtableClientFactory extends AbstractBigtable {
     }
 

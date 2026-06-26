@@ -56,7 +56,7 @@ import reactor.core.publisher.Mono;
 @Plugin(
     examples = {
         @Example(
-            title = "Create a table with a custom query.",
+            title = "Create a table with a custom query",
             full = true,
             code = """
                 id: gcp_bq_query
@@ -83,7 +83,7 @@ import reactor.core.publisher.Mono;
                 """
         ),
         @Example(
-            title = "Execute a query and fetch results sets on another task.",
+            title = "Execute a query and fetch results sets on another task",
             full = true,
             code = """
                 id: gcp_bq_query
@@ -171,13 +171,13 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     // private Map<String, String> namedParameters;
 
     @Schema(
-        title = "The clustering specification for the destination table."
+        title = "The clustering specification for the destination table"
     )
     @PluginProperty(group = "advanced")
     private Property<List<String>> clusteringFields;
 
     @Schema(
-        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job.",
+        title = "[Experimental] Options allowing the schema of the destination table to be updated as a side effect of the query job",
         description = " Schema update options are supported in two cases: " +
             "* when writeDisposition is WRITE_APPEND; \n" +
             "* when writeDisposition is WRITE_TRUNCATE and the destination" +
@@ -185,47 +185,47 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             "\n" +
             " For normal tables, WRITE_TRUNCATE will always overwrite the schema."
     )
-    @PluginProperty
+    @PluginProperty(group = "processing")
     private Property<List<JobInfo.SchemaUpdateOption>> schemaUpdateOptions;
 
     @Schema(
-        title = "The time partitioning field for the destination table."
+        title = "The time partitioning field for the destination table"
     )
     @PluginProperty(group = "advanced")
     private Property<String> timePartitioningField;
 
     @Schema(
-        title = "The time partitioning type specification."
+        title = "The time partitioning type specification"
     )
     @Builder.Default
     private Property<TimePartitioning.Type> timePartitioningType = Property.ofValue(TimePartitioning.Type.DAY);
 
     @Schema(
-        title = "Range partitioning field for the destination table."
+        title = "Range partitioning field for the destination table"
     )
     @PluginProperty(group = "advanced")
     private Property<String> rangePartitioningField;
 
     @Schema(
-        title = "The start of range partitioning, inclusive."
+        title = "The start of range partitioning, inclusive"
     )
     @PluginProperty(group = "advanced")
     private Property<Long> rangePartitioningStart;
 
     @Schema(
-        title = "The end range partitioning, inclusive."
+        title = "The end range partitioning, inclusive"
     )
     @PluginProperty(group = "advanced")
     private Property<Long> rangePartitioningEnd;
 
     @Schema(
-        title = "The width of each interval."
+        title = "The width of each interval"
     )
     @PluginProperty(group = "advanced")
     private Property<Long> rangePartitioningInterval;
 
     @Schema(
-        title = "Sets the default dataset.",
+        title = "Sets the default dataset",
         description = "This dataset is used for all unqualified table names used in the query."
     )
     @PluginProperty(group = "source")
@@ -239,7 +239,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<QueryJobConfiguration.Priority> priority = Property.ofValue(QueryJobConfiguration.Priority.INTERACTIVE);
 
     @Schema(
-        title = "Sets whether the job is enabled to create arbitrarily large results.",
+        title = "Sets whether the job is enabled to create arbitrarily large results",
         description = "If `true` the query is allowed to create large results at a slight cost in performance. " +
             "`destinationTable` must be provided."
     )
@@ -247,7 +247,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Boolean> allowLargeResults;
 
     @Schema(
-        title = "Sets whether to look for the result in the query cache.",
+        title = "Sets whether to look for the result in the query cache",
         description = "The query cache is a best-effort cache that will be flushed whenever tables in the query are " +
             "modified. Moreover, the query cache is only available when `destinationTable` is not set "
     )
@@ -255,7 +255,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Boolean> useQueryCache;
 
     @Schema(
-        title = "Sets whether nested and repeated fields should be flattened.",
+        title = "Sets whether nested and repeated fields should be flattened",
         description = "If set to `false`, allowLargeResults must be `true`."
     )
     @Builder.Default
@@ -263,7 +263,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Boolean> flattenResults = Property.ofValue(true);
 
     @Schema(
-        title = "Sets whether to use BigQuery's legacy SQL dialect for this query.",
+        title = "Sets whether to use BigQuery's legacy SQL dialect for this query",
         description = " A valid query will return a mostly empty response with some processing statistics, " +
             "while an invalid query will return the same error it would if it wasn't a dry run."
     )
@@ -272,7 +272,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Boolean> useLegacySql = Property.ofValue(false);
 
     @Schema(
-        title = "Limits the billing tier for this job.",
+        title = "Limits the billing tier for this job",
         description = "Queries that have resource usage beyond this tier will fail (without incurring a charge). " +
             "If unspecified, this will be set to your project default."
     )
@@ -280,7 +280,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Integer> maximumBillingTier;
 
     @Schema(
-        title = "Limits the bytes billed for this job.",
+        title = "Limits the bytes billed for this job",
         description = "Queries that will have bytes billed beyond this limit will fail (without incurring a charge). " +
             "If unspecified, this will be set to your project default."
     )
@@ -288,7 +288,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
     private Property<Long> maximumBytesBilled;
 
     @Schema(
-        title = "This is only supported in the fast query path.",
+        title = "This is only supported in the fast query path",
         description = "The maximum number of rows of data " +
             "to return per page of results. Setting this flag to a small value such as 1000 and then " +
             "paging through results might improve reliability when the query result set is large. In " +

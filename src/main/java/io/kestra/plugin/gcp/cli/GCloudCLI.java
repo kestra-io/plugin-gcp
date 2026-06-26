@@ -38,7 +38,7 @@ import lombok.experimental.SuperBuilder;
     examples = {
         @Example(
             full = true,
-            title = "Create a cluster then list them using a service account.",
+            title = "Create a cluster then list them using a service account",
             code = """
                 id: gcp_g_cloud_cli
                 namespace: company.team
@@ -55,7 +55,7 @@ import lombok.experimental.SuperBuilder;
         ),
         @Example(
             full = true,
-            title = "Create a GCS bucket.",
+            title = "Create a GCS bucket",
             code = """
                 id: gcp_g_cloud_cli
                 namespace: company.team
@@ -71,7 +71,7 @@ import lombok.experimental.SuperBuilder;
         ),
         @Example(
             full = true,
-            title = "Output the result of a command.",
+            title = "Output the result of a command",
             code = """
                 id: gcp_g_cloud_cli
                 namespace: company.team
@@ -83,7 +83,7 @@ import lombok.experimental.SuperBuilder;
                     serviceAccount: "{{ secret('gcp-sa') }}"
                     commands:
                       # Outputs as a flow output for UI display
-                      - gcloud pubsub topics list --format=json | tr -d '\n ' | xargs -0 -I {} echo '::{"outputs":{"gcloud":{}}}::'
+                      - gcloud pubsub topics list --format=json | tr -d '\\n ' | xargs -0 -I {} echo '::{"outputs":{"gcloud":{}}}::'
 
                       # Outputs as a file, preferred way for large payloads
                       - gcloud storage ls --json > storage.json
@@ -106,7 +106,7 @@ import lombok.experimental.SuperBuilder;
                     commands:
                       - gcloud storage ls
                       - gcloud storage ls --json > storage.json
-                      - gcloud storage ls --json | tr -d '\n ' | xargs -0 -I {} echo
+                      - gcloud storage ls --json | tr -d '\\n ' | xargs -0 -I {} echo
                         '::{"outputs":{"gcloud":{}}}::'
                 """
         )

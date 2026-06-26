@@ -26,13 +26,13 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Delete rows from a Google Cloud Bigtable table.", description = "Deletes rows either by an explicit list of row keys, or by a row key range "
+    title = "Delete rows from a Google Cloud Bigtable table", description = "Deletes rows either by an explicit list of row keys, or by a row key range "
         +
         "(`rowKeyStart`/`rowKeyEnd`) or prefix (`rowKeyPrefix`). Exactly one mode must be configured."
 )
 @Plugin(
     examples = {
-        @Example(title = "Delete rows by exact row keys.", full = true, code = """
+        @Example(title = "Delete rows by exact row keys", full = true, code = """
             id: bigtable_delete_rows
             namespace: company.team
 
@@ -46,7 +46,7 @@ import lombok.experimental.SuperBuilder;
                   - row-001
                   - row-002
             """),
-        @Example(title = "Delete all rows matching a row key prefix.", full = true, code = """
+        @Example(title = "Delete all rows matching a row key prefix", full = true, code = """
             id: bigtable_delete_rows_prefix
             namespace: company.team
 
