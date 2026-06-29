@@ -81,7 +81,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
     api 'com.google.cloud:google-cloud-bigtable:2.44.0'
-    api 'com.google.cloud:google-cloud-spanner:6.67.0'
+    api 'com.google.cloud:google-cloud-spanner:6.118.0'
     api 'com.google.cloud:google-cloud-container'
     api 'com.google.cloud:google-cloud-aiplatform'
     api 'com.google.cloud:google-cloud-logging'
