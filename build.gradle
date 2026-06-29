@@ -278,7 +278,7 @@ idea {
 // Build the UI module before packaging (only if ui/ directory exists)
 if (file('ui').exists()) {
     tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmTask) {
-        args = ['install']
+        args = ['install', '--fetch-retries=5', '--fetch-retry-mintimeout=5000', '--fetch-retry-maxtimeout=60000']
         workingDir = file('ui')
     }
 
