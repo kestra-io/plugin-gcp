@@ -19,6 +19,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
 import com.google.cloud.NoCredentials;
 import com.google.cloud.spanner.*;
@@ -49,7 +50,8 @@ class SpannerTest {
     private static final String DATABASE_ID = "test-database";
 
     protected static final GenericContainer<?> SPANNER_EMULATOR = new GenericContainer<>("gcr.io/cloud-spanner-emulator/emulator:latest")
-        .withExposedPorts(9010);
+        .withExposedPorts(9010)
+        .waitingFor(Wait.forListeningPort());
 
     private static Spanner spanner;
 
