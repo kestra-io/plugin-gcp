@@ -40,7 +40,7 @@ public abstract class AbstractDataflow extends Task implements GcpInterface, Dat
 
     @Schema(title = "The GCP scopes to be used")
     @PluginProperty(group = "advanced")
-    protected Property<List<String>> scopes;
+    protected Property<List<String>> scopes = Property.ofValue(List.of("https://www.googleapis.com/auth/cloud-platform"));
 
     @NotNull
     @Schema(title = "The regional endpoint (e.g. us-central1)")
