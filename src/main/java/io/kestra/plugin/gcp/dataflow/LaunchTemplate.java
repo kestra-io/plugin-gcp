@@ -114,6 +114,9 @@ public class LaunchTemplate extends AbstractDataflow implements RunnableTask<Lau
 
         var response = launchRequest.execute();
         var job = response.getJob();
+        if (job == null) {
+            throw new IllegalStateException("Launch Classic Template response does not contain a job object. Response: " + response.toString());
+        }
 
         return Output.builder()
             .jobId(job.getId())

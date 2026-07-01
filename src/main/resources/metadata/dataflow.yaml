@@ -3,5 +3,6 @@ name: dataflow
 title: Google Cloud Dataflow
 description: "Tasks to launch, monitor, and cancel Google Cloud Dataflow Classic and Flex template jobs."
 body: "Use these tasks to execute templates, launch jobs, monitor pipelines, cancel executions, and trigger flows when Dataflow pipelines reach completion. Authentication is integrated with GCP service accounts (CredentialService)."
+videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

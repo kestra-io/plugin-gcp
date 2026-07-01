@@ -120,16 +120,12 @@ public class WaitForJob extends AbstractDataflow implements RunnableTask<WaitFor
             throw new TimeoutException("Dataflow job '" + rJobId + "' did not complete within the maximum duration of " + rMaxDuration);
         }
 
-        if (finalJob == null) {
-            throw new TimeoutException("Dataflow job '" + rJobId + "' did not complete within the maximum duration of " + rMaxDuration);
-        }
-
         var finalState = finalJob.getCurrentState();
         if ("JOB_STATE_FAILED".equals(finalState)) {
-            throw new Exception("Dataflow job '" + rJobId + "' failed with state: " + finalState);
+            throw new IllegalStateException("Dataflow job '" + rJobId + "' failed — check the Google Cloud Dataflow console for error details.");
         }
         if ("JOB_STATE_CANCELLED".equals(finalState)) {
-            throw new Exception("Dataflow job '" + rJobId + "' was cancelled.");
+            throw new IllegalStateException("Dataflow job '" + rJobId + "' was cancelled.");
         }
 
         var metricsMap = new HashMap<String, Object>();
@@ -144,14 +140,14 @@ public class WaitForJob extends AbstractDataflow implements RunnableTask<WaitFor
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (java.io.IOException e) {
             runContext.logger().warn("Failed to retrieve metrics for Dataflow job '{}'", rJobId, e);
         }
 
         return Output.builder()
             .jobId(finalJob.getId())
             .state(finalState)
-            .metrics(metricsMap)
+            .metrics(Map.copyOf(metricsMap))
             .build();
     }
 

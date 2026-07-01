@@ -78,7 +78,7 @@ public class GetJob extends AbstractDataflow implements RunnableTask<GetJob.Outp
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (java.io.IOException e) {
             runContext.logger().warn("Failed to retrieve metrics for Dataflow job '{}'", rJobId, e);
         }
 
@@ -91,7 +91,7 @@ public class GetJob extends AbstractDataflow implements RunnableTask<GetJob.Outp
             .currentStateTime(currentStateTime)
             .createTime(createTime)
             .type(job.getType())
-            .metrics(metricsMap)
+            .metrics(Map.copyOf(metricsMap))
             .build();
     }
 

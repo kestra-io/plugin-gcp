@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.google.api.services.dataflow.Dataflow;
+import com.google.api.services.dataflow.model.Job;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -36,7 +37,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Wait for a Dataflow job to reach a target terminal state and trigger a flow execution.",
-    description = "Polls the Dataflow service at a regular interval and triggers execution when a job matching the name prefix transitions to the target state."
+    description = "Polls the Dataflow service at a regular interval and triggers execution when a job matching the name prefix transitions to the target state. If multiple jobs match, the trigger returns the most recently completed one."
 )
 @Plugin(
     examples = {
@@ -73,7 +74,7 @@ public class Trigger extends AbstractTrigger
     private Property<String> projectId;
 
     @Schema(title = "The GCP service account")
-    @PluginProperty(secret = true, group = "connection")
+    @PluginProperty(secret = true, group = "execution")
     private Property<String> serviceAccount;
 
     @Schema(title = "The GCP service account to impersonate")
@@ -97,7 +98,7 @@ public class Trigger extends AbstractTrigger
     @Builder.Default
     @Schema(title = "The target state to trigger on (e.g. JOB_STATE_DONE, JOB_STATE_FAILED)")
     @PluginProperty(group = "processing")
-    private Property<String> targetState = Property.ofValue("JOB_STATE_DONE");
+    private Property<JobState> targetState = Property.ofValue(JobState.JOB_STATE_DONE);
 
     @Schema(title = "Lookback window applied to job state transitions")
     @PluginProperty(group = "processing")
@@ -121,39 +122,54 @@ public class Trigger extends AbstractTrigger
         var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
         var rLocation = runContext.render(this.location).as(String.class).orElseThrow();
         var rJobNamePrefix = runContext.render(this.jobNamePrefix).as(String.class).orElse("");
-        var rTargetState = runContext.render(this.targetState).as(String.class).orElse("JOB_STATE_DONE");
+        var rTargetState = runContext.render(this.targetState).as(JobState.class).orElse(JobState.JOB_STATE_DONE).name();
         var rLookback = runContext.render(this.lookback).as(Duration.class).orElse(this.interval);
 
         var end = Instant.now();
         var start = end.minus(rLookback);
 
         var dataflow = this.dataflowClient(runContext);
-        var listResponse = dataflow.projects().locations().jobs()
-            .list(rProjectId, rLocation)
-            .execute();
 
-        if (listResponse.getJobs() == null) {
-            return Optional.empty();
-        }
+        Job mostRecentJob = null;
+        Instant mostRecentTime = null;
 
-        for (var job : listResponse.getJobs()) {
-            var jobName = job.getName();
-            var state = job.getCurrentState();
-            var stateTimeStr = job.getCurrentStateTime();
+        String pageToken = null;
+        do {
+            var listRequest = dataflow.projects().locations().jobs()
+                .list(rProjectId, rLocation);
+            if (pageToken != null) {
+                listRequest.setPageToken(pageToken);
+            }
+            var listResponse = listRequest.execute();
+            if (listResponse.getJobs() != null) {
+                for (var job : listResponse.getJobs()) {
+                    var jobName = job.getName();
+                    var state = job.getCurrentState();
+                    var stateTimeStr = job.getCurrentStateTime();
 
-            if (jobName != null && jobName.startsWith(rJobNamePrefix) && rTargetState.equals(state) && stateTimeStr != null) {
-                var stateTime = Instant.parse(stateTimeStr);
-                if (stateTime.isAfter(start) && stateTime.isBefore(end)) {
-                    var output = Output.builder()
-                        .jobId(job.getId())
-                        .jobName(jobName)
-                        .state(state)
-                        .build();
-
-                    var execution = TriggerService.generateExecution(this, conditionContext, context, output);
-                    return Optional.of(execution);
+                    if (jobName != null && jobName.startsWith(rJobNamePrefix) && rTargetState.equals(state) && stateTimeStr != null) {
+                        var stateTime = Instant.parse(stateTimeStr);
+                        if (stateTime.isAfter(start) && stateTime.isBefore(end)) {
+                            if (mostRecentTime == null || stateTime.isAfter(mostRecentTime)) {
+                                mostRecentTime = stateTime;
+                                mostRecentJob = job;
+                            }
+                        }
+                    }
                 }
             }
+            pageToken = listResponse.getNextPageToken();
+        } while (pageToken != null);
+
+        if (mostRecentJob != null) {
+            var output = Output.builder()
+                .jobId(mostRecentJob.getId())
+                .jobName(mostRecentJob.getName())
+                .state(mostRecentJob.getCurrentState())
+                .build();
+
+            var execution = TriggerService.generateExecution(this, conditionContext, context, output);
+            return Optional.of(execution);
         }
 
         return Optional.empty();

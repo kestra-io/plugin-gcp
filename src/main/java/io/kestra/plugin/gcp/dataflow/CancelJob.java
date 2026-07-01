@@ -79,7 +79,7 @@ public class CancelJob extends AbstractDataflow implements RunnableTask<CancelJo
 
         return Output.builder()
             .jobId(response.getId())
-            .requestedState(requestedState)
+            .currentState(response.getCurrentState())
             .build();
     }
 
@@ -89,7 +89,7 @@ public class CancelJob extends AbstractDataflow implements RunnableTask<CancelJo
         @Schema(title = "The job ID")
         private final String jobId;
 
-        @Schema(title = "The requested state transition")
-        private final String requestedState;
+        @Schema(title = "The current state of the job")
+        private final String currentState;
     }
 }

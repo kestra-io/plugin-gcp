@@ -67,15 +67,24 @@ class DataflowTest {
     @Mock
     private Dataflow.Projects.Locations.Jobs.List mockJobsList;
 
+    private AutoCloseable closeable;
+
     @BeforeEach
     void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this).close();
+        closeable = MockitoAnnotations.openMocks(this);
 
         when(mockDataflow.projects()).thenReturn(mockProjects);
         when(mockProjects.locations()).thenReturn(mockLocations);
         when(mockLocations.templates()).thenReturn(mockTemplates);
         when(mockLocations.flexTemplates()).thenReturn(mockFlexTemplates);
         when(mockLocations.jobs()).thenReturn(mockJobs);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() throws Exception {
+        if (closeable != null) {
+            closeable.close();
+        }
     }
 
     @Test
@@ -188,7 +197,7 @@ class DataflowTest {
 
         var response = new Job()
             .setId("job-123")
-            .setRequestedState("JOB_STATE_CANCELLED");
+            .setCurrentState("JOB_STATE_CANCELLED");
 
         when(mockJobs.update(any(), any(), any(), any())).thenReturn(mockJobsUpdate);
         when(mockJobsUpdate.execute()).thenReturn(response);
@@ -207,7 +216,7 @@ class DataflowTest {
 
         var output = spyTask.run(runContext);
         assertThat(output.getJobId(), is("job-123"));
-        assertThat(output.getRequestedState(), is("JOB_STATE_CANCELLED"));
+        assertThat(output.getCurrentState(), is("JOB_STATE_CANCELLED"));
     }
 
     @Test
@@ -258,7 +267,7 @@ class DataflowTest {
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
             .jobNamePrefix(Property.ofValue("my-etl-"))
-            .targetState(Property.ofValue("JOB_STATE_DONE"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_DONE))
             .lookback(Property.ofValue(Duration.ofSeconds(10)))
             .build();
 
@@ -295,7 +304,7 @@ class DataflowTest {
 
         var response = new Job()
             .setId("job-123")
-            .setRequestedState("JOB_STATE_DRAINING");
+            .setCurrentState("JOB_STATE_DRAINING");
 
         when(mockJobs.update(any(), any(), any(), any())).thenReturn(mockJobsUpdate);
         when(mockJobsUpdate.execute()).thenReturn(response);
@@ -314,7 +323,7 @@ class DataflowTest {
 
         var output = spyTask.run(runContext);
         assertThat(output.getJobId(), is("job-123"));
-        assertThat(output.getRequestedState(), is("JOB_STATE_DRAINING"));
+        assertThat(output.getCurrentState(), is("JOB_STATE_DRAINING"));
     }
 
     @Test
@@ -436,7 +445,7 @@ class DataflowTest {
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
             .jobNamePrefix(Property.ofValue("my-etl-"))
-            .targetState(Property.ofValue("JOB_STATE_DONE"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_DONE))
             .lookback(Property.ofValue(Duration.ofSeconds(10)))
             .build();
 
