@@ -85,29 +85,56 @@ class SpannerTest {
             .setDisplayName("Test Instance")
             .setNodeCount(1)
             .build();
-        try {
-            instanceAdminClient.createInstance(instanceInfo).get();
-        } catch (Exception e) {
-            var cause = e.getCause();
-            if (!(cause instanceof SpannerException && ((SpannerException) cause).getErrorCode() == ErrorCode.ALREADY_EXISTS)) {
-                throw e;
+        retryOnUnavailable(() -> {
+            try {
+                instanceAdminClient.createInstance(instanceInfo).get();
+            } catch (Exception e) {
+                var cause = e.getCause();
+                if (!(cause instanceof SpannerException && ((SpannerException) cause).getErrorCode() == ErrorCode.ALREADY_EXISTS)) {
+                    throw e;
+                }
             }
-        }
+        });
 
         var databaseAdminClient = spanner.getDatabaseAdminClient();
-        try {
-            databaseAdminClient.createDatabase(INSTANCE_ID, DATABASE_ID, List.of(
-                "CREATE TABLE users (\n" +
-                "  id INT64 NOT NULL,\n" +
-                "  name STRING(256),\n" +
-                "  age INT64\n" +
-                ") PRIMARY KEY (id)",
-                "CREATE CHANGE STREAM users_stream FOR users"
-            )).get();
-        } catch (Exception e) {
-            var cause = e.getCause();
-            if (!(cause instanceof SpannerException && ((SpannerException) cause).getErrorCode() == ErrorCode.ALREADY_EXISTS)) {
-                throw e;
+        retryOnUnavailable(() -> {
+            try {
+                databaseAdminClient.createDatabase(INSTANCE_ID, DATABASE_ID, List.of(
+                    "CREATE TABLE users (\n" +
+                    "  id INT64 NOT NULL,\n" +
+                    "  name STRING(256),\n" +
+                    "  age INT64\n" +
+                    ") PRIMARY KEY (id)",
+                    "CREATE CHANGE STREAM users_stream FOR users"
+                )).get();
+            } catch (Exception e) {
+                var cause = e.getCause();
+                if (!(cause instanceof SpannerException && ((SpannerException) cause).getErrorCode() == ErrorCode.ALREADY_EXISTS)) {
+                    throw e;
+                }
+            }
+        });
+    }
+
+    private interface ThrowingRunnable {
+        void run() throws Exception;
+    }
+
+    // The emulator's TCP port can accept connections before its gRPC service is ready to serve admin
+    // requests, so the first create-instance/create-database call can transiently fail with UNAVAILABLE.
+    private static void retryOnUnavailable(ThrowingRunnable action) throws Exception {
+        var maxAttempts = 5;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                action.run();
+                return;
+            } catch (Exception e) {
+                var cause = e.getCause();
+                var isUnavailable = cause instanceof SpannerException && ((SpannerException) cause).getErrorCode() == ErrorCode.UNAVAILABLE;
+                if (!isUnavailable || attempt == maxAttempts) {
+                    throw e;
+                }
+                Thread.sleep(500);
             }
         }
     }
