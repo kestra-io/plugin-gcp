@@ -65,6 +65,56 @@ public class QueryErrorTest {
           }
         }""";
 
+    private static final String JOB_RESPONSE_RUNNING = """
+        {
+          "kind": "bigquery#job",
+          "etag": "\\"abcdef1234567890\\"",
+          "id": "kestra-unit-test:europe-west3.job_dup_test",
+          "jobReference": {
+            "projectId": "kestra-unit-test",
+            "jobId": "job_dup_test",
+            "location": "europe-west3"
+          },
+          "configuration": {
+            "query": {
+              "query": "SELECT * FROM `kestra-unit-test.my_dataset.my_table`",
+              "useLegacySql": false
+            },
+            "jobType": "QUERY"
+          },
+          "status": { "state": "RUNNING" },
+          "statistics": {
+            "creationTime": "1697123456789",
+            "startTime": "1697123457000"
+          }
+        }""";
+
+    private static final String JOB_RESPONSE_DUP_TEST_DONE = """
+        {
+          "kind": "bigquery#job",
+          "etag": "\\"abcdef1234567890\\"",
+          "id": "kestra-unit-test:europe-west3.job_dup_test",
+          "jobReference": {
+            "projectId": "kestra-unit-test",
+            "jobId": "job_dup_test",
+            "location": "europe-west3"
+          },
+          "configuration": {
+            "query": {
+              "query": "SELECT * FROM `kestra-unit-test.my_dataset.my_table`",
+              "useLegacySql": false
+            },
+            "jobType": "QUERY"
+          },
+          "status": { "state": "DONE" },
+          "statistics": {
+            "creationTime": "1697123456789",
+            "startTime": "1697123457000",
+            "endTime": "1697123459000",
+            "query": { "statementType": "SELECT" }
+          }
+        }""";
+
     private static final String BACKEND_ERROR_RESPONSE = """
         {
           "error": {
@@ -101,10 +151,11 @@ public class QueryErrorTest {
 
     @Test
     void shouldRetryOnBackendErrorWhenFetchingResults(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        String jobsPath = "/bigquery/v2/projects/.*/jobs";
         String resultsPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
 
         // Job creation and polling succeed
-        stubFor(post(urlPathMatching("/bigquery/v2/projects/.*/jobs"))
+        stubFor(post(urlPathMatching(jobsPath))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
@@ -128,7 +179,70 @@ public class QueryErrorTest {
 
         assertThrows(Exception.class, () -> task.run(runContext));
 
-        verify(3, getRequestedFor(urlPathMatching(resultsPath)));
+        // job.waitFor() polls the same results endpoint and fails once before AbstractBigquery#waitForJob
+        // finds the already-completed job via getJob() and short-circuits without submitting a duplicate job;
+        // the 3 remaining hits come from the dedicated "fetch results" retry loop in Query#run.
+        verify(4, getRequestedFor(urlPathMatching(resultsPath)));
+        verify(1, postRequestedFor(urlPathMatching(jobsPath)));
+    }
+
+    @Test
+    void shouldNotDuplicateJobWhenPollingFailsAfterJobActuallySucceeded(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        String jobsPath = "/bigquery/v2/projects/.*/jobs";
+        // job.waitFor() polls a query job via the queries endpoint (maxResults=0), not jobs/{id}.
+        String pollingPath = "/bigquery/v2/projects/.*/queries/job_dup_test.*";
+        // our fix looks up the last submitted job's status via BigQuery#getJob(JobId), which hits jobs/{id}.
+        String jobStatusPath = "/bigquery/v2/projects/.*/jobs/job_dup_test.*";
+
+        stubFor(post(urlPathMatching(jobsPath))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_RUNNING)));
+
+        // The poll consistently fails with a transient error, even though the job actually succeeded.
+        stubFor(get(urlPathMatching(pollingPath))
+            .willReturn(aResponse()
+                .withStatus(503)
+                .withHeader("Content-Type", "application/json")
+                .withBody(BACKEND_ERROR_RESPONSE)));
+
+        // The job's real status, fetched directly, shows it already completed successfully.
+        stubFor(get(urlPathMatching(jobStatusPath))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(JOB_RESPONSE_DUP_TEST_DONE)));
+
+        Query task = buildQueryWithoutFetch(wmRuntimeInfo, 3);
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        Query.Output output = task.run(runContext);
+
+        assertEquals("job_dup_test", output.getJobId());
+        verify(1, postRequestedFor(urlPathMatching(jobsPath)));
+    }
+
+    private Query buildQueryWithoutFetch(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) throws Exception {
+        Query task = Query.builder()
+            .id(QueryTest.class.getSimpleName())
+            .type(Query.class.getName())
+            .retryAuto(Exponential.builder()
+                .type("exponential")
+                .interval(Duration.ofMillis(100))
+                .maxInterval(Duration.ofMillis(500))
+                .maxDuration(Duration.ofSeconds(10))
+                .maxAttempts(maxAttempts)
+                .build())
+            .projectId(Property.ofValue(project))
+            .sql(Property.ofValue("SELECT * from test_table"))
+            .dryRun(Property.ofValue(false))
+            .build();
+
+        Query spy = Mockito.spy(task);
+        Mockito.doReturn(mockBigQueryClient(wmRuntimeInfo.getHttpBaseUrl()))
+            .when(spy).connection(Mockito.any(RunContext.class));
+        return spy;
     }
 
     private Query buildQuery(WireMockRuntimeInfo wmRuntimeInfo, int maxAttempts) throws Exception {
