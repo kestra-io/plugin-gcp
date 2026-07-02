@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
@@ -96,11 +97,13 @@ abstract public class AbstractBigquery extends AbstractTask {
             .getService();
     }
 
-    protected Job waitForJob(Logger logger, Callable<Job> createJob, RunContext runContext) {
-        return this.waitForJob(logger, createJob, false, runContext);
+    protected Job waitForJob(Logger logger, Callable<Job> createJob, RunContext runContext, BigQuery connection) {
+        return this.waitForJob(logger, createJob, false, runContext, connection);
     }
 
-    protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun, RunContext runContext) {
+    protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun, RunContext runContext, BigQuery connection) {
+        var lastJobId = new AtomicReference<JobId>();
+
         return Failsafe
             .with(
                 AbstractRetry.<Job> retryPolicy(
@@ -135,7 +138,33 @@ abstract public class AbstractBigquery extends AbstractTask {
             {
                 Job job = null;
                 try {
+                    // Dry-run jobs have no side effects and aren't reliably pollable, so always create a fresh one.
+                    if (!dryRun) {
+                        var previousJobId = lastJobId.get();
+                        if (previousJobId != null) {
+                            var previousJob = connection.getJob(previousJobId);
+
+                            if (previousJob != null) {
+                                if (!previousJob.isDone()) {
+                                    previousJob = previousJob.waitFor();
+                                }
+
+                                if (previousJob.getStatus().getError() == null) {
+                                    logger.warn(
+                                        "Job '{}' already completed successfully despite a transient error, skipping duplicate retry",
+                                        previousJob.getJobId()
+                                    );
+
+                                    return previousJob;
+                                }
+
+                                lastJobId.set(null);
+                            }
+                        }
+                    }
+
                     job = createJob.call();
+                    lastJobId.set(job.getJobId());
 
                     BigQueryService.handleErrors(job, logger);
 

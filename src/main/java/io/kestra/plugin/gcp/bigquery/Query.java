@@ -316,7 +316,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                         .build()
                 ),
             runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
-            runContext
+            runContext,
+            connection
         );
         JobStatistics.QueryStatistics queryJobStatistics = queryJob.getStatistics();
 

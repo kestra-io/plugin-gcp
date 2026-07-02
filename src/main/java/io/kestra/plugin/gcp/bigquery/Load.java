@@ -120,7 +120,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
                     .build();
             }
 
-            Job job = this.waitForJob(logger, writer::getJob, runContext);
+            Job job = this.waitForJob(logger, writer::getJob, runContext, connection);
 
             return this.outputs(runContext, configuration, job);
         }
