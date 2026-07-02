@@ -334,7 +334,6 @@ public class QueryErrorTest {
         try {
             output = task.run(runContext);
         } catch (Exception e) {
-            getAllServeEvents().forEach(ev -> System.out.println("REQ: " + ev.getRequest().getMethod() + " " + ev.getRequest().getUrl() + " -> " + ev.getResponse().getStatus()));
             throw e;
         }
 
