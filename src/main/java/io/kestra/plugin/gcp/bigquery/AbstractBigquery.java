@@ -102,7 +102,7 @@ abstract public class AbstractBigquery extends AbstractTask {
     }
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob, Boolean dryRun, RunContext runContext, BigQuery connection) {
-        AtomicReference<JobId> lastJobId = new AtomicReference<>();
+        var lastJobId = new AtomicReference<JobId>();
 
         return Failsafe
             .with(
@@ -138,22 +138,27 @@ abstract public class AbstractBigquery extends AbstractTask {
             {
                 Job job = null;
                 try {
-                    JobId previousJobId = lastJobId.get();
-                    if (previousJobId != null) {
-                        Job previousJob = connection.getJob(previousJobId);
+                    // Dry-run jobs have no side effects and aren't reliably pollable, so always create a fresh one.
+                    if (!dryRun) {
+                        var previousJobId = lastJobId.get();
+                        if (previousJobId != null) {
+                            var previousJob = connection.getJob(previousJobId);
 
-                        if (previousJob != null) {
-                            if (!previousJob.isDone()) {
-                                previousJob = previousJob.waitFor();
-                            }
+                            if (previousJob != null) {
+                                if (!previousJob.isDone()) {
+                                    previousJob = previousJob.waitFor();
+                                }
 
-                            if (previousJob.getStatus().getError() == null) {
-                                logger.warn(
-                                    "Job '{}' already completed successfully despite a transient error, skipping duplicate retry",
-                                    previousJob.getJobId()
-                                );
+                                if (previousJob.getStatus().getError() == null) {
+                                    logger.warn(
+                                        "Job '{}' already completed successfully despite a transient error, skipping duplicate retry",
+                                        previousJob.getJobId()
+                                    );
 
-                                return previousJob;
+                                    return previousJob;
+                                }
+
+                                lastJobId.set(null);
                             }
                         }
                     }
