@@ -96,11 +96,11 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     @Builder.Default
-    private final AtomicBoolean isKilled = new AtomicBoolean(false);
+    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
     /**
-     * Records the job currently submitted, so that {@link #kill()} can cancel the live BigQuery job
-     * instead of a stale one from a previous retry attempt.
+     * Records the job currently submitted, so that {@link #kill()} or {@link #stop()} can cancel the
+     * live BigQuery job instead of a stale one from a previous retry attempt.
      */
     protected void trackJob(BigQuery connection, JobId jobId) {
         this.trackedConnection.set(connection);
@@ -109,7 +109,16 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
     @Override
     public void kill() {
-        if (isKilled.compareAndSet(false, true)) {
+        cancelTrackedJob();
+    }
+
+    @Override
+    public void stop() {
+        cancelTrackedJob();
+    }
+
+    private void cancelTrackedJob() {
+        if (isCancelled.compareAndSet(false, true)) {
             BigQuery connection = this.trackedConnection.get();
             JobId jobId = this.trackedJobId.get();
 

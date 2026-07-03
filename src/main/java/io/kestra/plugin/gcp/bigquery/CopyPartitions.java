@@ -189,6 +189,15 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
         }
     }
 
+    @Override
+    public void stop() {
+        Copy task = this.copyTask.get();
+
+        if (task != null) {
+            task.stop();
+        }
+    }
+
     @Getter
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {

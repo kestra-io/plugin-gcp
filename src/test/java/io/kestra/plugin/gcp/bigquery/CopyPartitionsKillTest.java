@@ -29,6 +29,24 @@ class CopyPartitionsKillTest {
         assertDoesNotThrow(task::kill);
     }
 
+    @Test
+    void stopForwardsToNestedCopyTask() throws Exception {
+        CopyPartitions task = CopyPartitions.builder().build();
+        Copy copy = mock(Copy.class);
+
+        trackedCopyTask(task).set(copy);
+        task.stop();
+
+        verify(copy, times(1)).stop();
+    }
+
+    @Test
+    void stopWithoutNestedCopyTaskIsNoOp() {
+        CopyPartitions task = CopyPartitions.builder().build();
+
+        assertDoesNotThrow(task::stop);
+    }
+
     @SuppressWarnings("unchecked")
     private static AtomicReference<Copy> trackedCopyTask(CopyPartitions task) throws Exception {
         Field field = CopyPartitions.class.getDeclaredField("copyTask");
