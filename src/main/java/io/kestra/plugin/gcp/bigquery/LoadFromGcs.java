@@ -153,7 +153,7 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
                 JobInfo.newBuilder(configuration)
                     .setJobId(BigQueryService.jobId(runContext, this))
                     .build()
-            ), runContext
+            ), runContext, connection
         );
 
         return this.outputs(runContext, configuration, loadJob);

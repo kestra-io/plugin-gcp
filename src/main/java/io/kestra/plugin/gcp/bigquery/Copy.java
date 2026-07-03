@@ -100,7 +100,8 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
                         .build()
                 ),
             runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
-            runContext
+            runContext,
+            connection
         );
 
         JobStatistics.CopyStatistics copyJobStatistics = copyJob.getStatistics();
