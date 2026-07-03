@@ -23,8 +23,10 @@ import lombok.experimental.SuperBuilder;
 public abstract class AbstractTask extends Task implements GcpInterface {
     protected Property<String> projectId;
 
+    @ToString.Exclude
     protected Property<String> serviceAccount;
 
+    @ToString.Exclude
     protected Property<String> impersonatedServiceAccount;
 
     @Builder.Default
