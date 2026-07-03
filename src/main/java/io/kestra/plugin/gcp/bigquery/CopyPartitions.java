@@ -4,10 +4,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.TableId;
@@ -110,6 +112,13 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
     )
     protected Property<Boolean> skipEmpty = Property.ofValue(false);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Copy> copyTask = new AtomicReference<>();
+
     @Override
     public CopyPartitions.Output run(RunContext runContext) throws Exception {
         BigQuery connection = this.connection(runContext);
@@ -166,9 +175,29 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
             .scopes(this.scopes)
             .build();
 
+        this.copyTask.set(task);
+
         Copy.Output run = task.run(runContext);
 
         return Output.of(tableId, partitionToCopy, run.getJobId());
+    }
+
+    @Override
+    public void kill() {
+        Copy task = this.copyTask.get();
+
+        if (task != null) {
+            task.kill();
+        }
+    }
+
+    @Override
+    public void stop() {
+        Copy task = this.copyTask.get();
+
+        if (task != null) {
+            task.stop();
+        }
     }
 
     @Getter

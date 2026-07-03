@@ -6,16 +6,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.WorkerJobLifecycle;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.retrys.AbstractRetry;
@@ -33,7 +36,9 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-abstract public class AbstractBigquery extends AbstractTask {
+abstract public class AbstractBigquery extends AbstractTask implements WorkerJobLifecycle {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractBigquery.class);
+
     @Schema(
         title = "Dataset location",
         description = "Optional BigQuery location for created or targeted resources. Experimental and may change; see BigQuery dataset location documentation."
@@ -77,6 +82,74 @@ abstract public class AbstractBigquery extends AbstractTask {
             "Retrying may solve the problem"
         )
     );
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<BigQuery> trackedConnection = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<JobId> trackedJobId = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Logger> trackedLogger = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
+
+    /**
+     * Records the job currently submitted, so that {@link #kill()} or {@link #stop()} can cancel the
+     * live BigQuery job instead of a stale one from a previous retry attempt.
+     */
+    protected void trackJob(BigQuery connection, JobId jobId, Logger logger) {
+        this.trackedConnection.set(connection);
+        this.trackedJobId.set(jobId);
+        this.trackedLogger.set(logger);
+    }
+
+    @Override
+    public void kill() {
+        cancelTrackedJob();
+    }
+
+    @Override
+    public void stop() {
+        cancelTrackedJob();
+    }
+
+    private void cancelTrackedJob() {
+        if (isCancelled.compareAndSet(false, true)) {
+            BigQuery connection = this.trackedConnection.get();
+            JobId jobId = this.trackedJobId.get();
+
+            if (connection != null && jobId != null) {
+                try {
+                    connection.cancel(jobId);
+                } catch (Exception e) {
+                    Logger logger = this.trackedLogger.get();
+                    if (logger != null) {
+                        logger.warn("Failed to cancel BigQuery job '{}'", jobId, e);
+                    } else {
+                        LOG.warn("Failed to cancel BigQuery job '{}'", jobId, e);
+                    }
+                }
+            }
+        }
+    }
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         GoogleCredentials credentials = this.credentials(runContext);
@@ -165,6 +238,7 @@ abstract public class AbstractBigquery extends AbstractTask {
 
                     job = createJob.call();
                     lastJobId.set(job.getJobId());
+                    this.trackJob(connection, job.getJobId(), logger);
 
                     BigQueryService.handleErrors(job, logger);
 
