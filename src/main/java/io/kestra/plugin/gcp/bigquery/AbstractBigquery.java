@@ -85,16 +85,29 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
     @JsonIgnore
     @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @Builder.Default
     private final AtomicReference<BigQuery> trackedConnection = new AtomicReference<>();
 
     @JsonIgnore
     @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @Builder.Default
     private final AtomicReference<JobId> trackedJobId = new AtomicReference<>();
 
     @JsonIgnore
     @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Logger> trackedLogger = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @Builder.Default
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
@@ -102,9 +115,10 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
      * Records the job currently submitted, so that {@link #kill()} or {@link #stop()} can cancel the
      * live BigQuery job instead of a stale one from a previous retry attempt.
      */
-    protected void trackJob(BigQuery connection, JobId jobId) {
+    protected void trackJob(BigQuery connection, JobId jobId, Logger logger) {
         this.trackedConnection.set(connection);
         this.trackedJobId.set(jobId);
+        this.trackedLogger.set(logger);
     }
 
     @Override
@@ -126,7 +140,12 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                 try {
                     connection.cancel(jobId);
                 } catch (Exception e) {
-                    LOG.warn("Failed to cancel BigQuery job '{}'", jobId, e);
+                    Logger logger = this.trackedLogger.get();
+                    if (logger != null) {
+                        logger.warn("Failed to cancel BigQuery job '{}'", jobId, e);
+                    } else {
+                        LOG.warn("Failed to cancel BigQuery job '{}'", jobId, e);
+                    }
                 }
             }
         }
@@ -219,7 +238,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
                     job = createJob.call();
                     lastJobId.set(job.getJobId());
-                    this.trackJob(connection, job.getJobId());
+                    this.trackJob(connection, job.getJobId(), logger);
 
                     BigQueryService.handleErrors(job, logger);
 

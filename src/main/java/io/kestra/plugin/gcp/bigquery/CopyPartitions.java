@@ -114,6 +114,8 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
 
     @JsonIgnore
     @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @Builder.Default
     private final AtomicReference<Copy> copyTask = new AtomicReference<>();
 

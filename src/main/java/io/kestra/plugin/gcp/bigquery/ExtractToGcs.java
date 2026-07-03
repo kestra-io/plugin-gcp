@@ -132,7 +132,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         ExtractJobConfiguration configuration = this.buildExtractJob(runContext);
 
         Job extractJob = connection.create(JobInfo.of(configuration));
-        this.trackJob(connection, extractJob.getJobId());
+        this.trackJob(connection, extractJob.getJobId(), logger);
 
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
