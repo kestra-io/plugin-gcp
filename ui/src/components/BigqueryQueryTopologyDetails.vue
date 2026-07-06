@@ -85,12 +85,8 @@ const sql = computed(() => ((props.task as any).sql ?? flowTask.value?.sql) as s
 const hasExecution = computed(() => !!props.execution?.id);
 const executionId = computed(() => props.execution?.id as string | undefined);
 
-// During some render phases namespace/flowId arrive as unresolved template literals ("{namespace}");
-// passing those as render context is meaningless, so drop them (same guard used for loadFlowTask above).
 const resolved = (v?: string) => (v && !v.startsWith("{") ? v : undefined);
 
-// projectId / location may be Pebble expressions (e.g. "{{ vars.projectId }}"); resolve them for
-// display so the topology shows real values instead of raw templates. Falls back to raw on failure.
 const { display } = useRenderedExpressions(
     () => [projectId.value, location.value, sql.value],
     () => ({
@@ -165,7 +161,6 @@ const resolvedLocation = computed(() => {
     return jid.slice(colonIdx + 1, dotIdx);
 });
 
-// Rendered SQL for display — Pebble expressions resolved, falling back to the raw query.
 const resolvedSql = computed(() => display(sql.value));
 
 // KsEditor needs an explicit "dark"/"light" theme. The host marks dark mode with a `dark` class on

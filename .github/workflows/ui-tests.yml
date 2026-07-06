@@ -2,7 +2,7 @@ name: UI Tests
 
 # The shared plugin CI (kestra-io/actions plugins.yml) only builds/tests the Java plugin, so the
 # ui/ micro-frontend is validated here. Runs on every push/PR to the same branches as Main. Tests
-# run in jsdom (portable Storybook stories + composable unit tests) — no browser runner required.
+# run in jsdom (portable Storybook stories + composable unit tests)
 on:
   push:
     branches:
