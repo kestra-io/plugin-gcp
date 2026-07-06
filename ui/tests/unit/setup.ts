@@ -1,8 +1,6 @@
 import { vi } from "vitest";
 import { config } from "@vue/test-utils";
 
-// Mirrors kestra ui/tests/unit/setup.ts (trimmed to what this plugin needs).
-
 // Components mounted in isolation without vue-router can't resolve a literal <router-link>, which
 // spams "[Vue warn]: Failed to resolve component: router-link". Register a minimal global stub.
 config.global.stubs = {
@@ -26,23 +24,76 @@ vi.mock("vue-i18n", async (importOriginal) => {
     };
 });
 
-// jsdom polyfills for Monaco editor (KsEditor), so component-level unit tests can mount it.
-if (typeof document !== "undefined" && typeof document.queryCommandSupported !== "function") {
-    (document as unknown as { queryCommandSupported: () => boolean }).queryCommandSupported = () =>
-        false;
+// jsdom lacks a handful of browser APIs the design-system / Monaco (KsEditor) touch at mount time.
+// Stub the ones story rendering needs so `play` functions can run headlessly.
+if (typeof document !== "undefined") {
+    const d = document as unknown as Record<string, unknown>;
+    if (typeof d.queryCommandSupported !== "function") d.queryCommandSupported = () => false;
+    if (typeof d.queryCommandState !== "function") d.queryCommandState = () => false;
+    if (typeof d.execCommand !== "function") d.execCommand = () => false;
+    // Monaco (KsEditor) awaits `document.fonts.ready` on mount; jsdom has no FontFaceSet.
+    if (!("fonts" in document)) {
+        Object.defineProperty(document, "fonts", {
+            configurable: true,
+            value: {
+                ready: Promise.resolve(),
+                add() {},
+                delete() {},
+                load: () => Promise.resolve([]),
+                addEventListener() {},
+                removeEventListener() {},
+            },
+        });
+    }
 }
-if (typeof document !== "undefined" && typeof document.execCommand !== "function") {
-    (document as unknown as { execCommand: () => boolean }).execCommand = () => false;
+
+if (typeof window !== "undefined") {
+    // KsEditor (Monaco) reads localStorage for editor settings; jsdom's implementation isn't always
+    // usable under vitest, so install a simple in-memory store.
+    if (typeof window.localStorage?.getItem !== "function") {
+        const store = new Map<string, string>();
+        Object.defineProperty(window, "localStorage", {
+            configurable: true,
+            value: {
+                getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+                setItem: (k: string, v: string) => void store.set(k, String(v)),
+                removeItem: (k: string) => void store.delete(k),
+                clear: () => store.clear(),
+                key: (i: number) => Array.from(store.keys())[i] ?? null,
+                get length() {
+                    return store.size;
+                },
+            },
+        });
+    }
+    if (typeof window.matchMedia !== "function") {
+        (window as unknown as { matchMedia: (q: string) => object }).matchMedia = (
+            query: string,
+        ) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => false,
+        });
+    }
+    for (const name of ["ResizeObserver", "IntersectionObserver"]) {
+        if (!(name in window)) {
+            (window as unknown as Record<string, unknown>)[name] = class {
+                observe() {}
+                unobserve() {}
+                disconnect() {}
+                takeRecords() {
+                    return [];
+                }
+            };
+        }
+    }
 }
-if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
-    (window as unknown as { matchMedia: (q: string) => object }).matchMedia = (query: string) => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: () => {},
-        removeListener: () => {},
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        dispatchEvent: () => false,
-    });
+
+if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = () => {};
 }

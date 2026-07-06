@@ -1,9 +1,8 @@
 name: UI Tests
 
 # The shared plugin CI (kestra-io/actions plugins.yml) only builds/tests the Java plugin, so the
-# ui/ micro-frontend is validated here. Runs on every push/PR to the same branches as Main, mirroring
-# the Kestra core UI test architecture: a jsdom "unit" project and a browser-mode "storybook" project
-# (Storybook Vitest addon + Playwright Chromium).
+# ui/ micro-frontend is validated here. Runs on every push/PR to the same branches as Main. Tests
+# run in jsdom (portable Storybook stories + composable unit tests) — no browser runner required.
 on:
   push:
     branches:
@@ -44,40 +43,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # jsdom project — fast, no browser; fail fast before the heavier browser install below.
-      - name: Unit tests
-        run: npm run test:unit
-
-      # Cache the Chromium binary (~130MB) keyed by the resolved Playwright version so it is only
-      # re-downloaded when Playwright is upgraded. System deps live outside this cache dir and are
-      # (re)installed each run below.
-      - name: Resolve Playwright version
-        id: playwright
-        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
-
-      - name: Install Playwright Chromium (+ system deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright system deps (cached browser)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-
-      # Storybook project — every story (and its play function) runs in headless Chromium.
-      - name: Storybook component tests
-        run: npm run test:storybook
-
-      - name: Upload unit test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ui-unit-test-report
-          path: ui/test-report.junit.xml
-          if-no-files-found: ignore
+      - name: Test
+        run: npm test

@@ -20,7 +20,7 @@ const sdkMocks = [
 
 const config: StorybookConfig = {
     stories: ["../tests/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
-    addons: ["@storybook/addon-themes", "@storybook/addon-docs", "@storybook/addon-vitest"],
+    addons: ["@storybook/addon-themes", "@storybook/addon-docs"],
     framework: {
         name: "@storybook/vue3-vite",
         options: {},
