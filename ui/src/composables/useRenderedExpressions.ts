@@ -13,65 +13,35 @@ export interface RenderContext {
 }
 
 /**
- * The Kestra UI encodes the active tenant as the first path segment after the app base
- * (`/ui/<tenant>/flows/...`). The generated SDK otherwise resolves the tenant to its built-in
- * `"main"` default because the host configures the shared client via `useClient()`/manual URLs
- * and never calls `setSelectedTenant()`. On EE instances whose tenant is named differently that
- * default 404s, so we resolve the tenant from the URL and pass it explicitly per call.
+ * Tenant from the UI path (`/ui/<tenant>/...`). The shared SDK client defaults to `"main"`, which
+ * 404s on EE instances with a differently-named tenant, so we pass it explicitly per call.
  */
 function currentTenant(): string | undefined {
     if (typeof window === "undefined") return undefined;
-    // KESTRA_UI_PATH is the absolute UI base (e.g. "/ui/"). It can be a relative "./" in some
-    // templated builds, so only trust it when absolute and otherwise assume the conventional mount.
     const raw = (window as { KESTRA_UI_PATH?: string }).KESTRA_UI_PATH;
     const base = raw && raw.startsWith("/") ? raw.replace(/\/$/, "") : "/ui";
     let path = window.location.pathname;
-    if (base && path.startsWith(base)) {
-        path = path.slice(base.length);
-    }
+    if (path.startsWith(base)) path = path.slice(base.length);
     return path.split("/").find(Boolean) || undefined;
 }
 
 /**
- * Kestra's `CsrfTokenFilter` rejects cookie-authenticated non-safe requests (POST) that lack a
- * CSRF token with a 403. `expressions/render` is a POST, so the browser (JWT/basic-auth cookie)
- * must send the token. The host app reads it from `<meta name="csrf-token">` and forwards it as
- * the `X-CSRF-TOKEN` header, but the generated SDK client we call has no such interceptor, so we
- * attach it ourselves. Returns an empty object when there is no token (e.g. Authorization-header
- * clients, which the filter exempts).
- */
-function csrfHeaders(): Record<string, string> {
-    if (typeof document === "undefined") return {};
-    // The host page can carry more than one `<meta name="csrf-token">`. `querySelector` would silently
-    // pick the first in document order; if the values ever diverge that could send a stale token and
-    // 403. Collect them all, use the first, but surface a diagnostic when they disagree so a CSRF 403
-    // isn't indistinguishable from "nothing to render".
-    const tokens = Array.from(document.querySelectorAll('meta[name="csrf-token"]'))
-        .map((m) => m.getAttribute("content"))
-        .filter((c): c is string => !!c);
-    if (new Set(tokens).size > 1) {
-        console.debug("[gcp] multiple distinct csrf-token meta tags; using the first", tokens);
-    }
-    const token = tokens[0];
-    return token ? { "X-CSRF-TOKEN": token } : {};
-}
-
-/**
- * Resolves Pebble expressions for display by calling the backend `POST /expressions/render`
- * endpoint through the framework-agnostic SDK. All rendering happens server-side; this composable
- * only wires the call into Vue reactivity and falls back to the raw value.
+ * Resolves Pebble expressions for display via `POST /expressions/render`. Rendering is server-side;
+ * this composable only wires it into Vue reactivity and falls back to the raw value.
  *
- * Resolution is all-or-nothing per expression: an expression referencing anything the restricted
- * display engine cannot resolve (env(), kv(), missing vars, …) is returned unchanged. secret() is
- * masked as `[secret: KEY]`. Any failure keeps the raw value (no error surfaced).
- *
- * Context priority (server-side): executionId → flow source → namespace + flowId → globals only.
+ * Resolution is all-or-nothing per expression: anything the restricted display engine cannot resolve
+ * (env(), kv(), missing vars, …) is returned unchanged; secret() is masked as `[secret: KEY]`. Any
+ * failure keeps the raw value (never surfaced). Context priority (server-side):
+ * executionId → flow source → namespace + flowId → globals only.
  */
 export function useRenderedExpressions(
     expressions: () => Array<string | undefined>,
     context: () => RenderContext,
 ) {
     const rendered = ref<Record<string, string>>({});
+    // Guards against out-of-order responses: rapid context switches fire overlapping load() calls, so
+    // only the latest is allowed to mutate `rendered`.
+    let requestId = 0;
 
     async function load() {
         const values = (expressions() ?? []).filter(
@@ -81,32 +51,31 @@ export function useRenderedExpressions(
             rendered.value = {};
             return;
         }
+        const id = ++requestId;
         try {
             const { rendered: result } = await renderExpressions(
+                { expressions: values, tenant: currentTenant(), ...context() },
                 {
-                    expressions: values,
-                    tenant: currentTenant(),
-                    ...context(),
+                    // CSRF is applied by the host's shared SDK client (module-federation singleton),
+                    // so this call inherits X-CSRF-TOKEN automatically — no per-call header needed.
+                    // Best-effort display call: keep failures off the host's global error UI.
+                    validateStatus: (s: number) => s === 200 || s === 404,
+                    showMessageOnError: false,
                 },
-                { headers: csrfHeaders() },
             );
-            rendered.value = result ?? {};
-        } catch (e) {
-            // best-effort: keep raw values. Logged (not surfaced) so a silent 403/404 on this path is
-            // debuggable instead of being indistinguishable from "nothing to render".
-            console.debug("[gcp] expression rendering failed; keeping raw values", e);
+            if (id === requestId) rendered.value = result ?? {};
+        } catch {
+            // Drop stale values so display() falls back to the raw template.
+            if (id === requestId) rendered.value = {};
         }
     }
 
-    // Serialize both watch sources with JSON.stringify: a plain `.join(" ")` on the expressions can
-    // collide (a value shifting across the space boundary yields the same string) and miss a real
-    // change, leaving stale rendered values.
+    // JSON.stringify both sources: a plain join() can collide when a value shifts across the delimiter
+    // and miss a real change, leaving stale rendered values.
     watch(
         [() => JSON.stringify(expressions() ?? []), () => JSON.stringify(context() ?? {})],
         load,
-        {
-            immediate: true,
-        },
+        { immediate: true },
     );
 
     /** Returns the rendered value for `value`, falling back to the raw value. */

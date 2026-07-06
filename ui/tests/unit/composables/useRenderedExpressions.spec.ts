@@ -3,7 +3,7 @@ import { defineComponent, h } from "vue";
 import { mount, flushPromises } from "@vue/test-utils";
 
 // Mock the SDK expression-render endpoint — these unit tests exercise the composable's wiring
-// (filtering, CSRF header, tenant resolution, reactive fallback), not a real backend.
+// (filtering, tenant resolution, reactive fallback), not a real backend.
 const { renderExpressionsMock } = vi.hoisted(() => ({ renderExpressionsMock: vi.fn() }));
 vi.mock("@kestra-io/kestra-sdk/expressions", () => ({
     renderExpressions: renderExpressionsMock,
@@ -78,7 +78,7 @@ describe("useRenderedExpressions", () => {
         expect(display("{{ vars.projectId }}")).toBe("{{ vars.projectId }}");
     });
 
-    it("attaches the CSRF token from the page as X-CSRF-TOKEN", async () => {
+    it("does not set a per-call CSRF header (handled by the host's shared SDK client)", async () => {
         const meta = document.createElement("meta");
         meta.setAttribute("name", "csrf-token");
         meta.setAttribute("content", "tok-123");
@@ -89,7 +89,7 @@ describe("useRenderedExpressions", () => {
         await flushPromises();
 
         const [, opts] = renderExpressionsMock.mock.calls[0];
-        expect(opts.headers).toEqual({ "X-CSRF-TOKEN": "tok-123" });
+        expect(opts?.headers).toBeUndefined();
     });
 
     it("resolves the tenant from the UI path and passes it explicitly", async () => {
