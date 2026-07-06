@@ -48,8 +48,27 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Install Playwright Chromium
+      # Cache the Chromium binary (~130MB) keyed by the resolved Playwright version so it is only
+      # re-downloaded when Playwright is upgraded. System deps live outside this cache dir and are
+      # (re)installed each run below.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
+      - name: Install Playwright Chromium (+ system deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cached browser)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       # Storybook project — every story (and its play function) runs in headless Chromium.
       - name: Storybook component tests
