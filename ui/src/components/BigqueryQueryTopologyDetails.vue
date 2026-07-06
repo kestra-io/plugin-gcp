@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
-import { computed, ref, watch, useAttrs } from "vue";
+import { computed, ref, watch, onMounted, onBeforeUnmount, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
-import { KsTopologyDetails } from "@kestra-io/design-system";
+import { KsTopologyDetails, KsEditor } from "@kestra-io/design-system";
 import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
 import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
 import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
 import * as OutputsAPI from "@kestra-io/kestra-sdk/outputs";
+import { useRenderedExpressions } from "../composables/useRenderedExpressions";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -15,6 +16,7 @@ const { t } = useI18n({
         en: {
             project: "Project",
             location: "Location",
+            query: "Query",
             duration: "Duration",
             estimatedCost: "Estimated cost",
             jobDetails: "Job details",
@@ -32,7 +34,9 @@ const { t } = useI18n({
     },
 });
 
-const props = defineProps<KnownSlotProps["topology-details"]>();
+// `source` (the current, possibly unsaved flow YAML) is provided by the host but not yet part of the
+// shared KnownSlotProps type, so it is declared explicitly here.
+const props = defineProps<KnownSlotProps["topology-details"] & { source?: string }>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
 const namespace = computed(() => props.namespace);
@@ -75,10 +79,27 @@ const projectId = computed(
 const location = computed(
     () => ((props.task as any).location ?? flowTask.value?.location) as string | undefined,
 );
+const sql = computed(() => ((props.task as any).sql ?? flowTask.value?.sql) as string | undefined);
 
 // Execution state
 const hasExecution = computed(() => !!props.execution?.id);
 const executionId = computed(() => props.execution?.id as string | undefined);
+
+// During some render phases namespace/flowId arrive as unresolved template literals ("{namespace}");
+// passing those as render context is meaningless, so drop them (same guard used for loadFlowTask above).
+const resolved = (v?: string) => (v && !v.startsWith("{") ? v : undefined);
+
+// projectId / location may be Pebble expressions (e.g. "{{ vars.projectId }}"); resolve them for
+// display so the topology shows real values instead of raw templates. Falls back to raw on failure.
+const { display } = useRenderedExpressions(
+    () => [projectId.value, location.value, sql.value],
+    () => ({
+        executionId: executionId.value,
+        namespace: resolved(namespace.value),
+        flowId: resolved(flowId.value),
+        flow: props.source,
+    }),
+);
 
 const taskRun = computed(() => {
     const list = props.execution?.taskRunList as any[] | undefined;
@@ -127,7 +148,7 @@ const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.output
 // Parse project and location from the job ID as fallback.
 // BigQuery job IDs have the format: project:location.jobname
 const resolvedProject = computed(() => {
-    if (projectId.value) return projectId.value;
+    if (projectId.value) return display(projectId.value);
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -135,7 +156,7 @@ const resolvedProject = computed(() => {
 });
 
 const resolvedLocation = computed(() => {
-    if (location.value) return location.value;
+    if (location.value) return display(location.value);
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -143,6 +164,26 @@ const resolvedLocation = computed(() => {
     if (colonIdx < 0 || dotIdx < 0) return undefined;
     return jid.slice(colonIdx + 1, dotIdx);
 });
+
+// Rendered SQL for display — Pebble expressions resolved, falling back to the raw query.
+const resolvedSql = computed(() => display(sql.value));
+
+// KsEditor needs an explicit "dark"/"light" theme. The host marks dark mode with a `dark` class on
+// <html> (same signal the design-system's own components observe), so mirror it and react to toggles.
+const isDark = ref(false);
+const editorTheme = computed(() => (isDark.value ? "dark" : "light"));
+let themeObserver: MutationObserver | null = null;
+onMounted(() => {
+    if (typeof document === "undefined") return;
+    const detect = () => (isDark.value = document.documentElement.classList.contains("dark"));
+    detect();
+    themeObserver = new MutationObserver(detect);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+    });
+});
+onBeforeUnmount(() => themeObserver?.disconnect());
 
 // Metrics (fetched via SDK — best-effort)
 interface MetricEntry {
@@ -257,6 +298,20 @@ const perfRows = computed(() => [
     <div class="bq-details">
         <KsTopologyDetails :rows="summaryRows" />
 
+        <!-- Rendered SQL: full view (available pre-execution, straight from the flow definition) -->
+        <section v-if="isFullView && resolvedSql" class="bq-section">
+            <h4 class="bq-section__title">{{ t("query") }}</h4>
+            <div class="bq-sql">
+                <KsEditor
+                    :model-value="resolvedSql"
+                    lang="sql"
+                    :theme="editorTheme"
+                    read-only
+                    :navbar="false"
+                />
+            </div>
+        </section>
+
         <!-- Job details: full view, post-execution only -->
         <section v-if="hasExecution && isFullView" class="bq-section">
             <h4 class="bq-section__title">{{ t("jobDetails") }}</h4>
@@ -281,5 +336,14 @@ const perfRows = computed(() => [
     font-size: var(--ks-font-size-xs);
     font-weight: 600;
     color: var(--ks-text-secondary);
+}
+
+/* KsEditor auto-sizes to its content; cap the height so a long query scrolls instead of pushing
+   the rest of the panel off-screen. */
+.bq-sql {
+    max-height: 20rem;
+    overflow: auto;
+    border: 1px solid var(--ks-border-primary);
+    border-radius: var(--ks-border-radius);
 }
 </style>
