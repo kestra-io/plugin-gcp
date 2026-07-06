@@ -1,0 +1,64 @@
+name: UI Tests
+
+# The shared plugin CI (kestra-io/actions plugins.yml) only builds/tests the Java plugin, so the
+# ui/ micro-frontend is validated here. Runs on every push/PR to the same branches as Main, mirroring
+# the Kestra core UI test architecture: a jsdom "unit" project and a browser-mode "storybook" project
+# (Storybook Vitest addon + Playwright Chromium).
+on:
+  push:
+    branches:
+      - main
+      - master
+      - releases/*
+  pull_request:
+    branches:
+      - main
+      - master
+      - releases/*
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # jsdom project — fast, no browser; fail fast before the heavier browser install below.
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Storybook project — every story (and its play function) runs in headless Chromium.
+      - name: Storybook component tests
+        run: npm run test:storybook
+
+      - name: Upload unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-unit-test-report
+          path: ui/test-report.junit.xml
+          if-no-files-found: ignore

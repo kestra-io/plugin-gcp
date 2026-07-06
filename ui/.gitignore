@@ -3,6 +3,11 @@ dist
 storybook-static
 *.local
 
+# test artifacts
+test-report.junit.xml
+coverage
+.vitest-reports
+
 # federation specific build files
 .__mf__temp
 
