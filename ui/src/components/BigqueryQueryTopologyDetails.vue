@@ -64,23 +64,16 @@ async function loadFlowTask() {
 watch(
     [namespace, flowId],
     ([ns, fid]) => {
-        if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{"))
-            loadFlowTask();
+        if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{")) loadFlowTask();
     },
     { immediate: true },
 );
 
 const projectId = computed(
-    () =>
-        ((props.task as any).projectId ?? flowTask.value?.projectId) as
-            | string
-            | undefined,
+    () => ((props.task as any).projectId ?? flowTask.value?.projectId) as string | undefined,
 );
 const location = computed(
-    () =>
-        ((props.task as any).location ?? flowTask.value?.location) as
-            | string
-            | undefined,
+    () => ((props.task as any).location ?? flowTask.value?.location) as string | undefined,
 );
 
 // Execution state
@@ -129,9 +122,7 @@ watch(
     { immediate: true },
 );
 
-const taskOutputs = computed(
-    () => fetchedOutputs.value ?? taskRun.value?.outputs ?? null,
-);
+const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.outputs ?? null);
 
 // Parse project and location from the job ID as fallback.
 // BigQuery job IDs have the format: project:location.jobname
@@ -187,8 +178,7 @@ watch(
     { immediate: true },
 );
 
-const getMetric = (name: string) =>
-    metrics.value.find((m) => m.name === name)?.value;
+const getMetric = (name: string) => metrics.value.find((m) => m.name === name)?.value;
 
 const bytesBilled = computed(() => getMetric("total.bytes.billed"));
 const bytesProcessed = computed(() => getMetric("total.bytes.processed"));
@@ -240,7 +230,10 @@ const jobRows = computed(() => {
         { label: t("jobId"), value: (taskOutputs.value?.jobId as string) ?? "—" },
         {
             label: t("rows"),
-            value: taskOutputs.value?.size !== undefined ? taskOutputs.value.size.toLocaleString() : "—",
+            value:
+                taskOutputs.value?.size !== undefined
+                    ? taskOutputs.value.size.toLocaleString()
+                    : "—",
         },
     ];
     const dt = taskOutputs.value?.destinationTable;
@@ -290,4 +283,3 @@ const perfRows = computed(() => [
     color: var(--ks-text-secondary);
 }
 </style>
-
