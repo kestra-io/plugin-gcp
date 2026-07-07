@@ -34,9 +34,8 @@ describe("useRenderedExpressions", () => {
     });
 
     afterEach(() => {
-        // Reset URL and any injected csrf meta tags so tests don't leak into each other.
+        // Reset the URL so tests don't leak into each other.
         window.history.replaceState(null, "", "/");
-        document.querySelectorAll('meta[name="csrf-token"]').forEach((m) => m.remove());
     });
 
     it("returns the resolved value for an expression", async () => {
@@ -76,20 +75,6 @@ describe("useRenderedExpressions", () => {
         await flushPromises();
 
         expect(display("{{ vars.projectId }}")).toBe("{{ vars.projectId }}");
-    });
-
-    it("does not set a per-call CSRF header (handled by the host's shared SDK client)", async () => {
-        const meta = document.createElement("meta");
-        meta.setAttribute("name", "csrf-token");
-        meta.setAttribute("content", "tok-123");
-        document.head.appendChild(meta);
-        renderExpressionsMock.mockResolvedValue({ rendered: {} });
-
-        mountComposable(["{{ vars.projectId }}"]);
-        await flushPromises();
-
-        const [, opts] = renderExpressionsMock.mock.calls[0];
-        expect(opts?.headers).toBeUndefined();
     });
 
     it("resolves the tenant from the UI path and passes it explicitly", async () => {

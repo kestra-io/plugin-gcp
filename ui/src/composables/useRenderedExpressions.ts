@@ -56,8 +56,6 @@ export function useRenderedExpressions(
             const { rendered: result } = await renderExpressions(
                 { expressions: values, tenant: currentTenant(), ...context() },
                 {
-                    // CSRF is applied by the host's shared SDK client (module-federation singleton),
-                    // so this call inherits X-CSRF-TOKEN automatically — no per-call header needed.
                     // Best-effort display call: keep failures off the host's global error UI.
                     validateStatus: (s: number) => s === 200 || s === 404,
                     showMessageOnError: false,
