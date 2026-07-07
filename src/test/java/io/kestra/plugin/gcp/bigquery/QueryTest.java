@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -25,6 +26,7 @@ import com.google.common.io.CharStreams;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
@@ -268,9 +270,13 @@ class QueryTest {
         ExecutorService executorService = Executors.newCachedThreadPool();
         String table = project + "." + dataset + "." + FriendlyId.createFriendlyId();
 
+        // Real BigQuery caps concurrent WRITE_TRUNCATE jobs per table. 10 concurrent jobs stay
+        // comfortably under that quota so the retry-on-quota-error behavior converges reliably
+        // instead of depending on how many of a larger batch happen to collide.
+        int concurrency = 10;
         List<Callable<Query.Output>> tasks = new ArrayList<>();
 
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < concurrency; i++) {
             Query task = Query.builder()
                 .id(QueryTest.class.getSimpleName())
                 .type(Query.class.getName())
@@ -279,6 +285,15 @@ class QueryTest {
                 .destinationTable(Property.ofValue(table))
                 .createDisposition(Property.ofValue(JobInfo.CreateDisposition.CREATE_IF_NEEDED))
                 .writeDisposition(Property.ofValue(JobInfo.WriteDisposition.WRITE_TRUNCATE))
+                .retryAuto(
+                    Exponential.builder()
+                        .type("exponential")
+                        .interval(Duration.ofSeconds(5))
+                        .maxInterval(Duration.ofMinutes(2))
+                        .maxDuration(Duration.ofMinutes(20))
+                        .maxAttempts(20)
+                        .build()
+                )
                 .build();
 
             RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
