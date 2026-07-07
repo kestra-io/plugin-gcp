@@ -77,27 +77,12 @@ const expressionTask = {
     fetch: true,
 };
 
-// Live (unsaved) flow source the host would hand the slot; used as render context for resolution.
-const expressionSource = [
-    "id: bq-pipeline",
-    "namespace: company.team",
-    "variables:",
-    "  projectId: my-gcp-project",
-    "  location: EU",
-    "tasks:",
-    "  - id: query-bq",
-    "    type: io.kestra.plugin.gcp.bigquery.Query",
-    '    projectId: "{{ vars.projectId }}"',
-    '    location: "{{ vars.location }}"',
-].join("\n");
-
 export const PreExecutionExpressions: Story = {
     name: "Pre-execution — expressions resolved",
     args: {
         task: expressionTask,
         namespace: "company.team",
         flowId: "bq-pipeline",
-        source: expressionSource,
         displayMode: "full",
     } as any,
     // Regression guard: the panel must show RESOLVED values, never the raw "{{ … }}" templates.
@@ -119,7 +104,6 @@ export const PostExecutionExpressions: Story = {
         task: expressionTask,
         namespace: "company.team",
         flowId: "bq-pipeline",
-        source: expressionSource,
         displayMode: "full",
         execution: {
             id: "exec-abc123",

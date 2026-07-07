@@ -7,7 +7,7 @@ import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
 import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
 import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
 import * as OutputsAPI from "@kestra-io/kestra-sdk/outputs";
-import { useRenderedExpressions } from "../composables/useRenderedExpressions";
+import { renderExpressions } from "@kestra-io/kestra-sdk/expressions";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -34,9 +34,7 @@ const { t } = useI18n({
     },
 });
 
-// `source` (the current, possibly unsaved flow YAML) is provided by the host but not yet part of the
-// shared KnownSlotProps type, so it is declared explicitly here.
-const props = defineProps<KnownSlotProps["topology-details"] & { source?: string }>();
+const props = defineProps<KnownSlotProps["topology-details"]>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
 const namespace = computed(() => props.namespace);
@@ -87,15 +85,55 @@ const executionId = computed(() => props.execution?.id as string | undefined);
 
 const resolved = (v?: string) => (v && !v.startsWith("{") ? v : undefined);
 
-const { display } = useRenderedExpressions(
-    () => [projectId.value, location.value, sql.value],
-    () => ({
-        executionId: executionId.value,
-        namespace: resolved(namespace.value),
-        flowId: resolved(flowId.value),
-        flow: props.source,
-    }),
+// Resolve the task config's Pebble expressions (projectId / location / sql) for display via
+// POST /expressions/render. Rendering is server-side and all-or-nothing per expression: anything the
+// restricted display engine cannot resolve (env(), kv(), missing vars, …) comes back unchanged, and
+// any failure keeps the raw template (see display()). Only values that actually contain a `{{…}}` are
+// worth a round-trip. The tenant is passed explicitly (from where the host EE persists it on
+// navigation) because the plugin bundles its own SDK copy whose global tenant stays at the "main"
+// default; absent on single-tenant OSS, where "main" is already correct.
+const EXPRESSION_RE = /\{\{.*?}}/;
+const rendered = ref<Record<string, string>>({});
+
+async function loadRenderedExpressions() {
+    const values = [projectId.value, location.value, sql.value].filter(
+        (v): v is string => typeof v === "string" && EXPRESSION_RE.test(v),
+    );
+    if (!values.length) {
+        rendered.value = {};
+        return;
+    }
+    try {
+        const { rendered: result } = await renderExpressions(
+            {
+                expressions: values,
+                tenant: window.localStorage.getItem("selectedTenant") ?? undefined,
+                executionId: executionId.value,
+                namespace: resolved(namespace.value),
+                flowId: resolved(flowId.value),
+            },
+            {
+                // Best-effort display call: keep failures off the host's global error UI.
+                validateStatus: (s: number) => s === 200 || s === 404,
+                showMessageOnError: false,
+            },
+        );
+        rendered.value = result ?? {};
+    } catch {
+        // Drop rendered values so display() falls back to the raw template.
+        rendered.value = {};
+    }
+}
+
+watch(
+    [projectId, location, sql, executionId, namespace, flowId],
+    loadRenderedExpressions,
+    { immediate: true },
 );
+
+/** Returns the rendered value for `value`, falling back to the raw value. */
+const display = (value?: string) =>
+    value === undefined ? undefined : (rendered.value[value] ?? value);
 
 const taskRun = computed(() => {
     const list = props.execution?.taskRunList as any[] | undefined;
