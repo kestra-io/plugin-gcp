@@ -34,8 +34,8 @@ describe("useRenderedExpressions", () => {
     });
 
     afterEach(() => {
-        // Reset the URL so tests don't leak into each other.
-        window.history.replaceState(null, "", "/");
+        // Clear the persisted tenant so tests don't leak into each other.
+        window.localStorage.clear();
     });
 
     it("returns the resolved value for an expression", async () => {
@@ -77,8 +77,8 @@ describe("useRenderedExpressions", () => {
         expect(display("{{ vars.projectId }}")).toBe("{{ vars.projectId }}");
     });
 
-    it("resolves the tenant from the UI path and passes it explicitly", async () => {
-        window.history.replaceState(null, "", "/ui/my-tenant/flows/company.team/flow-a");
+    it("passes the tenant the host persisted in localStorage", async () => {
+        window.localStorage.setItem("selectedTenant", "my-tenant");
         renderExpressionsMock.mockResolvedValue({ rendered: {} });
 
         mountComposable(["{{ vars.projectId }}"]);

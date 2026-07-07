@@ -13,16 +13,13 @@ export interface RenderContext {
 }
 
 /**
- * Tenant from the UI path (`/ui/<tenant>/...`). The shared SDK client defaults to `"main"`, which
- * 404s on EE instances with a differently-named tenant, so we pass it explicitly per call.
+ * Tenant the host UI resolved and persisted on navigation (EE writes it under `selectedTenant`).
+ * We pass it explicitly because the plugin bundles its own SDK copy whose global tenant stays at the
+ * `"main"` default. Absent on single-tenant OSS — there the `"main"` default is already correct.
  */
 function currentTenant(): string | undefined {
     if (typeof window === "undefined") return undefined;
-    const raw = (window as { KESTRA_UI_PATH?: string }).KESTRA_UI_PATH;
-    const base = raw && raw.startsWith("/") ? raw.replace(/\/$/, "") : "/ui";
-    let path = window.location.pathname;
-    if (path.startsWith(base)) path = path.slice(base.length);
-    return path.split("/").find(Boolean) || undefined;
+    return window.localStorage.getItem("selectedTenant") ?? undefined;
 }
 
 /**
