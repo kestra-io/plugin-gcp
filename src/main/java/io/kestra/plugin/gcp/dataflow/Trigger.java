@@ -121,6 +121,11 @@ public class Trigger extends AbstractTrigger
     @PluginProperty(group = "advanced")
     private Property<Duration> stateTtl;
 
+    @Schema(
+        title = "Which state change events to trigger on.",
+        description = "Can be CREATE, UPDATE or CREATE_OR_UPDATE."
+    )
+    @PluginProperty(group = "processing")
     @Builder.Default
     private final Property<On> on = Property.ofValue(On.CREATE_OR_UPDATE);
 
@@ -144,6 +149,7 @@ public class Trigger extends AbstractTrigger
         var rJobNamePrefix = runContext.render(this.jobNamePrefix).as(String.class).orElse("");
         var rTargetState = runContext.render(this.targetState).as(JobState.class).orElse(JobState.JOB_STATE_DONE).name();
         var rLookback = runContext.render(this.lookback).as(Duration.class).orElse(this.interval);
+        var rOn = runContext.render(this.on).as(On.class).orElse(On.CREATE_OR_UPDATE);
         var rStateKey = runContext.render(this.stateKey).as(String.class).orElse(defaultKey(context.getNamespace(), context.getFlowId(), id));
         var rStateTtl = runContext.render(this.stateTtl).as(Duration.class);
 
@@ -156,7 +162,7 @@ public class Trigger extends AbstractTrigger
 
         Job targetJob = null;
         Instant targetJobTime = null;
-        Entry targetEntry = null;
+        boolean stateUpdated = false;
 
         String pageToken = null;
         do {
@@ -191,14 +197,12 @@ public class Trigger extends AbstractTrigger
                         var stateTime = Instant.parse(stateTimeStr);
                         if (stateTime.isAfter(start) && stateTime.isBefore(end)) {
                             var candidate = Entry.candidate(job.getId(), job.getCurrentState(), stateTime);
-                            // Evaluate against temporary copy of state to avoid mutating until target is chosen
-                            var tempState = new HashMap<>(state);
-                            var update = computeAndUpdateState(tempState, candidate, On.CREATE_OR_UPDATE);
+                            var update = computeAndUpdateState(state, candidate, rOn);
+                            stateUpdated = true;
                             if (update.fire()) {
                                 if (targetJobTime == null || stateTime.isAfter(targetJobTime)) {
                                     targetJobTime = stateTime;
                                     targetJob = job;
-                                    targetEntry = candidate;
                                 }
                             }
                         }
@@ -208,11 +212,11 @@ public class Trigger extends AbstractTrigger
             pageToken = listResponse.getNextPageToken();
         } while (pageToken != null);
 
-        if (targetJob != null) {
-            // Apply the chosen state candidate to the persistent state map
-            computeAndUpdateState(state, targetEntry, On.CREATE_OR_UPDATE);
+        if (stateUpdated) {
             writeState(runContext, rStateKey, state, rStateTtl);
+        }
 
+        if (targetJob != null) {
             var output = Output.builder()
                 .jobId(targetJob.getId())
                 .jobName(targetJob.getName())

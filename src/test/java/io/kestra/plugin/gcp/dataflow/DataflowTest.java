@@ -300,6 +300,229 @@ class DataflowTest {
     }
 
     @Test
+    void triggerEvaluation_stateful_create_or_update() throws Exception {
+        var trigger = Trigger.builder()
+            .id(IdUtils.create())
+            .type(Trigger.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .location(Property.ofValue("us-central1"))
+            .jobNamePrefix(Property.ofValue("my-etl-"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_DONE))
+            .lookback(Property.ofValue(Duration.ofSeconds(10)))
+            .on(Property.ofValue(io.kestra.core.models.triggers.StatefulTriggerInterface.On.CREATE_OR_UPDATE))
+            .build();
+
+        var spyTrigger = spy(trigger);
+        doReturn(mockDataflow).when(spyTrigger).dataflowClient(any());
+
+        var time1 = Instant.now().minus(Duration.ofSeconds(5));
+        var response1 = new ListJobsResponse()
+            .setJobs(
+                List.of(
+                    new Job()
+                        .setId("job-123")
+                        .setName("my-etl-job")
+                        .setCurrentState("JOB_STATE_DONE")
+                        .setCurrentStateTime(time1.toString())
+                )
+            );
+
+        when(mockJobs.list(any(), any())).thenReturn(mockJobsList);
+        when(mockJobsList.execute()).thenReturn(response1);
+
+        var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
+
+        // First execution (CREATE) -> should fire
+        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution1.isPresent(), is(true));
+        assertThat(execution1.get().getTrigger().getVariables().get("jobId"), is("job-123"));
+
+        // Second execution (same state, same time) -> should NOT fire (deduplicated)
+        var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution2.isPresent(), is(false));
+
+        // Third execution (same job, but state changes to JOB_STATE_UPDATED/time changes) -> should fire (UPDATE)
+        var time2 = Instant.now().minus(Duration.ofSeconds(2));
+        var response2 = new ListJobsResponse()
+            .setJobs(
+                List.of(
+                    new Job()
+                        .setId("job-123")
+                        .setName("my-etl-job")
+                        .setCurrentState("JOB_STATE_UPDATED")
+                        .setCurrentStateTime(time2.toString())
+                )
+            );
+        // We need to change the trigger's target state so that it finds JOB_STATE_UPDATED
+        var triggerUpdated = Trigger.builder()
+            .id(trigger.getId())
+            .type(Trigger.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .location(Property.ofValue("us-central1"))
+            .jobNamePrefix(Property.ofValue("my-etl-"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_UPDATED))
+            .lookback(Property.ofValue(Duration.ofSeconds(10)))
+            .on(Property.ofValue(io.kestra.core.models.triggers.StatefulTriggerInterface.On.CREATE_OR_UPDATE))
+            .build();
+        var spyTriggerUpdated = spy(triggerUpdated);
+        doReturn(mockDataflow).when(spyTriggerUpdated).dataflowClient(any());
+        when(mockJobsList.execute()).thenReturn(response2);
+
+        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution3.isPresent(), is(true));
+        assertThat(execution3.get().getTrigger().getVariables().get("jobId"), is("job-123"));
+        assertThat(execution3.get().getTrigger().getVariables().get("state"), is("JOB_STATE_UPDATED"));
+
+        // Fourth execution (same UPDATED state) -> should NOT fire
+        var execution4 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution4.isPresent(), is(false));
+    }
+
+    @Test
+    void triggerEvaluation_stateful_create() throws Exception {
+        var trigger = Trigger.builder()
+            .id(IdUtils.create())
+            .type(Trigger.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .location(Property.ofValue("us-central1"))
+            .jobNamePrefix(Property.ofValue("my-etl-"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_DONE))
+            .lookback(Property.ofValue(Duration.ofSeconds(10)))
+            .on(Property.ofValue(io.kestra.core.models.triggers.StatefulTriggerInterface.On.CREATE))
+            .build();
+
+        var spyTrigger = spy(trigger);
+        doReturn(mockDataflow).when(spyTrigger).dataflowClient(any());
+
+        var time1 = Instant.now().minus(Duration.ofSeconds(5));
+        var response1 = new ListJobsResponse()
+            .setJobs(
+                List.of(
+                    new Job()
+                        .setId("job-123")
+                        .setName("my-etl-job")
+                        .setCurrentState("JOB_STATE_DONE")
+                        .setCurrentStateTime(time1.toString())
+                )
+            );
+
+        when(mockJobs.list(any(), any())).thenReturn(mockJobsList);
+        when(mockJobsList.execute()).thenReturn(response1);
+
+        var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
+
+        // First execution (CREATE) -> should fire
+        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution1.isPresent(), is(true));
+
+        // Second execution (same state) -> should NOT fire
+        var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution2.isPresent(), is(false));
+
+        // Third execution (UPDATE) -> should NOT fire because 'on' is CREATE
+        var time2 = Instant.now().minus(Duration.ofSeconds(2));
+        var response2 = new ListJobsResponse()
+            .setJobs(
+                List.of(
+                    new Job()
+                        .setId("job-123")
+                        .setName("my-etl-job")
+                        .setCurrentState("JOB_STATE_UPDATED")
+                        .setCurrentStateTime(time2.toString())
+                )
+            );
+        var triggerUpdated = Trigger.builder()
+            .id(trigger.getId())
+            .type(Trigger.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .location(Property.ofValue("us-central1"))
+            .jobNamePrefix(Property.ofValue("my-etl-"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_UPDATED))
+            .lookback(Property.ofValue(Duration.ofSeconds(10)))
+            .on(Property.ofValue(io.kestra.core.models.triggers.StatefulTriggerInterface.On.CREATE))
+            .build();
+        var spyTriggerUpdated = spy(triggerUpdated);
+        doReturn(mockDataflow).when(spyTriggerUpdated).dataflowClient(any());
+        when(mockJobsList.execute()).thenReturn(response2);
+
+        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution3.isPresent(), is(false));
+    }
+
+    @Test
+    void triggerEvaluation_stateful_update() throws Exception {
+        var trigger = Trigger.builder()
+            .id(IdUtils.create())
+            .type(Trigger.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .location(Property.ofValue("us-central1"))
+            .jobNamePrefix(Property.ofValue("my-etl-"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_DONE))
+            .lookback(Property.ofValue(Duration.ofSeconds(10)))
+            .on(Property.ofValue(io.kestra.core.models.triggers.StatefulTriggerInterface.On.UPDATE))
+            .build();
+
+        var spyTrigger = spy(trigger);
+        doReturn(mockDataflow).when(spyTrigger).dataflowClient(any());
+
+        var time1 = Instant.now().minus(Duration.ofSeconds(5));
+        var response1 = new ListJobsResponse()
+            .setJobs(
+                List.of(
+                    new Job()
+                        .setId("job-123")
+                        .setName("my-etl-job")
+                        .setCurrentState("JOB_STATE_DONE")
+                        .setCurrentStateTime(time1.toString())
+                )
+            );
+
+        when(mockJobs.list(any(), any())).thenReturn(mockJobsList);
+        when(mockJobsList.execute()).thenReturn(response1);
+
+        var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
+
+        // First execution (CREATE) -> should NOT fire because 'on' is UPDATE
+        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution1.isPresent(), is(false));
+
+        // Second execution (UPDATE) -> should fire
+        var time2 = Instant.now().minus(Duration.ofSeconds(2));
+        var response2 = new ListJobsResponse()
+            .setJobs(
+                List.of(
+                    new Job()
+                        .setId("job-123")
+                        .setName("my-etl-job")
+                        .setCurrentState("JOB_STATE_UPDATED")
+                        .setCurrentStateTime(time2.toString())
+                )
+            );
+        var triggerUpdated = Trigger.builder()
+            .id(trigger.getId())
+            .type(Trigger.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .location(Property.ofValue("us-central1"))
+            .jobNamePrefix(Property.ofValue("my-etl-"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_UPDATED))
+            .lookback(Property.ofValue(Duration.ofSeconds(10)))
+            .on(Property.ofValue(io.kestra.core.models.triggers.StatefulTriggerInterface.On.UPDATE))
+            .build();
+        var spyTriggerUpdated = spy(triggerUpdated);
+        doReturn(mockDataflow).when(spyTriggerUpdated).dataflowClient(any());
+        when(mockJobsList.execute()).thenReturn(response2);
+
+        var execution2 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution2.isPresent(), is(true));
+        assertThat(execution2.get().getTrigger().getVariables().get("jobId"), is("job-123"));
+        assertThat(execution2.get().getTrigger().getVariables().get("state"), is("JOB_STATE_UPDATED"));
+
+        // Third execution (same UPDATED state) -> should NOT fire
+        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        assertThat(execution3.isPresent(), is(false));
+    }
+
+    @Test
     void cancelJobTask_drain() throws Exception {
         var runContext = runContextFactory.of();
 
