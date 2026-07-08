@@ -51,6 +51,12 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.spanner.Trigger`
 - `io.kestra.plugin.gcp.cli.GCloudCLI`
 - `io.kestra.plugin.gcp.dataform.InvokeWorkflow`
+- `io.kestra.plugin.gcp.dataflow.CancelJob`
+- `io.kestra.plugin.gcp.dataflow.GetJob`
+- `io.kestra.plugin.gcp.dataflow.LaunchFlexTemplate`
+- `io.kestra.plugin.gcp.dataflow.LaunchTemplate`
+- `io.kestra.plugin.gcp.dataflow.Trigger`
+- `io.kestra.plugin.gcp.dataflow.WaitForJob`
 - `io.kestra.plugin.gcp.dataproc.batches.PySparkSubmit`
 - `io.kestra.plugin.gcp.dataproc.batches.RSparkSubmit`
 - `io.kestra.plugin.gcp.dataproc.batches.SparkSqlSubmit`
