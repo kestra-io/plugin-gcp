@@ -16,6 +16,7 @@ import com.google.api.services.dataflow.model.*;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 
 import jakarta.inject.Inject;
@@ -99,7 +100,7 @@ class DataflowTest {
         when(mockTemplatesLaunch.execute()).thenReturn(response);
 
         var task = LaunchTemplate.builder()
-            .id("launch-template")
+            .id(IdUtils.create())
             .type(LaunchTemplate.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -128,7 +129,7 @@ class DataflowTest {
         when(mockFlexTemplatesLaunch.execute()).thenReturn(response);
 
         var task = LaunchFlexTemplate.builder()
-            .id("launch-flex-template")
+            .id(IdUtils.create())
             .type(LaunchFlexTemplate.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -172,7 +173,7 @@ class DataflowTest {
         when(mockJobsGetMetrics.execute()).thenReturn(metricsResponse);
 
         var task = GetJob.builder()
-            .id("get-job")
+            .id(IdUtils.create())
             .type(GetJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -203,7 +204,7 @@ class DataflowTest {
         when(mockJobsUpdate.execute()).thenReturn(response);
 
         var task = CancelJob.builder()
-            .id("cancel-job")
+            .id(IdUtils.create())
             .type(CancelJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -241,7 +242,7 @@ class DataflowTest {
         when(mockJobsGetMetrics.execute()).thenReturn(metricsResponse);
 
         var task = WaitForJob.builder()
-            .id("wait-for-job")
+            .id(IdUtils.create())
             .type(WaitForJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -262,7 +263,7 @@ class DataflowTest {
     @Test
     void triggerEvaluation() throws Exception {
         var trigger = Trigger.builder()
-            .id("trigger")
+            .id(IdUtils.create())
             .type(Trigger.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -310,7 +311,7 @@ class DataflowTest {
         when(mockJobsUpdate.execute()).thenReturn(response);
 
         var task = CancelJob.builder()
-            .id("cancel-job")
+            .id(IdUtils.create())
             .type(CancelJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -337,7 +338,7 @@ class DataflowTest {
         when(mockJobsGet.execute()).thenReturn(runningJob, failedJob);
 
         var task = WaitForJob.builder()
-            .id("wait-for-job")
+            .id(IdUtils.create())
             .type(WaitForJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -363,7 +364,7 @@ class DataflowTest {
         when(mockJobsGet.execute()).thenReturn(runningJob, cancelledJob);
 
         var task = WaitForJob.builder()
-            .id("wait-for-job")
+            .id(IdUtils.create())
             .type(WaitForJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -388,7 +389,7 @@ class DataflowTest {
         when(mockJobsGet.execute()).thenReturn(runningJob);
 
         var task = WaitForJob.builder()
-            .id("wait-for-job")
+            .id(IdUtils.create())
             .type(WaitForJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -421,7 +422,7 @@ class DataflowTest {
         when(mockJobsGetMetrics.execute()).thenThrow(new java.io.IOException("Google API metrics error"));
 
         var task = GetJob.builder()
-            .id("get-job")
+            .id(IdUtils.create())
             .type(GetJob.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))
@@ -440,7 +441,7 @@ class DataflowTest {
     @Test
     void triggerEvaluation_noMatch() throws Exception {
         var trigger = Trigger.builder()
-            .id("trigger")
+            .id(IdUtils.create())
             .type(Trigger.class.getName())
             .projectId(Property.ofValue("test-project"))
             .location(Property.ofValue("us-central1"))

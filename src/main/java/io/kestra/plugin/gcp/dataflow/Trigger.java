@@ -2,7 +2,9 @@ package io.kestra.plugin.gcp.dataflow;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.api.services.dataflow.Dataflow;
@@ -14,11 +16,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.triggers.AbstractTrigger;
-import io.kestra.core.models.triggers.PollingTriggerInterface;
-import io.kestra.core.models.triggers.TriggerContext;
-import io.kestra.core.models.triggers.TriggerOutput;
-import io.kestra.core.models.triggers.TriggerService;
+import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,6 +27,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+
+import static io.kestra.core.models.triggers.StatefulTriggerService.*;
 
 @SuperBuilder
 @ToString
@@ -66,7 +66,7 @@ import lombok.experimental.SuperBuilder;
     }
 )
 public class Trigger extends AbstractTrigger
-    implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, DataflowConnectionInterface {
+    implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, DataflowConnectionInterface, StatefulTriggerInterface {
 
     @NotNull
     @Schema(title = "The GCP project ID")
@@ -100,9 +100,29 @@ public class Trigger extends AbstractTrigger
     @PluginProperty(group = "processing")
     private Property<JobState> targetState = Property.ofValue(JobState.JOB_STATE_DONE);
 
-    @Schema(title = "Lookback window applied to job state transitions")
+    @Schema(
+        title = "Lookback window applied to job state transitions",
+        description = "Defaults to the polling interval if not specified."
+    )
     @PluginProperty(group = "processing")
     private Property<Duration> lookback;
+
+    @Schema(
+        title = "State key",
+        description = "Override key used to persist trigger state; defaults to namespace/flow/id"
+    )
+    @PluginProperty(group = "connection")
+    private Property<String> stateKey;
+
+    @Schema(
+        title = "State TTL",
+        description = "Optional TTL for trigger state entries"
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Duration> stateTtl;
+
+    @Builder.Default
+    private final Property<On> on = Property.ofValue(On.CREATE_OR_UPDATE);
 
     @Builder.Default
     @Schema(title = "The interval between polls")
@@ -124,19 +144,39 @@ public class Trigger extends AbstractTrigger
         var rJobNamePrefix = runContext.render(this.jobNamePrefix).as(String.class).orElse("");
         var rTargetState = runContext.render(this.targetState).as(JobState.class).orElse(JobState.JOB_STATE_DONE).name();
         var rLookback = runContext.render(this.lookback).as(Duration.class).orElse(this.interval);
+        var rStateKey = runContext.render(this.stateKey).as(String.class).orElse(defaultKey(context.getNamespace(), context.getFlowId(), id));
+        var rStateTtl = runContext.render(this.stateTtl).as(Duration.class);
 
         var end = Instant.now();
         var start = end.minus(rLookback);
 
         var dataflow = this.dataflowClient(runContext);
 
-        Job mostRecentJob = null;
-        Instant mostRecentTime = null;
+        Map<String, Entry> state = readState(runContext, rStateKey, rStateTtl);
+
+        Job targetJob = null;
+        Instant targetJobTime = null;
+        Entry targetEntry = null;
 
         String pageToken = null;
         do {
             var listRequest = dataflow.projects().locations().jobs()
                 .list(rProjectId, rLocation);
+
+            // Optimize API call by listing only terminated/active jobs depending on targetState
+            if (
+                rTargetState.equals("JOB_STATE_DONE") || rTargetState.equals("JOB_STATE_FAILED") ||
+                    rTargetState.equals("JOB_STATE_CANCELLED") || rTargetState.equals("JOB_STATE_DRAINED") ||
+                    rTargetState.equals("JOB_STATE_UPDATED")
+            ) {
+                listRequest.setFilter("TERMINATED");
+            } else if (
+                rTargetState.equals("JOB_STATE_RUNNING") || rTargetState.equals("JOB_STATE_PENDING") ||
+                    rTargetState.equals("JOB_STATE_QUEUED")
+            ) {
+                listRequest.setFilter("ACTIVE");
+            }
+
             if (pageToken != null) {
                 listRequest.setPageToken(pageToken);
             }
@@ -144,15 +184,22 @@ public class Trigger extends AbstractTrigger
             if (listResponse.getJobs() != null) {
                 for (var job : listResponse.getJobs()) {
                     var jobName = job.getName();
-                    var state = job.getCurrentState();
+                    var currentState = job.getCurrentState();
                     var stateTimeStr = job.getCurrentStateTime();
 
-                    if (jobName != null && jobName.startsWith(rJobNamePrefix) && rTargetState.equals(state) && stateTimeStr != null) {
+                    if (jobName != null && jobName.startsWith(rJobNamePrefix) && rTargetState.equals(currentState) && stateTimeStr != null) {
                         var stateTime = Instant.parse(stateTimeStr);
                         if (stateTime.isAfter(start) && stateTime.isBefore(end)) {
-                            if (mostRecentTime == null || stateTime.isAfter(mostRecentTime)) {
-                                mostRecentTime = stateTime;
-                                mostRecentJob = job;
+                            var candidate = Entry.candidate(job.getId(), job.getCurrentState(), stateTime);
+                            // Evaluate against temporary copy of state to avoid mutating until target is chosen
+                            var tempState = new HashMap<>(state);
+                            var update = computeAndUpdateState(tempState, candidate, On.CREATE_OR_UPDATE);
+                            if (update.fire()) {
+                                if (targetJobTime == null || stateTime.isAfter(targetJobTime)) {
+                                    targetJobTime = stateTime;
+                                    targetJob = job;
+                                    targetEntry = candidate;
+                                }
                             }
                         }
                     }
@@ -161,11 +208,15 @@ public class Trigger extends AbstractTrigger
             pageToken = listResponse.getNextPageToken();
         } while (pageToken != null);
 
-        if (mostRecentJob != null) {
+        if (targetJob != null) {
+            // Apply the chosen state candidate to the persistent state map
+            computeAndUpdateState(state, targetEntry, On.CREATE_OR_UPDATE);
+            writeState(runContext, rStateKey, state, rStateTtl);
+
             var output = Output.builder()
-                .jobId(mostRecentJob.getId())
-                .jobName(mostRecentJob.getName())
-                .state(mostRecentJob.getCurrentState())
+                .jobId(targetJob.getId())
+                .jobName(targetJob.getName())
+                .state(targetJob.getCurrentState())
                 .build();
 
             var execution = TriggerService.generateExecution(this, conditionContext, context, output);
@@ -176,7 +227,7 @@ public class Trigger extends AbstractTrigger
     }
 
     protected Dataflow dataflowClient(RunContext runContext) throws Exception {
-        return DataflowService.dataflowClient(runContext, this);
+        return AbstractDataflow.dataflowClient(runContext, this);
     }
 
     @Builder

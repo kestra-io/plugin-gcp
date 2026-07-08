@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.api.services.dataflow.model.Job;
 
@@ -85,6 +87,14 @@ public class WaitForJob extends AbstractDataflow implements RunnableTask<WaitFor
     @PluginProperty(group = "main")
     private Property<Duration> maxDuration = Property.ofValue(Duration.ofHours(1));
 
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Runnable> killable = new AtomicReference<>();
+
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicBoolean isKilled = new AtomicBoolean(false);
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
@@ -95,11 +105,31 @@ public class WaitForJob extends AbstractDataflow implements RunnableTask<WaitFor
 
         var dataflow = this.dataflowClient(runContext);
 
+        killable.set(() ->
+        {
+            try {
+                var cancelJobPayload = new Job().setRequestedState("JOB_STATE_CANCELLED");
+                dataflow.projects().locations().jobs()
+                    .update(rProjectId, rLocation, rJobId, cancelJobPayload)
+                    .execute();
+                runContext.logger().info("Dataflow job '{}' successfully cancelled on task kill.", rJobId);
+            } catch (Exception e) {
+                runContext.logger().warn("Failed to cancel Dataflow job '{}' on task kill: {}", rJobId, e.getMessage());
+            }
+        });
+
+        if (isKilled.get()) {
+            throw new InterruptedException("Task was killed");
+        }
+
         Job finalJob;
         try {
             finalJob = Await.until(
                 () ->
                 {
+                    if (isKilled.get()) {
+                        throw new RuntimeException("Task was killed");
+                    }
                     try {
                         var job = dataflow.projects().locations().jobs()
                             .get(rProjectId, rLocation, rJobId)
@@ -157,6 +187,21 @@ public class WaitForJob extends AbstractDataflow implements RunnableTask<WaitFor
             "JOB_STATE_CANCELLED".equals(state) ||
             "JOB_STATE_DRAINED".equals(state) ||
             "JOB_STATE_UPDATED".equals(state);
+    }
+
+    @Override
+    public void kill() {
+        if (isKilled.compareAndSet(false, true)) {
+            var killAction = killable.get();
+            if (killAction != null) {
+                killAction.run();
+            }
+        }
+    }
+
+    @Override
+    public void stop() {
+        kill();
     }
 
     @Builder
