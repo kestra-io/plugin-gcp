@@ -24,7 +24,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Cancel or drain a running Dataflow job.",
+    title = "Cancel or drain a running Dataflow job",
     description = "Requests a transition to JOB_STATE_CANCELLED to cancel immediately, or JOB_STATE_DRAINING to allow streaming pipelines to process in-flight data before stopping."
 )
 @Plugin(

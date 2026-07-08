@@ -26,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Retrieve status and metadata of a Dataflow job.",
+    title = "Retrieve status and metadata of a Dataflow job",
     description = "Queries the Google Cloud Dataflow service to get the current execution state, metadata, and execution metrics of a job."
 )
 @Plugin(

@@ -17,8 +17,10 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -32,7 +34,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for a Dataflow job to complete.",
+    title = "Wait for a Dataflow job to complete",
     description = "Polls a Dataflow job status sequentially until it enters a terminal state (JOB_STATE_DONE, JOB_STATE_FAILED, JOB_STATE_CANCELLED, JOB_STATE_DRAINED, JOB_STATE_UPDATED)."
 )
 @Plugin(
@@ -88,10 +90,14 @@ public class WaitForJob extends AbstractDataflow implements RunnableTask<WaitFor
     private Property<Duration> maxDuration = Property.ofValue(Duration.ofHours(1));
 
     @ToString.Exclude
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
     @Builder.Default
     private final AtomicReference<Runnable> killable = new AtomicReference<>();
 
     @ToString.Exclude
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
     @Builder.Default
     private final AtomicBoolean isKilled = new AtomicBoolean(false);
 

@@ -29,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Launch a Classic Template Dataflow job from a GCS path.",
+    title = "Launch a Classic Template Dataflow job from a GCS path",
     description = "Starts a Dataflow pipeline defined as a Classic Template stored in Google Cloud Storage."
 )
 @Plugin(

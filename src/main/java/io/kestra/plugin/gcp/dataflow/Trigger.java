@@ -36,7 +36,7 @@ import static io.kestra.core.models.triggers.StatefulTriggerService.*;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for a Dataflow job to reach a target terminal state and trigger a flow execution.",
+    title = "Wait for a Dataflow job to reach a target terminal state and trigger a flow execution",
     description = "Polls the Dataflow service at a regular interval and triggers execution when a job matching the name prefix transitions to the target state. If multiple jobs match, the trigger returns the most recently completed one."
 )
 @Plugin(
@@ -122,7 +122,7 @@ public class Trigger extends AbstractTrigger
     private Property<Duration> stateTtl;
 
     @Schema(
-        title = "Which state change events to trigger on.",
+        title = "Which state change events to trigger on",
         description = "Can be CREATE, UPDATE or CREATE_OR_UPDATE."
     )
     @PluginProperty(group = "processing")

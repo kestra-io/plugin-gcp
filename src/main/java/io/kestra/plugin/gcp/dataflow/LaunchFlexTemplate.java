@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Launch a Flex Template Dataflow job.",
+    title = "Launch a Flex Template Dataflow job",
     description = "Starts a Dataflow pipeline defined as a Flex Template packaged in a Docker container image."
 )
 @Plugin(
