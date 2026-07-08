@@ -332,16 +332,13 @@ class DataflowTest {
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
 
-        // First execution (CREATE) -> should fire
         var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
         assertThat(execution1.isPresent(), is(true));
         assertThat(execution1.get().getTrigger().getVariables().get("jobId"), is("job-123"));
 
-        // Second execution (same state, same time) -> should NOT fire (deduplicated)
         var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
         assertThat(execution2.isPresent(), is(false));
 
-        // Third execution (same job, but state changes to JOB_STATE_UPDATED/time changes) -> should fire (UPDATE)
         var time2 = Instant.now().minus(Duration.ofSeconds(2));
         var response2 = new ListJobsResponse()
             .setJobs(
@@ -353,7 +350,6 @@ class DataflowTest {
                         .setCurrentStateTime(time2.toString())
                 )
             );
-        // We need to change the trigger's target state so that it finds JOB_STATE_UPDATED
         var triggerUpdated = Trigger.builder()
             .id(trigger.getId())
             .type(Trigger.class.getName())
@@ -373,7 +369,6 @@ class DataflowTest {
         assertThat(execution3.get().getTrigger().getVariables().get("jobId"), is("job-123"));
         assertThat(execution3.get().getTrigger().getVariables().get("state"), is("JOB_STATE_UPDATED"));
 
-        // Fourth execution (same UPDATED state) -> should NOT fire
         var execution4 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
         assertThat(execution4.isPresent(), is(false));
     }
@@ -411,15 +406,12 @@ class DataflowTest {
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
 
-        // First execution (CREATE) -> should fire
         var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
         assertThat(execution1.isPresent(), is(true));
 
-        // Second execution (same state) -> should NOT fire
         var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
         assertThat(execution2.isPresent(), is(false));
 
-        // Third execution (UPDATE) -> should NOT fire because 'on' is CREATE
         var time2 = Instant.now().minus(Duration.ofSeconds(2));
         var response2 = new ListJobsResponse()
             .setJobs(
@@ -482,11 +474,9 @@ class DataflowTest {
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
 
-        // First execution (CREATE) -> should NOT fire because 'on' is UPDATE
         var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
         assertThat(execution1.isPresent(), is(false));
 
-        // Second execution (UPDATE) -> should fire
         var time2 = Instant.now().minus(Duration.ofSeconds(2));
         var response2 = new ListJobsResponse()
             .setJobs(
@@ -517,7 +507,6 @@ class DataflowTest {
         assertThat(execution2.get().getTrigger().getVariables().get("jobId"), is("job-123"));
         assertThat(execution2.get().getTrigger().getVariables().get("state"), is("JOB_STATE_UPDATED"));
 
-        // Third execution (same UPDATED state) -> should NOT fire
         var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
         assertThat(execution3.isPresent(), is(false));
     }
