@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
-import { computed, ref, watch, useAttrs } from "vue";
+import { computed, ref, watch, onMounted, onBeforeUnmount, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
-import { KsTopologyDetails } from "@kestra-io/design-system";
+import { KsTopologyDetails, KsEditor } from "@kestra-io/design-system";
 import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
 import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
 import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
 import * as OutputsAPI from "@kestra-io/kestra-sdk/outputs";
+import { renderExpressions } from "@kestra-io/kestra-sdk/expressions";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -15,6 +16,7 @@ const { t } = useI18n({
         en: {
             project: "Project",
             location: "Location",
+            query: "Query",
             duration: "Duration",
             estimatedCost: "Estimated cost",
             jobDetails: "Job details",
@@ -64,28 +66,74 @@ async function loadFlowTask() {
 watch(
     [namespace, flowId],
     ([ns, fid]) => {
-        if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{"))
-            loadFlowTask();
+        if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{")) loadFlowTask();
     },
     { immediate: true },
 );
 
 const projectId = computed(
-    () =>
-        ((props.task as any).projectId ?? flowTask.value?.projectId) as
-            | string
-            | undefined,
+    () => ((props.task as any).projectId ?? flowTask.value?.projectId) as string | undefined,
 );
 const location = computed(
-    () =>
-        ((props.task as any).location ?? flowTask.value?.location) as
-            | string
-            | undefined,
+    () => ((props.task as any).location ?? flowTask.value?.location) as string | undefined,
 );
+const sql = computed(() => ((props.task as any).sql ?? flowTask.value?.sql) as string | undefined);
 
 // Execution state
 const hasExecution = computed(() => !!props.execution?.id);
 const executionId = computed(() => props.execution?.id as string | undefined);
+
+const resolved = (v?: string) => (v && !v.startsWith("{") ? v : undefined);
+
+// Resolve the task config's Pebble expressions (projectId / location / sql) for display via
+// POST /expressions/render. Rendering is server-side and all-or-nothing per expression: anything the
+// restricted display engine cannot resolve (env(), kv(), missing vars, …) comes back unchanged, and
+// any failure keeps the raw template (see display()). Only values that actually contain a `{{…}}` are
+// worth a round-trip. The tenant is passed explicitly (from where the host EE persists it on
+// navigation) because the plugin bundles its own SDK copy whose global tenant stays at the "main"
+// default; absent on single-tenant OSS, where "main" is already correct.
+const EXPRESSION_RE = /\{\{.*?}}/;
+const rendered = ref<Record<string, string>>({});
+
+async function loadRenderedExpressions() {
+    const values = [projectId.value, location.value, sql.value].filter(
+        (v): v is string => typeof v === "string" && EXPRESSION_RE.test(v),
+    );
+    if (!values.length) {
+        rendered.value = {};
+        return;
+    }
+    try {
+        const { rendered: result } = await renderExpressions(
+            {
+                expressions: values,
+                tenant: window.localStorage.getItem("selectedTenant") ?? undefined,
+                executionId: executionId.value,
+                namespace: resolved(namespace.value),
+                flowId: resolved(flowId.value),
+            },
+            {
+                // Best-effort display call: keep failures off the host's global error UI.
+                validateStatus: (s: number) => s === 200 || s === 404,
+                showMessageOnError: false,
+            },
+        );
+        rendered.value = result ?? {};
+    } catch {
+        // Drop rendered values so display() falls back to the raw template.
+        rendered.value = {};
+    }
+}
+
+watch(
+    [projectId, location, sql, executionId, namespace, flowId],
+    loadRenderedExpressions,
+    { immediate: true },
+);
+
+/** Returns the rendered value for `value`, falling back to the raw value. */
+const display = (value?: string) =>
+    value === undefined ? undefined : (rendered.value[value] ?? value);
 
 const taskRun = computed(() => {
     const list = props.execution?.taskRunList as any[] | undefined;
@@ -129,14 +177,12 @@ watch(
     { immediate: true },
 );
 
-const taskOutputs = computed(
-    () => fetchedOutputs.value ?? taskRun.value?.outputs ?? null,
-);
+const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.outputs ?? null);
 
 // Parse project and location from the job ID as fallback.
 // BigQuery job IDs have the format: project:location.jobname
 const resolvedProject = computed(() => {
-    if (projectId.value) return projectId.value;
+    if (projectId.value) return display(projectId.value);
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -144,7 +190,7 @@ const resolvedProject = computed(() => {
 });
 
 const resolvedLocation = computed(() => {
-    if (location.value) return location.value;
+    if (location.value) return display(location.value);
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -152,6 +198,25 @@ const resolvedLocation = computed(() => {
     if (colonIdx < 0 || dotIdx < 0) return undefined;
     return jid.slice(colonIdx + 1, dotIdx);
 });
+
+const resolvedSql = computed(() => display(sql.value));
+
+// KsEditor needs an explicit "dark"/"light" theme. The host marks dark mode with a `dark` class on
+// <html> (same signal the design-system's own components observe), so mirror it and react to toggles.
+const isDark = ref(false);
+const editorTheme = computed(() => (isDark.value ? "dark" : "light"));
+let themeObserver: MutationObserver | null = null;
+onMounted(() => {
+    if (typeof document === "undefined") return;
+    const detect = () => (isDark.value = document.documentElement.classList.contains("dark"));
+    detect();
+    themeObserver = new MutationObserver(detect);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+    });
+});
+onBeforeUnmount(() => themeObserver?.disconnect());
 
 // Metrics (fetched via SDK — best-effort)
 interface MetricEntry {
@@ -187,8 +252,7 @@ watch(
     { immediate: true },
 );
 
-const getMetric = (name: string) =>
-    metrics.value.find((m) => m.name === name)?.value;
+const getMetric = (name: string) => metrics.value.find((m) => m.name === name)?.value;
 
 const bytesBilled = computed(() => getMetric("total.bytes.billed"));
 const bytesProcessed = computed(() => getMetric("total.bytes.processed"));
@@ -240,7 +304,10 @@ const jobRows = computed(() => {
         { label: t("jobId"), value: (taskOutputs.value?.jobId as string) ?? "—" },
         {
             label: t("rows"),
-            value: taskOutputs.value?.size !== undefined ? taskOutputs.value.size.toLocaleString() : "—",
+            value:
+                taskOutputs.value?.size !== undefined
+                    ? taskOutputs.value.size.toLocaleString()
+                    : "—",
         },
     ];
     const dt = taskOutputs.value?.destinationTable;
@@ -263,6 +330,20 @@ const perfRows = computed(() => [
 <template>
     <div class="bq-details">
         <KsTopologyDetails :rows="summaryRows" />
+
+        <!-- Rendered SQL: full view (available pre-execution, straight from the flow definition) -->
+        <section v-if="isFullView && resolvedSql" class="bq-section">
+            <h4 class="bq-section__title">{{ t("query") }}</h4>
+            <div class="bq-sql">
+                <KsEditor
+                    :model-value="resolvedSql"
+                    lang="sql"
+                    :theme="editorTheme"
+                    read-only
+                    :navbar="false"
+                />
+            </div>
+        </section>
 
         <!-- Job details: full view, post-execution only -->
         <section v-if="hasExecution && isFullView" class="bq-section">
@@ -289,5 +370,13 @@ const perfRows = computed(() => [
     font-weight: 600;
     color: var(--ks-text-secondary);
 }
-</style>
 
+/* KsEditor auto-sizes to its content; cap the height so a long query scrolls instead of pushing
+   the rest of the panel off-screen. */
+.bq-sql {
+    max-height: 20rem;
+    overflow: auto;
+    border: 1px solid var(--ks-border-primary);
+    border-radius: var(--ks-border-radius);
+}
+</style>
