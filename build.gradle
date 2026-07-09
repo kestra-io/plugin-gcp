@@ -239,6 +239,11 @@ jar {
 shadowJar {
     zip64 true
     archiveClassifier.set(null)
+    // Shadow 9.0.1+ changed the default duplicatesStrategy to EXCLUDE, which drops every
+    // duplicate META-INF/services entry before mergeServiceFiles() ever sees it — e.g. only
+    // grpc-util's io.grpc.LoadBalancerProvider survived, silently losing grpc-core's pick_first
+    // provider and breaking every grpc-based client (GKE ClusterMetadata, etc.) at runtime.
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
 
