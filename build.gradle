@@ -239,8 +239,35 @@ jar {
 shadowJar {
     zip64 true
     archiveClassifier.set(null)
+    // Shadow 9.0.1+ changed the default duplicatesStrategy to EXCLUDE, which drops every
+    // duplicate META-INF/services entry before mergeServiceFiles() ever sees it — e.g. only
+    // grpc-util's io.grpc.LoadBalancerProvider survived, silently losing grpc-core's pick_first
+    // provider and breaking every grpc-based client (GKE ClusterMetadata, etc.) at runtime.
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
+
+// Regression guard for the pick_first bug (see PR fixing duplicatesStrategy above): loads the
+// shaded jar in an isolated classloader, same as Kestra's per-plugin isolation, and asks grpc's
+// real LoadBalancerRegistry for "pick_first" -- the exact call that throws at runtime if the
+// shadowJar merge of META-INF/services/io.grpc.LoadBalancerProvider regresses.
+tasks.register("verifyShadedGrpcLoadBalancers") {
+    dependsOn shadowJar
+    doLast {
+        def jarFile = shadowJar.archiveFile.get().asFile
+        def loader = new URLClassLoader([jarFile.toURI().toURL()] as URL[], ClassLoader.getPlatformClassLoader())
+        def registryClass = loader.loadClass("io.grpc.LoadBalancerRegistry")
+        def registry = registryClass.getMethod("getDefaultRegistry").invoke(null)
+        def provider = registryClass.getMethod("getProvider", String).invoke(registry, "pick_first")
+        if (provider == null) {
+            throw new GradleException(
+                "pick_first LoadBalancerProvider missing from ${jarFile.name}'s META-INF/services/io.grpc.LoadBalancerProvider " +
+                "-- shadowJar's service file merge regressed, every grpc-based client (e.g. GKE ClusterMetadata) will fail at runtime."
+            )
+        }
+    }
+}
+check.dependsOn verifyShadedGrpcLoadBalancers
 
 
 /**********************************************************************************************************************\
