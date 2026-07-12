@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.rcs
+name: rcs
+title: Google Cloud RCS
+description: "Send Rich Communication Services (RCS) messages using Google RCS Business Messaging (RBM)."
+body: "Use these tasks to send plain text, rich cards, carousels, and file attachments directly to recipient phone numbers. Authentication is integrated with GCP service accounts (CredentialService)."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
