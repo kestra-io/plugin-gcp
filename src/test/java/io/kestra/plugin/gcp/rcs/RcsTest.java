@@ -46,6 +46,7 @@ public class RcsTest {
 
         Mockito.doReturn(scopedCredentials).when(mockCredentials).createScoped(Mockito.any(List.class));
         Mockito.doReturn(mockToken).when(scopedCredentials).refreshAccessToken();
+        Mockito.doReturn(mockToken).when(mockCredentials).refreshAccessToken();
         return mockCredentials;
     }
 

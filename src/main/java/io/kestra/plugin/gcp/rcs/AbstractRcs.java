@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.kestra.core.http.HttpRequest;
 import io.kestra.core.http.HttpResponse;
 import io.kestra.core.http.client.HttpClient;
@@ -30,26 +32,28 @@ public abstract class AbstractRcs extends AbstractTask {
 
     @Schema(title = "The unique agent ID of the Brand Agent configured on the RBM platform")
     @NotNull
-    @PluginProperty
+    @PluginProperty(group = "main", secret = true)
     protected Property<String> agentId;
 
     @Schema(title = "The recipient's phone number (MSISDN) in E.164 format (e.g. +33612345678)")
     @NotNull
-    @PluginProperty
+    @PluginProperty(group = "main")
     protected Property<String> msisdn;
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
+    @JsonIgnore
     protected String baseUrl = "https://rcsbusinessmessaging.googleapis.com";
-
-    @Builder.Default
-    protected Property<List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/rcsbusinessmessaging"));
 
     protected String getAccessToken(RunContext runContext) throws Exception {
         return this.credentials(runContext)
-            .createScoped(runContext.render(this.scopes).asList(String.class))
             .refreshAccessToken()
             .getTokenValue();
+    }
+
+    @Override
+    public Property<List<String>> getScopes() {
+        return Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/rcsbusinessmessaging"));
     }
 
     protected HttpResponse<String> executeRequest(RunContext runContext, String endpointPath, String httpMethod, HttpRequest.RequestBody requestBody) throws Exception {
