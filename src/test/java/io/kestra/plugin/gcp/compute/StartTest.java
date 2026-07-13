@@ -90,7 +90,7 @@ public class StartTest {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-    @Disabled
+    @Disabled("Starts a real billable Compute Engine VM, run manually against GCP")
     void run() throws Exception {
         var start = Start.builder()
             .id(Start.class.getSimpleName())

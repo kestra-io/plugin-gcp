@@ -124,7 +124,7 @@ public class DeleteTest {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-    @Disabled
+    @Disabled("Requires a real Compute Engine VM, run manually against GCP")
     void run() throws Exception {
         var delete = Delete.builder()
             .id(Delete.class.getSimpleName())

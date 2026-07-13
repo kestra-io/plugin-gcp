@@ -75,6 +75,8 @@ import lombok.experimental.SuperBuilder;
 )
 public class Create extends AbstractComputeTask implements RunnableTask<AbstractComputeTask.Output> {
 
+    private static final String DEFAULT_NETWORK = "global/networks/default";
+
     @NotNull
     @Schema(
         title = "The machine type to use for the instance",
@@ -154,7 +156,7 @@ public class Create extends AbstractComputeTask implements RunnableTask<Abstract
         title = "Whether to wait for the instance to reach the `RUNNING` state before completing the task",
         description = "Default: `true`."
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "execution")
     private Property<Boolean> waitUntilRunning = Property.ofValue(true);
 
     @Override
@@ -222,7 +224,7 @@ public class Create extends AbstractComputeTask implements RunnableTask<Abstract
         if (this.networkName != null) {
             networkInterface.setNetwork(runContext.render(this.networkName).as(String.class).orElseThrow());
         } else if (this.subnetworkName == null) {
-            networkInterface.setNetwork("global/networks/default");
+            networkInterface.setNetwork(DEFAULT_NETWORK);
         }
 
         var instanceBuilder = Instance.newBuilder()

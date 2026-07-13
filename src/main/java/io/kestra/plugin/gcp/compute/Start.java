@@ -58,7 +58,7 @@ public class Start extends AbstractComputeTask implements RunnableTask<AbstractC
         title = "Whether to wait for the instance to reach the `RUNNING` state before completing the task",
         description = "Default: `true`."
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "execution")
     private Property<Boolean> waitUntilRunning = Property.ofValue(true);
 
     @Override

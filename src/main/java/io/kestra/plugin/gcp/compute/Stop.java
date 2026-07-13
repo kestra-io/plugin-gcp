@@ -64,7 +64,7 @@ public class Stop extends AbstractComputeTask implements RunnableTask<AbstractCo
         title = "Whether to wait for the instance to reach the `TERMINATED` state before completing the task",
         description = "Default: `true`."
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "execution")
     private Property<Boolean> waitUntilStopped = Property.ofValue(true);
 
     @Override

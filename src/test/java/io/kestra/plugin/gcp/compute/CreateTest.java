@@ -219,7 +219,7 @@ public class CreateTest {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-    @Disabled
+    @Disabled("Creates a real billable Compute Engine VM, run manually against GCP")
     void run() throws Exception {
         var create = Create.builder()
             .id(Create.class.getSimpleName())

@@ -91,7 +91,7 @@ public class StopTest {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-    @Disabled
+    @Disabled("Requires a real Compute Engine VM, run manually against GCP")
     void run() throws Exception {
         var stop = Stop.builder()
             .id(Stop.class.getSimpleName())

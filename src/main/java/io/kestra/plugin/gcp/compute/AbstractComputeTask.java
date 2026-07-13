@@ -67,7 +67,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
         title = "The maximum duration to wait for the operation to complete",
         description = "Default: `PT10M`. Hitting this timeout fails the task but does not cancel the in-flight GCP operation."
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "execution")
     protected Property<Duration> timeout = Property.ofValue(DEFAULT_TIMEOUT);
 
     @JsonIgnore
@@ -88,7 +88,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
         return InstancesClient.create(settings);
     }
 
-    // stash the kill action. if we're already killed, run it now.
+    // cleanup to run if the task is killed.
     protected void onKill(Runnable action) {
         this.killable.set(action);
         if (this.isKilled.get()) {

@@ -67,7 +67,7 @@ public class Delete extends AbstractComputeTask implements RunnableTask<Delete.O
         title = "Whether to wait for the instance to be fully deleted before completing the task",
         description = "Default: `true`."
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "execution")
     private Property<Boolean> waitUntilDeleted = Property.ofValue(true);
 
     @Override
