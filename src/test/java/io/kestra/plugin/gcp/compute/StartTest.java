@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
+import com.google.api.gax.longrunning.OperationFuture;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.compute.v1.InstancesClient;
+import com.google.cloud.compute.v1.Operation;
 import com.google.common.collect.ImmutableMap;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -21,6 +25,14 @@ import jakarta.inject.Inject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @KestraTest
 public class StartTest {
@@ -45,6 +57,35 @@ public class StartTest {
 
         assertThat(runContext.render(start.getWaitUntilRunning()).as(Boolean.class).orElseThrow(), is(true));
         assertThat(runContext.render(start.getTimeout()).as(Duration.class).orElseThrow(), is(Duration.ofMinutes(10)));
+    }
+
+    @Test
+    void runWithoutWaitingReturnsStagingWithoutQueryingInstance() throws Exception {
+        var start = spy(
+            Start.builder()
+                .id("compute-start")
+                .type(Start.class.getName())
+                .projectId(Property.ofValue("my-project"))
+                .zone(Property.ofValue("us-central1-a"))
+                .instanceName(Property.ofValue("vm1"))
+                .waitUntilRunning(Property.ofValue(false))
+                .build()
+        );
+
+        var client = mock(InstancesClient.class);
+        @SuppressWarnings("unchecked")
+        OperationFuture<Operation, Operation> future = mock(OperationFuture.class);
+        when(client.startAsync("my-project", "us-central1-a", "vm1")).thenReturn(future);
+
+        doReturn(mock(GoogleCredentials.class)).when(start).credentials(any());
+        doReturn(client).when(start).instancesClient(any());
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, start, ImmutableMap.of());
+        var output = start.run(runContext);
+
+        assertThat(output.getInstanceName(), is("vm1"));
+        assertThat(output.getStatus(), is("STAGING"));
+        verify(client, never()).get(anyString(), anyString(), anyString());
     }
 
     @Test

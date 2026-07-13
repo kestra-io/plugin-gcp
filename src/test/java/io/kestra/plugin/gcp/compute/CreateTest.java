@@ -8,6 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
+import com.google.api.gax.longrunning.OperationFuture;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.compute.v1.AccessConfig;
+import com.google.cloud.compute.v1.Instance;
+import com.google.cloud.compute.v1.InstancesClient;
+import com.google.cloud.compute.v1.NetworkInterface;
+import com.google.cloud.compute.v1.Operation;
 import com.google.common.collect.ImmutableMap;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -23,6 +30,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @KestraTest
 public class CreateTest {
@@ -123,6 +138,83 @@ public class CreateTest {
 
         assertThat(networkInterface.getSubnetwork(), is("regions/us-central1/subnetworks/my-subnet"));
         assertThat(networkInterface.getNetwork(), is(""));
+    }
+
+    @Test
+    void runWaitsAndReturnsInstanceOutput() throws Exception {
+        var create = spy(
+            Create.builder()
+                .id("compute-create")
+                .type(Create.class.getName())
+                .projectId(Property.ofValue("my-project"))
+                .zone(Property.ofValue("us-central1-a"))
+                .instanceName(Property.ofValue("vm1"))
+                .machineType(Property.ofValue("e2-micro"))
+                .sourceImage(Property.ofValue("projects/debian-cloud/global/images/family/debian-12"))
+                .build()
+        );
+
+        var client = mock(InstancesClient.class);
+        @SuppressWarnings("unchecked")
+        OperationFuture<Operation, Operation> future = mock(OperationFuture.class);
+        when(future.get(anyLong(), any())).thenReturn(Operation.newBuilder().build());
+        when(client.insertAsync(anyString(), anyString(), any(Instance.class))).thenReturn(future);
+        when(client.get("my-project", "us-central1-a", "vm1")).thenReturn(
+            Instance.newBuilder()
+                .setName("vm1")
+                .setId(123L)
+                .setStatus("RUNNING")
+                .addNetworkInterfaces(
+                    NetworkInterface.newBuilder()
+                        .setNetworkIP("10.0.0.2")
+                        .addAccessConfigs(AccessConfig.newBuilder().setNatIP("34.1.2.3").build())
+                )
+                .build()
+        );
+
+        doReturn(mock(GoogleCredentials.class)).when(create).credentials(any());
+        doReturn(client).when(create).instancesClient(any());
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
+        var output = create.run(runContext);
+
+        assertThat(output.getInstanceName(), is("vm1"));
+        assertThat(output.getInstanceId(), is("123"));
+        assertThat(output.getStatus(), is("RUNNING"));
+        assertThat(output.getExternalIp(), is("34.1.2.3"));
+        assertThat(output.getInternalIp(), is("10.0.0.2"));
+    }
+
+    @Test
+    void runWithoutWaitingReturnsProvisioningWithoutQueryingInstance() throws Exception {
+        var create = spy(
+            Create.builder()
+                .id("compute-create")
+                .type(Create.class.getName())
+                .projectId(Property.ofValue("my-project"))
+                .zone(Property.ofValue("us-central1-a"))
+                .instanceName(Property.ofValue("vm1"))
+                .machineType(Property.ofValue("e2-micro"))
+                .sourceImage(Property.ofValue("projects/debian-cloud/global/images/family/debian-12"))
+                .waitUntilRunning(Property.ofValue(false))
+                .build()
+        );
+
+        var client = mock(InstancesClient.class);
+        @SuppressWarnings("unchecked")
+        OperationFuture<Operation, Operation> future = mock(OperationFuture.class);
+        when(client.insertAsync(anyString(), anyString(), any(Instance.class))).thenReturn(future);
+
+        doReturn(mock(GoogleCredentials.class)).when(create).credentials(any());
+        doReturn(client).when(create).instancesClient(any());
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, create, ImmutableMap.of());
+        var output = create.run(runContext);
+
+        assertThat(output.getInstanceName(), is("vm1"));
+        assertThat(output.getStatus(), is("PROVISIONING"));
+        // Must not query a not-yet-existing instance when the caller opted out of waiting.
+        org.mockito.Mockito.verify(client, org.mockito.Mockito.never()).get(anyString(), anyString(), eq("vm1"));
     }
 
     @Test

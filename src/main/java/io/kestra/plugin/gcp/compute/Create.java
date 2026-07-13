@@ -168,7 +168,7 @@ public class Create extends AbstractComputeTask implements RunnableTask<Abstract
         var rZone = runContext.render(this.zone).as(String.class).orElseThrow();
         var rInstanceName = runContext.render(this.instanceName).as(String.class).orElseThrow();
         var rWaitUntilRunning = runContext.render(this.waitUntilRunning).as(Boolean.class).orElse(true);
-        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(Duration.ofMinutes(10));
+        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(DEFAULT_TIMEOUT);
 
         var instanceResource = this.buildInstanceResource(runContext, rZone, rInstanceName);
 

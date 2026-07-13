@@ -62,10 +62,8 @@ import lombok.experimental.SuperBuilder;
 )
 public class Delete extends AbstractComputeTask implements RunnableTask<Delete.Output> {
 
-    // A `deleteDisks`/`keepDisks` option was evaluated (issue #621) and intentionally not added: Compute Engine
-    // already removes any disk whose `autoDelete` flag is set when the instance is deleted (the boot disk created
-    // by the `Create` task uses `autoDelete = true`), and other disks follow their own `autoDelete` flag. Adding a
-    // separate option would mean enumerating and deleting disks by hand, which is out of scope for this task.
+    // No `deleteDisks` option: Compute Engine already removes disks whose `autoDelete` flag is set (the boot disk
+    // created by the `Create` task is one), and others are kept per their own flag.
 
     @Builder.Default
     @Schema(
@@ -84,8 +82,9 @@ public class Delete extends AbstractComputeTask implements RunnableTask<Delete.O
         var rZone = runContext.render(this.zone).as(String.class).orElseThrow();
         var rInstanceName = runContext.render(this.instanceName).as(String.class).orElseThrow();
         var rWaitUntilDeleted = runContext.render(this.waitUntilDeleted).as(Boolean.class).orElse(true);
-        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(Duration.ofMinutes(10));
+        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(DEFAULT_TIMEOUT);
 
+        // Deleting introduces no new billable resource, so no compensating action is registered for kill().
         try (var client = this.instancesClient(runContext)) {
             Instance existing;
             try {

@@ -43,6 +43,11 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public abstract class AbstractComputeTask extends AbstractTask {
 
+    protected static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(10);
+
+    // Time to wait for a kill-time compensating request to be delivered before the client is closed.
+    private static final Duration KILL_ACK_TIMEOUT = Duration.ofSeconds(30);
+
     @NotNull
     @Schema(
         title = "The zone where the instance is located",
@@ -61,10 +66,10 @@ public abstract class AbstractComputeTask extends AbstractTask {
     @Builder.Default
     @Schema(
         title = "The maximum duration to wait for the operation to complete",
-        description = "Default: `PT10M`."
+        description = "Default: `PT10M`. Hitting this timeout fails the task but does not cancel the in-flight GCP operation."
     )
     @PluginProperty(group = "advanced")
-    protected Property<Duration> timeout = Property.ofValue(Duration.ofMinutes(10));
+    protected Property<Duration> timeout = Property.ofValue(DEFAULT_TIMEOUT);
 
     // Compensating action run once if the task is killed while a remote operation is in flight.
     @JsonIgnore
@@ -118,7 +123,8 @@ public abstract class AbstractComputeTask extends AbstractTask {
     protected void safelyStop(RunContext runContext, String projectId, String zone, String instanceName) {
         try (var client = this.instancesClient(runContext)) {
             runContext.logger().warn("Task killed, stopping instance '{}' to stop billing", instanceName);
-            client.stopAsync(projectId, zone, instanceName);
+            // Block until the request is acknowledged: the client is closed on exit and close() does not flush in-flight calls.
+            client.stopAsync(projectId, zone, instanceName).getInitialFuture().get(KILL_ACK_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             runContext.logger().warn("Could not stop instance '{}' on kill: {}", instanceName, e.getMessage());
         }
@@ -127,7 +133,8 @@ public abstract class AbstractComputeTask extends AbstractTask {
     protected void safelyDelete(RunContext runContext, String projectId, String zone, String instanceName) {
         try (var client = this.instancesClient(runContext)) {
             runContext.logger().warn("Task killed, deleting instance '{}' to stop billing", instanceName);
-            client.deleteAsync(projectId, zone, instanceName);
+            // Block until the request is acknowledged: the client is closed on exit and close() does not flush in-flight calls.
+            client.deleteAsync(projectId, zone, instanceName).getInitialFuture().get(KILL_ACK_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             runContext.logger().warn("Could not delete instance '{}' on kill: {}", instanceName, e.getMessage());
         }
@@ -181,10 +188,16 @@ public abstract class AbstractComputeTask extends AbstractTask {
         @Schema(title = "The unique GCP instance ID")
         private String instanceId;
 
-        @Schema(title = "The instance status after the operation")
+        @Schema(
+            title = "The instance status after the operation",
+            description = "e.g. `PROVISIONING`, `STAGING`, `RUNNING`, `STOPPING`, `TERMINATED`."
+        )
         private String status;
 
-        @Schema(title = "The instance's external (public) IP address, if any")
+        @Schema(
+            title = "The instance's external (public) IP address, if any",
+            description = "Typically `null` once an instance is stopped, since ephemeral external IPs are released on stop."
+        )
         private String externalIp;
 
         @Schema(title = "The instance's internal (private) IP address")

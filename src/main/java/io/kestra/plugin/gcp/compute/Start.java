@@ -70,7 +70,7 @@ public class Start extends AbstractComputeTask implements RunnableTask<AbstractC
         var rZone = runContext.render(this.zone).as(String.class).orElseThrow();
         var rInstanceName = runContext.render(this.instanceName).as(String.class).orElseThrow();
         var rWaitUntilRunning = runContext.render(this.waitUntilRunning).as(Boolean.class).orElse(true);
-        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(Duration.ofMinutes(10));
+        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(DEFAULT_TIMEOUT);
 
         logger.info("Starting Compute Engine instance '{}' in zone '{}'", rInstanceName, rZone);
 
@@ -79,9 +79,15 @@ public class Start extends AbstractComputeTask implements RunnableTask<AbstractC
 
             this.onKill(() -> this.safelyStop(runContext, rProjectId, rZone, rInstanceName));
 
-            if (rWaitUntilRunning) {
-                this.awaitOperation(operationFuture, rTimeout, rInstanceName, "start");
+            if (!rWaitUntilRunning) {
+                // Not waiting: skip the status GET, which would report the pre-operation state.
+                return AbstractComputeTask.Output.builder()
+                    .instanceName(rInstanceName)
+                    .status("STAGING")
+                    .build();
             }
+
+            this.awaitOperation(operationFuture, rTimeout, rInstanceName, "start");
 
             var instance = client.get(rProjectId, rZone, rInstanceName);
             logger.info("Compute Engine instance '{}' is now '{}'", rInstanceName, instance.getStatus());

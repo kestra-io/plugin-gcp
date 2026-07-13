@@ -76,16 +76,23 @@ public class Stop extends AbstractComputeTask implements RunnableTask<AbstractCo
         var rZone = runContext.render(this.zone).as(String.class).orElseThrow();
         var rInstanceName = runContext.render(this.instanceName).as(String.class).orElseThrow();
         var rWaitUntilStopped = runContext.render(this.waitUntilStopped).as(Boolean.class).orElse(true);
-        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(Duration.ofMinutes(10));
+        var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(DEFAULT_TIMEOUT);
 
         logger.info("Stopping Compute Engine instance '{}' in zone '{}'", rInstanceName, rZone);
 
+        // Stopping introduces no new billable resource, so no compensating action is registered for kill().
         try (var client = this.instancesClient(runContext)) {
             var operationFuture = client.stopAsync(rProjectId, rZone, rInstanceName);
 
-            if (rWaitUntilStopped) {
-                this.awaitOperation(operationFuture, rTimeout, rInstanceName, "stop");
+            if (!rWaitUntilStopped) {
+                // Not waiting: skip the status GET, which would report the pre-operation state.
+                return AbstractComputeTask.Output.builder()
+                    .instanceName(rInstanceName)
+                    .status("STOPPING")
+                    .build();
             }
+
+            this.awaitOperation(operationFuture, rTimeout, rInstanceName, "stop");
 
             var instance = client.get(rProjectId, rZone, rInstanceName);
             logger.info("Compute Engine instance '{}' is now '{}'", rInstanceName, instance.getStatus());

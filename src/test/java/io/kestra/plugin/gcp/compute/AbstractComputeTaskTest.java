@@ -1,5 +1,7 @@
 package io.kestra.plugin.gcp.compute;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.Test;
 
 import com.google.cloud.compute.v1.AccessConfig;
@@ -9,12 +11,52 @@ import com.google.cloud.compute.v1.Instance;
 import com.google.cloud.compute.v1.NetworkInterface;
 import com.google.cloud.compute.v1.Operation;
 
+import io.kestra.core.models.property.Property;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AbstractComputeTaskTest {
+
+    private static Delete task() {
+        return Delete.builder()
+            .id("t")
+            .type(Delete.class.getName())
+            .zone(Property.ofValue("us-central1-a"))
+            .instanceName(Property.ofValue("vm"))
+            .build();
+    }
+
+    @Test
+    void killRunsRegisteredActionOnce() {
+        var task = task();
+        var count = new AtomicInteger();
+        task.onKill(count::incrementAndGet);
+
+        task.kill();
+        task.kill();
+
+        assertThat(count.get(), is(1));
+    }
+
+    @Test
+    void onKillRunsImmediatelyWhenAlreadyKilled() {
+        var task = task();
+        task.kill();
+
+        var count = new AtomicInteger();
+        task.onKill(count::incrementAndGet);
+
+        assertThat(count.get(), is(1));
+    }
+
+    @Test
+    void killWithoutRegisteredActionIsNoOp() {
+        assertDoesNotThrow(() -> task().kill());
+    }
 
     @Test
     void externalIpReturnsFirstNatIp() {
