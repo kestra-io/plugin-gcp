@@ -1,15 +1,18 @@
 plugins {
-    id 'io.kestra.gradle.spotless-conventions' version '1.1.0'
-    id "com.vanniktech.maven.publish" version "0.36.0"
-    id "io.kestra.gradle.inject-bom-versions" version "1.1.0"
+    id 'io.kestra.gradle.repository-conventions' version '1.2.5'
+    id "io.kestra.gradle.plugin-doc-lint" version "1.2.5"
+    id 'io.kestra.gradle.spotless-conventions' version '1.2.5'
+    id "com.vanniktech.maven.publish" version "0.37.0"
+    id "io.kestra.gradle.inject-bom-versions" version "1.2.5"
     id 'java-library'
     id "idea"
     id 'jacoco'
     id "com.adarshr.test-logger" version "4.0.0"
-    id "com.gradleup.shadow" version "9.4.1"
+    id "com.gradleup.shadow" version "9.4.3"
     id 'signing'
     id "com.github.ben-manes.versions" version "0.54.0"
     id 'net.researchgate.release' version '3.1.0'
+    id 'com.github.node-gradle.node' version '7.1.0'
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -42,8 +45,8 @@ tasks.withType(JavaCompile) {
 // enforcedPlatform can't be overridden by constraints, so force at the plugin level.
 configurations.all {
     resolutionStrategy {
-        force 'com.google.protobuf:protobuf-java:4.35.0'
-        force 'com.google.protobuf:protobuf-java-util:4.35.0'
+        force 'com.google.protobuf:protobuf-java:4.35.1'
+        force 'com.google.protobuf:protobuf-java-util:4.35.1'
     }
 }
 
@@ -77,6 +80,9 @@ dependencies {
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
+    api 'com.google.cloud:google-cloud-bigtable:2.79.0'
+    api 'com.google.cloud:google-cloud-spanner:6.118.0'
+    api 'com.google.apis:google-api-services-dataflow:v1b3-rev20240430-2.0.0'
     api 'com.google.cloud:google-cloud-container'
     api 'com.google.cloud:google-cloud-aiplatform'
     api 'com.google.cloud:google-cloud-logging'
@@ -139,6 +145,9 @@ dependencies {
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id'
     testImplementation 'org.mockito:mockito-junit-jupiter'
+
+    testImplementation "org.testcontainers:testcontainers:2.0.5"
+    testImplementation "org.testcontainers:testcontainers-junit-jupiter:2.0.5"
 }
 
 /**********************************************************************************************************************\
@@ -207,8 +216,35 @@ jar {
 shadowJar {
     zip64 true
     archiveClassifier.set(null)
+    // Shadow 9.0.1+ changed the default duplicatesStrategy to EXCLUDE, which drops every
+    // duplicate META-INF/services entry before mergeServiceFiles() ever sees it — e.g. only
+    // grpc-util's io.grpc.LoadBalancerProvider survived, silently losing grpc-core's pick_first
+    // provider and breaking every grpc-based client (GKE ClusterMetadata, etc.) at runtime.
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
+
+// Regression guard for the pick_first bug (see PR fixing duplicatesStrategy above): loads the
+// shaded jar in an isolated classloader, same as Kestra's per-plugin isolation, and asks grpc's
+// real LoadBalancerRegistry for "pick_first" -- the exact call that throws at runtime if the
+// shadowJar merge of META-INF/services/io.grpc.LoadBalancerProvider regresses.
+tasks.register("verifyShadedGrpcLoadBalancers") {
+    dependsOn shadowJar
+    doLast {
+        def jarFile = shadowJar.archiveFile.get().asFile
+        def loader = new URLClassLoader([jarFile.toURI().toURL()] as URL[], ClassLoader.getPlatformClassLoader())
+        def registryClass = loader.loadClass("io.grpc.LoadBalancerRegistry")
+        def registry = registryClass.getMethod("getDefaultRegistry").invoke(null)
+        def provider = registryClass.getMethod("getProvider", String).invoke(registry, "pick_first")
+        if (provider == null) {
+            throw new GradleException(
+                "pick_first LoadBalancerProvider missing from ${jarFile.name}'s META-INF/services/io.grpc.LoadBalancerProvider " +
+                "-- shadowJar's service file merge regressed, every grpc-based client (e.g. GKE ClusterMetadata) will fail at runtime."
+            )
+        }
+    }
+}
+check.dependsOn verifyShadedGrpcLoadBalancers
 
 
 /**********************************************************************************************************************\
@@ -242,4 +278,20 @@ idea {
         downloadJavadoc = true
         downloadSources = true
     }
+}
+
+// Build the UI module before packaging (only if ui/ directory exists)
+if (file('ui').exists()) {
+    tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmTask) {
+        args = ['install', '--fetch-retries=5', '--fetch-retry-mintimeout=5000', '--fetch-retry-maxtimeout=60000']
+        workingDir = file('ui')
+    }
+
+    tasks.register('buildUI', com.github.gradle.node.npm.task.NpmTask) {
+        dependsOn 'npmInstallUI'
+        args = ['run', 'build', '--', '--outDir', '../src/main/resources/plugin-ui']
+        workingDir = file('ui')
+    }
+    processResources.dependsOn 'buildUI'
+    shadowJar.dependsOn 'buildUI'
 }

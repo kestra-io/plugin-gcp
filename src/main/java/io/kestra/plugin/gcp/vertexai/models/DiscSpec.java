@@ -19,14 +19,14 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class DiscSpec {
     @Schema(
-        title = "Type of the boot disk."
+        title = "Type of the boot disk"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
     private Property<DiskType> bootDiskType = Property.ofValue(DiskType.PD_SSD);
 
     @Schema(
-        title = "Size in GB of the boot disk."
+        title = "Size in GB of the boot disk"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")

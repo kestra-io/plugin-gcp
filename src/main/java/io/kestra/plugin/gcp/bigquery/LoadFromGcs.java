@@ -74,7 +74,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
                     from:
                       - "{{ outputs.ion_to_avro.uri }}"
-                    destinationTable: "my_project.my_dataset.my_table"
+                    destinationTable: "my-project.my_dataset.my_table"
                     format: AVRO
                     avroOptions:
                       useAvroLogicalTypes: true
@@ -153,7 +153,7 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
                 JobInfo.newBuilder(configuration)
                     .setJobId(BigQueryService.jobId(runContext, this))
                     .build()
-            ), runContext
+            ), runContext, connection
         );
 
         return this.outputs(runContext, configuration, loadJob);

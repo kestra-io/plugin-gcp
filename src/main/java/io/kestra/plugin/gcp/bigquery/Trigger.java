@@ -32,7 +32,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a sql query to return results and iterate through rows.",
+            title = "Wait for a sql query to return results and iterate through rows",
             full = true,
             code = """
                 id: bigquery_listen
@@ -67,9 +67,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @PluginProperty(group = "execution")
     private final Duration interval = Duration.ofSeconds(60);
 
+    @Schema(title = "GCP project id")
     protected Property<String> projectId;
-    @PluginProperty(secret = true)
+
+    @Schema(title = "GCP service account key as JSON")
+    @PluginProperty(secret = true, group = "connection")
     protected Property<String> serviceAccount;
+
+    @Schema(title = "GCP OAuth scopes")
     @Builder.Default
     protected Property<java.util.List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
 

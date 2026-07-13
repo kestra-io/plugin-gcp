@@ -35,7 +35,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Text completion using the Vertex AI Gemini API.",
+            title = "Text completion using the Vertex AI Gemini API",
             full = true,
             code = """
                 id: gcp_vertexai_text_completion
@@ -77,7 +77,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 public class TextCompletion extends AbstractGenerativeAi implements RunnableTask<TextCompletion.Output> {
 
     @Schema(
-        title = "Text input to generate model response.",
+        title = "Text input to generate model response",
         description = "Prompts can include preamble, questions, suggestions, instructions, or examples."
     )
     @NotNull
@@ -108,7 +108,7 @@ public class TextCompletion extends AbstractGenerativeAi implements RunnableTask
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "List of text predictions made by the model.")
+        @Schema(title = "List of text predictions made by the model")
         private List<Prediction> predictions;
     }
 }

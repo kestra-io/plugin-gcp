@@ -16,6 +16,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.concurrent.TimeUnit;
+
 import static io.kestra.core.utils.Rethrow.throwFunction;
 import io.kestra.core.models.annotations.PluginProperty;
 
@@ -42,13 +44,13 @@ import io.kestra.core.models.annotations.PluginProperty;
                     topic: topic-test
                     from:
                       - data: "{{ 'base64-encoded-string-1' | base64encode }}"
-                         attributes:
-                             testAttribute: KestraTest
+                        attributes:
+                          testAttribute: KestraTest
                       - messageId: '1234'
                       - orderingKey: 'foo'
                       - data: "{{ 'base64-encoded-string-2' | base64encode }}"
                       - attributes:
-                             testAttribute: KestraTest
+                          testAttribute: KestraTest
                 """
         )
     },
@@ -91,18 +93,22 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
                 .build()
         );
 
-        Integer count = io.kestra.core.models.property.Data.from(from)
-            .readAs(runContext, Message.class, map -> JacksonMapper.toMap(map, Message.class))
-            .map(throwFunction(message ->
-            {
-                publisher.publish(message.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow()));
-                return 1;
-            }))
-            .reduce(Integer::sum)
-            .blockOptional()
-            .orElse(0);
-
-        publisher.shutdown();
+        Integer count;
+        try {
+            count = io.kestra.core.models.property.Data.from(from)
+                .readAs(runContext, Message.class, map -> JacksonMapper.toMap(map, Message.class))
+                .map(throwFunction(message ->
+                {
+                    publisher.publish(message.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow()));
+                    return 1;
+                }))
+                .reduce(Integer::sum)
+                .blockOptional()
+                .orElse(0);
+        } finally {
+            publisher.shutdown();
+            publisher.awaitTermination(1, TimeUnit.MINUTES);
+        }
 
         // metrics
         runContext.metric(Counter.of("records", count, "topic", runContext.render(this.getTopic()).as(String.class).orElseThrow()));

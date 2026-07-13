@@ -46,7 +46,7 @@ import lombok.experimental.SuperBuilder;
                   - id: load
                     type: io.kestra.plugin.gcp.bigquery.Load
                     from: "{{ inputs.file }}"
-                    destinationTable: "my_project.my_dataset.my_table"
+                    destinationTable: "my-project.my_dataset.my_table"
                     format: CSV
                     csvOptions:
                       fieldDelimiter: ";"
@@ -120,7 +120,7 @@ public class Load extends AbstractLoad implements RunnableTask<AbstractLoad.Outp
                     .build();
             }
 
-            Job job = this.waitForJob(logger, writer::getJob, runContext);
+            Job job = this.waitForJob(logger, writer::getJob, runContext, connection);
 
             return this.outputs(runContext, configuration, job);
         }

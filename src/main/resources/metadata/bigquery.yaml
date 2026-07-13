@@ -1,6 +1,6 @@
 group: io.kestra.plugin.gcp.bigquery
 name: "bigquery"
-title: "BigQuery"
+title: "Google Cloud BigQuery"
 description: "Build high-performance data pipelines with BigQuery. Query, transform, and load data at scale without infrastructure management."
 body: ""
 videos: []

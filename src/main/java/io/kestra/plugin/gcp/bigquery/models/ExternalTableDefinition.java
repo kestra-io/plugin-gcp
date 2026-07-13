@@ -19,7 +19,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class ExternalTableDefinition {
     @Schema(
-        title = "The fully-qualified URIs that point to your data in Google Cloud Storage.",
+        title = "The fully-qualified URIs that point to your data in Google Cloud Storage",
         description = "Each URI can\n" +
             "* contain one '*' wildcard character that must come after the bucket's name. Size limits related\n" +
             "* to load jobs apply to external data sources, plus an additional limit of 10 GB maximum size\n" +
@@ -29,28 +29,28 @@ public class ExternalTableDefinition {
     private final Property<List<String>> sourceUris;
 
     @Schema(
-        title = "The source format, and possibly some parsing options, of the external data."
+        title = "The source format, and possibly some parsing options, of the external data"
     )
     @PluginProperty(group = "advanced")
     private final Property<FormatType> formatType;
 
-    @Schema(title = "Whether automatic detection of schema and format options should be performed.")
+    @Schema(title = "Whether automatic detection of schema and format options should be performed")
     @PluginProperty(group = "advanced")
     private final Property<Boolean> autodetect;
 
-    @Schema(title = "The compression type of the data source.")
+    @Schema(title = "The compression type of the data source")
     @PluginProperty(group = "processing")
     private final Property<String> compression;
 
     @Schema(
-        title = "The maximum number of bad records that BigQuery can ignore when reading data.",
+        title = "The maximum number of bad records that BigQuery can ignore when reading data",
         description = "If the number of bad records exceeds this value, an invalid error is returned in the job result."
     )
     @PluginProperty(group = "execution")
     private final Property<Integer> maxBadRecords;
 
     @Schema(
-        title = "Whether BigQuery should allow extra values that are not represented in the table schema.",
+        title = "Whether BigQuery should allow extra values that are not represented in the table schema",
         description = "If true, the extra values are ignored. If false, records with extra columns are treated " +
             "as bad records, and if there are too many bad records, an invalid error is returned in the job " +
             "result."

@@ -33,7 +33,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Extract a BigQuery table to a GCS bucket.",
+            title = "Extract a BigQuery table to a GCS bucket",
             full = true,
             code = """
                 id: gcp_bq_extract_to_gcs
@@ -44,7 +44,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     type: io.kestra.plugin.gcp.bigquery.ExtractToGcs
                     destinationUris:
                       - "gs://bucket_name/filename.csv"
-                    sourceTable: "my_project.my_dataset.my_table"
+                    sourceTable: "my-project.my_dataset.my_table"
                     format: CSV
                     fieldDelimiter: ';'
                     printHeader: true
@@ -132,6 +132,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         ExtractJobConfiguration configuration = this.buildExtractJob(runContext);
 
         Job extractJob = connection.create(JobInfo.of(configuration));
+        this.trackJob(connection, extractJob.getJobId(), logger);
 
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 

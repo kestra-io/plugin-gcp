@@ -18,14 +18,14 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class Scheduling {
     @Schema(
-        title = "The maximum job running time. The default is 7 days."
+        title = "The maximum job running time. The default is 7 days"
     )
     @NotNull
     @PluginProperty(group = "main")
     private Property<Duration> timeOut;
 
     @Schema(
-        title = "Restarts the entire CustomJob if a worker gets restarted.",
+        title = "Restarts the entire CustomJob if a worker gets restarted",
         description = "This feature can be used by distributed training jobs that are not resilient to workers leaving and joining a job."
     )
     @NotNull

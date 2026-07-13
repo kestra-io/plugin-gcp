@@ -49,7 +49,7 @@ import io.kestra.core.models.annotations.PluginProperty;
     examples = {
         @Example(
             full = true,
-            title = "Consume a message from a Pub/Sub topic in real-time.",
+            title = "Consume a message from a Pub/Sub topic in real-time",
             code = """
                 id: realtime_pubsub
                 namespace: company.team
@@ -127,6 +127,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
     @PluginProperty(group = "advanced")
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
+    @Schema(title = "How often the trigger checks for new messages")
     @Builder.Default
     private final Property<Duration> interval = Property.ofValue(Duration.ofSeconds(60));
 

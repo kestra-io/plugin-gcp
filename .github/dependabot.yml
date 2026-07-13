@@ -15,3 +15,7 @@ updates:
     schedule:
       # Check for updates to Gradle modules every week
       interval: "weekly"
+    groups:
+      kestra-gradle-plugins:
+        patterns:
+          - "io.kestra.gradle.*"

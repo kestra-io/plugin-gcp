@@ -251,31 +251,31 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
     public static class Output implements io.kestra.core.models.tasks.Output {
         @NotNull
         @Schema(
-            title = "Resource name of a CustomJob."
+            title = "Resource name of a CustomJob"
         )
         private final String name;
 
         @NotNull
         @Schema(
-            title = "Time when the CustomJob was created."
+            title = "Time when the CustomJob was created"
         )
         private final Instant createDate;
 
         @NotNull
         @Schema(
-            title = "Time when the CustomJob was updated."
+            title = "Time when the CustomJob was updated"
         )
         private final Instant updateDate;
 
         @NotNull
         @Schema(
-            title = "Time when the CustomJob was ended."
+            title = "Time when the CustomJob was ended"
         )
         private final Instant endDate;
 
         @NotNull
         @Schema(
-            title = "The detailed state of the CustomJob."
+            title = "The detailed state of the CustomJob"
         )
         private final JobState state;
     }

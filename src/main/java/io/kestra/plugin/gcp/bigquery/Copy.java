@@ -44,8 +44,8 @@ import io.kestra.core.models.annotations.PluginProperty;
                     type: io.kestra.plugin.gcp.bigquery.Copy
                     operationType: COPY
                     sourceTables:
-                      - "my_project.my_dataset.my_table$20130908"
-                    destinationTable: "my_project.my_dataset.my_table"
+                      - "my-project.my_dataset.my_table$20130908"
+                    destinationTable: "my-project.my_dataset.my_table"
                 """
         )
     },
@@ -100,7 +100,8 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
                         .build()
                 ),
             runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
-            runContext
+            runContext,
+            connection
         );
 
         JobStatistics.CopyStatistics copyJobStatistics = copyJob.getStatistics();

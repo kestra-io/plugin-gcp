@@ -156,6 +156,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(title = "The URI of the composed object on Cloud Storage")
         private URI uri;
     }
 

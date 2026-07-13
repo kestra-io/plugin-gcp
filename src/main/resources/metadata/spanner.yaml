@@ -1,0 +1,7 @@
+group: io.kestra.plugin.gcp.spanner
+name: spanner
+title: Google Cloud Spanner
+description: "Tasks to query, execute DML/DDL statements, and manage databases in Google Cloud Spanner, the globally distributed, horizontally scalable database service."
+body: "Use these tasks to execute SELECT queries, run DML/DDL updates, run batch DML operations, create or delete databases, and trigger flows on database changes in Google Cloud Spanner. Authentication follows the same GCP service account pattern as the other plugin-gcp sub-plugins (CredentialService)."
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

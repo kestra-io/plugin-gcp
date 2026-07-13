@@ -239,7 +239,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     private Pair<URI, Long> store(RunContext runContext, List<QueryDocumentSnapshot> documents) throws IOException {
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
 
-        try (var output = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
+        try (var output = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
             Flux<Map<String, Object>> flux = Flux.fromIterable(documents).map(snapshot -> snapshot.getData());
             Long count = FileSerde.writeAll(output, flux).block();
 
@@ -279,13 +279,13 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     )
     public static class Filter {
         @Schema(
-            title = "Field name for the filter."
+            title = "Field name for the filter"
         )
         @NotNull
         private Property<String> field;
 
         @Schema(
-            title = "Field value for the filter.",
+            title = "Field value for the filter",
             description = "Field value for the filter. Only strings are supported at the moment."
         )
         @NotNull
