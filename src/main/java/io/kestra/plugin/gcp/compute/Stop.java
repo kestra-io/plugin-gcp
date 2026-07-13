@@ -80,7 +80,6 @@ public class Stop extends AbstractComputeTask implements RunnableTask<AbstractCo
 
         logger.info("Stopping Compute Engine instance '{}' in zone '{}'", rInstanceName, rZone);
 
-        // nothing new to bill for here, so no kill hook.
         try (var client = this.instancesClient(runContext)) {
             var operationFuture = client.stopAsync(rProjectId, rZone, rInstanceName);
 

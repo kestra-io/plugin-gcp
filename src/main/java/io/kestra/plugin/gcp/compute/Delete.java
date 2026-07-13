@@ -81,7 +81,6 @@ public class Delete extends AbstractComputeTask implements RunnableTask<Delete.O
         var rWaitUntilDeleted = runContext.render(this.waitUntilDeleted).as(Boolean.class).orElse(true);
         var rTimeout = runContext.render(this.timeout).as(Duration.class).orElse(DEFAULT_TIMEOUT);
 
-        // nothing new to bill for here, so no kill hook.
         try (var client = this.instancesClient(runContext)) {
             Instance existing;
             try {

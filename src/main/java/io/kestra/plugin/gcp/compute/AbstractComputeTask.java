@@ -45,7 +45,6 @@ public abstract class AbstractComputeTask extends AbstractTask {
 
     protected static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(10);
 
-    // how long to wait for the kill request to land before we close the client
     private static final Duration KILL_ACK_TIMEOUT = Duration.ofSeconds(30);
 
     @NotNull
@@ -71,7 +70,6 @@ public abstract class AbstractComputeTask extends AbstractTask {
     @PluginProperty(group = "advanced")
     protected Property<Duration> timeout = Property.ofValue(DEFAULT_TIMEOUT);
 
-    // what to run if we're killed mid-op. fires once.
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     @Builder.Default
@@ -105,7 +103,6 @@ public abstract class AbstractComputeTask extends AbstractTask {
         }
     }
 
-    // wait for the op, and turn SDK errors into something readable.
     protected void awaitOperation(OperationFuture<Operation, Operation> operationFuture, Duration timeout, String instanceName, String action) throws Exception {
         Operation operation;
         try {
