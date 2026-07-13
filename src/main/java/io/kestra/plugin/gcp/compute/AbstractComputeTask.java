@@ -66,8 +66,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
     @PluginProperty(group = "advanced")
     protected Property<Duration> timeout = Property.ofValue(Duration.ofMinutes(10));
 
-    // Compensating action to run if the task is killed while a remote operation is in flight (e.g. delete a VM
-    // that is still being created so it does not keep billing), and a guard so kill() runs the action only once.
+    // Compensating action run once if the task is killed while a remote operation is in flight.
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     @Builder.Default
@@ -86,8 +85,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
         return InstancesClient.create(settings);
     }
 
-    // Registers the action kill() should run to compensate for an in-flight operation. If the task was already
-    // killed before the operation was submitted, the action runs immediately.
+    // Registers the compensating action for kill(); runs it immediately if the task was already killed.
     protected void onKill(Runnable action) {
         this.killable.set(action);
         if (this.isKilled.get()) {
@@ -95,16 +93,14 @@ public abstract class AbstractComputeTask extends AbstractTask {
         }
     }
 
-    // Not annotated @Override: kill() is declared on RunnableTask, which only the concrete subclasses implement.
-    // This inherited implementation satisfies that contract for all of them.
+    // kill() is declared on RunnableTask (implemented by the concrete subclasses); this satisfies it for all of them.
     public void kill() {
         if (this.isKilled.compareAndSet(false, true)) {
             Optional.ofNullable(this.killable.get()).ifPresent(Runnable::run);
         }
     }
 
-    // Waits for a Compute Engine operation to complete within the timeout and surfaces failures as a clear,
-    // actionable message rather than a raw SDK exception (e.g. instance already exists, or was not found).
+    // Waits for the operation within the timeout, translating SDK failures into an actionable message.
     protected void awaitOperation(OperationFuture<Operation, Operation> operationFuture, Duration timeout, String instanceName, String action) throws Exception {
         Operation operation;
         try {
@@ -119,7 +115,6 @@ public abstract class AbstractComputeTask extends AbstractTask {
         checkOperationError(operation);
     }
 
-    // Best-effort compensating action: stop an instance that is being started, ignoring failures.
     protected void safelyStop(RunContext runContext, String projectId, String zone, String instanceName) {
         try (var client = this.instancesClient(runContext)) {
             runContext.logger().warn("Task killed, stopping instance '{}' to stop billing", instanceName);
@@ -129,7 +124,6 @@ public abstract class AbstractComputeTask extends AbstractTask {
         }
     }
 
-    // Best-effort compensating action: delete an instance that is being created, ignoring failures.
     protected void safelyDelete(RunContext runContext, String projectId, String zone, String instanceName) {
         try (var client = this.instancesClient(runContext)) {
             runContext.logger().warn("Task killed, deleting instance '{}' to stop billing", instanceName);
@@ -166,5 +160,34 @@ public abstract class AbstractComputeTask extends AbstractTask {
             .filter(ip -> ip != null && !ip.isEmpty())
             .findFirst()
             .orElse(null);
+    }
+
+    protected Output instanceOutput(Instance instance) {
+        return Output.builder()
+            .instanceName(instance.getName())
+            .instanceId(String.valueOf(instance.getId()))
+            .status(instance.getStatus())
+            .externalIp(externalIp(instance))
+            .internalIp(internalIp(instance))
+            .build();
+    }
+
+    @Getter
+    @Builder
+    public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(title = "The name of the instance")
+        private String instanceName;
+
+        @Schema(title = "The unique GCP instance ID")
+        private String instanceId;
+
+        @Schema(title = "The instance status after the operation")
+        private String status;
+
+        @Schema(title = "The instance's external (public) IP address, if any")
+        private String externalIp;
+
+        @Schema(title = "The instance's internal (private) IP address")
+        private String internalIp;
     }
 }

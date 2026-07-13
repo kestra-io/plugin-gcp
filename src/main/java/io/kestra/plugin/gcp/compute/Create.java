@@ -73,7 +73,7 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class Create extends AbstractComputeTask implements RunnableTask<Create.Output> {
+public class Create extends AbstractComputeTask implements RunnableTask<AbstractComputeTask.Output> {
 
     @NotNull
     @Schema(
@@ -177,12 +177,11 @@ public class Create extends AbstractComputeTask implements RunnableTask<Create.O
         try (var client = this.instancesClient(runContext)) {
             var operationFuture = client.insertAsync(rProjectId, rZone, instanceResource);
 
-            // If the task is killed while the VM is still being created, delete it so it does not keep billing.
+            // On kill, delete the VM that is still being created so it does not keep billing.
             this.onKill(() -> this.safelyDelete(runContext, rProjectId, rZone, rInstanceName));
 
             if (!rWaitUntilRunning) {
-                // The caller opted out of waiting: the instance may not be queryable yet, so return what we know
-                // rather than racing a GET against an in-flight insert.
+                // Not waiting: the instance may not be queryable yet, so avoid racing a GET against the in-flight insert.
                 return Output.builder()
                     .instanceName(rInstanceName)
                     .status("PROVISIONING")
@@ -194,13 +193,7 @@ public class Create extends AbstractComputeTask implements RunnableTask<Create.O
             var instance = client.get(rProjectId, rZone, rInstanceName);
             logger.info("Compute Engine instance '{}' is now '{}'", rInstanceName, instance.getStatus());
 
-            return Output.builder()
-                .instanceName(instance.getName())
-                .instanceId(String.valueOf(instance.getId()))
-                .status(instance.getStatus())
-                .externalIp(externalIp(instance))
-                .internalIp(internalIp(instance))
-                .build();
+            return this.instanceOutput(instance);
         }
     }
 
@@ -280,35 +273,5 @@ public class Create extends AbstractComputeTask implements RunnableTask<Create.O
         }
 
         return builder.build();
-    }
-
-    @Getter
-    @Builder
-    public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The name of the created instance"
-        )
-        private String instanceName;
-
-        @Schema(
-            title = "The unique GCP instance ID"
-        )
-        private String instanceId;
-
-        @Schema(
-            title = "The instance status after the operation",
-            description = "e.g. `RUNNING`, `PROVISIONING`, `STAGING`."
-        )
-        private String status;
-
-        @Schema(
-            title = "The instance's external (public) IP address, if any"
-        )
-        private String externalIp;
-
-        @Schema(
-            title = "The instance's internal (private) IP address"
-        )
-        private String internalIp;
     }
 }

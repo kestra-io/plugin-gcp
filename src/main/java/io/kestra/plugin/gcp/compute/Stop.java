@@ -57,7 +57,7 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class Stop extends AbstractComputeTask implements RunnableTask<Stop.Output> {
+public class Stop extends AbstractComputeTask implements RunnableTask<AbstractComputeTask.Output> {
 
     @Builder.Default
     @Schema(
@@ -90,44 +90,7 @@ public class Stop extends AbstractComputeTask implements RunnableTask<Stop.Outpu
             var instance = client.get(rProjectId, rZone, rInstanceName);
             logger.info("Compute Engine instance '{}' is now '{}'", rInstanceName, instance.getStatus());
 
-            return Output.builder()
-                .instanceName(instance.getName())
-                .instanceId(String.valueOf(instance.getId()))
-                .status(instance.getStatus())
-                .externalIp(externalIp(instance))
-                .internalIp(internalIp(instance))
-                .build();
+            return this.instanceOutput(instance);
         }
-    }
-
-    @Getter
-    @Builder
-    public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The name of the stopped instance"
-        )
-        private String instanceName;
-
-        @Schema(
-            title = "The unique GCP instance ID"
-        )
-        private String instanceId;
-
-        @Schema(
-            title = "The instance status after the operation",
-            description = "e.g. `TERMINATED`, `STOPPING`."
-        )
-        private String status;
-
-        @Schema(
-            title = "The instance's external (public) IP address, if any",
-            description = "Typically `null` once the instance is stopped, since ephemeral external IPs are released on stop."
-        )
-        private String externalIp;
-
-        @Schema(
-            title = "The instance's internal (private) IP address"
-        )
-        private String internalIp;
     }
 }

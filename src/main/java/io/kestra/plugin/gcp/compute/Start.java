@@ -51,7 +51,7 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class Start extends AbstractComputeTask implements RunnableTask<Start.Output> {
+public class Start extends AbstractComputeTask implements RunnableTask<AbstractComputeTask.Output> {
 
     @Builder.Default
     @Schema(
@@ -77,7 +77,6 @@ public class Start extends AbstractComputeTask implements RunnableTask<Start.Out
         try (var client = this.instancesClient(runContext)) {
             var operationFuture = client.startAsync(rProjectId, rZone, rInstanceName);
 
-            // If the task is killed while the VM is starting, stop it again so it does not keep billing.
             this.onKill(() -> this.safelyStop(runContext, rProjectId, rZone, rInstanceName));
 
             if (rWaitUntilRunning) {
@@ -87,43 +86,7 @@ public class Start extends AbstractComputeTask implements RunnableTask<Start.Out
             var instance = client.get(rProjectId, rZone, rInstanceName);
             logger.info("Compute Engine instance '{}' is now '{}'", rInstanceName, instance.getStatus());
 
-            return Output.builder()
-                .instanceName(instance.getName())
-                .instanceId(String.valueOf(instance.getId()))
-                .status(instance.getStatus())
-                .externalIp(externalIp(instance))
-                .internalIp(internalIp(instance))
-                .build();
+            return this.instanceOutput(instance);
         }
-    }
-
-    @Getter
-    @Builder
-    public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(
-            title = "The name of the started instance"
-        )
-        private String instanceName;
-
-        @Schema(
-            title = "The unique GCP instance ID"
-        )
-        private String instanceId;
-
-        @Schema(
-            title = "The instance status after the operation",
-            description = "e.g. `RUNNING`, `STAGING`."
-        )
-        private String status;
-
-        @Schema(
-            title = "The instance's external (public) IP address, if any"
-        )
-        private String externalIp;
-
-        @Schema(
-            title = "The instance's internal (private) IP address"
-        )
-        private String internalIp;
     }
 }
