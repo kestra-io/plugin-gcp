@@ -45,7 +45,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
 
     protected static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(10);
 
-    // Time to wait for a kill-time compensating request to be delivered before the client is closed.
+    // how long to wait for the kill request to land before we close the client
     private static final Duration KILL_ACK_TIMEOUT = Duration.ofSeconds(30);
 
     @NotNull
@@ -71,7 +71,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
     @PluginProperty(group = "advanced")
     protected Property<Duration> timeout = Property.ofValue(DEFAULT_TIMEOUT);
 
-    // Compensating action run once if the task is killed while a remote operation is in flight.
+    // what to run if we're killed mid-op. fires once.
     @JsonIgnore
     @Getter(AccessLevel.NONE)
     @Builder.Default
@@ -90,7 +90,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
         return InstancesClient.create(settings);
     }
 
-    // Registers the compensating action for kill(); runs it immediately if the task was already killed.
+    // stash the kill action. if we're already killed, run it now.
     protected void onKill(Runnable action) {
         this.killable.set(action);
         if (this.isKilled.get()) {
@@ -98,14 +98,14 @@ public abstract class AbstractComputeTask extends AbstractTask {
         }
     }
 
-    // kill() is declared on RunnableTask (implemented by the concrete subclasses); this satisfies it for all of them.
+    // kill() comes from RunnableTask, which only the subclasses implement, so this covers them all.
     public void kill() {
         if (this.isKilled.compareAndSet(false, true)) {
             Optional.ofNullable(this.killable.get()).ifPresent(Runnable::run);
         }
     }
 
-    // Waits for the operation within the timeout, translating SDK failures into an actionable message.
+    // wait for the op, and turn SDK errors into something readable.
     protected void awaitOperation(OperationFuture<Operation, Operation> operationFuture, Duration timeout, String instanceName, String action) throws Exception {
         Operation operation;
         try {
@@ -123,7 +123,7 @@ public abstract class AbstractComputeTask extends AbstractTask {
     protected void safelyStop(RunContext runContext, String projectId, String zone, String instanceName) {
         try (var client = this.instancesClient(runContext)) {
             runContext.logger().warn("Task killed, stopping instance '{}' to stop billing", instanceName);
-            // Block until the request is acknowledged: the client is closed on exit and close() does not flush in-flight calls.
+            // wait for the request to land, close() below won't flush it for us.
             client.stopAsync(projectId, zone, instanceName).getInitialFuture().get(KILL_ACK_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             runContext.logger().warn("Could not stop instance '{}' on kill: {}", instanceName, e.getMessage());
@@ -133,15 +133,14 @@ public abstract class AbstractComputeTask extends AbstractTask {
     protected void safelyDelete(RunContext runContext, String projectId, String zone, String instanceName) {
         try (var client = this.instancesClient(runContext)) {
             runContext.logger().warn("Task killed, deleting instance '{}' to stop billing", instanceName);
-            // Block until the request is acknowledged: the client is closed on exit and close() does not flush in-flight calls.
+            // wait for the request to land, close() below won't flush it for us.
             client.deleteAsync(projectId, zone, instanceName).getInitialFuture().get(KILL_ACK_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             runContext.logger().warn("Could not delete instance '{}' on kill: {}", instanceName, e.getMessage());
         }
     }
 
-    // Compute Engine's long-running operations carry their errors on the Operation itself rather than
-    // throwing: an OperationFuture can complete successfully while wrapping a failed operation.
+    // compute ops don't throw on failure, they hand back an operation with the error inside.
     protected static void checkOperationError(Operation operation) {
         if (operation.hasError()) {
             var message = operation.getError().getErrorsList().stream()

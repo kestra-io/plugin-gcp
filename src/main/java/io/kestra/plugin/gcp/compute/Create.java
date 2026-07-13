@@ -161,8 +161,7 @@ public class Create extends AbstractComputeTask implements RunnableTask<Abstract
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
 
-        // credentials() must be called before rendering projectId: it infers the project ID from the
-        // service account when the property is not explicitly set.
+        // credentials() first: it fills projectId from the service account when it's not set.
         this.credentials(runContext);
         var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
         var rZone = runContext.render(this.zone).as(String.class).orElseThrow();
@@ -177,11 +176,11 @@ public class Create extends AbstractComputeTask implements RunnableTask<Abstract
         try (var client = this.instancesClient(runContext)) {
             var operationFuture = client.insertAsync(rProjectId, rZone, instanceResource);
 
-            // On kill, delete the VM that is still being created so it does not keep billing.
+            // killed mid-create? delete the half-built VM so it stops billing.
             this.onKill(() -> this.safelyDelete(runContext, rProjectId, rZone, rInstanceName));
 
             if (!rWaitUntilRunning) {
-                // Not waiting: the instance may not be queryable yet, so avoid racing a GET against the in-flight insert.
+                // not waiting, so don't GET a VM that might not exist yet.
                 return Output.builder()
                     .instanceName(rInstanceName)
                     .status("PROVISIONING")
@@ -218,9 +217,8 @@ public class Create extends AbstractComputeTask implements RunnableTask<Abstract
             networkInterface.setSubnetwork(runContext.render(this.subnetworkName).as(String.class).orElseThrow());
         }
 
-        // Only set the network explicitly when the user asked for one. When only a subnetwork is given, GCP infers
-        // the network from it. When neither is set, fall back to the project's default network. Forcing the default
-        // network alongside a custom-mode subnetwork would be rejected as a network/subnetwork mismatch.
+        // set the network only if the user gave one. with just a subnet, let GCP infer it (forcing the default
+        // network over a custom-mode subnet gets rejected). nothing set means the default network.
         if (this.networkName != null) {
             networkInterface.setNetwork(runContext.render(this.networkName).as(String.class).orElseThrow());
         } else if (this.subnetworkName == null) {

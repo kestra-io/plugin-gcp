@@ -80,7 +80,7 @@ public class Start extends AbstractComputeTask implements RunnableTask<AbstractC
             this.onKill(() -> this.safelyStop(runContext, rProjectId, rZone, rInstanceName));
 
             if (!rWaitUntilRunning) {
-                // Not waiting: skip the status GET, which would report the pre-operation state.
+                // not waiting, so skip the GET (it'd just show the old status).
                 return AbstractComputeTask.Output.builder()
                     .instanceName(rInstanceName)
                     .status("STAGING")
