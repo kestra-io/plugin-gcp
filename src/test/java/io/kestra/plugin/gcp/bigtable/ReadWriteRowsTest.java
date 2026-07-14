@@ -175,10 +175,10 @@ class ReadWriteRowsTest extends BigtableTestUtils {
             .emulatorHost(Property.ofValue(getEmulatorHost()))
             .build();
 
-        java.util.Map.Entry<io.kestra.core.models.conditions.ConditionContext, io.kestra.core.models.triggers.Trigger> triggerContext = io.kestra.core.utils.TestsUtils
+        java.util.Map.Entry<io.kestra.core.models.conditions.ConditionContext, io.kestra.core.scheduler.model.TriggerState> triggerContext = io.kestra.core.utils.TestsUtils
             .mockTrigger(runContextFactory, trigger);
 
-        Optional<io.kestra.core.models.executions.Execution> execution = trigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        Optional<io.kestra.core.models.executions.Execution> execution = trigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution.isPresent(), is(true));
 
         assertThat(execution.get().getTrigger().getVariables().get("rowCount"), is(1L));
