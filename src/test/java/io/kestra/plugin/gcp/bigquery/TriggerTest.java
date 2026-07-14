@@ -69,8 +69,8 @@ class TriggerTest {
             .interval(Duration.ofSeconds(10))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue().context());
 
         @SuppressWarnings("unchecked")
         java.util.List<Blob> blobs = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("rows");
