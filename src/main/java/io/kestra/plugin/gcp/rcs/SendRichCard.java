@@ -59,20 +59,20 @@ import lombok.experimental.SuperBuilder;
 public class SendRichCard extends AbstractRcs implements RunnableTask<SendRichCard.Output> {
 
     @Schema(title = "The card title")
-    @PluginProperty
+    @PluginProperty(group = "main")
     private Property<String> title;
 
     @JsonProperty("description")
     @Schema(name = "description", title = "The card description")
-    @PluginProperty
+    @PluginProperty(group = "main")
     private Property<String> contentDescription;
 
     @Schema(title = "The card image URL")
-    @PluginProperty
+    @PluginProperty(group = "main")
     private Property<String> imageUrl;
 
     @Schema(title = "The list of suggested action/reply buttons (max 4)")
-    @PluginProperty
+    @PluginProperty(group = "main")
     private List<Suggestion> suggestions;
 
     @Override

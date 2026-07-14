@@ -56,11 +56,11 @@ public class SendFile extends AbstractRcs implements RunnableTask<SendFile.Outpu
 
     @Schema(title = "The file attachment URI (can be a public HTTPS URL or a Kestra internal storage URI)")
     @NotNull
-    @PluginProperty(internalStorageURI = true)
+    @PluginProperty(group = "main", internalStorageURI = true)
     private Property<String> file;
 
     @Schema(title = "Optional thumbnail image URI (can be a public HTTPS URL or a Kestra internal storage URI)")
-    @PluginProperty(internalStorageURI = true)
+    @PluginProperty(group = "main", internalStorageURI = true)
     private Property<String> thumbnail;
 
     @Override

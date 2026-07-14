@@ -51,7 +51,7 @@ public class SendMessage extends AbstractRcs implements RunnableTask<SendMessage
 
     @Schema(title = "The plain text content of the message")
     @NotNull
-    @PluginProperty
+    @PluginProperty(group = "main")
     private Property<String> text;
 
     @Override

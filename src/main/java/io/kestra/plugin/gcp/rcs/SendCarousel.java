@@ -63,7 +63,7 @@ public class SendCarousel extends AbstractRcs implements RunnableTask<SendCarous
 
     @Schema(title = "The list of rich cards in the carousel (between 2 and 10 cards)")
     @NotNull
-    @PluginProperty
+    @PluginProperty(group = "main")
     private List<Card> cards;
 
     @Override
