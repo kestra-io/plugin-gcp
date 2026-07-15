@@ -93,6 +93,10 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.pubsub.Publish`
 - `io.kestra.plugin.gcp.pubsub.RealtimeTrigger`
 - `io.kestra.plugin.gcp.pubsub.Trigger`
+- `io.kestra.plugin.gcp.rcs.SendCarousel`
+- `io.kestra.plugin.gcp.rcs.SendFile`
+- `io.kestra.plugin.gcp.rcs.SendMessage`
+- `io.kestra.plugin.gcp.rcs.SendRichCard`
 - `io.kestra.plugin.gcp.vertexai.ChatCompletion`
 - `io.kestra.plugin.gcp.vertexai.CustomJob`
 - `io.kestra.plugin.gcp.vertexai.MultimodalCompletion`
