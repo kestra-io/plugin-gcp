@@ -50,6 +50,10 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.spanner.Query`
 - `io.kestra.plugin.gcp.spanner.Trigger`
 - `io.kestra.plugin.gcp.cli.GCloudCLI`
+- `io.kestra.plugin.gcp.compute.Create`
+- `io.kestra.plugin.gcp.compute.Start`
+- `io.kestra.plugin.gcp.compute.Stop`
+- `io.kestra.plugin.gcp.compute.Delete`
 - `io.kestra.plugin.gcp.dataform.InvokeWorkflow`
 - `io.kestra.plugin.gcp.dataflow.CancelJob`
 - `io.kestra.plugin.gcp.dataflow.GetJob`
@@ -89,6 +93,10 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.pubsub.Publish`
 - `io.kestra.plugin.gcp.pubsub.RealtimeTrigger`
 - `io.kestra.plugin.gcp.pubsub.Trigger`
+- `io.kestra.plugin.gcp.rcs.SendCarousel`
+- `io.kestra.plugin.gcp.rcs.SendFile`
+- `io.kestra.plugin.gcp.rcs.SendMessage`
+- `io.kestra.plugin.gcp.rcs.SendRichCard`
 - `io.kestra.plugin.gcp.vertexai.ChatCompletion`
 - `io.kestra.plugin.gcp.vertexai.CustomJob`
 - `io.kestra.plugin.gcp.vertexai.MultimodalCompletion`
