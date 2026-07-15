@@ -91,6 +91,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-dataproc'
     api 'com.google.cloud:google-cloud-vertexai'
     api 'com.google.cloud:google-cloud-dataform'
+    api 'com.google.cloud:google-cloud-compute'
 }
 
 

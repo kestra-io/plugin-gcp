@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.compute
+name: "compute"
+title: "Google Compute Engine"
+description: "Create, start, stop, and delete Compute Engine virtual machine instances as part of orchestrated workflows."
+body: "Use these tasks to create, start, stop, and delete Compute Engine virtual machine instances as part of a flow. Each task waits for the operation to complete within a configurable timeout and returns the instance name, ID, status, and IP addresses."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

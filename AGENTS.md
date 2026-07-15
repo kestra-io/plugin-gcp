@@ -50,6 +50,10 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.spanner.Query`
 - `io.kestra.plugin.gcp.spanner.Trigger`
 - `io.kestra.plugin.gcp.cli.GCloudCLI`
+- `io.kestra.plugin.gcp.compute.Create`
+- `io.kestra.plugin.gcp.compute.Start`
+- `io.kestra.plugin.gcp.compute.Stop`
+- `io.kestra.plugin.gcp.compute.Delete`
 - `io.kestra.plugin.gcp.dataform.InvokeWorkflow`
 - `io.kestra.plugin.gcp.dataflow.CancelJob`
 - `io.kestra.plugin.gcp.dataflow.GetJob`
