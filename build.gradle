@@ -80,7 +80,7 @@ dependencies {
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
-    api 'com.google.cloud:google-cloud-bigtable:2.79.0'
+    api 'com.google.cloud:google-cloud-bigtable:2.80.0'
     api 'com.google.cloud:google-cloud-spanner:6.118.0'
     api 'com.google.apis:google-api-services-dataflow:v1b3-rev20240430-2.0.0'
     api 'com.google.cloud:google-cloud-container'
