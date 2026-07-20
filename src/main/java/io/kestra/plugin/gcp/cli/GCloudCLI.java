@@ -12,6 +12,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.*;
+import io.kestra.core.models.tasks.runners.TargetOS;
 import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
@@ -194,12 +195,13 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
             .withContainerImage(runContext.render(this.containerImage).as(String.class).orElseThrow())
             .withInterpreter(Property.ofValue(List.of("/bin/sh", "-c")))
             .withCommands(this.commands)
-            .withEnv(this.getEnv(runContext))
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
             .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
 
-        return commands.run();
+        return commands
+            .addEnv(this.getEnv(runContext, commands))
+            .run();
     }
 
     private DockerOptions injectDefaults(DockerOptions original) {
@@ -215,15 +217,21 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         return builder.build();
     }
 
-    private Map<String, String> getEnv(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
+    private Map<String, String> getEnv(RunContext runContext, CommandsWrapper commands) throws IOException, IllegalVariableEvaluationException {
         Map<String, String> envs = new HashMap<>();
 
         if (serviceAccount != null) {
             Path serviceAccountPath = runContext.workingDir().createTempFile(runContext.render(this.serviceAccount).as(String.class).orElseThrow().getBytes());
+
+            // Remap the worker-absolute temp path to the runner working dir (e.g. /kestra/working-dir on
+            // Kubernetes) so gcloud finds the key inside the container; on Docker it resolves unchanged.
+            String relativePath = runContext.workingDir().path().relativize(serviceAccountPath).toString();
+            String credentialPath = commands.getTaskRunner().toAbsolutePath(runContext, commands, relativePath, TargetOS.LINUX);
+
             envs.putAll(
                 Map.of(
-                    "GOOGLE_APPLICATION_CREDENTIALS", serviceAccountPath.toString(),
-                    "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", serviceAccountPath.toString()
+                    "GOOGLE_APPLICATION_CREDENTIALS", credentialPath,
+                    "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", credentialPath
                 )
             );
         }
