@@ -70,10 +70,15 @@ import io.kestra.core.models.annotations.PluginProperty;
                         ]
                       }
 
+                  - id: upload_to_gcs
+                    type: io.kestra.plugin.gcp.gcs.Upload
+                    from: "{{ outputs.ion_to_avro.uri }}"
+                    to: "gs://my-bucket/orders.avro"
+
                   - id: load_from_gcs
                     type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
                     from:
-                      - "{{ outputs.ion_to_avro.uri }}"
+                      - "{{ outputs.upload_to_gcs.uri }}"
                     destinationTable: "my-project.my_dataset.my_table"
                     format: AVRO
                     avroOptions:

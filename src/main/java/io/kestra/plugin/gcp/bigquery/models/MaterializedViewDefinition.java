@@ -17,7 +17,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Builder
 @Jacksonized
 public class MaterializedViewDefinition {
-    @Schema(title = "Date when this materialized view was last modified")
+    @Schema(title = "Date when this materialized view was last refreshed")
     @PluginProperty(group = "advanced")
     private final Instant lastRefreshDate;
 

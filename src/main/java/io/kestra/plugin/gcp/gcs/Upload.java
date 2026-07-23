@@ -39,7 +39,7 @@ import lombok.experimental.SuperBuilder;
     examples = {
         @Example(
             full = true,
-            title = "Uploada FILE input to GCS",
+            title = "Upload a FILE input to GCS",
             code = """
                 id: gcp_gcs_upload
                 namespace: company.team

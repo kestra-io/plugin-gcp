@@ -16,7 +16,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class MachineSpec {
     @Schema(
-        title = " The type of the machine",
+        title = "The type of the machine",
         description = "See the [list of machine types supported for" +
             "prediction](https://cloud.google.com/vertex-ai/docs/predictions/configure-compute#machine-types)\n" +
             "See the [list of machine types supported for custom " +

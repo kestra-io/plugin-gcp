@@ -32,8 +32,8 @@ public class PythonPackageSpec {
     private Property<List<String>> packageUris;
 
     @Schema(
-        title = "The Google Cloud Storage location of the Python package files which are the training program and its dependent packages",
-        description = "The maximum number of package URIs is 100."
+        title = "Command line arguments passed to the Python task",
+        description = "The arguments to pass to the Python module being run."
     )
     @NotNull
     @PluginProperty(group = "main")
@@ -60,9 +60,10 @@ public class PythonPackageSpec {
             builder.addAllArgs(renderedArgs);
         }
 
-        if (!renderedPackage.isEmpty()) {
+        var renderedEnvs = runContext.render(this.envs).asMap(String.class, String.class);
+        if (!renderedEnvs.isEmpty()) {
             builder.addAllEnv(
-                runContext.render(this.envs).asMap(String.class, String.class)
+                renderedEnvs
                     .entrySet()
                     .stream()
                     .map(

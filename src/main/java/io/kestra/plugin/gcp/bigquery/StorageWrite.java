@@ -81,7 +81,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 )
 @Schema(
     title = "Stream a file to BigQuery via Storage Write API",
-    description = "Reads a file from Kestra internal storage and writes rows with the BigQuery Storage Write API. Supports DEFAULT or PENDING streams (commit required for PENDING). Requires the destination table to exist."
+    description = "Reads a file from Kestra internal storage and writes rows with the BigQuery Storage Write API. Supports DEFAULT, COMMITTED, or PENDING streams (commit required for PENDING). Requires the destination table to exist."
 )
 public class StorageWrite extends AbstractTask implements RunnableTask<StorageWrite.Output> {
     private static final int MAX_IN_FLIGHT_APPENDS = 20;

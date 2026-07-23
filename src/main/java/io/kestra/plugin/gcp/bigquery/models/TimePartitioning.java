@@ -20,7 +20,7 @@ public class TimePartitioning {
     private final Property<com.google.cloud.bigquery.TimePartitioning.Type> type;
 
     @Schema(
-        title = "The number of milliseconds for which to keep the storage for a partition. When expired, the storage for the partition is reclaimed. If null, the partition does not expire"
+        title = "The duration for which to keep the storage for a partition. When expired, the storage for the partition is reclaimed. If null, the partition does not expire"
     )
     @PluginProperty(group = "advanced")
     private final Property<Duration> expiration;
@@ -54,7 +54,7 @@ public class TimePartitioning {
             builder.setField(runContext.render(this.field).as(String.class).orElseThrow());
         }
 
-        if (this.getExpiration() != null) {
+        if (this.getRequirePartitionFilter() != null) {
             builder.setRequirePartitionFilter(runContext.render(this.getRequirePartitionFilter()).as(Boolean.class).orElseThrow());
         }
 

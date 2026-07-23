@@ -66,7 +66,7 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
         description = "If true (default), polls the invocation until it leaves RUNNING"
     )
     @PluginProperty(group = "execution")
-    protected Boolean wait = true;;
+    protected Boolean wait = true;
 
     @Override
     public Output run(RunContext runContext) throws Exception {

@@ -234,6 +234,7 @@ public class CopyPartitions extends AbstractPartition implements RunnableTask<Co
                 .datasetId(table.getDataset())
                 .table(table.getTable())
                 .partitions(partitions)
+                .jobId(jobId)
                 .build();
         }
     }
