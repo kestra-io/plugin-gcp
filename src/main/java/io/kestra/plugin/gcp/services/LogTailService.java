@@ -57,8 +57,10 @@ public class LogTailService {
         switch (logEntry.getSeverity()) {
             case DEBUG:
                 logger.debug("{}", logEntry.toStructuredJsonString());
+                break;
             case WARNING:
                 logger.warn("{}", logEntry.toStructuredJsonString());
+                break;
             case ERROR:
             case CRITICAL:
             case ALERT:

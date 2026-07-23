@@ -92,7 +92,7 @@ import reactor.core.publisher.Mono;
                 tasks:
                   - id: fetch
                     type: io.kestra.plugin.gcp.bigquery.Query
-                    fetch: true
+                    fetchType: FETCH
                     sql: |
                       SELECT 1 as id, "John" as name
                       UNION ALL
@@ -114,7 +114,7 @@ import reactor.core.publisher.Mono;
         @Metric(name = "total.bytes.processed", type = Counter.TYPE, unit = "bytes", description = "The total number of bytes processed by the query."),
         @Metric(
             name = "total.partitions.processed", type = Counter.TYPE, unit = "partitions",
-            description = "The totla number of partitions processed from all partitioned tables referenced in the job."
+            description = "The total number of partitions processed from all partitioned tables referenced in the job."
         ),
         @Metric(name = "total.slot.ms", type = Counter.TYPE, description = "The slot-milliseconds consumed by the query."),
         @Metric(
@@ -123,6 +123,8 @@ import reactor.core.publisher.Mono;
         ),
         @Metric(name = "referenced.tables", type = Counter.TYPE, description = "The number of tables referenced by the query."),
         @Metric(name = "num.child.jobs", type = Counter.TYPE, description = "The number of child jobs executed by the query."),
+        @Metric(name = "total.rows", type = Counter.TYPE, unit = "records", description = "The total number of rows returned by the query."),
+        @Metric(name = "fetch.rows", type = Counter.TYPE, unit = "records", description = "The number of rows fetched into the task output."),
     }
 )
 @Schema(
@@ -264,8 +266,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     @Schema(
         title = "Sets whether to use BigQuery's legacy SQL dialect for this query",
-        description = " A valid query will return a mostly empty response with some processing statistics, " +
-            "while an invalid query will return the same error it would if it wasn't a dry run."
+        description = "If true, uses BigQuery's legacy SQL dialect for this query instead of the default standard SQL dialect."
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
@@ -532,13 +533,13 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         @Schema(
             title = "List containing the fetched data",
-            description = "Only populated if 'fetch' parameter is set to true."
+            description = "Only populated if `fetchType` is `FETCH`."
         )
         private List<Map<String, Object>> rows;
 
         @Schema(
             title = "Map containing the first row of fetched data",
-            description = "Only populated if 'fetchOne' parameter is set to true."
+            description = "Only populated if `fetchType` is `FETCH_ONE`."
         )
         private Map<String, Object> row;
 
@@ -549,7 +550,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         @Schema(
             title = "The uri of store result",
-            description = "Only populated if 'store' is set to true."
+            description = "Only populated if `fetchType` is `STORE`."
         )
         private URI uri;
 

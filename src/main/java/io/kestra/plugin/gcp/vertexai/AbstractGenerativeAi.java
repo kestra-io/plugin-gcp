@@ -92,7 +92,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         @Max(1)
         @Schema(
             title = "Temperature used for sampling during the response generation, which occurs when topP and topK are applied",
-            description = "Temperature controls the degree of randomness in token selection. Lower temperatures are good for prompts that require a more deterministic and less open-ended or creative response, while higher temperatures can lead to more diverse or creative results. A temperature of 0 is deterministic: the highest probability response is always selected. For most use cases, try starting with a temperature of 0.2."
+            description = "Temperature controls the degree of randomness in token selection. Lower temperatures are good for prompts that require a more deterministic and less open-ended or creative response, while higher temperatures can lead to more diverse or creative results. A temperature close to 0 is nearly deterministic: the highest probability response is almost always selected. For most use cases, try starting with a temperature of 0.2."
         )
         private Float temperature = 0.2F;
 

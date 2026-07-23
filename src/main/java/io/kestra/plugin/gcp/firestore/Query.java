@@ -122,18 +122,18 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             var query = getQuery(runContext, collectionRef, this.filters);
 
             if (this.orderBy != null) {
-                query.orderBy(
+                query = query.orderBy(
                     runContext.render(this.orderBy).as(String.class).orElseThrow(),
                     runContext.render(this.orderDirection).as(Direction.class).orElseThrow()
                 );
             }
 
             if (this.offset != null) {
-                query.offset(runContext.render(this.offset).as(Integer.class).orElseThrow());
+                query = query.offset(runContext.render(this.offset).as(Integer.class).orElseThrow());
             }
 
             if (this.limit != null) {
-                query.limit(runContext.render(this.limit).as(Integer.class).orElseThrow());
+                query = query.limit(runContext.render(this.limit).as(Integer.class).orElseThrow());
             }
 
             var queryDocumentSnapshots = query.get().get().getDocuments();

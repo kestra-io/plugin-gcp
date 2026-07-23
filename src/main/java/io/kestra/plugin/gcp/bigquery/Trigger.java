@@ -52,7 +52,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     type: io.kestra.plugin.gcp.bigquery.Trigger
                     interval: "PT5M"
                     sql: "SELECT * FROM `myproject.mydataset.mytable`"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }

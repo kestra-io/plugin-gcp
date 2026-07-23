@@ -35,7 +35,7 @@ public class Field {
     private final Property<StandardSQLTypeName> type;
 
     @Schema(
-        title = "The list of sub-fields if `type` is a `LegacySQLType.RECORD`. Returns null otherwise"
+        title = "The list of sub-fields if `type` is a record/struct type (`StandardSQLTypeName.STRUCT`). Null otherwise."
     )
     @PluginProperty(group = "advanced")
     private final List<Field> subFields;

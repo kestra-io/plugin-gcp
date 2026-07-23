@@ -36,7 +36,7 @@ import io.kestra.core.models.annotations.PluginProperty;
             tasks:
               - id: spark_sql_submit
                 type: io.kestra.plugin.gcp.dataproc.batches.SparkSqlSubmit
-                queryFileUri: 'gs://spark-jobs-kestra/foobar.py'
+                queryFileUri: 'gs://spark-jobs-kestra/foobar.sql'
                 name: test-sparksql
                 region: europe-west3
             """

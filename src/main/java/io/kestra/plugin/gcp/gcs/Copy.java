@@ -39,14 +39,11 @@ import io.kestra.core.models.annotations.PluginProperty;
                 id: gcp_gcs_copy
                 namespace: company.team
 
-                inputs:
-                  - id: file
-                    type: FILE
-
                 tasks:
                   - id: copy
                     type: io.kestra.plugin.gcp.gcs.Copy
-                    from: "{{ inputs.file }}"
+                    from: "gs://my_bucket/dir/file.csv"
+                    to: "gs://my_bucket/archive/file.csv"
                     delete: true
                 """
         )

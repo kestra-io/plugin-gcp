@@ -45,9 +45,9 @@ import lombok.experimental.SuperBuilder;
                 namespace: company.team
 
                 inputs:
-                  - id: min_age
-                    type: INT
-                    defaults: 18
+                  - id: department
+                    type: STRING
+                    defaults: engineering
 
                 tasks:
                   - id: query
@@ -55,9 +55,9 @@ import lombok.experimental.SuperBuilder;
                     projectId: "{{ secret('GCP_PROJECT_ID') }}"
                     instanceId: my-instance
                     databaseId: my-database
-                    sql: "SELECT * FROM users WHERE age >= @minAge"
+                    sql: "SELECT * FROM users WHERE department = @department"
                     parameters:
-                      minAge: "{{ inputs.min_age }}"
+                      department: "{{ inputs.department }}"
                     fetchType: STORE
                 """
         )

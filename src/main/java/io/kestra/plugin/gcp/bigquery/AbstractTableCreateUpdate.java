@@ -29,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 abstract public class AbstractTableCreateUpdate extends AbstractTable {
     @Schema(
         title = "Table definition",
-        description = "Required table definition (standard, external, view, etc.)"
+        description = "The table definition (standard, external, view, etc.). Required when creating a table; optional when updating, where the current definition is preserved unless overridden."
     )
     @PluginProperty(group = "advanced")
     protected TableDefinition tableDefinition;
