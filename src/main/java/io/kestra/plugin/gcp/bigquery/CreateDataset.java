@@ -31,7 +31,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Plugin(
     examples = {
         @Example(
-            title = "Create a dataset if not exits",
+            title = "Create a dataset if not exists",
             full = true,
             code = """
                 id: gcp_bq_create_dataset

@@ -15,7 +15,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class EncryptionConfiguration {
     @Schema(
-        name = "The KMS key name."
+        title = "The KMS key name."
     )
     @PluginProperty(group = "advanced")
     private final Property<String> kmsKeyName;

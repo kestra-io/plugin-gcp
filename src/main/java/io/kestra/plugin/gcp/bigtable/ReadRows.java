@@ -59,7 +59,7 @@ import lombok.experimental.SuperBuilder;
                 """
         ),
         @Example(
-            title = "Read a single row by exact row key",
+            title = "Read the first row within a row key range",
             full = true,
             code = """
                 id: bigtable_read_one_row

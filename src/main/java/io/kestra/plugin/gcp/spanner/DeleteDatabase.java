@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Delete a Spanner database",
-    description = "Permanently deletes a Spanner database and all of its schema and cells."
+    description = "Permanently deletes a Spanner database and all of its schema and data."
 )
 @Plugin(
     examples = {

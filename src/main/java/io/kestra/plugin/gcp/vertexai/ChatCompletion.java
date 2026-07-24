@@ -51,10 +51,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                     type: io.kestra.plugin.gcp.vertexai.ChatCompletion
                     region: us-central1
                     projectId: my-project
-                    context: I love jokes that talk about sport
                     messages:
-                      - author: user
-                        content: Please tell me a joke
+                      - content: Please tell me a joke that talks about sport
                 """
         )
     },

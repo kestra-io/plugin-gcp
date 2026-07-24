@@ -294,7 +294,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
     public static class CsvOptions {
         @Schema(
             title = "Whether BigQuery should accept rows that are missing trailing optional columns",
-            description = "If true, BigQuery treats missing trailing columns as null values. If {@code false}, records" +
+            description = "If true, BigQuery treats missing trailing columns as null values. If false, records" +
                 " with missing trailing columns are treated as bad records, and if there are too many bad" +
                 " records, an invalid error is returned in the job result. By default, rows with missing" +
                 " trailing columns are considered bad records."
@@ -313,7 +313,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
             title = "The character encoding of the data",
             description = "The supported values are UTF-8 or ISO-8859-1. The" +
                 " default value is UTF-8. BigQuery decodes the data after the raw, binary data has been split" +
-                " using the values set in {@link #setQuote(String)} and {@link #setFieldDelimiter(String)}."
+                " using the values set in the `quote` and `fieldDelimiter` properties."
         )
         @PluginProperty(group = "processing")
         private Property<String> encoding;
@@ -334,8 +334,8 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
                 " string to ISO-8859-1 encoding, and then uses the first byte of the encoded string to split" +
                 " the data in its raw, binary state. The default value is a double-quote ('\"'). If your data" +
                 " does not contain quoted sections, set the property value to an empty string. If your data" +
-                " contains quoted newline characters, you must also set {@link" +
-                " #setAllowQuotedNewLines(boolean)} property to {@code true}."
+                " contains quoted newline characters, you must also set the `allowQuotedNewLines`" +
+                " property to true."
         )
         @PluginProperty(group = "advanced")
         private Property<String> quote;

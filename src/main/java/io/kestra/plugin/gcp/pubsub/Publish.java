@@ -28,7 +28,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @NoArgsConstructor
 @Schema(
     title = "Publish messages to Pub/Sub",
-    description = "Publishes one or more messages to a topic. Supports STRING/JSON/AVRO serde and optional ordering keys."
+    description = "Publishes one or more messages to a topic. Supports STRING/JSON serde and optional ordering keys."
 )
 @Plugin(
     examples = {

@@ -20,10 +20,9 @@ import io.kestra.core.models.annotations.PluginProperty;
 public class ExternalTableDefinition {
     @Schema(
         title = "The fully-qualified URIs that point to your data in Google Cloud Storage",
-        description = "Each URI can\n" +
-            "* contain one '*' wildcard character that must come after the bucket's name. Size limits related\n" +
-            "* to load jobs apply to external data sources, plus an additional limit of 10 GB maximum size\n" +
-            "* across all URIs."
+        description = "Each URI can contain one '*' wildcard character that must come after the bucket's name. " +
+            "Size limits related to load jobs apply to external data sources, plus an additional limit of 10 GB " +
+            "maximum size across all URIs."
     )
     @PluginProperty(group = "advanced")
     private final Property<List<String>> sourceUris;

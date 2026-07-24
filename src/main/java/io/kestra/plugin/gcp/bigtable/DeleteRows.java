@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @Schema(
     title = "Delete rows from a Google Cloud Bigtable table", description = "Deletes rows either by an explicit list of row keys, or by a row key range "
         +
-        "(`rowKeyStart`/`rowKeyEnd`) or prefix (`rowKeyPrefix`). Exactly one mode must be configured."
+        "(`rowKeyStart`/`rowKeyEnd`) or prefix (`rowKeyPrefix`). At least one mode must be configured; if several are set, `rowKeys` takes precedence, then the prefix, then the range."
 )
 @Plugin(
     examples = {
@@ -67,7 +67,7 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
     @PluginProperty(group = "main")
     private Property<String> tableId;
 
-    @Schema(title = "Exact row keys to delete", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix`.")
+    @Schema(title = "Exact row keys to delete", description = "Takes precedence over `rowKeyStart`/`rowKeyEnd` and `rowKeyPrefix` if several are set.")
     @PluginProperty(group = "source")
     private Property<List<String>> rowKeys;
 
@@ -79,7 +79,7 @@ public class DeleteRows extends AbstractBigtable implements RunnableTask<DeleteR
     @PluginProperty(group = "source")
     private Property<String> rowKeyEnd;
 
-    @Schema(title = "Row key prefix to match rows for deletion", description = "Mutually exclusive with `rowKeyStart`/`rowKeyEnd` and `rowKeys`.")
+    @Schema(title = "Row key prefix to match rows for deletion", description = "Used when `rowKeys` is not set; takes precedence over `rowKeyStart`/`rowKeyEnd` if both are set.")
     @PluginProperty(group = "source")
     private Property<String> rowKeyPrefix;
 

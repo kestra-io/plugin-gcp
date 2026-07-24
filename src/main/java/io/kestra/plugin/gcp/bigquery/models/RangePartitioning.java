@@ -14,11 +14,11 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Builder
 @Jacksonized
 public class RangePartitioning {
-    @Schema(name = "The range partitioning field.")
+    @Schema(title = "The range partitioning field.")
     @PluginProperty(group = "advanced")
     private final Property<String> field;
 
-    @Schema(name = "The range of range partitioning.")
+    @Schema(title = "The range of range partitioning.")
     @PluginProperty(group = "advanced")
     private final Range range;
 
@@ -48,19 +48,19 @@ public class RangePartitioning {
     @Jacksonized
     public static class Range {
         @Schema(
-            name = "The start of range partitioning."
+            title = "The start of range partitioning."
         )
         @PluginProperty(group = "advanced")
         private final Property<Long> start;
 
         @Schema(
-            name = "The end of range partitioning."
+            title = "The end of range partitioning."
         )
         @PluginProperty(group = "advanced")
         private final Property<Long> end;
 
         @Schema(
-            name = "The width of each interval."
+            title = "The width of each interval."
         )
         @PluginProperty(group = "execution")
         private final Property<Long> interval;

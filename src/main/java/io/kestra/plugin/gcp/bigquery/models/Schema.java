@@ -17,7 +17,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Jacksonized
 public class Schema {
     @io.swagger.v3.oas.annotations.media.Schema(
-        name = "The fields associated with this schema."
+        title = "The fields associated with this schema."
     )
     private final List<Field> fields;
 

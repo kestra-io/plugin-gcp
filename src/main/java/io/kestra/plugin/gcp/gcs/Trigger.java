@@ -76,7 +76,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 
                 tasks:
                   - id: each
-                    type: io.kestra.plugin.core.flow.EachSequential
+                    type: io.kestra.plugin.core.flow.ForEach
                     values: "{{ trigger.blobs | jq('.[].uri') }}"
                     tasks:
                       - id: return

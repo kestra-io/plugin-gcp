@@ -48,7 +48,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
     @Schema(
         title = "Automatic BigQuery retry policy",
-        description = "Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s, up to 15m, max 10 attempts."
+        description = "Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s (per-attempt interval capped at 60m), with a total duration of up to 15m and a maximum of 10 attempts."
     )
     @PluginProperty(group = "advanced")
     protected AbstractRetry retryAuto;
