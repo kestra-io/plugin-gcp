@@ -18,7 +18,9 @@ public class TestAssetManagerFactory extends AssetManagerFactory {
 
     @Override
     public AssetEmitter of(boolean enable) {
-        return new TrackingAssetEmitter(allEmitted);
+        // Mirrors EE's InMemoryAssetEmitter: when the task/trigger's assets.enableAuto is false, emission
+        // must be a silent no-op, not just untracked, so tests exercise the same enable/disable contract.
+        return enable ? new TrackingAssetEmitter(allEmitted) : new NoopAssetEmitter();
     }
 
     /** All assets emitted across all RunContexts (for runner/integration tests). */
@@ -47,6 +49,18 @@ public class TestAssetManagerFactory extends AssetManagerFactory {
         @Override
         public List<AssetEmit> emitted() {
             return List.copyOf(local);
+        }
+    }
+
+    private static final class NoopAssetEmitter implements AssetEmitter {
+        @Override
+        public void emit(AssetEmit assetEmit) {
+            // no-op: matches EE's InMemoryAssetEmitter(enabled = false) behavior.
+        }
+
+        @Override
+        public List<AssetEmit> emitted() {
+            return List.of();
         }
     }
 }

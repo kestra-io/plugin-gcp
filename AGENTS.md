@@ -32,10 +32,10 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.bigquery.Load`
 - `io.kestra.plugin.gcp.bigquery.LoadFromGcs`
 - `io.kestra.plugin.gcp.bigquery.Query`
+- `io.kestra.plugin.gcp.bigquery.RunTransferConfig`
 - `io.kestra.plugin.gcp.bigquery.StorageWrite`
 - `io.kestra.plugin.gcp.bigquery.TableMetadata`
 - `io.kestra.plugin.gcp.bigquery.Trigger`
-- `io.kestra.plugin.gcp.bigquery.RunTransferConfig`
 - `io.kestra.plugin.gcp.bigquery.UpdateDataset`
 - `io.kestra.plugin.gcp.bigquery.UpdateTable`
 - `io.kestra.plugin.gcp.bigtable.CreateTable`

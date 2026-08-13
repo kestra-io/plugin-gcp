@@ -18,12 +18,17 @@ import com.google.cloud.bigquery.datatransfer.v1.TransferRun;
 import com.google.cloud.bigquery.datatransfer.v1.TransferState;
 import com.google.protobuf.util.Timestamps;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.assets.Custom;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.AssetEmit;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
@@ -71,6 +76,10 @@ import lombok.experimental.SuperBuilder;
                       enableAuto: true
                 """
         )
+    },
+    metrics = {
+        @Metric(name = "reattached", type = Counter.TYPE, description = "Whether the task re-attached to an already in-flight transfer run (1) or started a new one (0)."),
+        @Metric(name = "duration", type = Timer.TYPE, description = "The wall-clock time spent waiting for the transfer run to reach a terminal state, recorded only when `wait` is `true`.")
     }
 )
 public class RunTransferConfig extends AbstractDataTransfer implements RunnableTask<RunTransferConfig.Output> {
@@ -88,7 +97,8 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         title = "Whether to re-attach to an already pending or running run of this config instead of starting a new one",
         description = "When `true` (default), the task first looks for a run of this config that is already " +
             "pending or running and adopts it, so a retried execution never starts a duplicate run. " +
-            "Set to `false` to always start a new run."
+            "An in-flight run older than `maxDuration` is treated as stale and is not adopted -- a fresh run is " +
+            "started instead. Set to `false` to always start a new run."
     )
     @PluginProperty(group = "main")
     private Property<Boolean> reattach = Property.ofValue(true);
@@ -117,6 +127,14 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
 
     @Override
     public Output run(RunContext runContext) throws Exception {
+        try (DataTransferServiceClient client = this.connection(runContext)) {
+            return run(runContext, client);
+        }
+    }
+
+    // Package-private seam so unit tests can drive the task's logic against a client wired to a
+    // local WireMock server, without touching the connection lifecycle managed by run(RunContext).
+    Output run(RunContext runContext, DataTransferServiceClient client) throws Exception {
         var rTransferConfigName = runContext.render(this.transferConfigName).as(String.class).orElseThrow();
         var rWait = runContext.render(this.wait).as(Boolean.class).orElse(true);
         var rReattach = runContext.render(this.reattach).as(Boolean.class).orElse(true);
@@ -129,67 +147,81 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             throw new InterruptedException("Task was killed");
         }
 
-        try (DataTransferServiceClient client = this.connection(runContext)) {
-            var inFlightRun = rReattach ? findInFlightRun(client, rTransferConfigName) : null;
-            var reattached = inFlightRun != null;
+        var inFlightRun = rReattach ? findInFlightRun(client, rTransferConfigName, rMaxDuration) : null;
+        var reattached = inFlightRun != null;
+        runContext.metric(Counter.of("reattached", reattached ? 1 : 0));
 
-            TransferRun run;
-            if (reattached) {
-                run = inFlightRun;
-                logger.info("Re-attaching to in-flight transfer run '{}' instead of starting a new one", run.getName());
-            } else {
-                var startResponse = client.startManualTransferRuns(
-                    StartManualTransferRunsRequest.newBuilder()
-                        .setParent(rTransferConfigName)
-                        .setRequestedRunTime(Timestamps.fromMillis(Instant.now().toEpochMilli()))
-                        .build()
-                );
-                run = startResponse.getRunsList().getFirst();
-                logger.info("Started transfer run '{}'", run.getName());
-            }
-
-            var config = client.getTransferConfig(rTransferConfigName);
-
-            if (!rWait) {
-                emitDestinationAsset(runContext, config, rTransferConfigName);
-                return output(run.getName(), run.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
-            }
-
-            var runName = run.getName();
-            TransferRun finalRun;
-            try {
-                finalRun = Await.until(
-                    () ->
-                    {
-                        if (isKilled.get()) {
-                            throw new RuntimeException("Task was killed");
-                        }
-                        var polled = client.getTransferRun(runName);
-                        return isTerminal(polled.getState()) ? polled : null;
-                    },
-                    rPollInterval,
-                    rMaxDuration
-                );
-            } catch (TimeoutException e) {
-                var lastObserved = client.getTransferRun(runName);
-                throw new TimeoutException(
-                    "Transfer run '" + runName + "' did not reach a terminal state within " + rMaxDuration +
-                        " -- last observed state was " + lastObserved.getState()
-                );
-            }
-
-            if (finalRun.getState() == TransferState.FAILED || finalRun.getState() == TransferState.CANCELLED) {
+        TransferRun run;
+        if (reattached) {
+            run = inFlightRun;
+            logger.info("Re-attaching to in-flight transfer run '{}' instead of starting a new one", run.getName());
+        } else {
+            var startResponse = client.startManualTransferRuns(
+                StartManualTransferRunsRequest.newBuilder()
+                    .setParent(rTransferConfigName)
+                    .setRequestedRunTime(Timestamps.fromMillis(Instant.now().toEpochMilli()))
+                    .build()
+            );
+            var runsList = startResponse.getRunsList();
+            if (runsList.isEmpty()) {
                 throw new IllegalStateException(
-                    "Transfer run '" + runName + "' ended in state " + finalRun.getState() + ": " + finalRun.getErrorStatus().getMessage()
+                    "startManualTransferRuns started no run for transfer config '" + rTransferConfigName +
+                        "' -- the config may be disabled or the requested run time is outside its window"
                 );
             }
-
-            emitDestinationAsset(runContext, config, rTransferConfigName);
-            return output(finalRun.getName(), finalRun.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
+            run = runsList.getFirst();
+            logger.info("Started transfer run '{}'", run.getName());
         }
+
+        var config = client.getTransferConfig(rTransferConfigName);
+
+        if (!rWait) {
+            return output(run.getName(), run.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
+        }
+
+        var runName = run.getName();
+        var waitStart = Instant.now();
+        TransferRun finalRun;
+        try {
+            finalRun = Await.until(
+                () ->
+                {
+                    if (isKilled.get()) {
+                        throw new RuntimeException("Task was killed");
+                    }
+                    var polled = client.getTransferRun(runName);
+                    return isTerminal(polled.getState()) ? polled : null;
+                },
+                rPollInterval,
+                rMaxDuration
+            );
+        } catch (TimeoutException e) {
+            var lastObserved = client.getTransferRun(runName);
+            throw new TimeoutException(
+                "Transfer run '" + runName + "' did not reach a terminal state within " + rMaxDuration +
+                    " -- last observed state was " + lastObserved.getState()
+            );
+        }
+
+        runContext.metric(Timer.of("duration", Duration.between(waitStart, Instant.now())));
+
+        if (finalRun.getState() == TransferState.FAILED || finalRun.getState() == TransferState.CANCELLED) {
+            throw new IllegalStateException(
+                "Transfer run '" + runName + "' ended in state " + finalRun.getState() + ": " + finalRun.getErrorStatus().getMessage()
+            );
+        }
+
+        emitDestinationAsset(runContext, config, rTransferConfigName);
+        return output(finalRun.getName(), finalRun.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
     }
 
-    private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName) {
+    private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration maxDuration) {
+        // A PENDING/RUNNING run is only adopted while it is younger than maxDuration: a run stuck
+        // in that state past the task's own wait budget is treated as a zombie (backend never picked
+        // it up, or it is truly hung) rather than re-adopted forever, which would starve this task
+        // of ever starting a fresh run.
+        var cutoff = Instant.now().minus(maxDuration);
+
         TransferRun mostRecent = null;
         for (TransferRun candidate : client.listTransferRuns(
             ListTransferRunsRequest.newBuilder()
@@ -198,6 +230,10 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
                 .addStates(TransferState.RUNNING)
                 .build()
         ).iterateAll()) {
+            var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
+            if (scheduleTime.isBefore(cutoff)) {
+                continue;
+            }
             if (mostRecent == null || Timestamps.compare(candidate.getScheduleTime(), mostRecent.getScheduleTime()) > 0) {
                 mostRecent = candidate;
             }
@@ -209,11 +245,12 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         return state == TransferState.SUCCEEDED || state == TransferState.FAILED || state == TransferState.CANCELLED;
     }
 
-    // The Enterprise Edition asset type used for a table or dataset lineage node.
+    // The Enterprise Edition asset types used for a table or dataset lineage node.
     private static final String TABLE_ASSET_TYPE = "io.kestra.plugin.ee.assets.Table";
+    private static final String DATASET_ASSET_TYPE = "io.kestra.plugin.ee.assets.Dataset";
 
-    // Emit the destination as a data-lineage asset. The dataset is always available from the config,
-    // the table only when a scheduled query targets a literal (non-templated) destination table.
+    // Emit the destination as a data-lineage asset: a Table when the scheduled query targets a literal
+    // (non-templated) destination table, otherwise a Dataset since only the dataset is known.
     private static void emitDestinationAsset(RunContext runContext, TransferConfig config, String transferConfigName) {
         var dataset = config.getDestinationDatasetId();
         if (dataset == null || dataset.isBlank()) {
@@ -221,24 +258,38 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         }
 
         var projectId = parseSegment(transferConfigName, "projects");
+        var location = parseSegment(transferConfigName, "locations");
         var table = destinationTable(config);
 
         var metadata = new LinkedHashMap<String, Object>();
         metadata.put("system", "bigquery");
-        if (projectId != null) {
-            metadata.put("database", projectId);
-        }
-        metadata.put("schema", dataset);
-        if (table != null) {
-            metadata.put("name", table);
-        }
 
-        var idParts = Stream.of(projectId, dataset, table).filter(Objects::nonNull).toList();
-        var asset = Custom.builder()
-            .id(String.join(".", idParts))
-            .type(TABLE_ASSET_TYPE)
-            .metadata(metadata)
-            .build();
+        Custom asset;
+        if (table != null) {
+            if (projectId != null) {
+                metadata.put("database", projectId);
+            }
+            metadata.put("schema", dataset);
+            metadata.put("name", table);
+
+            var idParts = Stream.of(projectId, dataset, table).filter(Objects::nonNull).toList();
+            asset = Custom.builder()
+                .id(String.join(".", idParts))
+                .type(TABLE_ASSET_TYPE)
+                .metadata(metadata)
+                .build();
+        } else {
+            if (location != null) {
+                metadata.put("location", location);
+            }
+
+            var idParts = Stream.of(projectId, dataset).filter(Objects::nonNull).toList();
+            asset = Custom.builder()
+                .id(String.join(".", idParts))
+                .type(DATASET_ASSET_TYPE)
+                .metadata(metadata)
+                .build();
+        }
 
         try {
             runContext.assets().emit(new AssetEmit(List.of(), List.of(asset)));
@@ -246,7 +297,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         } catch (UnsupportedOperationException e) {
             // Asset emission is an Enterprise Edition feature, unsupported on OSS, so skip quietly.
             runContext.logger().debug("Asset emission is not supported in this edition, skipping");
-        } catch (Exception e) {
+        } catch (QueueException | IllegalVariableEvaluationException e) {
             runContext.logger().warn("Failed to emit destination asset for '{}': {}", transferConfigName, e.getMessage());
         }
     }
@@ -255,11 +306,11 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
     // A templated name (containing placeholders like {run_time}) is not a stable lineage node, so it is skipped.
     static String destinationTable(TransferConfig config) {
         var params = config.getParams();
-        if (params == null || !params.containsFields("destination_table_name_template")) {
+        if (!params.containsFields("destination_table_name_template")) {
             return null;
         }
         var template = params.getFieldsOrThrow("destination_table_name_template").getStringValue();
-        if (template == null || template.isBlank() || template.contains("{")) {
+        if (template.isBlank() || template.contains("{")) {
             return null;
         }
         return template;
