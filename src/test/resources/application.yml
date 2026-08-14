@@ -23,6 +23,8 @@ kestra:
       project: "kestra-unit-test"
       dataset: "kestra_unit_test"
       table: "${random.shortuuid}"
+    # bigquerydatatransfer:
+    #   config: "" # e.g. projects/{project}/locations/{location}/transferConfigs/{id} -- set to run RunTransferConfigTest live tests
     firestore:
       project: "kestra-unit-test"
     monitoring:
