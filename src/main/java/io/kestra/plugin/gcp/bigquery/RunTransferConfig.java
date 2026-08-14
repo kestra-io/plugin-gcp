@@ -9,6 +9,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.cloud.bigquery.datatransfer.v1.DataTransferServiceClient;
 import com.google.cloud.bigquery.datatransfer.v1.ListTransferRunsRequest;
@@ -102,7 +104,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             treating an old in-flight run as stale so a fresh run is started instead. \
             Set to `false` to always start a new run."""
     )
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "reliability")
     private Property<Boolean> reattach = Property.ofValue(true);
 
     @Schema(
@@ -114,7 +116,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             its age. This is independent of `maxDuration`, which only bounds how long this task waits for a \
             run to reach a terminal state."""
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "reliability")
     private Property<Duration> reattachMaxAge;
 
     @Builder.Default
@@ -124,17 +126,17 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             When `false`, the task returns as soon as the run is triggered and does not emit a destination \
             asset, since completion is not confirmed."""
     )
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "execution")
     private Property<Boolean> wait = Property.ofValue(true);
 
     @Builder.Default
     @Schema(title = "The interval between polls, used only when `wait` is `true`")
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "execution")
     private Property<Duration> pollInterval = Property.ofValue(Duration.ofSeconds(15));
 
     @Builder.Default
     @Schema(title = "The maximum duration to wait before timing out, used only when `wait` is `true`")
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "execution")
     private Property<Duration> maxDuration = Property.ofValue(Duration.ofHours(1));
 
     @ToString.Exclude
@@ -168,7 +170,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             throw new InterruptedException("Task was killed");
         }
 
-        var inFlightRun = rReattach ? findInFlightRun(client, rTransferConfigName, rReattachMaxAge) : null;
+        var inFlightRun = rReattach ? findInFlightRun(client, rTransferConfigName, rReattachMaxAge, logger) : null;
         var reattached = inFlightRun != null;
         runContext.metric(Counter.of("reattached", reattached ? 1 : 0));
 
@@ -236,7 +238,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         return output(finalRun.getName(), finalRun.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
     }
 
-    private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration reattachMaxAge) {
+    private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration reattachMaxAge, Logger logger) {
         // reattachMaxAge is opt-in and deliberately independent of maxDuration: maxDuration is also this
         // task's own wait budget, so using it as the staleness cutoff would make a run that is still
         // legitimately in-flight after a first attempt timed out look "stale" on the retry, causing a
@@ -254,6 +256,10 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             if (cutoff != null) {
                 var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
                 if (scheduleTime.isBefore(cutoff)) {
+                    logger.info(
+                        "Ignoring in-flight transfer run '{}' scheduled at {} because it is older than reattachMaxAge ({}); a fresh run will be started",
+                        candidate.getName(), scheduleTime, reattachMaxAge
+                    );
                     continue;
                 }
             }
