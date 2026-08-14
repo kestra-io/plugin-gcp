@@ -95,16 +95,35 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
     @Builder.Default
     @Schema(
         title = "Whether to re-attach to an already pending or running run of this config instead of starting a new one",
-        description = "When `true` (default), the task first looks for a run of this config that is already " +
-            "pending or running and adopts it, so a retried execution never starts a duplicate run. " +
-            "An in-flight run older than `maxDuration` is treated as stale and is not adopted -- a fresh run is " +
-            "started instead. Set to `false` to always start a new run."
+        description = """
+            When `true` (default), the task first looks for a run of this config that is already \
+            pending or running and adopts it, so a retried execution never starts a duplicate run. \
+            By default any in-flight run is adopted regardless of its age; set `reattachMaxAge` to opt into \
+            treating an old in-flight run as stale so a fresh run is started instead. \
+            Set to `false` to always start a new run."""
     )
     @PluginProperty(group = "main")
     private Property<Boolean> reattach = Property.ofValue(true);
 
+    @Schema(
+        title = "The maximum age of an in-flight run that can still be re-attached to",
+        description = """
+            Used only when `reattach` is `true`. When set, an in-flight (pending or running) run whose \
+            schedule time is older than `now - reattachMaxAge` is treated as stale and is NOT adopted -- a \
+            fresh run is started instead. When unset (default), any in-flight run is adopted regardless of \
+            its age. This is independent of `maxDuration`, which only bounds how long this task waits for a \
+            run to reach a terminal state."""
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Duration> reattachMaxAge;
+
     @Builder.Default
-    @Schema(title = "Whether to wait until the transfer run reaches a terminal state")
+    @Schema(
+        title = "Whether to wait until the transfer run reaches a terminal state",
+        description = """
+            When `false`, the task returns as soon as the run is triggered and does not emit a destination \
+            asset, since completion is not confirmed."""
+    )
     @PluginProperty(group = "main")
     private Property<Boolean> wait = Property.ofValue(true);
 
@@ -135,9 +154,11 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
     // Package-private seam so unit tests can drive the task's logic against a client wired to a
     // local WireMock server, without touching the connection lifecycle managed by run(RunContext).
     Output run(RunContext runContext, DataTransferServiceClient client) throws Exception {
-        var rTransferConfigName = runContext.render(this.transferConfigName).as(String.class).orElseThrow();
+        var rTransferConfigName = runContext.render(this.transferConfigName).as(String.class)
+            .orElseThrow(() -> new IllegalArgumentException("`transferConfigName` is required"));
         var rWait = runContext.render(this.wait).as(Boolean.class).orElse(true);
         var rReattach = runContext.render(this.reattach).as(Boolean.class).orElse(true);
+        var rReattachMaxAge = runContext.render(this.reattachMaxAge).as(Duration.class).orElse(null);
         var rPollInterval = runContext.render(this.pollInterval).as(Duration.class).orElse(Duration.ofSeconds(15));
         var rMaxDuration = runContext.render(this.maxDuration).as(Duration.class).orElse(Duration.ofHours(1));
 
@@ -147,7 +168,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             throw new InterruptedException("Task was killed");
         }
 
-        var inFlightRun = rReattach ? findInFlightRun(client, rTransferConfigName, rMaxDuration) : null;
+        var inFlightRun = rReattach ? findInFlightRun(client, rTransferConfigName, rReattachMaxAge) : null;
         var reattached = inFlightRun != null;
         runContext.metric(Counter.of("reattached", reattached ? 1 : 0));
 
@@ -215,12 +236,12 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         return output(finalRun.getName(), finalRun.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
     }
 
-    private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration maxDuration) {
-        // A PENDING/RUNNING run is only adopted while it is younger than maxDuration: a run stuck
-        // in that state past the task's own wait budget is treated as a zombie (backend never picked
-        // it up, or it is truly hung) rather than re-adopted forever, which would starve this task
-        // of ever starting a fresh run.
-        var cutoff = Instant.now().minus(maxDuration);
+    private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration reattachMaxAge) {
+        // reattachMaxAge is opt-in and deliberately independent of maxDuration: maxDuration is also this
+        // task's own wait budget, so using it as the staleness cutoff would make a run that is still
+        // legitimately in-flight after a first attempt timed out look "stale" on the retry, causing a
+        // duplicate run to be started -- defeating the whole purpose of reattach.
+        var cutoff = reattachMaxAge == null ? null : Instant.now().minus(reattachMaxAge);
 
         TransferRun mostRecent = null;
         for (TransferRun candidate : client.listTransferRuns(
@@ -230,9 +251,11 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
                 .addStates(TransferState.RUNNING)
                 .build()
         ).iterateAll()) {
-            var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
-            if (scheduleTime.isBefore(cutoff)) {
-                continue;
+            if (cutoff != null) {
+                var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
+                if (scheduleTime.isBefore(cutoff)) {
+                    continue;
+                }
             }
             if (mostRecent == null || Timestamps.compare(candidate.getScheduleTime(), mostRecent.getScheduleTime()) > 0) {
                 mostRecent = candidate;
