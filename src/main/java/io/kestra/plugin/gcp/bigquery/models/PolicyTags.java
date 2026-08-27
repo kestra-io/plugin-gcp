@@ -17,7 +17,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class PolicyTags {
     @Schema(
-        name = "The policy tags' names."
+        title = "The policy tags' names."
     )
     @PluginProperty(group = "advanced")
     private final Property<List<String>> names;

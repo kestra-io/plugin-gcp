@@ -19,15 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 
-import dev.failsafe.Failsafe;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.models.tasks.retrys.AbstractRetry;
-import io.kestra.core.models.tasks.retrys.Exponential;
-import io.kestra.core.serializers.JacksonMapper;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
@@ -38,10 +29,13 @@ import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.models.tasks.retrys.AbstractRetry;
+import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 
+import dev.failsafe.Failsafe;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -92,7 +86,7 @@ import reactor.core.publisher.Mono;
                 tasks:
                   - id: fetch
                     type: io.kestra.plugin.gcp.bigquery.Query
-                    fetch: true
+                    fetchType: FETCH
                     sql: |
                       SELECT 1 as id, "John" as name
                       UNION ALL
@@ -114,7 +108,7 @@ import reactor.core.publisher.Mono;
         @Metric(name = "total.bytes.processed", type = Counter.TYPE, unit = "bytes", description = "The total number of bytes processed by the query."),
         @Metric(
             name = "total.partitions.processed", type = Counter.TYPE, unit = "partitions",
-            description = "The totla number of partitions processed from all partitioned tables referenced in the job."
+            description = "The total number of partitions processed from all partitioned tables referenced in the job."
         ),
         @Metric(name = "total.slot.ms", type = Counter.TYPE, description = "The slot-milliseconds consumed by the query."),
         @Metric(
@@ -123,6 +117,8 @@ import reactor.core.publisher.Mono;
         ),
         @Metric(name = "referenced.tables", type = Counter.TYPE, description = "The number of tables referenced by the query."),
         @Metric(name = "num.child.jobs", type = Counter.TYPE, description = "The number of child jobs executed by the query."),
+        @Metric(name = "total.rows", type = Counter.TYPE, unit = "records", description = "The total number of rows returned by the query."),
+        @Metric(name = "fetch.rows", type = Counter.TYPE, unit = "records", description = "The number of rows fetched into the task output."),
     }
 )
 @Schema(
@@ -264,8 +260,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
     @Schema(
         title = "Sets whether to use BigQuery's legacy SQL dialect for this query",
-        description = " A valid query will return a mostly empty response with some processing statistics, " +
-            "while an invalid query will return the same error it would if it wasn't a dry run."
+        description = "If true, uses BigQuery's legacy SQL dialect for this query instead of the default standard SQL dialect."
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
@@ -336,47 +331,41 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             .jobId(queryJob.getJobId().getJob());
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
-            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto() : Exponential.builder()
-                .type("exponential")
-                .interval(Duration.ofSeconds(5))
-                .maxInterval(Duration.ofMinutes(60))
-                .maxDuration(Duration.ofMinutes(15))
-                .maxAttempts(10)
-                .build();
+            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto()
+                : Exponential.builder()
+                    .type("exponential")
+                    .interval(Duration.ofSeconds(5))
+                    .maxInterval(Duration.ofMinutes(60))
+                    .maxDuration(Duration.ofMinutes(15))
+                    .maxAttempts(10)
+                    .build();
 
             TableResult result = Failsafe.with(
-                AbstractRetry.<TableResult>retryPolicy(retryConfig)
+                AbstractRetry.<TableResult> retryPolicy(retryConfig)
                     .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
-                    .onFailure(event -> logger.error(
-                        "Stop retry fetching query results, attempts {} elapsed {} seconds",
-                        event.getAttemptCount(),
-                        event.getElapsedTime().getSeconds(),
-                        event.getException()
-                    ))
-                    .onRetry(event -> logger.warn(
-                        "Retrying fetching query results, attempts {} elapsed {} seconds",
-                        event.getAttemptCount(),
-                        event.getElapsedTime().getSeconds()
-                    ))
+                    .onFailure(
+                        event -> logger.error(
+                            "Stop retry fetching query results, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds(),
+                            event.getException()
+                        )
+                    )
+                    .onRetry(
+                        event -> logger.warn(
+                            "Retrying fetching query results, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds()
+                        )
+                    )
                     .build()
-            ).get(() -> {
+            ).get(() ->
+            {
                 try {
                     return queryJob.getQueryResults();
                 } catch (com.google.cloud.bigquery.BigQueryException e) {
-                    List<BigQueryError> errors = e.getErrors();
-                    if (errors == null || errors.isEmpty()) {
-                        String reason = e.getReason();
-                        if (reason == null) {
-                            reason = switch (e.getCode()) {
-                                case 503 -> "backendError";
-                                case 500 -> "internalError";
-                                case 429 -> "rateLimitExceeded";
-                                default -> "unknown";
-                            };
-                        }
-                        errors = List.of(new BigQueryError(reason, e.getLocation(), e.getMessage()));
-                    }
-                    throw new BigQueryException(errors);
+                    // Re-reading a finished job's results has no side effect, so the client's verdict stands.
+                    throw new BigQueryException(BigQueryService.errorsOf(e), e, e.isRetryable());
                 }
             });
 
@@ -409,7 +398,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 }
             }
         }
-
 
         if (tableIdentity != null) {
             DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable());
@@ -532,13 +520,13 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         @Schema(
             title = "List containing the fetched data",
-            description = "Only populated if 'fetch' parameter is set to true."
+            description = "Only populated if `fetchType` is `FETCH`."
         )
         private List<Map<String, Object>> rows;
 
         @Schema(
             title = "Map containing the first row of fetched data",
-            description = "Only populated if 'fetchOne' parameter is set to true."
+            description = "Only populated if `fetchType` is `FETCH_ONE`."
         )
         private Map<String, Object> row;
 
@@ -549,7 +537,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         @Schema(
             title = "The uri of store result",
-            description = "Only populated if 'store' is set to true."
+            description = "Only populated if `fetchType` is `STORE`."
         )
         private URI uri;
 

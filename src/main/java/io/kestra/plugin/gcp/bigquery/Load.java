@@ -36,7 +36,7 @@ import lombok.experimental.SuperBuilder;
 @Plugin(
     examples = {
         @Example(
-            title = "Load an csv file from an input file",
+            title = "Load a CSV file from an input file",
             full = true,
             code = """
                 id: gcp_bq_load

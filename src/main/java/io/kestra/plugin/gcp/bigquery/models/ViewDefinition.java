@@ -23,7 +23,7 @@ public class ViewDefinition {
     @PluginProperty(group = "processing")
     public final Property<String> query;
 
-    @Schema(title = "User defined functions that can be used by query. Returns {@code null} if not set")
+    @Schema(title = "User defined functions that can be used by query. Null if not set")
     @PluginProperty(group = "advanced")
     private final List<UserDefinedFunction> viewUserDefinedFunctions;
 

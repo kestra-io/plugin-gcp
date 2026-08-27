@@ -39,8 +39,8 @@ import lombok.experimental.SuperBuilder;
             namespace: company.team
 
             tasks:
-              - id: create_cluster_with_certain_disk_size
-                type: io.kestra.plugin.gcp.dataproc.clusters.Create
+              - id: cluster_delete
+                type: io.kestra.plugin.gcp.dataproc.clusters.Delete
                 clusterName: YOUR_CLUSTER_NAME
                 region: YOUR_REGION
             """

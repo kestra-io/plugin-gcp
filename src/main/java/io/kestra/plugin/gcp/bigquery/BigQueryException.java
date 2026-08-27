@@ -12,16 +12,29 @@ import lombok.Getter;
 public class BigQueryException extends Exception {
     private final List<BigQueryError> errors;
 
+    /**
+     * The client's own verdict on the underlying failure, and only where a retry can be deduplicated.
+     * A transport failure carries no BigQuery error reason, so retryReasons cannot speak for it.
+     */
+    private final boolean retryable;
+
     BigQueryException(List<BigQueryError> errors) {
-        super(formatErrors(Objects.requireNonNullElse(errors, List.of())));
+        this(errors, null, false);
+    }
+
+    /** Keeps the originating exception as the cause: a transport failure has nothing in its error list. */
+    BigQueryException(List<BigQueryError> errors, Throwable cause, boolean retryable) {
+        super(formatErrors(Objects.requireNonNullElse(errors, List.of())), cause);
         this.errors = Objects.requireNonNullElse(errors, List.of());
+        this.retryable = retryable;
     }
 
     private static String formatErrors(List<BigQueryError> errors) {
         return "Bigquery Errors\n[ - " +
             errors.stream()
                 .map(BigQueryError::toString)
-                .collect(Collectors.joining("\n - ")) +
+                .collect(Collectors.joining("\n - "))
+            +
             "\n]";
     }
 }

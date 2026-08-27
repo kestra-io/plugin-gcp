@@ -16,7 +16,7 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class WorkerPoolSpec {
     @Schema(
-        title = " The custom container task"
+        title = "The custom container task"
     )
     @PluginProperty(dynamic = false, group = "main")
     @NotNull
@@ -36,7 +36,7 @@ public class WorkerPoolSpec {
     private DiscSpec discSpec;
 
     @Schema(
-        title = "The specification of the disk"
+        title = "The number of worker replicas to use for this pool"
     )
     @PluginProperty(group = "advanced")
     private Property<Integer> replicaCount;

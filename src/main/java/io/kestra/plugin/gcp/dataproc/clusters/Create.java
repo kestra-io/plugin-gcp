@@ -66,7 +66,7 @@ import lombok.experimental.SuperBuilder;
                     workerMachineType: n1-standard-2
                     workerDiskSizeGB: 200
                     workers: 2
-                    bucket: YOUR_BUCKET_NAM
+                    bucket: YOUR_BUCKET_NAME
                 """
         )
     }

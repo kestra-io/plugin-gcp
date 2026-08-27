@@ -18,7 +18,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class Scheduling {
     @Schema(
-        title = "The maximum job running time. The default is 7 days"
+        title = "The maximum job running time"
     )
     @NotNull
     @PluginProperty(group = "main")

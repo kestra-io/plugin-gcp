@@ -267,9 +267,9 @@ public class CustomJob extends AbstractTask implements RunnableTask<CustomJob.Ou
         )
         private final Instant updateDate;
 
-        @NotNull
         @Schema(
-            title = "Time when the CustomJob was ended"
+            title = "Time when the CustomJob was ended",
+            description = "Only populated when `wait` is true."
         )
         private final Instant endDate;
 

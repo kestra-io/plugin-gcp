@@ -170,8 +170,6 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
                 batchBuilder.setRuntimeConfig(runtimeConfig.build());
             }
 
-            batchBuilder.setEnvironmentConfig(EnvironmentConfig.newBuilder().build());
-
             Batch batch = batchBuilder.build();
 
             logger.info("Starting with batch id '{}'", batchId);

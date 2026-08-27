@@ -15,14 +15,14 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Jacksonized
 public class UserDefinedFunction {
     @Schema(
-        name = "The type of user defined function."
+        title = "The type of user defined function."
     )
     private final Property<com.google.cloud.bigquery.UserDefinedFunction.Type> type;
 
     @Schema(
-        name = "Type of UserDefinedFunction",
-        description = "If `type` is UserDefinedFunction.Type.INLINE, this method returns a code blob.\n" +
-            "If `type` is UserDefinedFunction.Type.FROM_URI, the method returns a Google Cloud Storage URI (e.g. gs://bucket/path)."
+        title = "The content of the user defined function",
+        description = "If `type` is INLINE, this is a code blob. " +
+            "If `type` is FROM_URI, this is a Google Cloud Storage URI (e.g. gs://bucket/path)."
     )
     @PluginProperty(group = "advanced")
     private final Property<String> content;
