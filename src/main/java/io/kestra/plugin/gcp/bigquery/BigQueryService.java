@@ -2,12 +2,14 @@ package io.kestra.plugin.gcp.bigquery;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobException;
 import com.google.cloud.bigquery.JobId;
 import com.google.cloud.bigquery.TableId;
 
@@ -56,6 +58,59 @@ public class BigQueryService {
                 throw new BigQueryException(errors);
             }
         }
+    }
+
+    /**
+     * BigQuery only populates the error list for job-level failures. Transport failures (a 5xx on the
+     * REST call, a socket error, an interrupted poll) arrive as a BigQueryException whose error list is
+     * null, so the code, reason and message must be folded into a synthetic error. Without it the
+     * failure surfaces as an empty "Bigquery Errors [ - ]" and the retry policy has nothing to match on.
+     */
+    public static List<BigQueryError> errorsOf(com.google.cloud.bigquery.BigQueryException exception) {
+        List<BigQueryError> errors = exception.getErrors();
+
+        if (errors != null && !errors.isEmpty()) {
+            return errors;
+        }
+
+        return List.of(new BigQueryError(reasonOf(exception), exception.getLocation(), messageOf(exception)));
+    }
+
+    /**
+     * Same as {@link #errorsOf(com.google.cloud.bigquery.BigQueryException)} for the job-level exception
+     * raised by {@link Job#waitFor}, which carries no HTTP code to map a reason from.
+     */
+    public static List<BigQueryError> errorsOf(JobException exception) {
+        List<BigQueryError> errors = exception.getErrors();
+
+        if (errors != null && !errors.isEmpty()) {
+            return errors;
+        }
+
+        return List.of(new BigQueryError("unknown", null, messageOf(exception)));
+    }
+
+    private static String reasonOf(com.google.cloud.bigquery.BigQueryException exception) {
+        if (exception.getReason() != null) {
+            return exception.getReason();
+        }
+
+        // Reason is only set when BigQuery answered with a structured error payload. Otherwise derive it
+        // from the HTTP status so that the default retryReasons still apply to transient failures.
+        return switch (exception.getCode()) {
+            case 429 -> "rateLimitExceeded";
+            case 500 -> "internalError";
+            case 502, 503, 504 -> "backendError";
+            default -> "unknown";
+        };
+    }
+
+    private static String messageOf(Throwable exception) {
+        if (exception.getMessage() != null && !exception.getMessage().isBlank()) {
+            return exception.getMessage();
+        }
+
+        return exception.getCause() != null ? exception.getCause().toString() : exception.toString();
     }
 
     public static Map<String, String> labels(RunContext runContext) {

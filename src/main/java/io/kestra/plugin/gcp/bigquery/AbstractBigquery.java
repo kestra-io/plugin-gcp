@@ -8,12 +8,11 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
 
@@ -252,29 +251,74 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
                     return job;
                 } catch (Exception exception) {
+                    JobId jobId = job != null ? job.getJobId() : lastJobId.get();
+
+                    if (isInterrupted(exception)) {
+                        throw this.interrupted(logger, jobId, exception);
+                    }
+
                     if (exception instanceof com.google.cloud.bigquery.BigQueryException bqException) {
+                        List<BigQueryError> errors = BigQueryService.errorsOf(bqException);
 
                         logger.warn(
                             "Error query on {} with errors:\n[\n - {}\n]",
-                            job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            bqException.getErrors() == null ? "" : String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
+                            jobId != null ? "job '" + jobId.getJob() + "'" : "create job",
+                            String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
                         );
 
-                        throw new BigQueryException(bqException.getErrors());
+                        throw new BigQueryException(errors, bqException);
                     } else if (exception instanceof JobException bqException) {
+                        List<BigQueryError> errors = BigQueryService.errorsOf(bqException);
 
                         logger.warn(
-                            "Error query on job '{}' with errors:\n[\n - {}\n]",
-                            job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            bqException.getErrors() == null ? "" : String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
+                            "Error query on {} with errors:\n[\n - {}\n]",
+                            jobId != null ? "job '" + jobId.getJob() + "'" : "create job",
+                            String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
                         );
 
-                        throw new BigQueryException(bqException.getErrors());
+                        throw new BigQueryException(errors, bqException);
                     }
 
                     throw exception;
                 }
             });
+    }
+
+    /**
+     * The worker interrupts the task thread on a kill, on a task timeout, and on {@code shutdownNow()}
+     * when a worker terminates. The BigQuery client surfaces that as a BigQueryException wrapping an
+     * InterruptedException, with no error list and no HTTP code, so it has to be recognised before the
+     * generic handling below turns it into an errorless failure.
+     */
+    private static boolean isInterrupted(Throwable throwable) {
+        // Bounded walk: a malformed cause chain must not spin here.
+        for (int depth = 0; throwable != null && depth < 20; throwable = throwable.getCause(), depth++) {
+            if (throwable instanceof InterruptedException) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Reports an interrupted wait against the job it was waiting on. Retrying is pointless once the
+     * thread carries the interrupt flag, so this is deliberately not a retryable reason, but the job id
+     * has to reach the user: unless the task was killed, the job keeps running on BigQuery and will
+     * complete there while Kestra reports the task as failed.
+     */
+    private BigQueryException interrupted(Logger logger, JobId jobId, Throwable cause) {
+        Thread.currentThread().interrupt();
+
+        String message = "Interrupted while waiting for BigQuery job"
+            + (jobId != null ? " '" + jobId.getJob() + "'" : "")
+            + (this.isCancelled.get()
+                ? ", the job was cancelled."
+                : ". The job was not cancelled and may still be running on BigQuery.");
+
+        logger.warn(message, cause);
+
+        return new BigQueryException(List.of(new BigQueryError("interrupted", null, message)), cause);
     }
 
     boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
@@ -284,11 +328,11 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         }
 
         for (BigQueryError error : ((BigQueryException) failure).getErrors()) {
-            if (runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
+            if (error.getReason() != null && runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
                 return true;
             }
 
-            if (this.retryMessages != null) {
+            if (this.retryMessages != null && error.getMessage() != null) {
                 for (String message : runContext.render(this.retryMessages).asList(String.class)) {
                     if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
                         return true;

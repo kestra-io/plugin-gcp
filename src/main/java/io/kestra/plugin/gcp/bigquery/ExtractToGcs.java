@@ -13,6 +13,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
@@ -23,7 +24,6 @@ import io.kestra.core.serializers.JacksonMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -131,20 +131,23 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
         ExtractJobConfiguration configuration = this.buildExtractJob(runContext);
 
-        Job extractJob = connection.create(JobInfo.of(configuration));
-        this.trackJob(connection, extractJob.getJobId(), logger);
-
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
-        return this.execute(runContext, logger, configuration, extractJob);
+        // Goes through waitForJob like the other job tasks, rather than polling the job directly: it is
+        // what tracks the job for cancellation, retries retryable failures, and re-attaches to the
+        // already-submitted job instead of submitting a second extract.
+        Job extractJob = this.waitForJob(
+            logger,
+            () -> connection.create(JobInfo.of(configuration)),
+            runContext,
+            connection
+        );
+
+        return this.execute(runContext, configuration, extractJob);
     }
 
-    protected ExtractToGcs.Output execute(RunContext runContext, Logger logger, ExtractJobConfiguration configuration, Job job)
-        throws InterruptedException, IllegalVariableEvaluationException, BigQueryException {
-        BigQueryService.handleErrors(job, logger);
-        job = job.waitFor();
-        BigQueryService.handleErrors(job, logger);
-
+    protected ExtractToGcs.Output execute(RunContext runContext, ExtractJobConfiguration configuration, Job job)
+        throws IllegalVariableEvaluationException {
         JobStatistics.ExtractStatistics stats = job.getStatistics();
         this.metrics(runContext, stats, job);
 

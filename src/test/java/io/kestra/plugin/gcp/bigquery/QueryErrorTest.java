@@ -1,5 +1,11 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.time.Duration;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
@@ -7,6 +13,7 @@ import com.google.cloud.NoCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -14,13 +21,9 @@ import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
+
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import java.time.Duration;
-import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -197,15 +200,78 @@ public class QueryErrorTest {
           }
         }""";
 
+    // BigQuery does not always answer with a structured "errors" array. A bare 5xx like this one leaves
+    // BigQueryException#getErrors() null, which used to surface as "Bigquery Errors [ - ]" with no reason
+    // to retry on, so the task failed while the job kept running to completion. See #675.
+    private static final String BACKEND_ERROR_RESPONSE_WITHOUT_ERROR_LIST = """
+        {
+          "error": {
+            "code": 503,
+            "message": "The service is currently unavailable.",
+            "status": "UNAVAILABLE"
+          }
+        }""";
+
+    @Test
+    void shouldRecoverWhenPollingFailsWithoutAnErrorList(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        String jobsPath = "/bigquery/v2/projects/.*/jobs";
+        String pollingPath = "/bigquery/v2/projects/.*/queries/job_dup_test.*";
+        String jobStatusPath = "/bigquery/v2/projects/.*/jobs/job_dup_test.*";
+
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_RUNNING)
+                )
+        );
+
+        // The poll fails with a transient error carrying no error list, even though the job succeeded.
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE_WITHOUT_ERROR_LIST)
+                )
+        );
+
+        // The job's real status, fetched directly, shows it already completed successfully.
+        stubFor(
+            get(urlPathMatching(jobStatusPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DUP_TEST_DONE)
+                )
+        );
+
+        Query task = buildQueryWithoutFetch(wmRuntimeInfo, 3);
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        Query.Output output = task.run(runContext);
+
+        assertEquals("job_dup_test", output.getJobId());
+        verify(1, postRequestedFor(urlPathMatching(jobsPath)));
+    }
+
     @Test
     void shouldRetryOnBackendError(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         String jobsPath = "/bigquery/v2/projects/.*/jobs";
 
-        stubFor(post(urlPathMatching(jobsPath))
-            .willReturn(aResponse()
-                .withStatus(503)
-                .withHeader("Content-Type", "application/json")
-                .withBody(BACKEND_ERROR_RESPONSE)));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE)
+                )
+        );
 
         Query task = buildQuery(wmRuntimeInfo, 3);
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -221,24 +287,36 @@ public class QueryErrorTest {
         String resultsPath = "/bigquery/v2/projects/.*/queries/job_1234567890abcdef";
 
         // Job creation and polling succeed
-        stubFor(post(urlPathMatching(jobsPath))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DONE)
+                )
+        );
 
-        stubFor(get(urlPathMatching("/bigquery/v2/projects/.*/jobs/job_1234567890abcdef"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DONE)));
+        stubFor(
+            get(urlPathMatching("/bigquery/v2/projects/.*/jobs/job_1234567890abcdef"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DONE)
+                )
+        );
 
         // Result fetching returns 503
-        stubFor(get(urlPathMatching(resultsPath))
-            .willReturn(aResponse()
-                .withStatus(503)
-                .withHeader("Content-Type", "application/json")
-                .withBody(BACKEND_ERROR_RESPONSE)));
+        stubFor(
+            get(urlPathMatching(resultsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE)
+                )
+        );
 
         Query task = buildQuery(wmRuntimeInfo, 3);
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -260,25 +338,37 @@ public class QueryErrorTest {
         // our fix looks up the last submitted job's status via BigQuery#getJob(JobId), which hits jobs/{id}.
         String jobStatusPath = "/bigquery/v2/projects/.*/jobs/job_dup_test.*";
 
-        stubFor(post(urlPathMatching(jobsPath))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_RUNNING)));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_RUNNING)
+                )
+        );
 
         // The poll consistently fails with a transient error, even though the job actually succeeded.
-        stubFor(get(urlPathMatching(pollingPath))
-            .willReturn(aResponse()
-                .withStatus(503)
-                .withHeader("Content-Type", "application/json")
-                .withBody(BACKEND_ERROR_RESPONSE)));
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE)
+                )
+        );
 
         // The job's real status, fetched directly, shows it already completed successfully.
-        stubFor(get(urlPathMatching(jobStatusPath))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DUP_TEST_DONE)));
+        stubFor(
+            get(urlPathMatching(jobStatusPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DUP_TEST_DONE)
+                )
+        );
 
         Query task = buildQueryWithoutFetch(wmRuntimeInfo, 3);
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -295,37 +385,53 @@ public class QueryErrorTest {
         String pollingPath = "/bigquery/v2/projects/.*/queries/job_dup_test.*";
         String jobStatusPath = "/bigquery/v2/projects/.*/jobs/job_dup_test.*";
 
-        stubFor(post(urlPathMatching(jobsPath))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_RUNNING)));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_RUNNING)
+                )
+        );
 
         // The job's own first poll fails transiently; once the retry looks the job up directly and
         // finds it still running, it calls waitFor() again, which this time observes completion.
-        stubFor(get(urlPathMatching(pollingPath))
-            .inScenario("still-running")
-            .whenScenarioStateIs(Scenario.STARTED)
-            .willReturn(aResponse()
-                .withStatus(503)
-                .withHeader("Content-Type", "application/json")
-                .withBody(BACKEND_ERROR_RESPONSE))
-            .willSetStateTo("completed"));
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .inScenario("still-running")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE)
+                )
+                .willSetStateTo("completed")
+        );
 
-        stubFor(get(urlPathMatching(pollingPath))
-            .inScenario("still-running")
-            .whenScenarioStateIs("completed")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(QUERY_RESULTS_RESPONSE_COMPLETE)));
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .inScenario("still-running")
+                .whenScenarioStateIs("completed")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(QUERY_RESULTS_RESPONSE_COMPLETE)
+                )
+        );
 
         // The job's real status, fetched directly, shows it is still running.
-        stubFor(get(urlPathMatching(jobStatusPath))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_RUNNING)));
+        stubFor(
+            get(urlPathMatching(jobStatusPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_RUNNING)
+                )
+        );
 
         Query task = buildQueryWithoutFetch(wmRuntimeInfo, 3);
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -347,50 +453,70 @@ public class QueryErrorTest {
         String pollingPath = "/bigquery/v2/projects/.*/queries/job_dup_test.*";
         String jobStatusPath = "/bigquery/v2/projects/.*/jobs/job_dup_test.*";
 
-        stubFor(post(urlPathMatching(jobsPath))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_RUNNING)));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_RUNNING)
+                )
+        );
 
         // The original job's poll fails transiently; the fresh job submitted after the lookback
         // then polls successfully.
-        stubFor(get(urlPathMatching(pollingPath))
-            .inScenario("done-with-error")
-            .whenScenarioStateIs(Scenario.STARTED)
-            .willReturn(aResponse()
-                .withStatus(503)
-                .withHeader("Content-Type", "application/json")
-                .withBody(BACKEND_ERROR_RESPONSE))
-            .willSetStateTo("completed"));
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .inScenario("done-with-error")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE)
+                )
+                .willSetStateTo("completed")
+        );
 
-        stubFor(get(urlPathMatching(pollingPath))
-            .inScenario("done-with-error")
-            .whenScenarioStateIs("completed")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(QUERY_RESULTS_RESPONSE_COMPLETE)));
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .inScenario("done-with-error")
+                .whenScenarioStateIs("completed")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(QUERY_RESULTS_RESPONSE_COMPLETE)
+                )
+        );
 
         // The job's real status, fetched directly, shows it actually failed: no dedup, a new job is submitted.
         // Job#waitFor() itself calls reload() (another GET on this same path) once the fresh job completes,
         // to fetch its authoritative final status, so the stub must distinguish that call from the lookback.
-        stubFor(get(urlPathMatching(jobStatusPath))
-            .inScenario("done-with-error-status")
-            .whenScenarioStateIs(Scenario.STARTED)
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DUP_TEST_DONE_WITH_ERROR))
-            .willSetStateTo("new-job-completed"));
+        stubFor(
+            get(urlPathMatching(jobStatusPath))
+                .inScenario("done-with-error-status")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DUP_TEST_DONE_WITH_ERROR)
+                )
+                .willSetStateTo("new-job-completed")
+        );
 
-        stubFor(get(urlPathMatching(jobStatusPath))
-            .inScenario("done-with-error-status")
-            .whenScenarioStateIs("new-job-completed")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DUP_TEST_DONE)));
+        stubFor(
+            get(urlPathMatching(jobStatusPath))
+                .inScenario("done-with-error-status")
+                .whenScenarioStateIs("new-job-completed")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DUP_TEST_DONE)
+                )
+        );
 
         Query task = buildQueryWithoutFetch(wmRuntimeInfo, 3);
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -407,50 +533,70 @@ public class QueryErrorTest {
         String pollingPath = "/bigquery/v2/projects/.*/queries/job_dup_test.*";
         String jobStatusPath = "/bigquery/v2/projects/.*/jobs/job_dup_test.*";
 
-        stubFor(post(urlPathMatching(jobsPath))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_RUNNING)));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_RUNNING)
+                )
+        );
 
         // The original job's poll fails transiently; the fresh job submitted after the lookback
         // then polls successfully.
-        stubFor(get(urlPathMatching(pollingPath))
-            .inScenario("not-found")
-            .whenScenarioStateIs(Scenario.STARTED)
-            .willReturn(aResponse()
-                .withStatus(503)
-                .withHeader("Content-Type", "application/json")
-                .withBody(BACKEND_ERROR_RESPONSE))
-            .willSetStateTo("completed"));
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .inScenario("not-found")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE)
+                )
+                .willSetStateTo("completed")
+        );
 
-        stubFor(get(urlPathMatching(pollingPath))
-            .inScenario("not-found")
-            .whenScenarioStateIs("completed")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(QUERY_RESULTS_RESPONSE_COMPLETE)));
+        stubFor(
+            get(urlPathMatching(pollingPath))
+                .inScenario("not-found")
+                .whenScenarioStateIs("completed")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(QUERY_RESULTS_RESPONSE_COMPLETE)
+                )
+        );
 
         // The job can no longer be found: no dedup, a new job is submitted.
         // Job#waitFor() itself calls reload() (another GET on this same path) once the fresh job completes,
         // to fetch its authoritative final status, so the stub must distinguish that call from the lookback.
-        stubFor(get(urlPathMatching(jobStatusPath))
-            .inScenario("not-found-status")
-            .whenScenarioStateIs(Scenario.STARTED)
-            .willReturn(aResponse()
-                .withStatus(404)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_NOT_FOUND_RESPONSE))
-            .willSetStateTo("new-job-completed"));
+        stubFor(
+            get(urlPathMatching(jobStatusPath))
+                .inScenario("not-found-status")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(
+                    aResponse()
+                        .withStatus(404)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_NOT_FOUND_RESPONSE)
+                )
+                .willSetStateTo("new-job-completed")
+        );
 
-        stubFor(get(urlPathMatching(jobStatusPath))
-            .inScenario("not-found-status")
-            .whenScenarioStateIs("new-job-completed")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DUP_TEST_DONE)));
+        stubFor(
+            get(urlPathMatching(jobStatusPath))
+                .inScenario("not-found-status")
+                .whenScenarioStateIs("new-job-completed")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DUP_TEST_DONE)
+                )
+        );
 
         Query task = buildQueryWithoutFetch(wmRuntimeInfo, 3);
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -469,22 +615,30 @@ public class QueryErrorTest {
 
         // A dry-run job is never polled, so its first submission fails with a job-level error that
         // is only visible once the job comes back as DONE; the retry submits a fresh dry-run job.
-        stubFor(post(urlPathMatching(jobsPath))
-            .inScenario("dry-run-retry")
-            .whenScenarioStateIs(Scenario.STARTED)
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DUP_TEST_DONE_WITH_ERROR))
-            .willSetStateTo("completed"));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .inScenario("dry-run-retry")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DUP_TEST_DONE_WITH_ERROR)
+                )
+                .willSetStateTo("completed")
+        );
 
-        stubFor(post(urlPathMatching(jobsPath))
-            .inScenario("dry-run-retry")
-            .whenScenarioStateIs("completed")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(JOB_RESPONSE_DUP_TEST_DONE)));
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .inScenario("dry-run-retry")
+                .whenScenarioStateIs("completed")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(JOB_RESPONSE_DUP_TEST_DONE)
+                )
+        );
 
         Query task = buildDryRunQuery(wmRuntimeInfo, 3);
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
@@ -503,13 +657,15 @@ public class QueryErrorTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .retryAuto(Exponential.builder()
-                .type("exponential")
-                .interval(Duration.ofMillis(100))
-                .maxInterval(Duration.ofMillis(500))
-                .maxDuration(Duration.ofSeconds(10))
-                .maxAttempts(maxAttempts)
-                .build())
+            .retryAuto(
+                Exponential.builder()
+                    .type("exponential")
+                    .interval(Duration.ofMillis(100))
+                    .maxInterval(Duration.ofMillis(500))
+                    .maxDuration(Duration.ofSeconds(10))
+                    .maxAttempts(maxAttempts)
+                    .build()
+            )
             .projectId(Property.ofValue(project))
             .sql(Property.ofValue("SELECT * from test_table"))
             .dryRun(Property.ofValue(false))
@@ -525,13 +681,15 @@ public class QueryErrorTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .retryAuto(Exponential.builder()
-                .type("exponential")
-                .interval(Duration.ofMillis(100))
-                .maxInterval(Duration.ofMillis(500))
-                .maxDuration(Duration.ofSeconds(10))
-                .maxAttempts(maxAttempts)
-                .build())
+            .retryAuto(
+                Exponential.builder()
+                    .type("exponential")
+                    .interval(Duration.ofMillis(100))
+                    .maxInterval(Duration.ofMillis(500))
+                    .maxDuration(Duration.ofSeconds(10))
+                    .maxAttempts(maxAttempts)
+                    .build()
+            )
             .projectId(Property.ofValue(project))
             .sql(Property.ofValue("SELECT * from test_table"))
             .dryRun(Property.ofValue(true))
@@ -547,13 +705,15 @@ public class QueryErrorTest {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
             .type(Query.class.getName())
-            .retryAuto(Exponential.builder()
-                .type("exponential")
-                .interval(Duration.ofMillis(100))
-                .maxInterval(Duration.ofMillis(500))
-                .maxDuration(Duration.ofSeconds(10))
-                .maxAttempts(maxAttempts)
-                .build())
+            .retryAuto(
+                Exponential.builder()
+                    .type("exponential")
+                    .interval(Duration.ofMillis(100))
+                    .maxInterval(Duration.ofMillis(500))
+                    .maxDuration(Duration.ofSeconds(10))
+                    .maxAttempts(maxAttempts)
+                    .build()
+            )
             .projectId(Property.ofValue(project))
             .sql(Property.ofValue("SELECT * from test_table"))
             .fetchType(Property.ofValue(FetchType.FETCH))
