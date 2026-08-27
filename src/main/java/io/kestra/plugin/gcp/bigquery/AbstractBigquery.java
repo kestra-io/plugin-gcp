@@ -8,12 +8,11 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
 
@@ -38,6 +37,9 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 abstract public class AbstractBigquery extends AbstractTask implements WorkerJobLifecycle {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractBigquery.class);
+
+    /** Guards the cause-chain walk against a cyclic chain. Real chains are an order of magnitude shorter. */
+    private static final int MAX_CAUSE_DEPTH = 20;
 
     @Schema(
         title = "Dataset location",
@@ -252,43 +254,93 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
                     return job;
                 } catch (Exception exception) {
-                    if (exception instanceof com.google.cloud.bigquery.BigQueryException bqException) {
+                    var jobId = job != null ? job.getJobId() : lastJobId.get();
 
-                        logger.warn(
-                            "Error query on {} with errors:\n[\n - {}\n]",
-                            job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            bqException.getErrors() == null ? "" : String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
-                        );
-
-                        throw new BigQueryException(bqException.getErrors());
-                    } else if (exception instanceof JobException bqException) {
-
-                        logger.warn(
-                            "Error query on job '{}' with errors:\n[\n - {}\n]",
-                            job != null ? "job '" + job.getJobId().getJob() + "'" : "create job",
-                            bqException.getErrors() == null ? "" : String.join("\n - ", bqException.getErrors().stream().map(BigQueryError::toString).toArray(String[]::new))
-                        );
-
-                        throw new BigQueryException(bqException.getErrors());
+                    if (isInterrupted(exception)) {
+                        throw this.interruptedFailure(logger, jobId, exception);
                     }
 
-                    throw exception;
+                    List<BigQueryError> errors = null;
+                    var retryable = false;
+
+                    if (exception instanceof com.google.cloud.bigquery.BigQueryException bqException) {
+                        errors = BigQueryService.errorsOf(bqException);
+
+                        // Trust the client's verdict only once the job id is known, because the lookback
+                        // above can then re-attach instead of resubmitting. A failed submission cannot
+                        // tell an accepted job from a lost one, and BigQuery assigns the id itself
+                        // (#674), so retrying there would run the statement twice.
+                        retryable = jobId != null && bqException.isRetryable();
+                    } else if (exception instanceof JobException jobException) {
+                        errors = BigQueryService.errorsOf(jobException);
+                    }
+
+                    if (errors == null) {
+                        throw exception;
+                    }
+
+                    logger.warn(
+                        "Error query on {} with errors:\n[\n - {}\n]",
+                        jobId != null ? "job '" + jobId.getJob() + "'" : "create job",
+                        String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
+                    );
+
+                    throw new BigQueryException(errors, exception, retryable);
                 }
             });
     }
 
+    /** The client wraps an interrupt in a BigQueryException carrying no error list, so match on the cause chain. */
+    private static boolean isInterrupted(Throwable throwable) {
+        for (int depth = 0; throwable != null && depth < MAX_CAUSE_DEPTH; throwable = throwable.getCause(), depth++) {
+            if (throwable instanceof InterruptedException) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Deliberately not a retryable reason: an interrupted thread cannot make progress. Names the job,
+     * which outlives the task unless the kill already cancelled it.
+     */
+    private BigQueryException interruptedFailure(Logger logger, JobId jobId, Throwable cause) {
+        Thread.currentThread().interrupt();
+
+        var message = "Interrupted while waiting for BigQuery job"
+            + (jobId != null ? " '" + jobId.getJob() + "'" : "")
+            + (this.isCancelled.get()
+                ? ", the job was cancelled."
+                : ". The job was not cancelled and may still be running on BigQuery.");
+
+        logger.warn(message, cause);
+
+        return new BigQueryException(List.of(new BigQueryError("interrupted", null, message)), cause, false);
+    }
+
     boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
-        if (!(failure instanceof BigQueryException)) {
+        // Structural, not a matter of which reasons are configured: an interrupted thread cannot back off.
+        if (Thread.currentThread().isInterrupted()) {
+            return false;
+        }
+
+        if (!(failure instanceof BigQueryException bigQueryException)) {
             logger.warn("Cancelled retrying, unknown exception type {}", failure.getClass(), failure);
             return false;
         }
 
-        for (BigQueryError error : ((BigQueryException) failure).getErrors()) {
-            if (runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
+        // A transport failure carries no BigQuery reason to match on, so defer to the client.
+        if (bigQueryException.isRetryable()) {
+            return true;
+        }
+
+        for (BigQueryError error : bigQueryException.getErrors()) {
+            if (error.getReason() != null && runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
                 return true;
             }
 
-            if (this.retryMessages != null) {
+            if (this.retryMessages != null && error.getMessage() != null) {
                 for (String message : runContext.render(this.retryMessages).asList(String.class)) {
                     if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
                         return true;

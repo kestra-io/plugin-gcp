@@ -2,12 +2,15 @@ package io.kestra.plugin.gcp.bigquery;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobException;
 import com.google.cloud.bigquery.JobId;
 import com.google.cloud.bigquery.TableId;
 
@@ -15,6 +18,8 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
 
 public class BigQueryService {
+    private static final String UNKNOWN_REASON = "unknown";
+
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
         return JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()).as(String.class).orElse(null))
@@ -56,6 +61,37 @@ public class BigQueryService {
                 throw new BigQueryException(errors);
             }
         }
+    }
+
+    /**
+     * BigQuery fills the error list only for job-level failures. A transport failure (bare 5xx, socket
+     * error, interrupted poll) arrives with it null, so carry the exception's own reason and message as
+     * a single error: otherwise the failure reads as "Bigquery Errors [ - ]" with nothing to diagnose.
+     * Whether such a failure is worth retrying is the client's call, not a reason string's.
+     */
+    public static List<BigQueryError> errorsOf(com.google.cloud.bigquery.BigQueryException exception) {
+        return errorsOrSynthetic(exception.getErrors(), exception.getReason(), exception.getLocation(), exception);
+    }
+
+    /** {@link Job#waitFor} raises a JobException, which carries neither reason nor location. */
+    public static List<BigQueryError> errorsOf(JobException exception) {
+        return errorsOrSynthetic(exception.getErrors(), null, null, exception);
+    }
+
+    private static List<BigQueryError> errorsOrSynthetic(List<BigQueryError> errors, String reason, String location, Throwable exception) {
+        if (errors != null && !errors.isEmpty()) {
+            return errors;
+        }
+
+        return List.of(new BigQueryError(Objects.requireNonNullElse(reason, UNKNOWN_REASON), location, messageOf(exception)));
+    }
+
+    private static String messageOf(Throwable exception) {
+        if (exception.getMessage() != null && !exception.getMessage().isBlank()) {
+            return exception.getMessage();
+        }
+
+        return exception.getCause() != null ? exception.getCause().toString() : exception.toString();
     }
 
     public static Map<String, String> labels(RunContext runContext) {

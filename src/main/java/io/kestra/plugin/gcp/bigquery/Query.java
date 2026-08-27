@@ -19,15 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.cloud.bigquery.*;
 import com.google.common.collect.ImmutableMap;
 
-import dev.failsafe.Failsafe;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.models.tasks.retrys.AbstractRetry;
-import io.kestra.core.models.tasks.retrys.Exponential;
-import io.kestra.core.serializers.JacksonMapper;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
@@ -38,10 +29,13 @@ import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.models.tasks.retrys.AbstractRetry;
+import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 
+import dev.failsafe.Failsafe;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -337,47 +331,41 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             .jobId(queryJob.getJobId().getJob());
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
-            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto() : Exponential.builder()
-                .type("exponential")
-                .interval(Duration.ofSeconds(5))
-                .maxInterval(Duration.ofMinutes(60))
-                .maxDuration(Duration.ofMinutes(15))
-                .maxAttempts(10)
-                .build();
+            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto()
+                : Exponential.builder()
+                    .type("exponential")
+                    .interval(Duration.ofSeconds(5))
+                    .maxInterval(Duration.ofMinutes(60))
+                    .maxDuration(Duration.ofMinutes(15))
+                    .maxAttempts(10)
+                    .build();
 
             TableResult result = Failsafe.with(
-                AbstractRetry.<TableResult>retryPolicy(retryConfig)
+                AbstractRetry.<TableResult> retryPolicy(retryConfig)
                     .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
-                    .onFailure(event -> logger.error(
-                        "Stop retry fetching query results, attempts {} elapsed {} seconds",
-                        event.getAttemptCount(),
-                        event.getElapsedTime().getSeconds(),
-                        event.getException()
-                    ))
-                    .onRetry(event -> logger.warn(
-                        "Retrying fetching query results, attempts {} elapsed {} seconds",
-                        event.getAttemptCount(),
-                        event.getElapsedTime().getSeconds()
-                    ))
+                    .onFailure(
+                        event -> logger.error(
+                            "Stop retry fetching query results, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds(),
+                            event.getException()
+                        )
+                    )
+                    .onRetry(
+                        event -> logger.warn(
+                            "Retrying fetching query results, attempts {} elapsed {} seconds",
+                            event.getAttemptCount(),
+                            event.getElapsedTime().getSeconds()
+                        )
+                    )
                     .build()
-            ).get(() -> {
+            ).get(() ->
+            {
                 try {
                     return queryJob.getQueryResults();
                 } catch (com.google.cloud.bigquery.BigQueryException e) {
-                    List<BigQueryError> errors = e.getErrors();
-                    if (errors == null || errors.isEmpty()) {
-                        String reason = e.getReason();
-                        if (reason == null) {
-                            reason = switch (e.getCode()) {
-                                case 503 -> "backendError";
-                                case 500 -> "internalError";
-                                case 429 -> "rateLimitExceeded";
-                                default -> "unknown";
-                            };
-                        }
-                        errors = List.of(new BigQueryError(reason, e.getLocation(), e.getMessage()));
-                    }
-                    throw new BigQueryException(errors);
+                    // Re-reading a finished job's results has no side effect, so the client's verdict stands.
+                    throw new BigQueryException(BigQueryService.errorsOf(e), e, e.isRetryable());
                 }
             });
 
@@ -410,7 +398,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 }
             }
         }
-
 
         if (tableIdentity != null) {
             DestinationTable destinationTable = new DestinationTable(tableIdentity.getProject(), tableIdentity.getDataset(), tableIdentity.getTable());
