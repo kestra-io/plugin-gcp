@@ -261,12 +261,16 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                     }
 
                     List<BigQueryError> errors = null;
+                    var retryable = false;
+
                     if (exception instanceof com.google.cloud.bigquery.BigQueryException bqException) {
-                        // Inferring a retryable reason from a bare status is only safe once the job id is
-                        // known, because the lookback above then re-attaches instead of resubmitting. A
-                        // failed submission cannot tell an accepted job from a lost one, and BigQuery
-                        // assigns the id itself (#674), so retrying there would run the statement twice.
-                        errors = BigQueryService.errorsOf(bqException, jobId != null);
+                        errors = BigQueryService.errorsOf(bqException);
+
+                        // Trust the client's verdict only once the job id is known, because the lookback
+                        // above can then re-attach instead of resubmitting. A failed submission cannot
+                        // tell an accepted job from a lost one, and BigQuery assigns the id itself
+                        // (#674), so retrying there would run the statement twice.
+                        retryable = jobId != null && bqException.isRetryable();
                     } else if (exception instanceof JobException jobException) {
                         errors = BigQueryService.errorsOf(jobException);
                     }
@@ -281,7 +285,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                         String.join("\n - ", errors.stream().map(BigQueryError::toString).toArray(String[]::new))
                     );
 
-                    throw new BigQueryException(errors, exception);
+                    throw new BigQueryException(errors, exception, retryable);
                 }
             });
     }
@@ -312,7 +316,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
         logger.warn(message, cause);
 
-        return new BigQueryException(List.of(new BigQueryError("interrupted", null, message)), cause);
+        return new BigQueryException(List.of(new BigQueryError("interrupted", null, message)), cause, false);
     }
 
     boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
@@ -321,12 +325,17 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
             return false;
         }
 
-        if (!(failure instanceof BigQueryException)) {
+        if (!(failure instanceof BigQueryException bigQueryException)) {
             logger.warn("Cancelled retrying, unknown exception type {}", failure.getClass(), failure);
             return false;
         }
 
-        for (BigQueryError error : ((BigQueryException) failure).getErrors()) {
+        // A transport failure carries no BigQuery reason to match on, so defer to the client.
+        if (bigQueryException.isRetryable()) {
+            return true;
+        }
+
+        for (BigQueryError error : bigQueryException.getErrors()) {
             if (error.getReason() != null && runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
                 return true;
             }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 
@@ -64,24 +65,17 @@ public class BigQueryService {
 
     /**
      * BigQuery fills the error list only for job-level failures. A transport failure (bare 5xx, socket
-     * error, interrupted poll) arrives with it null, so fold the exception's own reason and message into
-     * one error: otherwise the failure reads as "Bigquery Errors [ - ]" and retryReasons has no match.
-     *
-     * @param inferRetryableReason derive a reason from the HTTP status when BigQuery returned none.
-     *        Only pass true where a retry can be deduplicated.
+     * error, interrupted poll) arrives with it null, so carry the exception's own reason and message as
+     * a single error: otherwise the failure reads as "Bigquery Errors [ - ]" with nothing to diagnose.
+     * Whether such a failure is worth retrying is the client's call, not a reason string's.
      */
-    public static List<BigQueryError> errorsOf(com.google.cloud.bigquery.BigQueryException exception, boolean inferRetryableReason) {
-        return errorsOrSynthetic(
-            exception.getErrors(),
-            reasonOf(exception, inferRetryableReason),
-            exception.getLocation(),
-            exception
-        );
+    public static List<BigQueryError> errorsOf(com.google.cloud.bigquery.BigQueryException exception) {
+        return errorsOrSynthetic(exception.getErrors(), exception.getReason(), exception.getLocation(), exception);
     }
 
-    /** {@link Job#waitFor} raises a JobException, which carries no HTTP status to derive a reason from. */
+    /** {@link Job#waitFor} raises a JobException, which carries neither reason nor location. */
     public static List<BigQueryError> errorsOf(JobException exception) {
-        return errorsOrSynthetic(exception.getErrors(), UNKNOWN_REASON, null, exception);
+        return errorsOrSynthetic(exception.getErrors(), null, null, exception);
     }
 
     private static List<BigQueryError> errorsOrSynthetic(List<BigQueryError> errors, String reason, String location, Throwable exception) {
@@ -89,26 +83,7 @@ public class BigQueryService {
             return errors;
         }
 
-        return List.of(new BigQueryError(reason, location, messageOf(exception)));
-    }
-
-    private static String reasonOf(com.google.cloud.bigquery.BigQueryException exception, boolean inferRetryableReason) {
-        if (exception.getReason() != null) {
-            return exception.getReason();
-        }
-
-        if (!inferRetryableReason) {
-            return UNKNOWN_REASON;
-        }
-
-        // No structured payload: derive the reason from the status so retryReasons still match.
-        // A bare 403 stays unknown on purpose: it is far more often a permission denial than a quota.
-        return switch (exception.getCode()) {
-            case 429 -> "rateLimitExceeded";
-            case 500 -> "internalError";
-            case 502, 503, 504 -> "backendError";
-            default -> UNKNOWN_REASON;
-        };
+        return List.of(new BigQueryError(Objects.requireNonNullElse(reason, UNKNOWN_REASON), location, messageOf(exception)));
     }
 
     private static String messageOf(Throwable exception) {

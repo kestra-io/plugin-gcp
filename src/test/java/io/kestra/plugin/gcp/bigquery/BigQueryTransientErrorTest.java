@@ -1,14 +1,13 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import com.google.cloud.bigquery.BigQuery;
@@ -51,34 +50,13 @@ class BigQueryTransientErrorTest {
         Thread.interrupted();
     }
 
-    @ParameterizedTest
-    @CsvSource(
-        {
-            "429, rateLimitExceeded",
-            "500, internalError",
-            "502, backendError",
-            "503, backendError",
-            "504, backendError",
-            "403, unknown",
-            "400, unknown"
-        }
-    )
-    void shouldDeriveTheReasonFromTheHttpStatusWhenTheErrorListIsMissing(int code, String expectedReason) {
-        var exception = new com.google.cloud.bigquery.BigQueryException(code, "boom");
-
-        List<BigQueryError> errors = BigQueryService.errorsOf(exception, true);
-
-        assertThat(errors, hasSize(1));
-        assertThat(errors.getFirst().getReason(), is(expectedReason));
-        assertThat(errors.getFirst().getMessage(), is("boom"));
-    }
-
     @Test
-    void shouldNotInferAReasonWhenARetryCannotBeDeduplicated() {
+    void shouldCarryTheMessageWhenTheErrorListIsMissing() {
         var exception = new com.google.cloud.bigquery.BigQueryException(503, "The service is currently unavailable.");
 
-        List<BigQueryError> errors = BigQueryService.errorsOf(exception, false);
+        List<BigQueryError> errors = BigQueryService.errorsOf(exception);
 
+        assertThat(errors, hasSize(1));
         assertThat(errors.getFirst().getReason(), is("unknown"));
         assertThat(errors.getFirst().getMessage(), is("The service is currently unavailable."));
     }
@@ -88,10 +66,9 @@ class BigQueryTransientErrorTest {
         var cause = new IOException("Connection reset");
         var exception = new com.google.cloud.bigquery.BigQueryException(0, null, cause);
 
-        List<BigQueryError> errors = BigQueryService.errorsOf(exception, true);
+        List<BigQueryError> errors = BigQueryService.errorsOf(exception);
 
         assertThat(errors, hasSize(1));
-        assertThat(errors.getFirst().getReason(), is("unknown"));
         assertThat(errors.getFirst().getMessage(), containsString("Connection reset"));
     }
 
@@ -100,7 +77,39 @@ class BigQueryTransientErrorTest {
         var reported = new BigQueryError("invalidQuery", null, "Syntax error");
         var exception = new com.google.cloud.bigquery.BigQueryException(400, "Syntax error", reported);
 
-        assertThat(BigQueryService.errorsOf(exception, true), is(List.of(reported)));
+        assertThat(BigQueryService.errorsOf(exception), is(List.of(reported)));
+    }
+
+    @Test
+    void shouldTrustTheClientVerdictOnceTheJobIdIsKnown() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var unavailable = new com.google.cloud.bigquery.BigQueryException(503, "The service is currently unavailable.");
+        var job = runningJob("job_poll_failed");
+        Mockito.when(job.waitFor()).thenThrow(unavailable);
+
+        var failure = failureOf(task, runContext, () -> job);
+
+        assertThat(failure.isRetryable(), is(true));
+        assertThat(failure.getCause(), instanceOf(com.google.cloud.bigquery.BigQueryException.class));
+        assertThat(failure.getMessage(), containsString("The service is currently unavailable."));
+    }
+
+    @Test
+    void shouldFollowTheClientVerdictRatherThanAnHttpStatus() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        // A socket timeout has no HTTP status at all, yet the client reports it as worth retrying.
+        var job = runningJob("job_socket_timeout");
+        Mockito.when(job.waitFor())
+            .thenThrow(new com.google.cloud.bigquery.BigQueryException(new SocketTimeoutException("read timed out")));
+
+        var failure = failureOf(task, runContext, () -> job);
+
+        assertThat(failure.isRetryable(), is(true));
+        assertThat(failure.getMessage(), containsString("read timed out"));
     }
 
     @Test
@@ -112,22 +121,13 @@ class BigQueryTransientErrorTest {
         // Nothing here can tell an accepted job from a lost one, so a retry could run the statement twice.
         var unavailable = new com.google.cloud.bigquery.BigQueryException(503, "The service is currently unavailable.");
 
-        var thrown = assertThrows(
-            FailsafeException.class, () -> task.waitForJob(
-                runContext.logger(),
-                () ->
-                {
-                    submissions.incrementAndGet();
-                    throw unavailable;
-                },
-                runContext,
-                Mockito.mock(BigQuery.class)
-            )
-        );
+        var failure = failureOf(task, runContext, () ->
+        {
+            submissions.incrementAndGet();
+            throw unavailable;
+        });
 
-        var failure = (BigQueryException) thrown.getCause();
-
-        assertThat(failure.getErrors().getFirst().getReason(), is("unknown"));
+        assertThat(failure.isRetryable(), is(false));
         assertThat(failure.getMessage(), containsString("The service is currently unavailable."));
         assertThat(failure.getCause(), is(unavailable));
         assertThat(submissions.get(), is(1));
@@ -143,21 +143,13 @@ class BigQueryTransientErrorTest {
         var job = runningJob("job_interrupted");
         Mockito.when(job.waitFor()).thenThrow(new InterruptedException());
 
-        var thrown = assertThrows(
-            FailsafeException.class, () -> task.waitForJob(
-                runContext.logger(),
-                () ->
-                {
-                    submissions.incrementAndGet();
-                    return job;
-                },
-                runContext,
-                Mockito.mock(BigQuery.class)
-            )
-        );
+        var failure = failureOf(task, runContext, () ->
+        {
+            submissions.incrementAndGet();
+            return job;
+        });
 
-        var failure = (BigQueryException) thrown.getCause();
-
+        assertThat(failure.isRetryable(), is(false));
         assertThat(failure.getErrors(), hasSize(1));
         assertThat(failure.getErrors().getFirst().getReason(), is("interrupted"));
         assertThat(failure.getErrors().getFirst().getMessage(), containsString("'job_interrupted'"));
@@ -175,48 +167,26 @@ class BigQueryTransientErrorTest {
 
         task.kill();
 
-        var thrown = assertThrows(
-            FailsafeException.class, () -> task.waitForJob(
-                runContext.logger(),
-                () ->
-                {
-                    throw new com.google.cloud.bigquery.BigQueryException(0, "java.lang.InterruptedException", new InterruptedException());
-                },
-                runContext,
-                Mockito.mock(BigQuery.class)
-            )
-        );
-
-        var failure = (BigQueryException) thrown.getCause();
+        var failure = failureOf(task, runContext, () ->
+        {
+            throw new com.google.cloud.bigquery.BigQueryException(0, "java.lang.InterruptedException", new InterruptedException());
+        });
 
         assertThat(failure.getErrors().getFirst().getMessage(), containsString("the job was cancelled"));
         assertThat(failure.getErrors().getFirst().getMessage(), not(containsString("may still be running")));
     }
 
-    @Test
-    void shouldKeepTheOriginalExceptionAsTheCauseOfAnErrorlessPollFailure() throws Exception {
-        var task = task();
-        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
-
-        var unavailable = new com.google.cloud.bigquery.BigQueryException(503, "The service is currently unavailable.");
-        var job = runningJob("job_poll_failed");
-        Mockito.when(job.waitFor()).thenThrow(unavailable);
-
+    private BigQueryException failureOf(Query task, io.kestra.core.runners.RunContext runContext, java.util.concurrent.Callable<Job> createJob) {
         var thrown = assertThrows(
             FailsafeException.class, () -> task.waitForJob(
                 runContext.logger(),
-                () -> job,
+                createJob,
                 runContext,
                 Mockito.mock(BigQuery.class)
             )
         );
 
-        var failure = (BigQueryException) thrown.getCause();
-
-        assertThat(failure.getCause(), instanceOf(com.google.cloud.bigquery.BigQueryException.class));
-        assertThat(failure.getMessage(), containsString("The service is currently unavailable."));
-        // The job id is known here, so the reason is inferred and the retry policy can act on it.
-        assertThat(failure.getErrors().getFirst().getReason(), is("backendError"));
+        return (BigQueryException) thrown.getCause();
     }
 
     private Job runningJob(String id) {
