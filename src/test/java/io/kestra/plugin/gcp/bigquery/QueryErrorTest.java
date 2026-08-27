@@ -200,9 +200,7 @@ public class QueryErrorTest {
           }
         }""";
 
-    // BigQuery does not always answer with a structured "errors" array. A bare 5xx like this one leaves
-    // BigQueryException#getErrors() null, which used to surface as "Bigquery Errors [ - ]" with no reason
-    // to retry on, so the task failed while the job kept running to completion. See #675.
+    // A bare 5xx with no "errors" array leaves BigQueryException#getErrors() null. See #675.
     private static final String BACKEND_ERROR_RESPONSE_WITHOUT_ERROR_LIST = """
         {
           "error": {
@@ -279,6 +277,30 @@ public class QueryErrorTest {
         assertThrows(Exception.class, () -> task.run(runContext));
 
         verify(3, postRequestedFor(urlPathMatching(jobsPath)));
+    }
+
+    @Test
+    void shouldNotRetryJobCreationFailingWithoutAnErrorList(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        String jobsPath = "/bigquery/v2/projects/.*/jobs";
+
+        stubFor(
+            post(urlPathMatching(jobsPath))
+                .willReturn(
+                    aResponse()
+                        .withStatus(503)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(BACKEND_ERROR_RESPONSE_WITHOUT_ERROR_LIST)
+                )
+        );
+
+        Query task = buildQuery(wmRuntimeInfo, 3);
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        assertThrows(Exception.class, () -> task.run(runContext));
+
+        // Unlike the structured 503 above, there is no job id to re-attach to and BigQuery assigns the
+        // id itself (#674), so retrying could run the query twice. Fail once instead.
+        verify(1, postRequestedFor(urlPathMatching(jobsPath)));
     }
 
     @Test

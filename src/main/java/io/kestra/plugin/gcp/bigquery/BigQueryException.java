@@ -16,11 +16,7 @@ public class BigQueryException extends Exception {
         this(errors, null);
     }
 
-    /**
-     * Keeps the originating exception as the cause. BigQuery only fills the error list for job-level
-     * failures, so transport failures used to be rethrown with an empty list and no cause, which left
-     * the user with a "Bigquery Errors [ - ]" message and nothing to diagnose.
-     */
+    /** Keeps the originating exception as the cause: a transport failure has nothing in its error list. */
     BigQueryException(List<BigQueryError> errors, Throwable cause) {
         super(formatErrors(Objects.requireNonNullElse(errors, List.of())), cause);
         this.errors = Objects.requireNonNullElse(errors, List.of());

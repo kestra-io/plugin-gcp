@@ -17,6 +17,8 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
 
 public class BigQueryService {
+    private static final String UNKNOWN_REASON = "unknown";
+
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
         return JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()).as(String.class).orElse(null))
@@ -61,47 +63,51 @@ public class BigQueryService {
     }
 
     /**
-     * BigQuery only populates the error list for job-level failures. Transport failures (a 5xx on the
-     * REST call, a socket error, an interrupted poll) arrive as a BigQueryException whose error list is
-     * null, so the code, reason and message must be folded into a synthetic error. Without it the
-     * failure surfaces as an empty "Bigquery Errors [ - ]" and the retry policy has nothing to match on.
+     * BigQuery fills the error list only for job-level failures. A transport failure (bare 5xx, socket
+     * error, interrupted poll) arrives with it null, so fold the exception's own reason and message into
+     * one error: otherwise the failure reads as "Bigquery Errors [ - ]" and retryReasons has no match.
+     *
+     * @param inferRetryableReason derive a reason from the HTTP status when BigQuery returned none.
+     *        Only pass true where a retry can be deduplicated.
      */
-    public static List<BigQueryError> errorsOf(com.google.cloud.bigquery.BigQueryException exception) {
-        List<BigQueryError> errors = exception.getErrors();
-
-        if (errors != null && !errors.isEmpty()) {
-            return errors;
-        }
-
-        return List.of(new BigQueryError(reasonOf(exception), exception.getLocation(), messageOf(exception)));
+    public static List<BigQueryError> errorsOf(com.google.cloud.bigquery.BigQueryException exception, boolean inferRetryableReason) {
+        return errorsOrSynthetic(
+            exception.getErrors(),
+            reasonOf(exception, inferRetryableReason),
+            exception.getLocation(),
+            exception
+        );
     }
 
-    /**
-     * Same as {@link #errorsOf(com.google.cloud.bigquery.BigQueryException)} for the job-level exception
-     * raised by {@link Job#waitFor}, which carries no HTTP code to map a reason from.
-     */
+    /** {@link Job#waitFor} raises a JobException, which carries no HTTP status to derive a reason from. */
     public static List<BigQueryError> errorsOf(JobException exception) {
-        List<BigQueryError> errors = exception.getErrors();
+        return errorsOrSynthetic(exception.getErrors(), UNKNOWN_REASON, null, exception);
+    }
 
+    private static List<BigQueryError> errorsOrSynthetic(List<BigQueryError> errors, String reason, String location, Throwable exception) {
         if (errors != null && !errors.isEmpty()) {
             return errors;
         }
 
-        return List.of(new BigQueryError("unknown", null, messageOf(exception)));
+        return List.of(new BigQueryError(reason, location, messageOf(exception)));
     }
 
-    private static String reasonOf(com.google.cloud.bigquery.BigQueryException exception) {
+    private static String reasonOf(com.google.cloud.bigquery.BigQueryException exception, boolean inferRetryableReason) {
         if (exception.getReason() != null) {
             return exception.getReason();
         }
 
-        // Reason is only set when BigQuery answered with a structured error payload. Otherwise derive it
-        // from the HTTP status so that the default retryReasons still apply to transient failures.
+        if (!inferRetryableReason) {
+            return UNKNOWN_REASON;
+        }
+
+        // No structured payload: derive the reason from the status so retryReasons still match.
+        // A bare 403 stays unknown on purpose: it is far more often a permission denial than a quota.
         return switch (exception.getCode()) {
             case 429 -> "rateLimitExceeded";
             case 500 -> "internalError";
             case 502, 503, 504 -> "backendError";
-            default -> "unknown";
+            default -> UNKNOWN_REASON;
         };
     }
 

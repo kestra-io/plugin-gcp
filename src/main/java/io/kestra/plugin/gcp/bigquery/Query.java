@@ -364,7 +364,8 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 try {
                     return queryJob.getQueryResults();
                 } catch (com.google.cloud.bigquery.BigQueryException e) {
-                    throw new BigQueryException(BigQueryService.errorsOf(e), e);
+                    // Safe to infer a retryable reason: re-reading a finished job's results has no side effect.
+                    throw new BigQueryException(BigQueryService.errorsOf(e, true), e);
                 }
             });
 

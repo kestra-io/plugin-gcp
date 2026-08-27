@@ -133,9 +133,8 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
 
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
-        // Goes through waitForJob like the other job tasks, rather than polling the job directly: it is
-        // what tracks the job for cancellation, retries retryable failures, and re-attaches to the
-        // already-submitted job instead of submitting a second extract.
+        // waitForJob, like the other job tasks: tracks the job for cancellation, retries transient
+        // failures, and re-attaches to the submitted job instead of extracting twice.
         Job extractJob = this.waitForJob(
             logger,
             () -> connection.create(JobInfo.of(configuration)),
@@ -143,10 +142,10 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
             connection
         );
 
-        return this.execute(runContext, configuration, extractJob);
+        return this.outputs(runContext, configuration, extractJob);
     }
 
-    protected ExtractToGcs.Output execute(RunContext runContext, ExtractJobConfiguration configuration, Job job)
+    private ExtractToGcs.Output outputs(RunContext runContext, ExtractJobConfiguration configuration, Job job)
         throws IllegalVariableEvaluationException {
         JobStatistics.ExtractStatistics stats = job.getStatistics();
         this.metrics(runContext, stats, job);
