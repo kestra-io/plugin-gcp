@@ -89,10 +89,10 @@ export const WithExecution: Story = {
     } as any,
 };
 
-// Task whose GCP config is driven by Pebble expressions (flow vars). Storybook resolves these
-// through the mocked expression-render endpoint (see .storybook/mocks/expressions.ts), so the panel
-// shows the RESOLVED values ("my-gcp-project", "EU") and a resolved SQL block instead of the raw
-// "{{ … }}" templates. `displayMode: "full"` opens the full view where the Query section renders.
+// Task whose GCP config is driven by Pebble expressions (flow vars). Server-side expression
+// rendering was dropped along with @kestra-io/kestra-sdk, so the panel now shows these RAW,
+// unresolved ("{{ vars.projectId }}", "{{ vars.location }}") instead of a resolved value.
+// `displayMode: "full"` opens the full view where the Query section renders.
 const expressionTask = {
     id: "query-bq",
     type: "io.kestra.plugin.gcp.bigquery.Query",
@@ -103,28 +103,25 @@ const expressionTask = {
 };
 
 export const PreExecutionExpressions: Story = {
-    name: "Pre-execution — expressions resolved",
+    name: "Pre-execution — expressions shown raw",
     args: {
         task: expressionTask,
         namespace: "company.team",
         flowId: "bq-pipeline",
         displayMode: "full",
     } as any,
-    // Regression guard: the panel must show RESOLVED values, never the raw "{{ … }}" templates.
+    // Regression guard: the panel must show the raw "{{ … }}" template, unresolved.
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
-        // Resolution is async (backend round-trip), so wait for the resolved value to appear.
         await waitFor(() =>
-            expect(canvas.getAllByText("my-gcp-project").length).toBeGreaterThan(0),
+            expect(canvas.getAllByText("{{ vars.projectId }}").length).toBeGreaterThan(0),
         );
-        expect(canvas.getAllByText("EU").length).toBeGreaterThan(0);
-        expect(canvas.queryByText("{{ vars.projectId }}")).not.toBeInTheDocument();
-        expect(canvas.queryByText("{{ vars.location }}")).not.toBeInTheDocument();
+        expect(canvas.getAllByText("{{ vars.location }}").length).toBeGreaterThan(0);
     },
 };
 
 export const PostExecutionExpressions: Story = {
-    name: "Post-execution — expressions resolved",
+    name: "Post-execution — expressions shown raw",
     args: {
         task: expressionTask,
         namespace: "company.team",
@@ -146,17 +143,16 @@ export const PostExecutionExpressions: Story = {
         fetchOutputs: async () => SAMPLE_OUTPUTS,
         fetchMetrics: async () => SAMPLE_METRICS,
     } as any,
-    // Regression guard: resolved values AND the post-execution job details (from the fetchOutputs/
-    // fetchMetrics fixtures) must render, still with no raw "{{ … }}" templates.
+    // Regression guard: raw "{{ … }}" templates AND the post-execution job details (from the
+    // fetchOutputs/fetchMetrics fixtures) must render together.
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
         await waitFor(() =>
-            expect(canvas.getAllByText("my-gcp-project").length).toBeGreaterThan(0),
+            expect(canvas.getAllByText("{{ vars.projectId }}").length).toBeGreaterThan(0),
         );
-        expect(canvas.getAllByText("EU").length).toBeGreaterThan(0);
+        expect(canvas.getAllByText("{{ vars.location }}").length).toBeGreaterThan(0);
         expect(
             canvas.getByText("my-gcp-project:EU.bquxjob_1a2b3c4d_1234567890ab"),
         ).toBeInTheDocument();
-        expect(canvas.queryByText("{{ vars.projectId }}")).not.toBeInTheDocument();
     },
 };

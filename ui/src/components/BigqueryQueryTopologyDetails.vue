@@ -3,7 +3,6 @@ import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, onMounted, onBeforeUnmount, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
 import { KsTopologyDetails, KsEditor } from "@kestra-io/design-system";
-import { renderExpressions } from "@kestra-io/kestra-sdk/expressions";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -33,8 +32,6 @@ const { t } = useI18n({
 const props = defineProps<KnownSlotProps["topology-details"]>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
-const namespace = computed(() => props.namespace);
-const flowId = computed(() => props.flowId);
 
 const taskId = computed(() => props.task?.id as string | undefined);
 
@@ -48,58 +45,6 @@ const sql = computed(() => (props.task as any)?.sql as string | undefined);
 const hasExecution = computed(() => !!props.execution?.id);
 const executionId = computed(() => props.execution?.id as string | undefined);
 
-const resolved = (v?: string) => (v && !v.startsWith("{") ? v : undefined);
-
-// Resolve the task config's Pebble expressions (projectId / location / sql) for display via
-// POST /expressions/render. Rendering is server-side and all-or-nothing per expression: anything the
-// restricted display engine cannot resolve (env(), kv(), missing vars, …) comes back unchanged, and
-// any failure keeps the raw template (see display()). Only values that actually contain a `{{…}}` are
-// worth a round-trip. This call still goes through @kestra-io/kestra-sdk directly (host-side expression
-// rendering isn't available yet — kestra-io/kestra-ee#10488), so the tenant is threaded from the
-// `tenant` prop the host now provides rather than read from localStorage.
-const EXPRESSION_RE = /\{\{.*?}}/;
-const rendered = ref<Record<string, string>>({});
-
-async function loadRenderedExpressions() {
-    const values = [projectId.value, location.value, sql.value].filter(
-        (v): v is string => typeof v === "string" && EXPRESSION_RE.test(v),
-    );
-    if (!values.length) {
-        rendered.value = {};
-        return;
-    }
-    try {
-        const { rendered: result } = await renderExpressions(
-            {
-                expressions: values,
-                tenant: props.tenant,
-                executionId: executionId.value,
-                namespace: resolved(namespace.value),
-                flowId: resolved(flowId.value),
-            },
-            {
-                // Best-effort display call: keep failures off the host's global error UI.
-                validateStatus: (s: number) => s === 200 || s === 404,
-                showMessageOnError: false,
-            },
-        );
-        rendered.value = result ?? {};
-    } catch {
-        // Drop rendered values so display() falls back to the raw template.
-        rendered.value = {};
-    }
-}
-
-watch(
-    [projectId, location, sql, executionId, namespace, flowId],
-    loadRenderedExpressions,
-    { immediate: true },
-);
-
-/** Returns the rendered value for `value`, falling back to the raw value. */
-const display = (value?: string) =>
-    value === undefined ? undefined : (rendered.value[value] ?? value);
-
 const taskRun = computed(() => {
     const list = props.execution?.taskRunList as any[] | undefined;
     return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
@@ -112,7 +57,8 @@ const fetchedOutputs = ref<Record<string, any> | null>(null);
 
 async function loadTaskOutputs() {
     try {
-        fetchedOutputs.value = (await props.fetchOutputs?.({ taskRunId: taskRun.value?.id })) ?? null;
+        fetchedOutputs.value =
+            (await props.fetchOutputs?.({ taskRunId: taskRun.value?.id })) ?? null;
     } catch {
         /* best-effort */
     }
@@ -130,8 +76,10 @@ const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.output
 
 // Parse project and location from the job ID as fallback.
 // BigQuery job IDs have the format: project:location.jobname
+// projectId/location are shown raw (unresolved Pebble expressions like "{{ vars.project }}"
+// display literally) since server-side rendering was dropped along with @kestra-io/kestra-sdk.
 const resolvedProject = computed(() => {
-    if (projectId.value) return display(projectId.value);
+    if (projectId.value) return projectId.value;
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -139,7 +87,7 @@ const resolvedProject = computed(() => {
 });
 
 const resolvedLocation = computed(() => {
-    if (location.value) return display(location.value);
+    if (location.value) return location.value;
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -148,7 +96,7 @@ const resolvedLocation = computed(() => {
     return jid.slice(colonIdx + 1, dotIdx);
 });
 
-const resolvedSql = computed(() => display(sql.value));
+const resolvedSql = computed(() => sql.value);
 
 // KsEditor needs an explicit "dark"/"light" theme. The host marks dark mode with a `dark` class on
 // <html> (same signal the design-system's own components observe), so mirror it and react to toggles.
