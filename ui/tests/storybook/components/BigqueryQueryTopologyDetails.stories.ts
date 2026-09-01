@@ -33,6 +33,29 @@ const baseTask = {
     fetch: true,
 };
 
+// The sample task-run outputs/metrics the post-execution stories' fetchOutputs/fetchMetrics fixtures
+// return — mirrors what the host would resolve server-side for this execution/task.
+const SAMPLE_OUTPUTS = {
+    jobId: "my-gcp-project:EU.bquxjob_1a2b3c4d_1234567890ab",
+    size: 15234,
+    destinationTable: {
+        project: "my-gcp-project",
+        dataset: "analytics",
+        table: "users_active",
+    },
+};
+
+const SAMPLE_METRICS = {
+    results: [
+        { name: "total.bytes.billed", value: 1_099_511_627_776 }, // 1 TiB
+        { name: "total.bytes.processed", value: 987_842_478_899 }, // ~0.9 TiB
+        { name: "total.slot.ms", value: 45_678 },
+        { name: "cache.hit", value: 0 },
+        { name: "duration", value: 3_420 },
+    ],
+    total: 5,
+};
+
 export const Default: Story = {
     name: "Pre-execution",
     args: {
@@ -61,7 +84,9 @@ export const WithExecution: Story = {
                 },
             ],
         } as any,
-    },
+        fetchOutputs: async () => SAMPLE_OUTPUTS,
+        fetchMetrics: async () => SAMPLE_METRICS,
+    } as any,
 };
 
 // Task whose GCP config is driven by Pebble expressions (flow vars). Storybook resolves these
@@ -118,9 +143,11 @@ export const PostExecutionExpressions: Story = {
                 },
             ],
         } as any,
+        fetchOutputs: async () => SAMPLE_OUTPUTS,
+        fetchMetrics: async () => SAMPLE_METRICS,
     } as any,
-    // Regression guard: resolved values AND the post-execution job details (from the mocked
-    // metrics/outputs) must render, still with no raw "{{ … }}" templates.
+    // Regression guard: resolved values AND the post-execution job details (from the fetchOutputs/
+    // fetchMetrics fixtures) must render, still with no raw "{{ … }}" templates.
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
         await waitFor(() =>

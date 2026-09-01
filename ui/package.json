@@ -18,7 +18,7 @@
     "format:fix": "oxfmt --write"
   },
   "dependencies": {
-    "@kestra-io/artifact-sdk": "^0.1.2",
+    "@kestra-io/artifact-sdk": "^0.2.2",
     "@kestra-io/design-system": "^0.3.0",
     "@kestra-io/kestra-sdk": "^2.0.0-kdevelop.17830727.7ce38d9a.a4050f62",
     "element-plus": "^2.14.0",

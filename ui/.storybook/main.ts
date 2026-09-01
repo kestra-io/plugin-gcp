@@ -5,17 +5,13 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const mock = (file: string) => resolve(here, "mocks", file);
 
-// The component reaches the Kestra backend through the generated SDK (expression rendering, metrics,
-// task outputs, …). Storybook has no backend, so alias those SDK entry points to local fakes that
-// return deterministic data — this is what lets the stories show *resolved* Pebble expressions and
-// populated job metrics fully offline. Storybook-only: the production build (vite.config.ts) never
-// sees these aliases.
+// The component only reaches the Kestra backend through the generated SDK for expression rendering
+// (host-side rendering hasn't landed yet — kestra-ee#10488); task, outputs and metrics all come from
+// host-provided story args/props now. Storybook has no backend, so alias that one SDK entry point to a
+// local fake that returns deterministic data — this is what lets the stories show *resolved* Pebble
+// expressions fully offline. Storybook-only: the production build (vite.config.ts) never sees this alias.
 const sdkMocks = [
     { find: /^@kestra-io\/kestra-sdk\/expressions$/, replacement: mock("expressions.ts") },
-    { find: /^@kestra-io\/kestra-sdk\/metrics$/, replacement: mock("metrics.ts") },
-    { find: /^@kestra-io\/kestra-sdk\/flows$/, replacement: mock("flows.ts") },
-    { find: /^@kestra-io\/kestra-sdk\/executions$/, replacement: mock("executions.ts") },
-    { find: /^@kestra-io\/kestra-sdk\/outputs$/, replacement: mock("outputs.ts") },
 ];
 
 const config: StorybookConfig = {
