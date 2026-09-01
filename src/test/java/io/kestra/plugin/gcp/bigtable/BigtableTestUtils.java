@@ -24,7 +24,9 @@ public abstract class BigtableTestUtils {
     protected static final String PROJECT_ID = "test-project";
     protected static final String INSTANCE_ID = "test-instance";
 
-    protected static final GenericContainer<?> BIGTABLE_EMULATOR = new GenericContainer<>("gcr.io/google.com/cloudsdktool/google-cloud-cli:477.0.0-emulators")
+    // gcr.io keeps only a rolling ~1 year window of google-cloud-cli tags: once this pin ages out,
+    // the image pull fails with "manifest unknown" and every Bigtable test errors on init. Bump it then.
+    protected static final GenericContainer<?> BIGTABLE_EMULATOR = new GenericContainer<>("gcr.io/google.com/cloudsdktool/google-cloud-cli:582.0.0-emulators")
         .withCommand("gcloud", "beta", "emulators", "bigtable", "start", "--host-port=0.0.0.0:8086")
         .withExposedPorts(8086);
 
