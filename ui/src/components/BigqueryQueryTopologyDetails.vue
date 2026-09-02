@@ -3,11 +3,6 @@ import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch, onMounted, onBeforeUnmount, useAttrs } from "vue";
 import { useI18n } from "vue-i18n";
 import { KsTopologyDetails, KsEditor } from "@kestra-io/design-system";
-import * as MetricsAPI from "@kestra-io/kestra-sdk/metrics";
-import * as FlowAPI from "@kestra-io/kestra-sdk/flows";
-import * as ExecutionAPI from "@kestra-io/kestra-sdk/executions";
-import * as OutputsAPI from "@kestra-io/kestra-sdk/outputs";
-import { renderExpressions } from "@kestra-io/kestra-sdk/expressions";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -37,133 +32,33 @@ const { t } = useI18n({
 const props = defineProps<KnownSlotProps["topology-details"]>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
-const namespace = computed(() => props.namespace);
-const flowId = computed(() => props.flowId);
 
 const taskId = computed(() => props.task?.id as string | undefined);
 
-// Full flow task config (fetched via SDK — inherits host EE auth automatically)
-const flowTask = ref<Record<string, any> | null>(null);
-
-async function loadFlowTask() {
-    if (!namespace.value || !flowId.value) return;
-    if (namespace.value.startsWith("{") || flowId.value.startsWith("{")) return;
-    try {
-        const f = await FlowAPI.flow(
-            { namespace: namespace.value, id: flowId.value },
-            {
-                showMessageOnError: false,
-                validateStatus: (s: number) => s === 200 || s === 404,
-            },
-        );
-        const tasks = (f as any).tasks as any[] | undefined;
-        flowTask.value = tasks?.find((t: any) => t.id === taskId.value) ?? null;
-    } catch {
-        /* best-effort */
-    }
-}
-
-watch(
-    [namespace, flowId],
-    ([ns, fid]) => {
-        if (ns && fid && !ns.startsWith("{") && !fid.startsWith("{")) loadFlowTask();
-    },
-    { immediate: true },
-);
-
-const projectId = computed(
-    () => ((props.task as any).projectId ?? flowTask.value?.projectId) as string | undefined,
-);
-const location = computed(
-    () => ((props.task as any).location ?? flowTask.value?.location) as string | undefined,
-);
-const sql = computed(() => ((props.task as any).sql ?? flowTask.value?.sql) as string | undefined);
+// props.task is the host-merged, complete task definition (graph node + parsed flow source) —
+// no separate flow fetch needed to read task-specific config.
+const projectId = computed(() => (props.task as any)?.projectId as string | undefined);
+const location = computed(() => (props.task as any)?.location as string | undefined);
+const sql = computed(() => (props.task as any)?.sql as string | undefined);
 
 // Execution state
 const hasExecution = computed(() => !!props.execution?.id);
 const executionId = computed(() => props.execution?.id as string | undefined);
-
-const resolved = (v?: string) => (v && !v.startsWith("{") ? v : undefined);
-
-// Resolve the task config's Pebble expressions (projectId / location / sql) for display via
-// POST /expressions/render. Rendering is server-side and all-or-nothing per expression: anything the
-// restricted display engine cannot resolve (env(), kv(), missing vars, …) comes back unchanged, and
-// any failure keeps the raw template (see display()). Only values that actually contain a `{{…}}` are
-// worth a round-trip. The tenant is passed explicitly (from where the host EE persists it on
-// navigation) because the plugin bundles its own SDK copy whose global tenant stays at the "main"
-// default; absent on single-tenant OSS, where "main" is already correct.
-const EXPRESSION_RE = /\{\{.*?}}/;
-const rendered = ref<Record<string, string>>({});
-
-async function loadRenderedExpressions() {
-    const values = [projectId.value, location.value, sql.value].filter(
-        (v): v is string => typeof v === "string" && EXPRESSION_RE.test(v),
-    );
-    if (!values.length) {
-        rendered.value = {};
-        return;
-    }
-    try {
-        const { rendered: result } = await renderExpressions(
-            {
-                expressions: values,
-                tenant: window.localStorage.getItem("selectedTenant") ?? undefined,
-                executionId: executionId.value,
-                namespace: resolved(namespace.value),
-                flowId: resolved(flowId.value),
-            },
-            {
-                // Best-effort display call: keep failures off the host's global error UI.
-                validateStatus: (s: number) => s === 200 || s === 404,
-                showMessageOnError: false,
-            },
-        );
-        rendered.value = result ?? {};
-    } catch {
-        // Drop rendered values so display() falls back to the raw template.
-        rendered.value = {};
-    }
-}
-
-watch(
-    [projectId, location, sql, executionId, namespace, flowId],
-    loadRenderedExpressions,
-    { immediate: true },
-);
-
-/** Returns the rendered value for `value`, falling back to the raw value. */
-const display = (value?: string) =>
-    value === undefined ? undefined : (rendered.value[value] ?? value);
 
 const taskRun = computed(() => {
     const list = props.execution?.taskRunList as any[] | undefined;
     return list?.filter((tr: any) => tr.taskId === taskId.value).at(-1);
 });
 
-// Fetch the full execution to get outputs (props.execution has task runs but no outputs)
+// props.execution carries task runs but no outputs; fetch the current task run's outputs from the
+// host-provided lazy fetcher (scoped server-side to this execution/task — costs no request if never
+// called, and resolves to {} outside an execution).
 const fetchedOutputs = ref<Record<string, any> | null>(null);
 
-async function loadTaskOutputs(execId: string) {
+async function loadTaskOutputs() {
     try {
-        const exec = await ExecutionAPI.execution(
-            { executionId: execId },
-            {
-                showMessageOnError: false,
-                validateStatus: (s: number) => s === 200 || s === 404,
-            },
-        );
-        const list = exec.taskRunList as any[] | undefined;
-        const tr = list?.filter((tr) => tr.taskId === taskId.value).at(-1);
-        // for 1.3
-        fetchedOutputs.value = (tr as any)?.outputs ?? null;
-
-        // for 1.4+, fetch via dedicated API if not present in execution response
-        if (!fetchedOutputs.value) {
-            fetchedOutputs.value = await OutputsAPI.taskRunOutputs({
-                executionId: execId,
-                taskRunId: tr?.id,
-            });
-        }
+        fetchedOutputs.value =
+            (await props.fetchOutputs?.({ taskRunId: taskRun.value?.id })) ?? null;
     } catch {
         /* best-effort */
     }
@@ -172,7 +67,7 @@ async function loadTaskOutputs(execId: string) {
 watch(
     executionId,
     (id) => {
-        if (id) loadTaskOutputs(id);
+        if (id) loadTaskOutputs();
     },
     { immediate: true },
 );
@@ -181,8 +76,10 @@ const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.output
 
 // Parse project and location from the job ID as fallback.
 // BigQuery job IDs have the format: project:location.jobname
+// projectId/location are shown raw (unresolved Pebble expressions like "{{ vars.project }}"
+// display literally) since server-side rendering was dropped along with @kestra-io/kestra-sdk.
 const resolvedProject = computed(() => {
-    if (projectId.value) return display(projectId.value);
+    if (projectId.value) return projectId.value;
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -190,7 +87,7 @@ const resolvedProject = computed(() => {
 });
 
 const resolvedLocation = computed(() => {
-    if (location.value) return display(location.value);
+    if (location.value) return location.value;
     const jid = taskOutputs.value?.jobId as string | undefined;
     if (!jid) return undefined;
     const colonIdx = jid.indexOf(":");
@@ -199,7 +96,7 @@ const resolvedLocation = computed(() => {
     return jid.slice(colonIdx + 1, dotIdx);
 });
 
-const resolvedSql = computed(() => display(sql.value));
+const resolvedSql = computed(() => sql.value);
 
 // KsEditor needs an explicit "dark"/"light" theme. The host marks dark mode with a `dark` class on
 // <html> (same signal the design-system's own components observe), so mirror it and react to toggles.
@@ -218,7 +115,8 @@ onMounted(() => {
 });
 onBeforeUnmount(() => themeObserver?.disconnect());
 
-// Metrics (fetched via SDK — best-effort)
+// Metrics (via the host-provided lazy fetcher — already scoped server-side to this task, so no
+// client-side taskId filtering is needed anymore).
 interface MetricEntry {
     name: string;
     value: number;
@@ -227,18 +125,10 @@ interface MetricEntry {
 
 const metrics = ref<MetricEntry[]>([]);
 
-async function loadMetrics(execId: string) {
+async function loadMetrics() {
     try {
-        const resp = await MetricsAPI.searchByExecution(
-            { executionId: execId },
-            {
-                showMessageOnError: false,
-                validateStatus: (s: number) => s === 200 || s === 404,
-            },
-        );
-        metrics.value = ((resp.results as MetricEntry[]) ?? []).filter(
-            (m) => !m.taskId || m.taskId === taskId.value,
-        );
+        const resp = await props.fetchMetrics?.({ taskRunId: taskRun.value?.id });
+        metrics.value = (resp?.results as MetricEntry[]) ?? [];
     } catch {
         /* best-effort */
     }
@@ -247,7 +137,7 @@ async function loadMetrics(execId: string) {
 watch(
     executionId,
     (id) => {
-        if (id) loadMetrics(id);
+        if (id) loadMetrics();
     },
     { immediate: true },
 );
