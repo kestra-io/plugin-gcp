@@ -66,6 +66,12 @@ public abstract class BigtableTestUtils {
         return BIGTABLE_EMULATOR.getHost() + ":" + BIGTABLE_EMULATOR.getMappedPort(8086);
     }
 
+    // Bigtable requires cell timestamps to be millisecond-aligned; the client's default
+    // (Instant.now()) is microsecond-precision and gets rejected as an invalid timestamp.
+    protected static long timestampMicros() {
+        return System.currentTimeMillis() * 1000L;
+    }
+
     protected static BigtableDataClient createDataClient() throws Exception {
         if (dataChannel == null || dataChannel.isShutdown()) {
             dataChannel = ManagedChannelBuilder.forTarget(getEmulatorHost())

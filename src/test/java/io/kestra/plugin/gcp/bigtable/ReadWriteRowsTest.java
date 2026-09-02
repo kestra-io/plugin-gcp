@@ -41,7 +41,7 @@ class ReadWriteRowsTest extends BigtableTestUtils {
         try (BigtableDataClient client = createDataClient()) {
             client.mutateRow(
                 RowMutation.create(TABLE_ID, "row-001")
-                    .setCell(COLUMN_FAMILY, "value", "42")
+                    .setCell(COLUMN_FAMILY, "value", timestampMicros(), "42")
             );
         }
 
@@ -119,7 +119,7 @@ class ReadWriteRowsTest extends BigtableTestUtils {
         try (BigtableDataClient client = createDataClient()) {
             client.mutateRow(
                 RowMutation.create(TABLE_ID, "delete-001")
-                    .setCell(COLUMN_FAMILY, "value", "to-delete")
+                    .setCell(COLUMN_FAMILY, "value", timestampMicros(), "to-delete")
             );
         }
 
@@ -161,7 +161,7 @@ class ReadWriteRowsTest extends BigtableTestUtils {
         try (BigtableDataClient client = createDataClient()) {
             client.mutateRow(
                 RowMutation.create(TABLE_ID, "trigger-001")
-                    .setCell(COLUMN_FAMILY, "value", "trigger-val")
+                    .setCell(COLUMN_FAMILY, "value", timestampMicros(), "trigger-val")
             );
         }
 

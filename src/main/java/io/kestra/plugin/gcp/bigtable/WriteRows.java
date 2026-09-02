@@ -130,6 +130,9 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
         logger.debug("Writing {} row(s) to Bigtable table '{}'", rRows.size(), rTableId);
 
         BulkMutation bulkMutation = BulkMutation.create(rTableId);
+        // Bigtable requires cell timestamps to be millisecond-aligned (microseconds % 1000 == 0);
+        // the client's own default (Instant.now()) is microsecond-precision and would be rejected.
+        long timestampMicros = System.currentTimeMillis() * 1000L;
 
         for (RowInput rowInput : rRows) {
             String family = rowInput.getColumnFamily() != null ? rowInput.getColumnFamily() : rDefaultFamily;
@@ -143,7 +146,7 @@ public class WriteRows extends AbstractBigtable implements RunnableTask<WriteRow
 
             if (rowInput.getCells() != null) {
                 for (Map.Entry<String, String> cell : rowInput.getCells().entrySet()) {
-                    entry = entry.setCell(family, cell.getKey(), cell.getValue());
+                    entry = entry.setCell(family, cell.getKey(), timestampMicros, cell.getValue());
                 }
             }
 
