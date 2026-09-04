@@ -14,6 +14,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
@@ -24,7 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -56,7 +56,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 )
 @Schema(
     title = "Copy or snapshot BigQuery tables",
-    description = "Runs a table copy job between tables or partitions. Supports COPY, SNAPSHOT, RESTORE, or CLONE operations and honors create/write dispositions."
+    description = "Runs a table copy job between tables or partitions. Supports COPY, SNAPSHOT, RESTORE, or CLONE operations and honors create/write dispositions. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
 )
 public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Schema(
@@ -93,12 +93,13 @@ public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
 
         Job copyJob = this.waitForJob(
             logger,
-            () -> connection
-                .create(
-                    JobInfo.newBuilder(jobConfiguration)
-                        .setJobId(BigQueryService.jobId(runContext, this))
-                        .build()
-                ),
+            () -> BigQueryService.createOrAdoptJob(
+                connection,
+                JobInfo.newBuilder(jobConfiguration)
+                    .setJobId(BigQueryService.jobId(runContext, this))
+                    .build(),
+                logger
+            ),
             runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
             runContext,
             connection
