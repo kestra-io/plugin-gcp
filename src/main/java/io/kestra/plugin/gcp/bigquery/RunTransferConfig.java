@@ -101,7 +101,8 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         description = """
             When `true` (default), the task first looks for a run of this config that is already \
             pending or running and adopts it, so a retried execution never starts a duplicate run. \
-            A run whose schedule time is in the future is never adopted: it is queued, not in-flight. \
+            A pending run whose schedule time is in the future is never adopted: it is queued, not in-flight. \
+            A running run is always in-flight and stays eligible whatever its schedule time. \
             This matters for transfers with a refresh window (Google Ads, GA4, YouTube), where Google \
             permanently keeps a chain of pending runs queued ahead of now, one per backfill date. \
             By default any in-flight run is adopted regardless of its age; set `reattachMaxAge` to opt into \
@@ -263,7 +264,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         // duplicate run to be started -- defeating the whole purpose of reattach.
         var staleCutoff = reattachMaxAge == null ? null : now.minus(reattachMaxAge);
 
-        // A run scheduled in the future is queued, not in-flight.
+        // A PENDING run scheduled in the future is queued. RUNNING is in-flight whatever its schedule time.
         var futureCutoff = now.plus(REATTACH_FUTURE_GRACE);
 
         TransferRun best = null;
@@ -278,7 +279,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         ).iterateAll()) {
             var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
 
-            if (scheduleTime.isAfter(futureCutoff)) {
+            if (candidate.getState() == TransferState.PENDING && scheduleTime.isAfter(futureCutoff)) {
                 queued++;
             } else if (staleCutoff != null && scheduleTime.isBefore(staleCutoff)) {
                 logger.info(
@@ -293,7 +294,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         if (queued > 0) {
             // Normal for a refresh-window config, so this explains rather than warns.
             logger.info(
-                "Ignoring {} transfer run(s) of '{}' scheduled in the future -- they are queued, not in-flight",
+                "Ignoring {} pending transfer run(s) of '{}' scheduled in the future -- they are queued, not in-flight",
                 queued, configName
             );
         }

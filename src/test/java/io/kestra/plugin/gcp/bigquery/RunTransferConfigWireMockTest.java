@@ -568,6 +568,87 @@ class RunTransferConfigWireMockTest {
     }
 
     @Test
+    void reattachAdoptsRunningRunScheduledInTheFuture(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        var runningRunName = CONFIG_NAME + "/runs/run-running-future";
+        var scheduleTime = scheduleTimeFromNow(Duration.ofHours(1));
+
+        // RUNNING is in-flight by definition, so the future cutoff must not reach it. A worker clock
+        // lagging Google by more than the grace would otherwise drop every genuinely in-flight run.
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME + "/runs"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "transferRuns": [
+                                {
+                                  "name": "%s",
+                                  "state": "RUNNING",
+                                  "scheduleTime": "%s"
+                                }
+                              ]
+                            }
+                            """.formatted(runningRunName, scheduleTime))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + runningRunName))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "state": "SUCCEEDED",
+                              "scheduleTime": "%s"
+                            }
+                            """.formatted(runningRunName, scheduleTime))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "destinationDatasetId": "my_dataset"
+                            }
+                            """.formatted(CONFIG_NAME))
+                )
+        );
+
+        var task = RunTransferConfig.builder()
+            .id(IdUtils.create())
+            .type(RunTransferConfig.class.getName())
+            .transferConfigName(Property.ofValue(CONFIG_NAME))
+            .reattach(Property.ofValue(true))
+            .wait(Property.ofValue(true))
+            .pollInterval(Property.ofValue(Duration.ofMillis(50)))
+            .maxDuration(Property.ofValue(Duration.ofSeconds(10)))
+            .assets(new AssetsDeclaration(true, List.of(), List.of()))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        try (DataTransferServiceClient client = httpJsonClient(wmRuntimeInfo)) {
+            var output = task.run(runContext, client);
+
+            assertThat("a RUNNING run is in-flight whatever its schedule time", output.isReattached(), is(true));
+            assertThat(output.getRunName(), is(runningRunName));
+        }
+
+        verify(0, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
+    }
+
+    @Test
     void reattachMaxAgeAndFutureCutoffBothApply(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         var staleRunName = CONFIG_NAME + "/runs/run-stale";
         var queuedRunName = CONFIG_NAME + "/runs/run-queued";
