@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -100,6 +101,10 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         description = """
             When `true` (default), the task first looks for a run of this config that is already \
             pending or running and adopts it, so a retried execution never starts a duplicate run. \
+            A pending run whose schedule time is in the future is never adopted: it is queued, not in-flight. \
+            A running run is always in-flight and stays eligible whatever its schedule time. \
+            This matters for transfers with a refresh window (Google Ads, GA4, YouTube), where Google \
+            permanently keeps a chain of pending runs queued ahead of now, one per backfill date. \
             By default any in-flight run is adopted regardless of its age; set `reattachMaxAge` to opt into \
             treating an old in-flight run as stale so a fresh run is started instead. \
             Set to `false` to always start a new run."""
@@ -161,6 +166,10 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         var rWait = runContext.render(this.wait).as(Boolean.class).orElse(true);
         var rReattach = runContext.render(this.reattach).as(Boolean.class).orElse(true);
         var rReattachMaxAge = runContext.render(this.reattachMaxAge).as(Duration.class).orElse(null);
+        // A negative value pushes the staleness cutoff into the future, which would silently reject every candidate.
+        if (rReattachMaxAge != null && rReattachMaxAge.isNegative()) {
+            throw new IllegalArgumentException("`reattachMaxAge` must not be negative, got " + rReattachMaxAge);
+        }
         var rPollInterval = runContext.render(this.pollInterval).as(Duration.class).orElse(Duration.ofSeconds(15));
         var rMaxDuration = runContext.render(this.maxDuration).as(Duration.class).orElse(Duration.ofHours(1));
 
@@ -238,14 +247,29 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         return output(finalRun.getName(), finalRun.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
     }
 
+    // Absorbs the drift between the startManualTransferRuns call and the scheduleTime DTS stamps on it.
+    private static final Duration REATTACH_FUTURE_GRACE = Duration.ofSeconds(30);
+
+    // A RUNNING candidate always beats a PENDING one. Within the same state the latest schedule time wins.
+    private static final Comparator<TransferRun> BY_LIVENESS = Comparator.comparing((TransferRun run) -> run.getState() == TransferState.RUNNING)
+        .thenComparing(TransferRun::getScheduleTime, Timestamps.comparator());
+
     private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration reattachMaxAge, Logger logger) {
+        // Both cutoffs come from one clock read so a candidate cannot fall between them.
+        var now = Instant.now();
+
         // reattachMaxAge is opt-in and deliberately independent of maxDuration: maxDuration is also this
         // task's own wait budget, so using it as the staleness cutoff would make a run that is still
         // legitimately in-flight after a first attempt timed out look "stale" on the retry, causing a
         // duplicate run to be started -- defeating the whole purpose of reattach.
-        var cutoff = reattachMaxAge == null ? null : Instant.now().minus(reattachMaxAge);
+        var staleCutoff = reattachMaxAge == null ? null : now.minus(reattachMaxAge);
 
-        TransferRun mostRecent = null;
+        // A PENDING run scheduled in the future is queued. RUNNING is in-flight whatever its schedule time.
+        var futureCutoff = now.plus(REATTACH_FUTURE_GRACE);
+
+        TransferRun best = null;
+        var queued = 0;
+
         for (TransferRun candidate : client.listTransferRuns(
             ListTransferRunsRequest.newBuilder()
                 .setParent(configName)
@@ -253,21 +277,29 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
                 .addStates(TransferState.RUNNING)
                 .build()
         ).iterateAll()) {
-            if (cutoff != null) {
-                var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
-                if (scheduleTime.isBefore(cutoff)) {
-                    logger.info(
-                        "Ignoring in-flight transfer run '{}' scheduled at {} because it is older than reattachMaxAge ({}); a fresh run will be started",
-                        candidate.getName(), scheduleTime, reattachMaxAge
-                    );
-                    continue;
-                }
-            }
-            if (mostRecent == null || Timestamps.compare(candidate.getScheduleTime(), mostRecent.getScheduleTime()) > 0) {
-                mostRecent = candidate;
+            var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
+
+            if (candidate.getState() == TransferState.PENDING && scheduleTime.isAfter(futureCutoff)) {
+                queued++;
+            } else if (staleCutoff != null && scheduleTime.isBefore(staleCutoff)) {
+                logger.info(
+                    "Ignoring in-flight transfer run '{}' scheduled at {} because it is older than reattachMaxAge ({}); a fresh run will be started",
+                    candidate.getName(), scheduleTime, reattachMaxAge
+                );
+            } else if (best == null || BY_LIVENESS.compare(candidate, best) > 0) {
+                best = candidate;
             }
         }
-        return mostRecent;
+
+        if (queued > 0) {
+            // Normal for a refresh-window config, so this explains rather than warns.
+            logger.info(
+                "Ignoring {} pending transfer run(s) of '{}' scheduled in the future -- they are queued, not in-flight",
+                queued, configName
+            );
+        }
+
+        return best;
     }
 
     private static boolean isTerminal(TransferState state) {
