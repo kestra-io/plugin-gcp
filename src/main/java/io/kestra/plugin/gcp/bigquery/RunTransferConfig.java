@@ -165,6 +165,10 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         var rWait = runContext.render(this.wait).as(Boolean.class).orElse(true);
         var rReattach = runContext.render(this.reattach).as(Boolean.class).orElse(true);
         var rReattachMaxAge = runContext.render(this.reattachMaxAge).as(Duration.class).orElse(null);
+        // A negative value pushes the staleness cutoff into the future, which would silently reject every candidate.
+        if (rReattachMaxAge != null && rReattachMaxAge.isNegative()) {
+            throw new IllegalArgumentException("`reattachMaxAge` must not be negative, got " + rReattachMaxAge);
+        }
         var rPollInterval = runContext.render(this.pollInterval).as(Duration.class).orElse(Duration.ofSeconds(15));
         var rMaxDuration = runContext.render(this.maxDuration).as(Duration.class).orElse(Duration.ofHours(1));
 

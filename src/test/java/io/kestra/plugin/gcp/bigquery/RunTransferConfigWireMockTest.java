@@ -53,7 +53,7 @@ class RunTransferConfigWireMockTest {
     private static final String CONFIG_NAME = "projects/my-project/locations/us/transferConfigs/615123456789012345";
     private static final String RUN_NAME = CONFIG_NAME + "/runs/run-abc123";
 
-    // A literal schedule time that is in the past today silently flips to the future later on.
+    // A literal schedule time picked as future at write time silently becomes past, flipping which branch runs.
     private static String scheduleTimeFromNow(Duration offset) {
         return Instant.now().plus(offset).toString();
     }
@@ -562,6 +562,141 @@ class RunTransferConfigWireMockTest {
 
             assertThat("a run scheduled just ahead of now is the task's own run and must still be adopted", output.isReattached(), is(true));
             assertThat(output.getRunName(), is(inFlightRunName));
+        }
+
+        verify(0, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
+    }
+
+    @Test
+    void reattachMaxAgeAndFutureCutoffBothApply(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        var staleRunName = CONFIG_NAME + "/runs/run-stale";
+        var queuedRunName = CONFIG_NAME + "/runs/run-queued";
+        var newRunName = CONFIG_NAME + "/runs/run-fresh";
+        var newRunScheduleTime = scheduleTimeFromNow(Duration.ZERO);
+
+        // One candidate fails each bound, so neither cutoff can rescue a candidate the other rejects.
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME + "/runs"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(
+                            """
+                                {
+                                  "transferRuns": [
+                                    {
+                                      "name": "%s",
+                                      "state": "RUNNING",
+                                      "scheduleTime": "%s"
+                                    },
+                                    {
+                                      "name": "%s",
+                                      "state": "PENDING",
+                                      "scheduleTime": "%s"
+                                    }
+                                  ]
+                                }
+                                """.formatted(
+                                staleRunName, scheduleTimeFromNow(Duration.ofHours(-6)),
+                                queuedRunName, scheduleTimeFromNow(Duration.ofHours(1))
+                            )
+                        )
+                )
+        );
+
+        stubFor(
+            post(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "runs": [
+                                {
+                                  "name": "%s",
+                                  "state": "PENDING",
+                                  "scheduleTime": "%s"
+                                }
+                              ]
+                            }
+                            """.formatted(newRunName, newRunScheduleTime))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + newRunName))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "state": "SUCCEEDED",
+                              "scheduleTime": "%s"
+                            }
+                            """.formatted(newRunName, newRunScheduleTime))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "destinationDatasetId": "my_dataset"
+                            }
+                            """.formatted(CONFIG_NAME))
+                )
+        );
+
+        var task = RunTransferConfig.builder()
+            .id(IdUtils.create())
+            .type(RunTransferConfig.class.getName())
+            .transferConfigName(Property.ofValue(CONFIG_NAME))
+            .reattach(Property.ofValue(true))
+            .reattachMaxAge(Property.ofValue(Duration.ofMinutes(30)))
+            .wait(Property.ofValue(true))
+            .pollInterval(Property.ofValue(Duration.ofMillis(50)))
+            .maxDuration(Property.ofValue(Duration.ofSeconds(10)))
+            .assets(new AssetsDeclaration(true, List.of(), List.of()))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        try (DataTransferServiceClient client = httpJsonClient(wmRuntimeInfo)) {
+            var output = task.run(runContext, client);
+
+            assertThat("a stale candidate and a queued candidate leave nothing to adopt", output.isReattached(), is(false));
+            assertThat(output.getRunName(), is(newRunName));
+        }
+
+        verify(1, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
+    }
+
+    @Test
+    void negativeReattachMaxAgeThrows(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        var task = RunTransferConfig.builder()
+            .id(IdUtils.create())
+            .type(RunTransferConfig.class.getName())
+            .transferConfigName(Property.ofValue(CONFIG_NAME))
+            .reattach(Property.ofValue(true))
+            .reattachMaxAge(Property.ofValue(Duration.ofHours(-1)))
+            .assets(new AssetsDeclaration(true, List.of(), List.of()))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        try (DataTransferServiceClient client = httpJsonClient(wmRuntimeInfo)) {
+            var exception = assertThrows(IllegalArgumentException.class, () -> task.run(runContext, client));
+
+            assertThat(exception.getMessage(), containsString("`reattachMaxAge` must not be negative"));
         }
 
         verify(0, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
