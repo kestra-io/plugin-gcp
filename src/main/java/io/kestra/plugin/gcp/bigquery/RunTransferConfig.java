@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -245,7 +246,12 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
     // the run, so a bare "now" cutoff would make a fast retry refuse to adopt the run this task just started.
     private static final Duration REATTACH_FUTURE_GRACE = Duration.ofSeconds(30);
 
+    // A RUNNING candidate always beats a PENDING one. Within the same state the latest schedule time wins.
+    private static final Comparator<TransferRun> BY_LIVENESS = Comparator.comparing((TransferRun run) -> run.getState() == TransferState.RUNNING)
+        .thenComparing(TransferRun::getScheduleTime, Timestamps.comparator());
+
     private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration reattachMaxAge, Logger logger) {
+        // Both cutoffs come from one clock read so a candidate cannot fall between them.
         var now = Instant.now();
 
         // reattachMaxAge is opt-in and deliberately independent of maxDuration: maxDuration is also this
@@ -260,8 +266,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         var futureCutoff = now.plus(REATTACH_FUTURE_GRACE);
 
         TransferRun best = null;
-        Instant bestScheduleTime = null;
-        var queuedSkipped = 0;
+        var queued = 0;
 
         for (TransferRun candidate : client.listTransferRuns(
             ListTransferRunsRequest.newBuilder()
@@ -273,43 +278,26 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
             var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
 
             if (scheduleTime.isAfter(futureCutoff)) {
-                queuedSkipped++;
-                continue;
-            }
-
-            if (staleCutoff != null && scheduleTime.isBefore(staleCutoff)) {
+                queued++;
+            } else if (staleCutoff != null && scheduleTime.isBefore(staleCutoff)) {
                 logger.info(
                     "Ignoring in-flight transfer run '{}' scheduled at {} because it is older than reattachMaxAge ({}); a fresh run will be started",
                     candidate.getName(), scheduleTime, reattachMaxAge
                 );
-                continue;
-            }
-
-            if (best == null || outranks(candidate, scheduleTime, best, bestScheduleTime)) {
+            } else if (best == null || BY_LIVENESS.compare(candidate, best) > 0) {
                 best = candidate;
-                bestScheduleTime = scheduleTime;
             }
         }
 
-        if (queuedSkipped > 0) {
+        if (queued > 0) {
             // Normal for a refresh-window config, so this explains rather than warns.
             logger.info(
                 "Ignoring {} transfer run(s) of '{}' scheduled in the future -- they are queued, not in-flight",
-                queuedSkipped, configName
+                queued, configName
             );
         }
 
         return best;
-    }
-
-    // A RUNNING candidate always beats a PENDING one. Within the same state the latest scheduleTime wins.
-    private static boolean outranks(TransferRun candidate, Instant candidateScheduleTime, TransferRun best, Instant bestScheduleTime) {
-        var candidateRunning = candidate.getState() == TransferState.RUNNING;
-        var bestRunning = best.getState() == TransferState.RUNNING;
-        if (candidateRunning != bestRunning) {
-            return candidateRunning;
-        }
-        return candidateScheduleTime.isAfter(bestScheduleTime);
     }
 
     private static boolean isTerminal(TransferState state) {
