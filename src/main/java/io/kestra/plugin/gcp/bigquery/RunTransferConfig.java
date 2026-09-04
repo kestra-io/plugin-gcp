@@ -100,6 +100,9 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         description = """
             When `true` (default), the task first looks for a run of this config that is already \
             pending or running and adopts it, so a retried execution never starts a duplicate run. \
+            A run whose schedule time is in the future is never adopted: it is queued, not in-flight. \
+            This matters for transfers with a refresh window (Google Ads, GA4, YouTube), where Google \
+            permanently keeps a chain of pending runs queued ahead of now, one per backfill date. \
             By default any in-flight run is adopted regardless of its age; set `reattachMaxAge` to opt into \
             treating an old in-flight run as stale so a fresh run is started instead. \
             Set to `false` to always start a new run."""
@@ -238,14 +241,28 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         return output(finalRun.getName(), finalRun.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
     }
 
+    // DTS stamps scheduleTime a fraction of a second after the startManualTransferRuns call that requested
+    // the run, so a bare "now" cutoff would make a fast retry refuse to adopt the run this task just started.
+    private static final Duration REATTACH_FUTURE_GRACE = Duration.ofSeconds(30);
+
     private static TransferRun findInFlightRun(DataTransferServiceClient client, String configName, Duration reattachMaxAge, Logger logger) {
+        var now = Instant.now();
+
         // reattachMaxAge is opt-in and deliberately independent of maxDuration: maxDuration is also this
         // task's own wait budget, so using it as the staleness cutoff would make a run that is still
         // legitimately in-flight after a first attempt timed out look "stale" on the retry, causing a
         // duplicate run to be started -- defeating the whole purpose of reattach.
-        var cutoff = reattachMaxAge == null ? null : Instant.now().minus(reattachMaxAge);
+        var staleCutoff = reattachMaxAge == null ? null : now.minus(reattachMaxAge);
 
-        TransferRun mostRecent = null;
+        // A run scheduled in the future is queued, not in-flight. Transfers with a refresh window (Google
+        // Ads, GA4, YouTube) permanently keep a chain of such PENDING runs, one per backfill date, so
+        // without this bound the config always has a candidate and the task never starts a run of its own.
+        var futureCutoff = now.plus(REATTACH_FUTURE_GRACE);
+
+        TransferRun best = null;
+        Instant bestScheduleTime = null;
+        var queuedSkipped = 0;
+
         for (TransferRun candidate : client.listTransferRuns(
             ListTransferRunsRequest.newBuilder()
                 .setParent(configName)
@@ -253,21 +270,46 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
                 .addStates(TransferState.RUNNING)
                 .build()
         ).iterateAll()) {
-            if (cutoff != null) {
-                var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
-                if (scheduleTime.isBefore(cutoff)) {
-                    logger.info(
-                        "Ignoring in-flight transfer run '{}' scheduled at {} because it is older than reattachMaxAge ({}); a fresh run will be started",
-                        candidate.getName(), scheduleTime, reattachMaxAge
-                    );
-                    continue;
-                }
+            var scheduleTime = Instant.ofEpochMilli(Timestamps.toMillis(candidate.getScheduleTime()));
+
+            if (scheduleTime.isAfter(futureCutoff)) {
+                queuedSkipped++;
+                continue;
             }
-            if (mostRecent == null || Timestamps.compare(candidate.getScheduleTime(), mostRecent.getScheduleTime()) > 0) {
-                mostRecent = candidate;
+
+            if (staleCutoff != null && scheduleTime.isBefore(staleCutoff)) {
+                logger.info(
+                    "Ignoring in-flight transfer run '{}' scheduled at {} because it is older than reattachMaxAge ({}); a fresh run will be started",
+                    candidate.getName(), scheduleTime, reattachMaxAge
+                );
+                continue;
+            }
+
+            if (best == null || outranks(candidate, scheduleTime, best, bestScheduleTime)) {
+                best = candidate;
+                bestScheduleTime = scheduleTime;
             }
         }
-        return mostRecent;
+
+        if (queuedSkipped > 0) {
+            // Normal for a refresh-window config, so this explains rather than warns.
+            logger.info(
+                "Ignoring {} transfer run(s) of '{}' scheduled in the future -- they are queued, not in-flight",
+                queuedSkipped, configName
+            );
+        }
+
+        return best;
+    }
+
+    // A RUNNING candidate always beats a PENDING one. Within the same state the latest scheduleTime wins.
+    private static boolean outranks(TransferRun candidate, Instant candidateScheduleTime, TransferRun best, Instant bestScheduleTime) {
+        var candidateRunning = candidate.getState() == TransferState.RUNNING;
+        var bestRunning = best.getState() == TransferState.RUNNING;
+        if (candidateRunning != bestRunning) {
+            return candidateRunning;
+        }
+        return candidateScheduleTime.isAfter(bestScheduleTime);
     }
 
     private static boolean isTerminal(TransferState state) {

@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.bigquery;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -51,6 +52,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class RunTransferConfigWireMockTest {
     private static final String CONFIG_NAME = "projects/my-project/locations/us/transferConfigs/615123456789012345";
     private static final String RUN_NAME = CONFIG_NAME + "/runs/run-abc123";
+
+    // Schedule times for the reattach cutoff tests must be relative to now, not literals: a literal
+    // that is in the past today silently flips to the future once wall-clock time passes it.
+    private static String scheduleTimeFromNow(Duration offset) {
+        return Instant.now().plus(offset).toString();
+    }
 
     @Inject
     private RunContextFactory runContextFactory;
@@ -377,6 +384,278 @@ class RunTransferConfigWireMockTest {
         }
 
         verify(1, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
+    }
+
+    @Test
+    void reattachIgnoresFutureScheduledRunAndStartsNewOne(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        var queuedRunName = CONFIG_NAME + "/runs/run-queued";
+        var newRunName = CONFIG_NAME + "/runs/run-fresh";
+
+        // A refresh-window transfer permanently keeps runs queued ahead of now. Adopting one made the
+        // task idle until Google's own schedule reached it, then report success for a stale date slice.
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME + "/runs"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "transferRuns": [
+                                {
+                                  "name": "%s",
+                                  "state": "PENDING",
+                                  "scheduleTime": "%s"
+                                }
+                              ]
+                            }
+                            """.formatted(queuedRunName, scheduleTimeFromNow(Duration.ofHours(1))))
+                )
+        );
+
+        stubFor(
+            post(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "runs": [
+                                {
+                                  "name": "%s",
+                                  "state": "PENDING",
+                                  "scheduleTime": "%s"
+                                }
+                              ]
+                            }
+                            """.formatted(newRunName, scheduleTimeFromNow(Duration.ZERO)))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + newRunName))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "state": "SUCCEEDED",
+                              "scheduleTime": "%s"
+                            }
+                            """.formatted(newRunName, scheduleTimeFromNow(Duration.ZERO)))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "destinationDatasetId": "my_dataset"
+                            }
+                            """.formatted(CONFIG_NAME))
+                )
+        );
+
+        var task = RunTransferConfig.builder()
+            .id(IdUtils.create())
+            .type(RunTransferConfig.class.getName())
+            .transferConfigName(Property.ofValue(CONFIG_NAME))
+            .reattach(Property.ofValue(true))
+            .wait(Property.ofValue(true))
+            .pollInterval(Property.ofValue(Duration.ofMillis(50)))
+            .maxDuration(Property.ofValue(Duration.ofSeconds(10)))
+            .assets(new AssetsDeclaration(true, List.of(), List.of()))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        try (DataTransferServiceClient client = httpJsonClient(wmRuntimeInfo)) {
+            var output = task.run(runContext, client);
+
+            assertThat("a run scheduled in the future is queued, not in-flight, so it must not be adopted", output.isReattached(), is(false));
+            assertThat(output.getRunName(), is(newRunName));
+            assertThat(output.getState(), is("SUCCEEDED"));
+        }
+
+        verify(1, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
+    }
+
+    @Test
+    void reattachAdoptsRunScheduledWithinGrace(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        var inFlightRunName = CONFIG_NAME + "/runs/run-just-started";
+
+        // DTS stamps scheduleTime a fraction of a second after the call that requested the run, so a
+        // marginally future schedule time still belongs to a run this task started and must be adopted.
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME + "/runs"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "transferRuns": [
+                                {
+                                  "name": "%s",
+                                  "state": "PENDING",
+                                  "scheduleTime": "%s"
+                                }
+                              ]
+                            }
+                            """.formatted(inFlightRunName, scheduleTimeFromNow(Duration.ofSeconds(2))))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + inFlightRunName))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "state": "SUCCEEDED",
+                              "scheduleTime": "%s"
+                            }
+                            """.formatted(inFlightRunName, scheduleTimeFromNow(Duration.ofSeconds(2))))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "destinationDatasetId": "my_dataset"
+                            }
+                            """.formatted(CONFIG_NAME))
+                )
+        );
+
+        var task = RunTransferConfig.builder()
+            .id(IdUtils.create())
+            .type(RunTransferConfig.class.getName())
+            .transferConfigName(Property.ofValue(CONFIG_NAME))
+            .reattach(Property.ofValue(true))
+            .wait(Property.ofValue(true))
+            .pollInterval(Property.ofValue(Duration.ofMillis(50)))
+            .maxDuration(Property.ofValue(Duration.ofSeconds(10)))
+            .assets(new AssetsDeclaration(true, List.of(), List.of()))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        try (DataTransferServiceClient client = httpJsonClient(wmRuntimeInfo)) {
+            var output = task.run(runContext, client);
+
+            assertThat("a run scheduled just ahead of now is the task's own run and must still be adopted", output.isReattached(), is(true));
+            assertThat(output.getRunName(), is(inFlightRunName));
+        }
+
+        verify(0, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
+    }
+
+    @Test
+    void reattachPrefersRunningOverPending(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
+        var runningRunName = CONFIG_NAME + "/runs/run-running";
+        var pendingRunName = CONFIG_NAME + "/runs/run-pending";
+
+        // The PENDING candidate has the later scheduleTime, so schedule-time-only ordering would pick it.
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME + "/runs"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(
+                            """
+                                {
+                                  "transferRuns": [
+                                    {
+                                      "name": "%s",
+                                      "state": "RUNNING",
+                                      "scheduleTime": "%s"
+                                    },
+                                    {
+                                      "name": "%s",
+                                      "state": "PENDING",
+                                      "scheduleTime": "%s"
+                                    }
+                                  ]
+                                }
+                                """.formatted(
+                                runningRunName, scheduleTimeFromNow(Duration.ofMinutes(-30)),
+                                pendingRunName, scheduleTimeFromNow(Duration.ofMinutes(-5))
+                            )
+                        )
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + runningRunName))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "state": "SUCCEEDED",
+                              "scheduleTime": "%s"
+                            }
+                            """.formatted(runningRunName, scheduleTimeFromNow(Duration.ofMinutes(-30))))
+                )
+        );
+
+        stubFor(
+            get(urlPathEqualTo("/v1/" + CONFIG_NAME))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                            {
+                              "name": "%s",
+                              "destinationDatasetId": "my_dataset"
+                            }
+                            """.formatted(CONFIG_NAME))
+                )
+        );
+
+        var task = RunTransferConfig.builder()
+            .id(IdUtils.create())
+            .type(RunTransferConfig.class.getName())
+            .transferConfigName(Property.ofValue(CONFIG_NAME))
+            .reattach(Property.ofValue(true))
+            .wait(Property.ofValue(true))
+            .pollInterval(Property.ofValue(Duration.ofMillis(50)))
+            .maxDuration(Property.ofValue(Duration.ofSeconds(10)))
+            .assets(new AssetsDeclaration(true, List.of(), List.of()))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        try (DataTransferServiceClient client = httpJsonClient(wmRuntimeInfo)) {
+            var output = task.run(runContext, client);
+
+            assertThat(output.isReattached(), is(true));
+            assertThat("a RUNNING candidate must outrank a PENDING one with a later schedule time", output.getRunName(), is(runningRunName));
+        }
+
+        verify(0, postRequestedFor(urlPathEqualTo("/v1/" + CONFIG_NAME + ":startManualRuns")));
     }
 
     @Test
