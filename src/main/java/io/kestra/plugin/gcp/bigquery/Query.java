@@ -123,7 +123,7 @@ import reactor.core.publisher.Mono;
 )
 @Schema(
     title = "Execute a BigQuery SQL job",
-    description = "Runs a SQL statement with standard SQL by default, optionally writing into a destination table. Supports cache usage, priority selection, schema updates, and deprecated fetch/store outputs (superseded by `fetchType`). Uses task-level project, service account, and scopes."
+    description = "Runs a SQL statement with standard SQL by default, optionally writing into a destination table. Supports cache usage, priority selection, schema updates, and deprecated fetch/store outputs (superseded by `fetchType`). Uses task-level project, service account, and scopes. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
@@ -304,12 +304,13 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         Job queryJob = this.waitForJob(
             logger,
-            () -> connection
-                .create(
-                    JobInfo.newBuilder(jobConfiguration)
-                        .setJobId(BigQueryService.jobId(runContext, this))
-                        .build()
-                ),
+            () -> BigQueryService.createOrAdoptJob(
+                connection,
+                JobInfo.newBuilder(jobConfiguration)
+                    .setJobId(BigQueryService.jobId(runContext, this))
+                    .build(),
+                logger
+            ),
             runContext.render(this.dryRun).as(Boolean.class).orElseThrow(),
             runContext,
             connection
