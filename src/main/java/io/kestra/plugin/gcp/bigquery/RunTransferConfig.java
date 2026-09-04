@@ -242,8 +242,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         return output(finalRun.getName(), finalRun.getState().name(), reattached, config.getDestinationDatasetId(), rTransferConfigName);
     }
 
-    // DTS stamps scheduleTime a fraction of a second after the startManualTransferRuns call that requested
-    // the run, so a bare "now" cutoff would make a fast retry refuse to adopt the run this task just started.
+    // Absorbs the drift between the startManualTransferRuns call and the scheduleTime DTS stamps on it.
     private static final Duration REATTACH_FUTURE_GRACE = Duration.ofSeconds(30);
 
     // A RUNNING candidate always beats a PENDING one. Within the same state the latest schedule time wins.
@@ -260,9 +259,7 @@ public class RunTransferConfig extends AbstractDataTransfer implements RunnableT
         // duplicate run to be started -- defeating the whole purpose of reattach.
         var staleCutoff = reattachMaxAge == null ? null : now.minus(reattachMaxAge);
 
-        // A run scheduled in the future is queued, not in-flight. Transfers with a refresh window (Google
-        // Ads, GA4, YouTube) permanently keep a chain of such PENDING runs, one per backfill date, so
-        // without this bound the config always has a candidate and the task never starts a run of its own.
+        // A run scheduled in the future is queued, not in-flight.
         var futureCutoff = now.plus(REATTACH_FUTURE_GRACE);
 
         TransferRun best = null;

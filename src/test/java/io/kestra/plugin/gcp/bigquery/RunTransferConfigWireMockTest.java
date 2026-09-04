@@ -53,8 +53,7 @@ class RunTransferConfigWireMockTest {
     private static final String CONFIG_NAME = "projects/my-project/locations/us/transferConfigs/615123456789012345";
     private static final String RUN_NAME = CONFIG_NAME + "/runs/run-abc123";
 
-    // Schedule times for the reattach cutoff tests must be relative to now, not literals: a literal
-    // that is in the past today silently flips to the future once wall-clock time passes it.
+    // A literal schedule time that is in the past today silently flips to the future later on.
     private static String scheduleTimeFromNow(Duration offset) {
         return Instant.now().plus(offset).toString();
     }
@@ -390,9 +389,9 @@ class RunTransferConfigWireMockTest {
     void reattachIgnoresFutureScheduledRunAndStartsNewOne(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         var queuedRunName = CONFIG_NAME + "/runs/run-queued";
         var newRunName = CONFIG_NAME + "/runs/run-fresh";
+        var newRunScheduleTime = scheduleTimeFromNow(Duration.ZERO);
 
-        // A refresh-window transfer permanently keeps runs queued ahead of now. Adopting one made the
-        // task idle until Google's own schedule reached it, then report success for a stale date slice.
+        // A refresh-window transfer permanently keeps runs queued ahead of now.
         stubFor(
             get(urlPathEqualTo("/v1/" + CONFIG_NAME + "/runs"))
                 .willReturn(
@@ -429,7 +428,7 @@ class RunTransferConfigWireMockTest {
                                 }
                               ]
                             }
-                            """.formatted(newRunName, scheduleTimeFromNow(Duration.ZERO)))
+                            """.formatted(newRunName, newRunScheduleTime))
                 )
         );
 
@@ -445,7 +444,7 @@ class RunTransferConfigWireMockTest {
                               "state": "SUCCEEDED",
                               "scheduleTime": "%s"
                             }
-                            """.formatted(newRunName, scheduleTimeFromNow(Duration.ZERO)))
+                            """.formatted(newRunName, newRunScheduleTime))
                 )
         );
 
@@ -491,9 +490,9 @@ class RunTransferConfigWireMockTest {
     @Test
     void reattachAdoptsRunScheduledWithinGrace(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         var inFlightRunName = CONFIG_NAME + "/runs/run-just-started";
+        var scheduleTime = scheduleTimeFromNow(Duration.ofSeconds(2));
 
-        // DTS stamps scheduleTime a fraction of a second after the call that requested the run, so a
-        // marginally future schedule time still belongs to a run this task started and must be adopted.
+        // A marginally future schedule time still belongs to a run this task started.
         stubFor(
             get(urlPathEqualTo("/v1/" + CONFIG_NAME + "/runs"))
                 .willReturn(
@@ -510,7 +509,7 @@ class RunTransferConfigWireMockTest {
                                 }
                               ]
                             }
-                            """.formatted(inFlightRunName, scheduleTimeFromNow(Duration.ofSeconds(2))))
+                            """.formatted(inFlightRunName, scheduleTime))
                 )
         );
 
@@ -526,7 +525,7 @@ class RunTransferConfigWireMockTest {
                               "state": "SUCCEEDED",
                               "scheduleTime": "%s"
                             }
-                            """.formatted(inFlightRunName, scheduleTimeFromNow(Duration.ofSeconds(2))))
+                            """.formatted(inFlightRunName, scheduleTime))
                 )
         );
 
@@ -572,6 +571,7 @@ class RunTransferConfigWireMockTest {
     void reattachPrefersRunningOverPending(WireMockRuntimeInfo wmRuntimeInfo) throws Exception {
         var runningRunName = CONFIG_NAME + "/runs/run-running";
         var pendingRunName = CONFIG_NAME + "/runs/run-pending";
+        var runningScheduleTime = scheduleTimeFromNow(Duration.ofMinutes(-30));
 
         // The PENDING candidate has the later scheduleTime, so schedule-time-only ordering would pick it.
         stubFor(
@@ -597,7 +597,7 @@ class RunTransferConfigWireMockTest {
                                   ]
                                 }
                                 """.formatted(
-                                runningRunName, scheduleTimeFromNow(Duration.ofMinutes(-30)),
+                                runningRunName, runningScheduleTime,
                                 pendingRunName, scheduleTimeFromNow(Duration.ofMinutes(-5))
                             )
                         )
@@ -616,7 +616,7 @@ class RunTransferConfigWireMockTest {
                               "state": "SUCCEEDED",
                               "scheduleTime": "%s"
                             }
-                            """.formatted(runningRunName, scheduleTimeFromNow(Duration.ofMinutes(-30))))
+                            """.formatted(runningRunName, runningScheduleTime))
                 )
         );
 
