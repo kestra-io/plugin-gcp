@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,10 +9,13 @@ import java.util.Objects;
 
 import org.slf4j.Logger;
 
+import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobException;
 import com.google.cloud.bigquery.JobId;
+import com.google.cloud.bigquery.JobInfo;
+import com.google.cloud.bigquery.JobStatus;
 import com.google.cloud.bigquery.TableId;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -20,11 +24,67 @@ import io.kestra.core.runners.RunContext;
 public class BigQueryService {
     private static final String UNKNOWN_REASON = "unknown";
 
+    // BigQuery reserves a caller-supplied job id, so deriving it from the taskrun makes a worker-loss
+    // resubmit collide with the job the lost worker started instead of running the same work twice.
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
-        return JobId.newBuilder()
+        var builder = JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()).as(String.class).orElse(null))
-            .setLocation(runContext.render(abstractBigquery.getLocation()).as(String.class).orElse(null))
+            .setLocation(runContext.render(abstractBigquery.getLocation()).as(String.class).orElse(null));
+
+        // A trigger evaluates outside any execution, so there is no taskrun to key on and no resubmit to
+        // deduplicate. Deriving an id there would give every poll of every trigger the same one.
+        var taskRunId = runContext.taskRunInfo().taskRunId();
+        if (taskRunId != null) {
+            builder.setJob("kestra_" + taskRunId);
+        }
+
+        return builder.build();
+    }
+
+    // Same project and location with no job id, so BigQuery assigns a random one as it did before.
+    private static JobId randomJobId(JobId jobId) {
+        return JobId.newBuilder()
+            .setProject(jobId.getProject())
+            .setLocation(jobId.getLocation())
             .build();
+    }
+
+    /**
+     * Submits the job, adopting the existing one when its deterministic id is already taken. A job that
+     * already failed has burnt its id for good, so that case falls back to a fresh random id and lets the
+     * retry make progress rather than re-reporting the old failure.
+     */
+    public static Job createOrAdoptJob(BigQuery connection, JobInfo jobInfo, Logger logger) {
+        try {
+            return connection.create(jobInfo);
+        } catch (com.google.cloud.bigquery.BigQueryException e) {
+            // Without a job id of our own the conflict cannot be about a job this taskrun submitted.
+            if (e.getCode() != HttpURLConnection.HTTP_CONFLICT || jobInfo.getJobId().getJob() == null) {
+                throw e;
+            }
+
+            // BigQuery says the id is taken but will not hand the job over, so there is nothing to adopt
+            // and nothing safe to resubmit under. Failing here duplicates no work, which is the point.
+            var existing = connection.getJob(jobInfo.getJobId());
+            if (existing == null) {
+                throw e;
+            }
+
+            var status = existing.getStatus();
+            if (status != null && status.getState() == JobStatus.State.DONE && status.getError() != null) {
+                logger.warn("Job '{}' already ran and failed, starting a new one", jobInfo.getJobId().getJob());
+
+                return connection.create(
+                    JobInfo.newBuilder(jobInfo.getConfiguration())
+                        .setJobId(randomJobId(jobInfo.getJobId()))
+                        .build()
+                );
+            }
+
+            logger.warn("Adopting job '{}' already started by this taskrun instead of submitting a duplicate", jobInfo.getJobId().getJob());
+
+            return existing;
+        }
     }
 
     public static TableId tableId(String table) {
@@ -41,6 +101,8 @@ public class BigQueryService {
     public static void handleErrors(Job job, Logger logger) throws BigQueryException {
         if (job == null) {
             throw new IllegalArgumentException("Job no longer exists");
+        } else if (job.getStatus() == null) {
+            throw new IllegalStateException("Job '" + job.getJobId().getJob() + "' has no status to report");
         } else if (job.getStatus().getError() != null) {
             ArrayList<BigQueryError> errors = new ArrayList<>();
             if (job.getStatus().getError() != null) {

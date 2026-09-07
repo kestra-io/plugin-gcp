@@ -58,7 +58,7 @@ import lombok.experimental.SuperBuilder;
 )
 @Schema(
     title = "Export BigQuery table to GCS",
-    description = "Runs an extract job from a table or partition to one or more GCS URIs. Supports CSV/JSON/AVRO, optional compression, custom delimiter, and AVRO logical types. Prints a header row by default."
+    description = "Runs an extract job from a table or partition to one or more GCS URIs. Supports CSV/JSON/AVRO, optional compression, custom delimiter, and AVRO logical types. Prints a header row by default. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output> {
 
@@ -137,7 +137,13 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         // failures, and re-attaches to the submitted job instead of extracting twice.
         Job extractJob = this.waitForJob(
             logger,
-            () -> connection.create(JobInfo.of(configuration)),
+            () -> BigQueryService.createOrAdoptJob(
+                connection,
+                JobInfo.newBuilder(configuration)
+                    .setJobId(BigQueryService.jobId(runContext, this))
+                    .build(),
+                logger
+            ),
             runContext,
             connection
         );

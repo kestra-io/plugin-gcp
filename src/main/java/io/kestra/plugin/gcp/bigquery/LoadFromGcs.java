@@ -12,6 +12,7 @@ import com.google.cloud.bigquery.LoadJobConfiguration;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
@@ -25,7 +26,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -126,7 +126,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 )
 @Schema(
     title = "Load GCS objects into BigQuery",
-    description = "Runs a BigQuery load job from one or more GCS URIs into the destination table. Supports wildcard paths, format-specific options, and standard load limits. Table must exist unless schema is supplied with a write disposition that creates it."
+    description = "Runs a BigQuery load job from one or more GCS URIs into the destination table. Supports wildcard paths, format-specific options, and standard load limits. Table must exist unless schema is supplied with a write disposition that creates it. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
 )
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     @Schema(
@@ -154,10 +154,12 @@ public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLo
         logger.debug("Starting query\n{}", JacksonMapper.log(configuration));
 
         Job loadJob = this.waitForJob(
-            logger, () -> connection.create(
+            logger, () -> BigQueryService.createOrAdoptJob(
+                connection,
                 JobInfo.newBuilder(configuration)
                     .setJobId(BigQueryService.jobId(runContext, this))
-                    .build()
+                    .build(),
+                logger
             ), runContext, connection
         );
 
