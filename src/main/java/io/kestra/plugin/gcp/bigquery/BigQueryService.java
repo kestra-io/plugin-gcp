@@ -27,13 +27,18 @@ public class BigQueryService {
     // BigQuery reserves a caller-supplied job id, so deriving it from the taskrun makes a worker-loss
     // resubmit collide with the job the lost worker started instead of running the same work twice.
     public static JobId jobId(RunContext runContext, AbstractBigquery abstractBigquery) throws IllegalVariableEvaluationException {
-        var taskRun = runContext.taskRunInfo();
-
-        return JobId.newBuilder()
+        var builder = JobId.newBuilder()
             .setProject(runContext.render(abstractBigquery.getProjectId()).as(String.class).orElse(null))
-            .setLocation(runContext.render(abstractBigquery.getLocation()).as(String.class).orElse(null))
-            .setJob("kestra_" + taskRun.executionId() + "_" + taskRun.taskRunId())
-            .build();
+            .setLocation(runContext.render(abstractBigquery.getLocation()).as(String.class).orElse(null));
+
+        // A trigger evaluates outside any execution, so there is no taskrun to key on and no resubmit to
+        // deduplicate. Deriving an id there would give every poll of every trigger the same one.
+        var taskRunId = runContext.taskRunInfo().taskRunId();
+        if (taskRunId != null) {
+            builder.setJob("kestra_" + taskRunId);
+        }
+
+        return builder.build();
     }
 
     // Same project and location with no job id, so BigQuery assigns a random one as it did before.
@@ -53,7 +58,8 @@ public class BigQueryService {
         try {
             return connection.create(jobInfo);
         } catch (com.google.cloud.bigquery.BigQueryException e) {
-            if (e.getCode() != HttpURLConnection.HTTP_CONFLICT) {
+            // Without a job id of our own the conflict cannot be about a job this taskrun submitted.
+            if (e.getCode() != HttpURLConnection.HTTP_CONFLICT || jobInfo.getJobId().getJob() == null) {
                 throw e;
             }
 

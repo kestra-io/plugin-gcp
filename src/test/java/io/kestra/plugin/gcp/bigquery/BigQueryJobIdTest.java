@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 
@@ -51,21 +52,27 @@ class BigQueryJobIdTest {
 
         assertThat(jobId.getJob(), notNullValue());
         assertThat(jobId.getJob(), startsWith("kestra_"));
-        assertThat(jobId.getJob(), is("kestra_" + runContext.taskRunInfo().executionId() + "_" + runContext.taskRunInfo().taskRunId()));
+        assertThat(jobId.getJob(), is("kestra_" + runContext.taskRunInfo().taskRunId()));
     }
 
     @Test
-    void shouldGiveTheSameJobIdToEveryAttemptOfATaskrun() throws Exception {
-        var task = task();
-        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+    void shouldGiveTheSameJobIdToTwoContextsBuiltForTheSameTaskrun() throws Exception {
+        // A resubmit builds a fresh RunContext on another worker, so the two must agree. Two separately
+        // built contexts, not one context asked twice, which a pure function would satisfy trivially.
+        var first = BigQueryService.jobId(contextOf("taskrun-1"), task()).getJob();
+        var second = BigQueryService.jobId(contextOf("taskrun-1"), task()).getJob();
 
-        // The whole point: a resubmit on another worker must land on the id the lost worker used.
-        // Compare the job segment, not the whole JobId: two absent ids also compare equal.
-        var first = BigQueryService.jobId(runContext, task).getJob();
-        var second = BigQueryService.jobId(runContext, task).getJob();
-
-        assertThat(first, notNullValue());
+        assertThat(first, is("kestra_taskrun-1"));
         assertThat(second, is(first));
+    }
+
+    @Test
+    void shouldLeaveTheJobIdUnsetWithoutATaskrun() throws Exception {
+        // A trigger evaluates outside any execution. Deriving an id from a missing taskrun once gave every
+        // poll of every trigger the literal "kestra_null_null", so the first job was adopted forever.
+        var jobId = BigQueryService.jobId(runContextFactory.of(ImmutableMap.of()), task());
+
+        assertThat("BigQuery must assign a random id when there is no taskrun to key on", jobId.getJob(), nullValue());
     }
 
     @Test
@@ -177,6 +184,10 @@ class BigQueryJobIdTest {
 
     private org.slf4j.Logger logger() {
         return org.slf4j.LoggerFactory.getLogger(BigQueryJobIdTest.class);
+    }
+
+    private RunContext contextOf(String taskRunId) {
+        return runContextFactory.of(ImmutableMap.of("taskrun", ImmutableMap.of("id", taskRunId)));
     }
 
     private Query task() {
