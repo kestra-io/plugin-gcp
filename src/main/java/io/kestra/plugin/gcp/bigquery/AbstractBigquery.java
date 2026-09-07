@@ -242,7 +242,11 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                     lastJobId.set(job.getJobId());
                     this.trackJob(connection, job.getJobId(), logger);
 
-                    BigQueryService.handleErrors(job, logger);
+                    // A submission can come back as a bare job reference. There is nothing to report yet,
+                    // and the check below runs once the state is known, so nothing is skipped for good.
+                    if (job.getStatus() != null) {
+                        BigQueryService.handleErrors(job, logger);
+                    }
 
                     logger.debug("Starting job '{}'", job.getJobId());
 

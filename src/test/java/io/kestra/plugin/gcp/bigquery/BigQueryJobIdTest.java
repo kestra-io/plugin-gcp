@@ -24,6 +24,7 @@ import io.kestra.core.utils.TestsUtils;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -100,6 +101,22 @@ class BigQueryJobIdTest {
     }
 
     @Test
+    void shouldAdoptAnAlreadyFinishedJobWhenTheIdIsAlreadyTaken() {
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var finished = job(null, JobStatus.State.DONE);
+
+        // The resubmit can land after the original already succeeded, and its result is the answer.
+        Mockito.when(connection.create(jobInfo)).thenThrow(conflict());
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(finished);
+
+        var adopted = BigQueryService.createOrAdoptJob(connection, jobInfo, logger());
+
+        assertThat("a finished job with no error is the outcome, not a reason to rerun", adopted, is(finished));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
     void shouldStartAFreshJobWhenTheTakenIdBelongsToAFailedJob() {
         var connection = Mockito.mock(BigQuery.class);
         var jobInfo = jobInfo("kestra_exec_taskrun");
@@ -159,12 +176,16 @@ class BigQueryJobIdTest {
     }
 
     @Test
-    void shouldNotFailOnASubmissionThatCameBackWithoutAStatus() throws Exception {
-        // Supplying our own job id makes the client answer some submissions with a bare job reference.
+    void shouldRefuseToReportOnAJobWithoutAStatus() {
+        // Never silently pass a job whose state is unknown: a dry run is not polled afterwards, so this
+        // is its only check.
         var job = Mockito.mock(Job.class);
         Mockito.when(job.getStatus()).thenReturn(null);
+        Mockito.when(job.getJobId()).thenReturn(JobId.of("my-project", "kestra_taskrun"));
 
-        BigQueryService.handleErrors(job, logger());
+        var thrown = assertThrows(IllegalStateException.class, () -> BigQueryService.handleErrors(job, logger()));
+
+        assertThat(thrown.getMessage(), containsString("no status to report"));
     }
 
     private static com.google.cloud.bigquery.BigQueryException conflict() {
@@ -181,9 +202,13 @@ class BigQueryJobIdTest {
     }
 
     private static Job job(BigQueryError error) {
+        return job(error, error == null ? JobStatus.State.RUNNING : JobStatus.State.DONE);
+    }
+
+    private static Job job(BigQueryError error, JobStatus.State state) {
         var status = Mockito.mock(JobStatus.class);
         Mockito.when(status.getError()).thenReturn(error);
-        Mockito.when(status.getState()).thenReturn(error == null ? JobStatus.State.RUNNING : JobStatus.State.DONE);
+        Mockito.when(status.getState()).thenReturn(state);
 
         var job = Mockito.mock(Job.class);
         Mockito.when(job.getStatus()).thenReturn(status);

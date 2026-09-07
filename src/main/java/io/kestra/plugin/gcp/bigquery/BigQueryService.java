@@ -63,6 +63,8 @@ public class BigQueryService {
                 throw e;
             }
 
+            // BigQuery says the id is taken but will not hand the job over, so there is nothing to adopt
+            // and nothing safe to resubmit under. Failing here duplicates no work, which is the point.
             var existing = connection.getJob(jobInfo.getJobId());
             if (existing == null) {
                 throw e;
@@ -70,7 +72,7 @@ public class BigQueryService {
 
             var status = existing.getStatus();
             if (status != null && status.getState() == JobStatus.State.DONE && status.getError() != null) {
-                logger.info("Job '{}' already ran and failed, starting a new one", jobInfo.getJobId().getJob());
+                logger.warn("Job '{}' already ran and failed, starting a new one", jobInfo.getJobId().getJob());
 
                 return connection.create(
                     JobInfo.newBuilder(jobInfo.getConfiguration())
@@ -79,7 +81,7 @@ public class BigQueryService {
                 );
             }
 
-            logger.info("Adopting job '{}' already started by this taskrun instead of submitting a duplicate", jobInfo.getJobId().getJob());
+            logger.warn("Adopting job '{}' already started by this taskrun instead of submitting a duplicate", jobInfo.getJobId().getJob());
 
             return existing;
         }
@@ -100,9 +102,7 @@ public class BigQueryService {
         if (job == null) {
             throw new IllegalArgumentException("Job no longer exists");
         } else if (job.getStatus() == null) {
-            // A submission answered with a job reference and no status yet has nothing to report. The
-            // waitFor that follows establishes the real state, so a failure cannot slip through here.
-            return;
+            throw new IllegalStateException("Job '" + job.getJobId().getJob() + "' has no status to report");
         } else if (job.getStatus().getError() != null) {
             ArrayList<BigQueryError> errors = new ArrayList<>();
             if (job.getStatus().getError() != null) {
