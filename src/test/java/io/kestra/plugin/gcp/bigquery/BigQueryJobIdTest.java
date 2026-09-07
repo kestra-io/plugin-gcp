@@ -158,6 +158,15 @@ class BigQueryJobIdTest {
         Mockito.verify(connection, Mockito.never()).getJob(Mockito.any(JobId.class));
     }
 
+    @Test
+    void shouldNotFailOnASubmissionThatCameBackWithoutAStatus() throws Exception {
+        // Supplying our own job id makes the client answer some submissions with a bare job reference.
+        var job = Mockito.mock(Job.class);
+        Mockito.when(job.getStatus()).thenReturn(null);
+
+        BigQueryService.handleErrors(job, logger());
+    }
+
     private static com.google.cloud.bigquery.BigQueryException conflict() {
         return new com.google.cloud.bigquery.BigQueryException(
             HttpURLConnection.HTTP_CONFLICT,

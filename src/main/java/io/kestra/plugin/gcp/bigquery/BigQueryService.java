@@ -99,6 +99,10 @@ public class BigQueryService {
     public static void handleErrors(Job job, Logger logger) throws BigQueryException {
         if (job == null) {
             throw new IllegalArgumentException("Job no longer exists");
+        } else if (job.getStatus() == null) {
+            // A submission answered with a job reference and no status yet has nothing to report. The
+            // waitFor that follows establishes the real state, so a failure cannot slip through here.
+            return;
         } else if (job.getStatus().getError() != null) {
             ArrayList<BigQueryError> errors = new ArrayList<>();
             if (job.getStatus().getError() != null) {
