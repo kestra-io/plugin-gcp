@@ -16,8 +16,8 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.CredentialService;
-import io.kestra.plugin.gcp.GcpInterface;
+import io.kestra.plugin.gcp.shared.CredentialService;
+import io.kestra.plugin.gcp.shared.GcpInterface;
 
 import io.grpc.ManagedChannelBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;

@@ -15,13 +15,14 @@ import com.google.cloud.storage.Storage;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.serializers.JacksonMapper;
-import io.kestra.plugin.gcp.GcpInterface;
 import io.kestra.plugin.gcp.gcs.models.Blob;
+import io.kestra.plugin.gcp.shared.GcpInterface;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -29,7 +30,6 @@ import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.models.triggers.StatefulTriggerService.*;
 import static io.kestra.core.utils.Rethrow.throwFunction;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
