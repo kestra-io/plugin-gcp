@@ -1,23 +1,24 @@
 package io.kestra.plugin.gcp.spanner;
 
 import java.io.IOException;
-import java.math.BigDecimal;
+import java.util.*;
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.*;
+import java.math.BigDecimal;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.cloud.ByteArray;
-import com.google.cloud.Date;
 import com.google.cloud.NoCredentials;
 import com.google.cloud.Timestamp;
+import com.google.cloud.Date;
+import com.google.cloud.ByteArray;
 import com.google.cloud.spanner.*;
 import com.google.cloud.spanner.Type;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.gcp.shared.CredentialService;
+import io.kestra.core.serializers.JacksonMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class SpannerService {
     public static Spanner spannerClient(RunContext runContext, SpannerConnectionInterface connection) throws IllegalVariableEvaluationException, IOException {
@@ -83,9 +84,8 @@ public class SpannerService {
         if (list.isEmpty()) {
             throw new IllegalArgumentException(
                 "Cannot bind an empty list for parameter '" + name + "': "
-                    + "Spanner arrays are typed and the element type cannot be inferred from an empty list. "
-                    + "Omit the parameter or pass a typed/non-empty value."
-            );
+                + "Spanner arrays are typed and the element type cannot be inferred from an empty list. "
+                + "Omit the parameter or pass a typed/non-empty value.");
         }
         for (var obj : list) {
             if (obj == null) {
