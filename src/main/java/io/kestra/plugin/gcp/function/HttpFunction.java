@@ -8,7 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 
 import com.google.auth.oauth2.IdTokenCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.IdTokenProvider;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.http.HttpRequest;
@@ -94,7 +94,9 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
     @Override
     public Output run(RunContext runContext) throws Exception {
         IdTokenCredentials idTokenCredentials = IdTokenCredentials.newBuilder()
-            .setIdTokenProvider((ServiceAccountCredentials) this.credentials(runContext).createScoped(runContext.render(this.scopes).asList(String.class)))
+            // Cast to IdTokenProvider, not ServiceAccountCredentials: ImpersonatedCredentials also
+            // implements it, so an impersonated run no longer throws ClassCastException here.
+            .setIdTokenProvider((IdTokenProvider) this.credentials(runContext).createScoped(runContext.render(this.scopes).asList(String.class)))
             .setTargetAudience(runContext.render(this.url).as(String.class).orElseThrow())
             .build();
         String token = idTokenCredentials.refreshAccessToken().getTokenValue();

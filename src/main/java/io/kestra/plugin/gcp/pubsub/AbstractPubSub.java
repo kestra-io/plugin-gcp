@@ -38,10 +38,12 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
 
     Publisher createPublisher(PublisherOptions options) throws IOException, IllegalVariableEvaluationException {
         RunContext runContext = options.getRunContext();
+        // Resolve credentials first: it backfills the inferred projectId, which the TopicName below reads.
+        var credentials = this.credentials(runContext);
         TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic).as(String.class).orElseThrow());
 
         Publisher.Builder builder = Publisher.newBuilder(topicName)
-            .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
+            .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()));
 
         if (options.isEnableMessageOrdering()) {
@@ -52,13 +54,14 @@ abstract class AbstractPubSub extends AbstractTask implements PubSubConnectionIn
     }
 
     public ProjectSubscriptionName createSubscription(RunContext runContext, String subscription, boolean autoCreateSubscription) throws IOException, IllegalVariableEvaluationException {
-
+        // Resolve credentials first: it backfills the inferred projectId read by the names below.
+        var credentials = this.credentials(runContext);
         TopicName topicName = TopicName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(topic).as(String.class).orElseThrow());
         ProjectSubscriptionName subscriptionName = ProjectSubscriptionName.of(runContext.render(projectId).as(String.class).orElse(null), runContext.render(subscription));
 
         if (autoCreateSubscription) {
             SubscriptionAdminSettings subscriptionAdminSettings = SubscriptionAdminSettings.newBuilder()
-                .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
+                .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
                 .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
                 .build();
 
