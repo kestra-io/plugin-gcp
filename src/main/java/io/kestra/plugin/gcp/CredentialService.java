@@ -18,6 +18,6 @@ public final class CredentialService {
 
     public static GoogleCredentials credentials(RunContext runContext, GcpInterface gcpInterface)
         throws IllegalVariableEvaluationException, IOException {
-        return io.kestra.plugin.gcp.shared.CredentialService.credentials(runContext, gcpInterface);
+        return io.kestra.plugin.gcp.shared.CredentialService.connection(runContext, gcpInterface).credentials();
     }
 }

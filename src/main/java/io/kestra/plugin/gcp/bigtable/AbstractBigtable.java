@@ -84,7 +84,7 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
                 .setTransportChannelProvider(emulatorTransportChannelProvider(rEmulatorHost.get()));
         } else {
             settingsBuilder.setCredentialsProvider(
-                FixedCredentialsProvider.create(CredentialService.credentials(runContext, this))
+                FixedCredentialsProvider.create(CredentialService.connection(runContext, this).credentials())
             );
         }
 
@@ -110,7 +110,7 @@ public abstract class AbstractBigtable extends Task implements GcpInterface {
                 .setTransportChannelProvider(emulatorTransportChannelProvider(rEmulatorHost.get()));
         } else {
             settingsBuilder.setCredentialsProvider(
-                FixedCredentialsProvider.create(CredentialService.credentials(runContext, this))
+                FixedCredentialsProvider.create(CredentialService.connection(runContext, this).credentials())
             );
         }
 

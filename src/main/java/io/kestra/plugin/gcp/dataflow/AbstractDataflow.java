@@ -36,7 +36,7 @@ public abstract class AbstractDataflow extends AbstractTask implements DataflowC
     }
 
     public static Dataflow dataflowClient(RunContext runContext, DataflowConnectionInterface connection) throws Exception {
-        var credentials = CredentialService.credentials(runContext, connection);
+        var credentials = CredentialService.connection(runContext, connection).credentials();
         var credentialsAdapter = new HttpCredentialsAdapter(credentials);
         var requestInitializer = new com.google.api.client.http.HttpRequestInitializer() {
             @Override
