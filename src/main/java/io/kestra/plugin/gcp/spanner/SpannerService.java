@@ -1,24 +1,23 @@
 package io.kestra.plugin.gcp.spanner;
 
 import java.io.IOException;
-import java.util.*;
-import java.net.URI;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.math.BigDecimal;
+import java.util.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.cloud.ByteArray;
+import com.google.cloud.Date;
 import com.google.cloud.NoCredentials;
 import com.google.cloud.Timestamp;
-import com.google.cloud.Date;
-import com.google.cloud.ByteArray;
 import com.google.cloud.spanner.*;
 import com.google.cloud.spanner.Type;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.CredentialService;
 import io.kestra.core.serializers.JacksonMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import io.kestra.plugin.gcp.shared.CredentialService;
 
 public class SpannerService {
     public static Spanner spannerClient(RunContext runContext, SpannerConnectionInterface connection) throws IllegalVariableEvaluationException, IOException {
@@ -33,7 +32,7 @@ public class SpannerService {
             optionsBuilder.setEmulatorHost(rEmulatorHost.get());
             optionsBuilder.setCredentials(NoCredentials.getInstance());
         } else {
-            optionsBuilder.setCredentials(CredentialService.credentials(runContext, connection));
+            optionsBuilder.setCredentials(CredentialService.connection(runContext, connection).credentials());
         }
 
         return optionsBuilder.build().getService();
@@ -84,8 +83,9 @@ public class SpannerService {
         if (list.isEmpty()) {
             throw new IllegalArgumentException(
                 "Cannot bind an empty list for parameter '" + name + "': "
-                + "Spanner arrays are typed and the element type cannot be inferred from an empty list. "
-                + "Omit the parameter or pass a typed/non-empty value.");
+                    + "Spanner arrays are typed and the element type cannot be inferred from an empty list. "
+                    + "Omit the parameter or pass a typed/non-empty value."
+            );
         }
         for (var obj : list) {
             if (obj == null) {

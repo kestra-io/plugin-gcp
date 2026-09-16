@@ -8,8 +8,8 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
-import io.kestra.plugin.gcp.CredentialService;
+import io.kestra.plugin.gcp.shared.AbstractTask;
+import io.kestra.plugin.gcp.shared.CredentialService;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -36,7 +36,7 @@ public abstract class AbstractDataflow extends AbstractTask implements DataflowC
     }
 
     public static Dataflow dataflowClient(RunContext runContext, DataflowConnectionInterface connection) throws Exception {
-        var credentials = CredentialService.credentials(runContext, connection);
+        var credentials = CredentialService.connection(runContext, connection).credentials();
         var credentialsAdapter = new HttpCredentialsAdapter(credentials);
         var requestInitializer = new com.google.api.client.http.HttpRequestInitializer() {
             @Override

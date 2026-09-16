@@ -24,9 +24,9 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
-import io.kestra.plugin.gcp.AbstractTask;
 import io.kestra.plugin.gcp.services.LogTailService;
 import io.kestra.plugin.gcp.services.TimestampService;
+import io.kestra.plugin.gcp.shared.AbstractTask;
 import io.kestra.plugin.gcp.vertexai.models.CustomJobSpec;
 
 import io.swagger.v3.oas.annotations.media.Schema;

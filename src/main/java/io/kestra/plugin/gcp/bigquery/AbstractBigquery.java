@@ -23,7 +23,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.retrys.AbstractRetry;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
+import io.kestra.plugin.gcp.shared.AbstractTask;
 
 import dev.failsafe.Failsafe;
 import io.swagger.v3.oas.annotations.media.Schema;

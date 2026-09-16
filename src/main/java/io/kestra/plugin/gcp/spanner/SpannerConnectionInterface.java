@@ -2,7 +2,7 @@ package io.kestra.plugin.gcp.spanner;
 
 import java.util.List;
 import io.kestra.core.models.property.Property;
-import io.kestra.plugin.gcp.GcpInterface;
+import io.kestra.plugin.gcp.shared.GcpInterface;
 
 public interface SpannerConnectionInterface extends GcpInterface {
     Property<String> getProjectId();

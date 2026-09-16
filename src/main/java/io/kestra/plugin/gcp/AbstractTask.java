@@ -1,45 +1,14 @@
 package io.kestra.plugin.gcp;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
-
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.runners.RunContext;
-
-import lombok.*;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * @deprecated moved to {@link io.kestra.plugin.gcp.shared.AbstractTask}; kept for backward compatibility, will be removed in the next major.
+ */
+@Deprecated(since = "2.12.0", forRemoval = true)
+@SuppressWarnings("removal")
 @SuperBuilder
-@ToString
-@EqualsAndHashCode
-@Getter
 @NoArgsConstructor
-public abstract class AbstractTask extends Task implements GcpInterface {
-    protected Property<String> projectId;
-
-    @ToString.Exclude
-    protected Property<String> serviceAccount;
-
-    @ToString.Exclude
-    protected Property<String> impersonatedServiceAccount;
-
-    @Builder.Default
-    protected Property<List<String>> scopes = Property.ofValue(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
-
-    public GoogleCredentials credentials(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        GoogleCredentials credentials = CredentialService.credentials(runContext, this);
-
-        //Infer projectID from credentials if projectId is null
-        if (credentials instanceof ServiceAccountCredentials serviceAccountCredentials) {
-            String projectIdFromServiceAccount = serviceAccountCredentials.getProjectId();
-            projectId = projectId != null ? projectId : Property.ofValue(projectIdFromServiceAccount);
-        }
-        return credentials;
-    }
+public abstract class AbstractTask extends io.kestra.plugin.gcp.shared.AbstractTask implements GcpInterface {
 }

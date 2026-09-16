@@ -10,7 +10,7 @@ import com.google.cloud.storage.StorageOptions;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.gcp.AbstractTask;
+import io.kestra.plugin.gcp.shared.AbstractTask;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

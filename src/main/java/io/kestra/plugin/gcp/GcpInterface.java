@@ -1,26 +1,8 @@
 package io.kestra.plugin.gcp;
 
-import java.util.List;
-
-import io.kestra.core.models.property.Property;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.kestra.core.models.annotations.PluginProperty;
-
-public interface GcpInterface {
-    @Schema(title = "The GCP project ID")
-    @PluginProperty(group = "connection")
-    Property<String> getProjectId();
-
-    @Schema(title = "The GCP service account")
-    @PluginProperty(secret = true, group = "execution")
-    Property<String> getServiceAccount();
-
-    @Schema(title = "The GCP service account to impersonate")
-    @PluginProperty(secret = true, group = "advanced")
-    Property<String> getImpersonatedServiceAccount();
-
-    @Schema(title = "The GCP scopes to be used")
-    @PluginProperty(group = "advanced")
-    Property<List<String>> getScopes();
+/**
+ * @deprecated moved to {@link io.kestra.plugin.gcp.shared.GcpInterface}; kept for backward compatibility, will be removed in the next major.
+ */
+@Deprecated(since = "2.12.0", forRemoval = true)
+public interface GcpInterface extends io.kestra.plugin.gcp.shared.GcpInterface {
 }

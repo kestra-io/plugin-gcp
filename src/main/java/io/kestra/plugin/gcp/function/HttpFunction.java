@@ -8,7 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 
 import com.google.auth.oauth2.IdTokenCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.IdTokenProvider;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.http.HttpRequest;
@@ -19,17 +19,17 @@ import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.http.client.configurations.TimeoutConfiguration;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
-import io.kestra.plugin.gcp.AbstractTask;
+import io.kestra.plugin.gcp.shared.AbstractTask;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -94,7 +94,9 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
     @Override
     public Output run(RunContext runContext) throws Exception {
         IdTokenCredentials idTokenCredentials = IdTokenCredentials.newBuilder()
-            .setIdTokenProvider((ServiceAccountCredentials) this.credentials(runContext).createScoped(runContext.render(this.scopes).asList(String.class)))
+            // Cast to IdTokenProvider, not ServiceAccountCredentials: ImpersonatedCredentials also
+            // implements it, so an impersonated run no longer throws ClassCastException here.
+            .setIdTokenProvider((IdTokenProvider) this.credentials(runContext).createScoped(runContext.render(this.scopes).asList(String.class)))
             .setTargetAudience(runContext.render(this.url).as(String.class).orElseThrow())
             .build();
         String token = idTokenCredentials.refreshAccessToken().getTokenValue();
