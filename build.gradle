@@ -16,8 +16,6 @@ plugins {
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
 
 repositories {
-    // TODO: resolves plugin-gcp-lib:1.0.0-SNAPSHOT locally until its first release to Maven Central; remove then.
-    mavenLocal()
     google()
     mavenCentral()
     if (isBuildSnapshot) {
@@ -75,8 +73,8 @@ dependencies {
     // libs
     compileOnly group: 'dev.failsafe', name: 'failsafe'
 
-    // Shared kernel: GcpInterface / CredentialService / AbstractTask (see the mavenLocal note in the repositories block)
-    api 'io.kestra.plugin:plugin-gcp-lib:1.0.0-SNAPSHOT'
+    // Shared kernel: GcpInterface / CredentialService / AbstractTask
+    api 'io.kestra.plugin:plugin-gcp-lib:1.0.0'
 
     // Google libraries are managed by the the Kestra Platform so they are aligned on all plugins
     api 'com.google.cloud:google-cloud-storage'
