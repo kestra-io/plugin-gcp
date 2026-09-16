@@ -49,9 +49,14 @@ class SpannerTest {
     private static final String INSTANCE_ID = "test-instance";
     private static final String DATABASE_ID = "test-database";
 
+    // Wait.forListeningPort() only confirms the TCP port is open, not that the gRPC Spanner
+    // service behind it is actually serving, so the client could race in and get UNAVAILABLE.
+    // Wait on the emulator's own startup log line instead (verified via `docker logs` against
+    // gcr.io/cloud-spanner-emulator/emulator:latest: "...emulator_main.cc:42] Cloud Spanner
+    // Emulator running.") so the container is only considered ready once gRPC is actually up.
     protected static final GenericContainer<?> SPANNER_EMULATOR = new GenericContainer<>("gcr.io/cloud-spanner-emulator/emulator:latest")
         .withExposedPorts(9010)
-        .waitingFor(Wait.forListeningPort());
+        .waitingFor(Wait.forLogMessage(".*Cloud Spanner Emulator running.*\\n", 1));
 
     private static Spanner spanner;
 
