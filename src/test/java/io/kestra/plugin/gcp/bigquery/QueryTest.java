@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -266,6 +267,11 @@ class QueryTest {
     }
 
     @Test
+    // BigQuery's job.waitFor() has no polling cap, so a single stalled WRITE_TRUNCATE job blocks
+    // invokeAll() indefinitely (12h waitFor default) and hung CI for 90m+ until the 6h job cap. This
+    // is a hang detector, not a retry-budget enforcer: a healthy run converges in ~10s, so 5m leaves
+    // ~30x headroom while failing fast on a genuine stall.
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
     void retry() throws Exception {
         ExecutorService executorService = Executors.newCachedThreadPool();
         String table = project + "." + dataset + "." + FriendlyId.createFriendlyId();
