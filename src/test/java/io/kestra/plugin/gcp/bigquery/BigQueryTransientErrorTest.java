@@ -28,6 +28,7 @@ import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -343,6 +344,144 @@ class BigQueryTransientErrorTest {
         assertThat(failure.getCause(), not(instanceOf(IllegalArgumentException.class)));
     }
 
+    /**
+     * The lookback re-attach has the same terminal-vs-retryable problem as the main wait: a previous
+     * job found still running that then fails with a quota error must be reported, not retried by the
+     * client for up to 12h.
+     */
+    @Test
+    void shouldReportAQuotaErrorThatLandsDuringTheLookbackWait() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var jobId = JobId.of("project", "job_lookback_quota");
+        var submissions = new AtomicInteger();
+        var runningStatus = runningStatus();
+
+        // First attempt fails transiently, so the retry takes the lookback path.
+        var submitted = Mockito.mock(Job.class);
+        Mockito.when(submitted.getJobId()).thenReturn(jobId);
+        Mockito.when(submitted.getStatus()).thenReturn(runningStatus);
+
+        // Still running when looked up, then terminal with a quota error.
+        var stillRunning = Mockito.mock(Job.class);
+        Mockito.when(stillRunning.getJobId()).thenReturn(jobId);
+        Mockito.when(stillRunning.getStatus()).thenReturn(runningStatus);
+
+        var quota = terminalJob("job_lookback_quota", new BigQueryError(
+            "rateLimitExceeded", null, "Exceeded rate limits: too many table dml insert operations for this table."
+        ));
+
+        var connection = Mockito.mock(BigQuery.class);
+        var reads = new AtomicInteger();
+        Mockito.when(connection.getJob(jobId)).thenAnswer(invocation ->
+            switch (reads.incrementAndGet()) {
+                case 1 -> throw new com.google.cloud.bigquery.BigQueryException(503, "The service is currently unavailable.");
+                case 2 -> stillRunning;
+                default -> quota;
+            }
+        );
+
+        var failure = failureOf(task, runContext, () ->
+        {
+            submissions.incrementAndGet();
+            return submitted;
+        }, connection);
+
+        assertThat(failure.getErrors(), hasSize(1));
+        assertThat(failure.getErrors().getFirst().getReason(), is("rateLimitExceeded"));
+        assertThat(failure.getMessage(), containsString("too many table dml insert operations"));
+
+        // The quota error was read as data and acted on -- the lookback found the previous job
+        // failed and resubmitted -- rather than being retried inside the client until the deadline.
+        assertThat(submissions.get(), greaterThan(1));
+        Mockito.verify(stillRunning, Mockito.never()).waitFor();
+    }
+
+    /**
+     * Job#waitFor() returns null when the job no longer exists, and the lookback used to dereference
+     * that directly -- turning a recoverable "job is gone, resubmit" state into a non-retryable NPE.
+     */
+    @Test
+    void shouldResubmitWhenThePreviousJobDisappearsDuringTheLookback() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var jobId = JobId.of("project", "job_lookback_vanished");
+        var submissions = new AtomicInteger();
+        var runningStatus = runningStatus();
+
+        var submitted = Mockito.mock(Job.class);
+        Mockito.when(submitted.getJobId()).thenReturn(jobId);
+        Mockito.when(submitted.getStatus()).thenReturn(runningStatus);
+
+        var stillRunning = Mockito.mock(Job.class);
+        Mockito.when(stillRunning.getJobId()).thenReturn(jobId);
+        Mockito.when(stillRunning.getStatus()).thenReturn(runningStatus);
+
+        // Reads 3-5 are misses (the job vanished), after which the lookback gives up on it and the
+        // task resubmits; the fresh job is then found and fails on its own terms.
+        var afterResubmit = terminalJob("job_lookback_vanished", new BigQueryError("invalidQuery", null, "Syntax error"));
+
+        var connection = Mockito.mock(BigQuery.class);
+        var reads = new AtomicInteger();
+        Mockito.when(connection.getJob(jobId)).thenAnswer(invocation ->
+            switch (reads.incrementAndGet()) {
+                case 1 -> throw new com.google.cloud.bigquery.BigQueryException(503, "The service is currently unavailable.");
+                case 2 -> stillRunning;
+                case 3, 4, 5 -> null;
+                default -> afterResubmit;
+            }
+        );
+
+        var failure = failureOf(task, runContext, () ->
+        {
+            submissions.incrementAndGet();
+            return submitted;
+        }, connection);
+
+        // A vanished job is a recoverable state: resubmit, never a NullPointerException.
+        assertThat(failure.getCause(), not(instanceOf(NullPointerException.class)));
+        assertThat(failure.getErrors().getFirst().getReason(), is("invalidQuery"));
+        assertThat(submissions.get(), greaterThan(1));
+    }
+
+    /**
+     * A job we just submitted is only invisible because jobs.get has not caught up, so the main wait
+     * must tolerate a run of misses. Capping it there would surface a null, and handleErrors(null)
+     * raises an IllegalArgumentException that shouldRetry does not retry -- failing the task hard on
+     * a purely transient condition, under exactly the concurrent load this class is about.
+     */
+    @Test
+    void shouldKeepPollingTheMainWaitThroughSeveralConsecutiveMisses() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var jobId = JobId.of("project", "job_slow_to_appear");
+        var reads = new AtomicInteger();
+
+        var submittedStatus = runningStatus();
+
+        var submitted = Mockito.mock(Job.class);
+        Mockito.when(submitted.getJobId()).thenReturn(jobId);
+        Mockito.when(submitted.getStatus()).thenReturn(submittedStatus);
+
+        var finished = terminalJob("job_slow_to_appear", new BigQueryError("invalidQuery", null, "Syntax error"));
+
+        var connection = Mockito.mock(BigQuery.class);
+        // Five misses -- comfortably past MAX_CONSECUTIVE_JOB_MISSES -- then the job appears.
+        Mockito.when(connection.getJob(jobId)).thenAnswer(invocation ->
+            reads.incrementAndGet() <= 5 ? null : finished
+        );
+
+        var failure = failureOf(task, runContext, () -> submitted, connection);
+
+        // It waited the job out rather than declaring it gone: the real error surfaced.
+        assertThat(failure.getErrors().getFirst().getReason(), is("invalidQuery"));
+        assertThat(failure.getCause(), not(instanceOf(IllegalArgumentException.class)));
+        assertThat(reads.get(), greaterThan(5));
+    }
+
     private BigQueryException failureOf(Query task, io.kestra.core.runners.RunContext runContext, java.util.concurrent.Callable<Job> createJob) {
         return failureOf(task, runContext, createJob, Mockito.mock(BigQuery.class));
     }
@@ -394,9 +533,6 @@ class BigQueryTransientErrorTest {
         var job = Mockito.mock(Job.class);
         Mockito.when(job.getJobId()).thenReturn(JobId.of("project", id));
         Mockito.when(job.getStatus()).thenReturn(status);
-        // The lookback path still calls Job#isDone() directly, so a terminal job must report
-        // terminal to every caller, not only to the status-based poll.
-        Mockito.when(job.isDone()).thenReturn(true);
 
         return job;
     }

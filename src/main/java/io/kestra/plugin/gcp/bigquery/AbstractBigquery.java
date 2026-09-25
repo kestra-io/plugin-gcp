@@ -220,27 +220,21 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                             var previousJob = connection.getJob(previousJobId);
 
                             if (previousJob != null) {
-                                if (!previousJob.isDone()) {
-                                    // DELIBERATELY still Job.waitFor() here, unlike the main wait below.
-                                    // This is the re-attach path hardened by #688 to stop a resubmit
-                                    // running the same statement twice; its tests assert exact request
-                                    // counts against the /queries/{jobId} endpoint. The hang this class
-                                    // fixes occurs in the MAIN wait, so narrowing the change to that one
-                                    // call keeps duplicate-submission safety exactly as tested.
-                                    previousJob = previousJob.waitFor();
-                                }
-
-                                if (previousJob.getStatus().getError() == null) {
-                                    logger.warn(
-                                        "Job '{}' already completed successfully despite a transient error, skipping duplicate retry",
-                                        previousJob.getJobId()
-                                    );
-
-                                    return previousJob;
-                                }
-
-                                lastJobId.set(null);
+                                previousJob = pollUntilDone(connection, previousJob, logger, MAX_CONSECUTIVE_JOB_MISSES);
                             }
+
+                            if (previousJob != null && previousJob.getStatus().getError() == null) {
+                                logger.warn(
+                                    "Job '{}' already completed successfully despite a transient error, skipping duplicate retry",
+                                    previousJob.getJobId()
+                                );
+
+                                return previousJob;
+                            }
+
+                            // Gone or failed, so there is nothing left to deduplicate against: drop the
+                            // id so a later retry resubmits instead of waiting on it again.
+                            lastJobId.set(null);
                         }
                     }
 
@@ -319,6 +313,15 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     private static final Duration JOB_WAIT_TIMEOUT = Duration.ofHours(12);
 
     /**
+     * Consecutive jobs.get misses tolerated before concluding a job we did not just submit is gone.
+     * Three rather than one because a lone miss is transient. Three in a row on a job that does still
+     * exist would clear lastJobId and resubmit, which is the duplicate execution #688 guards against;
+     * that is the accepted risk, bounded by this job having answered a jobs.get already, and the
+     * alternative -- never giving up -- holds the lookback on a vanished job for the full deadline.
+     */
+    private static final int MAX_CONSECUTIVE_JOB_MISSES = 3;
+
+    /**
      * Await completion by polling jobs.get rather than Job#waitFor().
      *
      * waitFor() delegates to waitForQueryResults(), whose retry config treats rateLimitExceeded as
@@ -330,12 +333,23 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
      * The loop reads the state off the job it just fetched rather than calling Job#isDone(), which
      * issues its own jobs.get and discards the result, doubling the request rate and leaving this
      * handle stale.
-     *
-     * Returns null when the job no longer exists, matching Job#waitFor()'s contract.
      */
     private Job pollUntilDone(BigQuery connection, Job job, Logger logger) throws InterruptedException, BigQueryException {
+        return pollUntilDone(connection, job, logger, Integer.MAX_VALUE);
+    }
+
+    /**
+     * {@code maxConsecutiveMisses} distinguishes the two callers. A job we JUST submitted is only
+     * invisible because jobs.get has not caught up, so the main wait tolerates misses until the
+     * deadline -- capping it would surface a null, and handleErrors(null) raises an
+     * IllegalArgumentException that shouldRetry does not retry, failing the task hard. The lookback
+     * asks about a job from a previous attempt, which really can be gone, so it caps and gets back
+     * null -- matching Job#waitFor()'s contract -- which tells it to resubmit.
+     */
+    private Job pollUntilDone(BigQuery connection, Job job, Logger logger, int maxConsecutiveMisses) throws InterruptedException, BigQueryException {
         var deadline = System.nanoTime() + JOB_WAIT_TIMEOUT.toNanos();
         var interval = this.jobPollInitialInterval;
+        var consecutiveMisses = 0;
 
         while (job != null && !isDone(job)) {
             if (System.nanoTime() - deadline >= 0) {
@@ -349,11 +363,17 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                 interval = this.jobPollMaxInterval;
             }
 
-            // A null read is TRANSIENT, not "the job is gone": jobs.get can briefly fail to see a
-            // job that was just submitted, and returning null reaches handleErrors(null), whose
-            // IllegalArgumentException is not retryable.
+            // A single null read is TRANSIENT -- jobs.get can briefly fail to see a job that was
+            // just submitted -- so absorb a few. Persistent absence is a real answer though: the
+            // job is gone, and reporting that (null, as Job#waitFor() does) lets the caller
+            // resubmit instead of waiting out the whole deadline.
             var refreshed = connection.getJob(job.getJobId());
-            if (refreshed != null) {
+            if (refreshed == null) {
+                if (++consecutiveMisses >= maxConsecutiveMisses) {
+                    return null;
+                }
+            } else {
+                consecutiveMisses = 0;
                 job = refreshed;
             }
         }
