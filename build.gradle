@@ -74,7 +74,7 @@ dependencies {
     compileOnly group: 'dev.failsafe', name: 'failsafe'
 
     // Shared kernel: GcpInterface / CredentialService / AbstractTask
-    api 'io.kestra.plugin:plugin-gcp-lib:1.0.0'
+    api 'io.kestra.plugin:plugin-gcp-lib:1.0.1'
 
     // Google libraries are managed by the the Kestra Platform so they are aligned on all plugins
     api 'com.google.cloud:google-cloud-storage'

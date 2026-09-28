@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.spanner;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URI;
 import java.nio.file.Files;
@@ -76,11 +75,11 @@ public class Trigger extends AbstractTrigger
     private Property<String> serviceAccount;
 
     @Schema(title = "The GCP service account to impersonate")
-    @PluginProperty(secret = true, group = "advanced")
+    @PluginProperty(secret = true, group = "connection")
     private Property<String> impersonatedServiceAccount;
 
     @Schema(title = "The GCP scopes to be used")
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "connection")
     private Property<List<String>> scopes;
 
     @NotNull
@@ -140,7 +139,7 @@ public class Trigger extends AbstractTrigger
         var startTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(start.getEpochSecond(), start.getNano());
         var endTimestamp = com.google.cloud.Timestamp.ofTimeSecondsAndNanos(end.getEpochSecond(), end.getNano());
 
-        var activeStartTimestamp = new com.google.cloud.Timestamp[]{ startTimestamp };
+        var activeStartTimestamp = new com.google.cloud.Timestamp[] { startTimestamp };
         var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         var rowCount = 0L;
         var changeCount = 0L;
@@ -151,7 +150,8 @@ public class Trigger extends AbstractTrigger
 
                 List<String> partitionTokens = executeWithRetry(
                     startTimestamp,
-                    startVal -> {
+                    startVal ->
+                    {
                         activeStartTimestamp[0] = startVal;
                         return discoverPartitionTokens(runContext, dbClient, rChangeStreamName, startVal, endTimestamp);
                     },
@@ -170,7 +170,8 @@ public class Trigger extends AbstractTrigger
 
                     var result = executeWithRetry(
                         activeStartTimestamp[0],
-                        startVal -> {
+                        startVal ->
+                        {
                             var stmtBuilder = Statement.newBuilder(querySql);
                             SpannerService.bindParameter(stmtBuilder, "startTimestamp", startVal);
                             SpannerService.bindParameter(stmtBuilder, "endTimestamp", endTimestamp);
@@ -202,7 +203,8 @@ public class Trigger extends AbstractTrigger
         return Optional.of(execution);
     }
 
-    private List<String> discoverPartitionTokens(RunContext runContext, DatabaseClient dbClient, String changeStreamName, com.google.cloud.Timestamp startTimestamp, com.google.cloud.Timestamp endTimestamp) throws Exception {
+    private List<String> discoverPartitionTokens(RunContext runContext, DatabaseClient dbClient, String changeStreamName, com.google.cloud.Timestamp startTimestamp,
+        com.google.cloud.Timestamp endTimestamp) throws Exception {
         var tokens = new ArrayList<String>();
         var querySql = "SELECT * FROM READ_" + changeStreamName + "(" +
             "start_timestamp => @startTimestamp, " +
