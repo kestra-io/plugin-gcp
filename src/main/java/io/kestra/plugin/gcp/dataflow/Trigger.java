@@ -2,7 +2,6 @@ package io.kestra.plugin.gcp.dataflow;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,15 +73,15 @@ public class Trigger extends AbstractTrigger
     private Property<String> projectId;
 
     @Schema(title = "The GCP service account")
-    @PluginProperty(secret = true, group = "execution")
+    @PluginProperty(secret = true, group = "connection")
     private Property<String> serviceAccount;
 
     @Schema(title = "The GCP service account to impersonate")
-    @PluginProperty(secret = true, group = "advanced")
+    @PluginProperty(secret = true, group = "connection")
     private Property<String> impersonatedServiceAccount;
 
     @Schema(title = "The GCP scopes to be used")
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "connection")
     private Property<List<String>> scopes;
 
     @NotNull
