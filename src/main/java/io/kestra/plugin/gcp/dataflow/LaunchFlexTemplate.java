@@ -80,7 +80,8 @@ public class LaunchFlexTemplate extends AbstractDataflow implements RunnableTask
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
+        var dataflow = this.dataflowClient(runContext);
+        var rProjectId = requireProjectId(runContext, this.projectId);
         var rLocation = runContext.render(this.location).as(String.class).orElseThrow();
         var rJobName = runContext.render(this.jobName).as(String.class).orElseThrow();
         var rContainerSpecGcsPath = runContext.render(this.containerSpecGcsPath).as(String.class).orElseThrow();
@@ -110,7 +111,6 @@ public class LaunchFlexTemplate extends AbstractDataflow implements RunnableTask
         var request = new LaunchFlexTemplateRequest()
             .setLaunchParameter(launchParameter);
 
-        var dataflow = this.dataflowClient(runContext);
         var launchRequest = dataflow.projects().locations().flexTemplates()
             .launch(rProjectId, rLocation, request);
 
