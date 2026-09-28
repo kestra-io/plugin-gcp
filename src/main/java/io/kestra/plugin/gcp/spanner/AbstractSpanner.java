@@ -38,11 +38,11 @@ public abstract class AbstractSpanner extends Task implements GcpInterface, Span
     protected Property<String> serviceAccount;
 
     @Schema(title = "The GCP service account to impersonate")
-    @PluginProperty(secret = true, group = "advanced")
+    @PluginProperty(secret = true, group = "connection")
     protected Property<String> impersonatedServiceAccount;
 
     @Schema(title = "The GCP scopes to be used")
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "connection")
     protected Property<List<String>> scopes;
 
     @NotNull
