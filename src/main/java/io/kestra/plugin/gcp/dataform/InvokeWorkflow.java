@@ -1,5 +1,12 @@
 package io.kestra.plugin.gcp.dataform;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.cloud.dataform.v1.CancelWorkflowInvocationRequest;
 import com.google.cloud.dataform.v1.CreateWorkflowInvocationRequest;
 import com.google.cloud.dataform.v1.DataformClient;
 import com.google.cloud.dataform.v1.WorkflowInvocation;
@@ -13,6 +20,7 @@ import io.kestra.core.runners.RunContext;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -68,8 +76,78 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
     @PluginProperty(group = "execution")
     protected Boolean wait = true;
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<DataformClient> trackedClient = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<String> trackedInvocationName = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Logger> trackedLogger = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
+
+    protected void trackInvocation(DataformClient client, String invocationName, Logger logger) {
+        this.trackedClient.set(client);
+        this.trackedInvocationName.set(invocationName);
+        this.trackedLogger.set(logger);
+    }
+
+    @Override
+    public void kill() {
+        cancelTrackedInvocation();
+    }
+
+    @Override
+    public void stop() {
+        cancelTrackedInvocation();
+    }
+
+    private void cancelTrackedInvocation() {
+        if (isCancelled.compareAndSet(false, true)) {
+            DataformClient client = this.trackedClient.get();
+            String invocationName = this.trackedInvocationName.get();
+
+            if (client != null && invocationName != null) {
+                try {
+                    client.cancelWorkflowInvocation(
+                        CancelWorkflowInvocationRequest.newBuilder()
+                            .setName(invocationName)
+                            .build()
+                    );
+                } catch (Exception e) {
+                    Logger logger = this.trackedLogger.get();
+                    if (logger != null) {
+                        logger.warn("Failed to cancel Dataform workflow invocation '{}'", invocationName, e);
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public Output run(RunContext runContext) throws Exception {
+        if (this.isCancelled.get()) {
+            throw new InterruptedException("Task was killed/stopped before execution");
+        }
+
         try (DataformClient client = this.dataformClient(runContext)) {
             String parent = buildRepositoryPath(runContext);
 
@@ -92,13 +170,31 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
 
             WorkflowInvocation response = client.createWorkflowInvocation(request);
             String invocationName = response.getName();
+            this.trackInvocation(client, invocationName, runContext.logger());
+
+            if (this.isCancelled.get()) {
+                cancelTrackedInvocation();
+                throw new InterruptedException("Task was killed/stopped");
+            }
 
             if (wait) {
-                WorkflowInvocation current;
-                do {
-                    Thread.sleep(1000);
+                WorkflowInvocation current = response;
+                while (current.getState() == WorkflowInvocation.State.RUNNING) {
+                    if (this.isCancelled.get()) {
+                        break;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        cancelTrackedInvocation();
+                        break;
+                    }
+                    if (this.isCancelled.get()) {
+                        break;
+                    }
                     current = client.getWorkflowInvocation(invocationName);
-                } while (current.getState() == WorkflowInvocation.State.RUNNING);
+                }
 
                 response = current; // Optional: return latest status
             }

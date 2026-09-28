@@ -7,9 +7,13 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
@@ -18,6 +22,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -30,7 +35,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -109,8 +113,77 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @PluginProperty(group = "advanced")
     private Property<SerdeType> serdeType = Property.ofValue(SerdeType.STRING);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Subscriber> trackedSubscriber = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<CountDownLatch> trackedLatch = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Logger> trackedLogger = new AtomicReference<>();
+
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
+
+    protected void trackConsumer(Subscriber subscriber, CountDownLatch latch, Logger logger) {
+        this.trackedSubscriber.set(subscriber);
+        this.trackedLatch.set(latch);
+        this.trackedLogger.set(logger);
+    }
+
+    @Override
+    public void kill() {
+        cancelConsumer();
+    }
+
+    @Override
+    public void stop() {
+        cancelConsumer();
+    }
+
+    private void cancelConsumer() {
+        if (isCancelled.compareAndSet(false, true)) {
+            Subscriber subscriber = this.trackedSubscriber.get();
+            if (subscriber != null) {
+                try {
+                    subscriber.stopAsync();
+                } catch (Exception e) {
+                    Logger logger = this.trackedLogger.get();
+                    if (logger != null) {
+                        logger.warn("Failed to stop Pub/Sub subscriber", e);
+                    }
+                }
+            }
+
+            CountDownLatch latch = this.trackedLatch.get();
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
+    }
+
     @Override
     public Output run(RunContext runContext) throws Exception {
+        if (this.isCancelled.get()) {
+            throw new InterruptedException("Task was killed/stopped before execution");
+        }
+
         if (this.maxDuration == null && this.maxRecords == null) {
             throw new IllegalArgumentException("'maxDuration' or 'maxRecords' must be set to avoid an infinite loop");
         }
@@ -145,17 +218,35 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
             var subscriber = Subscriber.newBuilder(subscriptionName, receiver)
                 .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
                 .build();
+
+            this.trackConsumer(subscriber, latch, runContext.logger());
+
+            if (this.isCancelled.get()) {
+                cancelConsumer();
+                throw new InterruptedException("Task was killed/stopped");
+            }
+
             subscriber.startAsync().awaitRunning();
 
             var maxDuration = runContext.render(this.maxDuration).as(Duration.class);
-            if (maxDuration.isPresent()) {
-                latch.await(maxDuration.get().toMillis(), TimeUnit.MILLISECONDS);
-            } else {
-                latch.await();
+            try {
+                if (maxDuration.isPresent()) {
+                    latch.await(maxDuration.get().toMillis(), TimeUnit.MILLISECONDS);
+                } else {
+                    latch.await();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                cancelConsumer();
             }
-            subscriber.stopAsync().awaitTerminated();
 
-            if (threadException.get() != null) {
+            try {
+                subscriber.stopAsync().awaitTerminated();
+            } catch (Exception e) {
+                runContext.logger().warn("Failed waiting for Pub/Sub subscriber to terminate", e);
+            }
+
+            if (threadException.get() != null && !this.isCancelled.get()) {
                 throw threadException.get();
             }
 
