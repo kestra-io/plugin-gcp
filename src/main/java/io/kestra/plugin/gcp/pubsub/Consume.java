@@ -58,7 +58,7 @@ import lombok.experimental.SuperBuilder;
                     type: io.kestra.plugin.gcp.pubsub.Consume
                     topic: topic-test
                     maxRecords: 10
-                    projectId: {{ secret('GCP_PROJECT_ID') }}
+                    projectId: "{{ secret('GCP_PROJECT_ID') }}"
                     subscription: my-subscription
                 """
         )
