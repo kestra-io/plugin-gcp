@@ -175,4 +175,20 @@ class InvokeWorkflowLifecycleTest {
 
         assertDoesNotThrow(task::stop);
     }
+
+    @Test
+    void killBeforeTrackingCancelsOnceTracked() {
+        InvokeWorkflow task = InvokeWorkflow.builder().build();
+        DataformClient client = mock(DataformClient.class);
+        String invocationName = "projects/test/locations/us/repositories/repo/workflowInvocations/123";
+
+        task.kill();
+        task.trackInvocation(client, invocationName, LOGGER);
+        task.kill();
+
+        CancelWorkflowInvocationRequest expectedRequest = CancelWorkflowInvocationRequest.newBuilder()
+            .setName(invocationName)
+            .build();
+        verify(client, times(1)).cancelWorkflowInvocation(eq(expectedRequest));
+    }
 }

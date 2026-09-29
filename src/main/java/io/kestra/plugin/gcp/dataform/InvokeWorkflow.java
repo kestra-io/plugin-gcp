@@ -104,6 +104,13 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
     @Builder.Default
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicBoolean cancelSent = new AtomicBoolean(false);
+
     protected void trackInvocation(DataformClient client, String invocationName, Logger logger) {
         this.trackedClient.set(client);
         this.trackedInvocationName.set(invocationName);
@@ -121,23 +128,24 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
     }
 
     private void cancelTrackedInvocation() {
-        if (isCancelled.compareAndSet(false, true)) {
-            DataformClient client = this.trackedClient.get();
-            String invocationName = this.trackedInvocationName.get();
+        this.isCancelled.set(true);
 
-            if (client != null && invocationName != null) {
-                try {
-                    client.cancelWorkflowInvocation(
-                        CancelWorkflowInvocationRequest.newBuilder()
-                            .setName(invocationName)
-                            .build()
-                    );
-                } catch (Exception e) {
-                    Logger logger = this.trackedLogger.get();
-                    if (logger != null) {
-                        logger.warn("Failed to cancel Dataform workflow invocation '{}'", invocationName, e);
-                    }
-                }
+        var client = this.trackedClient.get();
+        var invocationName = this.trackedInvocationName.get();
+        if (client == null || invocationName == null || !this.cancelSent.compareAndSet(false, true)) {
+            return;
+        }
+
+        try {
+            client.cancelWorkflowInvocation(
+                CancelWorkflowInvocationRequest.newBuilder()
+                    .setName(invocationName)
+                    .build()
+            );
+        } catch (Exception e) {
+            var logger = this.trackedLogger.get();
+            if (logger != null) {
+                logger.warn("Failed to cancel Dataform workflow invocation '{}'", invocationName, e);
             }
         }
     }
@@ -174,24 +182,20 @@ public class InvokeWorkflow extends AbstractDataForm implements RunnableTask<Inv
 
             if (this.isCancelled.get()) {
                 cancelTrackedInvocation();
-                throw new InterruptedException("Task was killed/stopped");
+                throw new InterruptedException("Dataform workflow invocation '" + invocationName + "' was cancelled because the task was killed or stopped");
             }
 
             if (wait) {
                 WorkflowInvocation current = response;
                 while (current.getState() == WorkflowInvocation.State.RUNNING) {
-                    if (this.isCancelled.get()) {
-                        break;
-                    }
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                         cancelTrackedInvocation();
-                        break;
+                        throw e;
                     }
                     if (this.isCancelled.get()) {
-                        break;
+                        throw new InterruptedException("Dataform workflow invocation '" + invocationName + "' was cancelled because the task was killed or stopped");
                     }
                     current = client.getWorkflowInvocation(invocationName);
                 }

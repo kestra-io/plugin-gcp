@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import com.google.cloud.dataform.v1.CancelWorkflowInvocationRequest;
 import com.google.cloud.dataform.v1.DataformClient;
 import com.google.cloud.dataform.v1.WorkflowInvocation;
 
@@ -77,6 +78,26 @@ class InvokeWorkflowTest {
         InvokeWorkflow.Output output = task.run(runContext);
 
         assertEquals("RUNNING", output.getWorkflowInvocationState());
+    }
+
+    @Test
+    void killDuringCreateCancelsInvocation() throws Exception {
+        DataformClient client = mock(DataformClient.class);
+        WorkflowInvocation running = WorkflowInvocation.newBuilder()
+            .setName("projects/test/locations/us/repositories/repo/workflowInvocations/123")
+            .setState(WorkflowInvocation.State.RUNNING)
+            .build();
+
+        InvokeWorkflow task = spy(testUtils.defaultInvokeWorkflowTask("repo", "config", true));
+        doReturn(client).when(task).createClient(any());
+
+        when(client.createWorkflowInvocation(any())).thenAnswer(inv -> {
+            task.kill();
+            return running;
+        });
+
+        assertThrows(InterruptedException.class, () -> task.run(testUtils.runContext(task)));
+        verify(client, times(1)).cancelWorkflowInvocation(any(CancelWorkflowInvocationRequest.class));
     }
 
     @Test

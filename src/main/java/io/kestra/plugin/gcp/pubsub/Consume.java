@@ -141,6 +141,13 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     @Builder.Default
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicBoolean cancelSent = new AtomicBoolean(false);
+
     protected void trackConsumer(Subscriber subscriber, CountDownLatch latch, Logger logger) {
         this.trackedSubscriber.set(subscriber);
         this.trackedLatch.set(latch);
@@ -158,8 +165,16 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     }
 
     private void cancelConsumer() {
-        if (isCancelled.compareAndSet(false, true)) {
-            Subscriber subscriber = this.trackedSubscriber.get();
+        this.isCancelled.set(true);
+
+        Subscriber subscriber = this.trackedSubscriber.get();
+        CountDownLatch latch = this.trackedLatch.get();
+
+        if (subscriber == null && latch == null) {
+            return;
+        }
+
+        if (this.cancelSent.compareAndSet(false, true)) {
             if (subscriber != null) {
                 try {
                     subscriber.stopAsync();
@@ -171,7 +186,6 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                 }
             }
 
-            CountDownLatch latch = this.trackedLatch.get();
             if (latch != null) {
                 latch.countDown();
             }
@@ -223,7 +237,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
 
             if (this.isCancelled.get()) {
                 cancelConsumer();
-                throw new InterruptedException("Task was killed/stopped");
+                throw new InterruptedException("Pub/Sub consume was cancelled because the task was killed or stopped");
             }
 
             subscriber.startAsync().awaitRunning();
@@ -236,8 +250,8 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                     latch.await();
                 }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
                 cancelConsumer();
+                throw e;
             }
 
             try {
@@ -246,7 +260,11 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                 runContext.logger().warn("Failed waiting for Pub/Sub subscriber to terminate", e);
             }
 
-            if (threadException.get() != null && !this.isCancelled.get()) {
+            if (this.isCancelled.get()) {
+                throw new InterruptedException("Pub/Sub consume was cancelled because the task was killed or stopped");
+            }
+
+            if (threadException.get() != null) {
                 throw threadException.get();
             }
 

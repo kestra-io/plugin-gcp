@@ -139,4 +139,18 @@ class ConsumeLifecycleTest {
         assertDoesNotThrow(task::stop);
         assertEquals(0, latch.getCount());
     }
+
+    @Test
+    void killBeforeTrackingCancelsOnceTracked() {
+        Consume task = Consume.builder().build();
+        Subscriber subscriber = mock(Subscriber.class);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        task.kill();
+        task.trackConsumer(subscriber, latch, LOGGER);
+        task.kill();
+
+        verify(subscriber, times(1)).stopAsync();
+        assertEquals(0, latch.getCount());
+    }
 }
