@@ -81,7 +81,8 @@ public class LaunchTemplate extends AbstractDataflow implements RunnableTask<Lau
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
+        var dataflow = this.dataflowClient(runContext);
+        var rProjectId = requireProjectId(runContext, this.projectId);
         var rLocation = runContext.render(this.location).as(String.class).orElseThrow();
         var rJobName = runContext.render(this.jobName).as(String.class).orElseThrow();
         var rGcsPath = runContext.render(this.gcsPath).as(String.class).orElseThrow();
@@ -107,7 +108,6 @@ public class LaunchTemplate extends AbstractDataflow implements RunnableTask<Lau
             params.setEnvironment(runtimeEnv);
         }
 
-        var dataflow = this.dataflowClient(runContext);
         var launchRequest = dataflow.projects().locations().templates()
             .launch(rProjectId, rLocation, params)
             .setGcsPath(rGcsPath);

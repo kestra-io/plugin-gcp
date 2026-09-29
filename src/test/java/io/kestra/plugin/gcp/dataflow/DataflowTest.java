@@ -1,7 +1,13 @@
 package io.kestra.plugin.gcp.dataflow;
 
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +22,7 @@ import com.google.api.services.dataflow.model.*;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 
@@ -69,6 +76,8 @@ class DataflowTest {
     private Dataflow.Projects.Locations.Jobs.List mockJobsList;
 
     private AutoCloseable closeable;
+
+    private static KeyPair cachedKeyPair;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -683,5 +692,289 @@ class DataflowTest {
         var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
 
         assertThat(execution.isPresent(), is(false));
+    }
+
+    @Test
+    void launchTemplateInfersProjectIdFromServiceAccount() throws Exception {
+        var runContext = runContextFactory.of();
+        var response = new LaunchTemplateResponse()
+            .setJob(new Job().setId("job-123").setCurrentState("JOB_STATE_RUNNING"));
+        when(mockTemplates.launch(eq("inferred-project"), eq("us-central1"), any())).thenReturn(mockTemplatesLaunch);
+        when(mockTemplatesLaunch.setGcsPath(any())).thenReturn(mockTemplatesLaunch);
+        when(mockTemplatesLaunch.execute()).thenReturn(response);
+
+        var task = launchTemplate(null, "inferred-project");
+        var spyTask = spy(task);
+        useResolvedCredentials(spyTask);
+
+        var output = spyTask.run(runContext);
+
+        assertThat(output.getJobId(), is("job-123"));
+        assertThat(spyTask.getProjectId(), is(Property.ofValue("inferred-project")));
+        verify(mockTemplates).launch(eq("inferred-project"), eq("us-central1"), any());
+    }
+
+    @Test
+    void launchFlexTemplateInfersProjectIdFromServiceAccount() throws Exception {
+        var runContext = runContextFactory.of();
+        var response = new LaunchFlexTemplateResponse()
+            .setJob(new Job().setId("flex-job-123").setCurrentState("JOB_STATE_RUNNING"));
+        when(mockFlexTemplates.launch(eq("inferred-project"), eq("us-central1"), any())).thenReturn(mockFlexTemplatesLaunch);
+        when(mockFlexTemplatesLaunch.execute()).thenReturn(response);
+
+        var task = LaunchFlexTemplate.builder()
+            .id(IdUtils.create())
+            .type(LaunchFlexTemplate.class.getName())
+            .serviceAccount(Property.ofValue(serviceAccountJson("inferred-project")))
+            .scopes(cloudPlatformScope())
+            .location(Property.ofValue("us-central1"))
+            .jobName(Property.ofValue("my-flex-job"))
+            .containerSpecGcsPath(Property.ofValue("gs://bucket/flex-spec.json"))
+            .build();
+        var spyTask = spy(task);
+        useResolvedCredentials(spyTask);
+
+        var output = spyTask.run(runContext);
+
+        assertThat(output.getJobId(), is("flex-job-123"));
+        assertThat(spyTask.getProjectId(), is(Property.ofValue("inferred-project")));
+        verify(mockFlexTemplates).launch(eq("inferred-project"), eq("us-central1"), any());
+    }
+
+    @Test
+    void getJobInfersProjectIdFromServiceAccount() throws Exception {
+        var runContext = runContextFactory.of();
+        var job = new Job()
+            .setId("job-123")
+            .setCurrentState("JOB_STATE_DONE")
+            .setCreateTime("2026-06-25T12:00:00Z")
+            .setCurrentStateTime("2026-06-25T13:00:00Z")
+            .setType("JOB_TYPE_BATCH");
+        when(mockJobs.get(eq("inferred-project"), eq("us-central1"), eq("job-123"))).thenReturn(mockJobsGet);
+        when(mockJobsGet.execute()).thenReturn(job);
+        when(mockJobs.getMetrics(eq("inferred-project"), eq("us-central1"), eq("job-123"))).thenReturn(mockJobsGetMetrics);
+        when(mockJobsGetMetrics.execute()).thenReturn(new JobMetrics());
+
+        var task = GetJob.builder()
+            .id(IdUtils.create())
+            .type(GetJob.class.getName())
+            .serviceAccount(Property.ofValue(serviceAccountJson("inferred-project")))
+            .scopes(cloudPlatformScope())
+            .location(Property.ofValue("us-central1"))
+            .jobId(Property.ofValue("job-123"))
+            .build();
+        var spyTask = spy(task);
+        useResolvedCredentials(spyTask);
+
+        var output = spyTask.run(runContext);
+
+        assertThat(output.getJobId(), is("job-123"));
+        assertThat(spyTask.getProjectId(), is(Property.ofValue("inferred-project")));
+        verify(mockJobs).get(eq("inferred-project"), eq("us-central1"), eq("job-123"));
+    }
+
+    @Test
+    void cancelJobInfersProjectIdFromServiceAccount() throws Exception {
+        var runContext = runContextFactory.of();
+        when(mockJobs.update(eq("inferred-project"), eq("us-central1"), eq("job-123"), any())).thenReturn(mockJobsUpdate);
+        when(mockJobsUpdate.execute()).thenReturn(new Job().setId("job-123").setCurrentState("JOB_STATE_CANCELLED"));
+
+        var task = CancelJob.builder()
+            .id(IdUtils.create())
+            .type(CancelJob.class.getName())
+            .serviceAccount(Property.ofValue(serviceAccountJson("inferred-project")))
+            .scopes(cloudPlatformScope())
+            .location(Property.ofValue("us-central1"))
+            .jobId(Property.ofValue("job-123"))
+            .build();
+        var spyTask = spy(task);
+        useResolvedCredentials(spyTask);
+
+        var output = spyTask.run(runContext);
+
+        assertThat(output.getCurrentState(), is("JOB_STATE_CANCELLED"));
+        assertThat(spyTask.getProjectId(), is(Property.ofValue("inferred-project")));
+        verify(mockJobs).update(eq("inferred-project"), eq("us-central1"), eq("job-123"), any());
+    }
+
+    @Test
+    void waitForJobInfersProjectIdFromServiceAccount() throws Exception {
+        var runContext = runContextFactory.of();
+        var done = new Job().setId("job-123").setCurrentState("JOB_STATE_DONE");
+        when(mockJobs.get(eq("inferred-project"), eq("us-central1"), eq("job-123"))).thenReturn(mockJobsGet);
+        when(mockJobsGet.execute()).thenReturn(done);
+        when(mockJobs.getMetrics(eq("inferred-project"), eq("us-central1"), eq("job-123"))).thenReturn(mockJobsGetMetrics);
+        when(mockJobsGetMetrics.execute()).thenReturn(new JobMetrics());
+
+        var task = WaitForJob.builder()
+            .id(IdUtils.create())
+            .type(WaitForJob.class.getName())
+            .serviceAccount(Property.ofValue(serviceAccountJson("inferred-project")))
+            .scopes(cloudPlatformScope())
+            .location(Property.ofValue("us-central1"))
+            .jobId(Property.ofValue("job-123"))
+            .pollInterval(Property.ofValue(Duration.ofMillis(50)))
+            .maxDuration(Property.ofValue(Duration.ofSeconds(2)))
+            .build();
+        var spyTask = spy(task);
+        useResolvedCredentials(spyTask);
+
+        var output = spyTask.run(runContext);
+
+        assertThat(output.getState(), is("JOB_STATE_DONE"));
+        assertThat(spyTask.getProjectId(), is(Property.ofValue("inferred-project")));
+        verify(mockJobs).get(eq("inferred-project"), eq("us-central1"), eq("job-123"));
+    }
+
+    @Test
+    void triggerInfersProjectIdFromServiceAccount() throws Exception {
+        when(mockJobs.list(eq("inferred-project"), eq("us-central1"))).thenReturn(mockJobsList);
+        when(mockJobsList.execute()).thenReturn(new ListJobsResponse());
+
+        var trigger = dataflowTrigger(null, "inferred-project");
+        var spyTrigger = spy(trigger);
+        useResolvedCredentials(spyTrigger);
+
+        var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
+        var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+
+        assertThat(execution.isPresent(), is(false));
+        assertThat(spyTrigger.getProjectId(), is(Property.ofValue("inferred-project")));
+        verify(mockJobs).list(eq("inferred-project"), eq("us-central1"));
+    }
+
+    @Test
+    void launchTemplateKeepsExplicitProjectId() throws Exception {
+        var runContext = runContextFactory.of();
+        var response = new LaunchTemplateResponse()
+            .setJob(new Job().setId("job-123").setCurrentState("JOB_STATE_RUNNING"));
+        when(mockTemplates.launch(eq("explicit-project"), eq("us-central1"), any())).thenReturn(mockTemplatesLaunch);
+        when(mockTemplatesLaunch.setGcsPath(any())).thenReturn(mockTemplatesLaunch);
+        when(mockTemplatesLaunch.execute()).thenReturn(response);
+
+        var task = launchTemplate(Property.ofValue("explicit-project"), "service-account-project");
+        var spyTask = spy(task);
+        useResolvedCredentials(spyTask);
+
+        spyTask.run(runContext);
+
+        assertThat(spyTask.getProjectId(), is(Property.ofValue("explicit-project")));
+        verify(mockTemplates).launch(eq("explicit-project"), eq("us-central1"), any());
+        verify(mockTemplates, never()).launch(eq("service-account-project"), any(), any());
+    }
+
+    @Test
+    void triggerKeepsExplicitProjectId() throws Exception {
+        when(mockJobs.list(eq("explicit-project"), eq("us-central1"))).thenReturn(mockJobsList);
+        when(mockJobsList.execute()).thenReturn(new ListJobsResponse());
+
+        var trigger = dataflowTrigger(Property.ofValue("explicit-project"), "service-account-project");
+        var spyTrigger = spy(trigger);
+        useResolvedCredentials(spyTrigger);
+
+        var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
+        spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+
+        assertThat(spyTrigger.getProjectId(), is(Property.ofValue("explicit-project")));
+        verify(mockJobs).list(eq("explicit-project"), eq("us-central1"));
+        verify(mockJobs, never()).list(eq("service-account-project"), any());
+    }
+
+    @Test
+    void launchTemplateFailsWhenProjectIdCannotBeResolved() throws Exception {
+        var runContext = runContextFactory.of();
+        var task = launchTemplate(null, null);
+        var spyTask = spy(task);
+        useResolvedCredentials(spyTask);
+
+        var error = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> spyTask.run(runContext));
+        assertThat(error.getMessage(), containsString("projectId"));
+
+        verify(spyTask).buildDataflowClient(any());
+        verify(mockTemplates, never()).launch(any(), any(), any());
+    }
+
+    @Test
+    void triggerFailsWhenProjectIdCannotBeResolved() throws Exception {
+        var trigger = dataflowTrigger(null, null);
+        var spyTrigger = spy(trigger);
+        useResolvedCredentials(spyTrigger);
+
+        var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
+        var error = org.junit.jupiter.api.Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue())
+        );
+        assertThat(error.getMessage(), containsString("projectId"));
+
+        verify(spyTrigger).buildDataflowClient(any());
+        verify(mockJobs, never()).list(any(), any());
+    }
+
+    private void useResolvedCredentials(AbstractDataflow task) throws Exception {
+        doReturn(mockDataflow).when(task).buildDataflowClient(any());
+    }
+
+    private void useResolvedCredentials(Trigger trigger) throws Exception {
+        doReturn(mockDataflow).when(trigger).buildDataflowClient(any());
+    }
+
+    private LaunchTemplate launchTemplate(Property<String> projectId, String serviceAccountProjectId) throws Exception {
+        return LaunchTemplate.builder()
+            .id(IdUtils.create())
+            .type(LaunchTemplate.class.getName())
+            .projectId(projectId)
+            .serviceAccount(Property.ofValue(serviceAccountJson(serviceAccountProjectId)))
+            .scopes(cloudPlatformScope())
+            .location(Property.ofValue("us-central1"))
+            .jobName(Property.ofValue("my-classic-job"))
+            .gcsPath(Property.ofValue("gs://bucket/template"))
+            .build();
+    }
+
+    private Trigger dataflowTrigger(Property<String> projectId, String serviceAccountProjectId) throws Exception {
+        return Trigger.builder()
+            .id(IdUtils.create())
+            .type(Trigger.class.getName())
+            .projectId(projectId)
+            .serviceAccount(Property.ofValue(serviceAccountJson(serviceAccountProjectId)))
+            .scopes(cloudPlatformScope())
+            .location(Property.ofValue("us-central1"))
+            .jobNamePrefix(Property.ofValue("my-etl-"))
+            .targetState(Property.ofValue(JobState.JOB_STATE_DONE))
+            .lookback(Property.ofValue(Duration.ofSeconds(10)))
+            .build();
+    }
+
+    private static Property<List<String>> cloudPlatformScope() {
+        return Property.ofValue(List.of("https://www.googleapis.com/auth/cloud-platform"));
+    }
+
+    private static String serviceAccountJson(String projectId) throws Exception {
+        String encodedKey = Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII))
+            .encodeToString(cachedKeyPair().getPrivate().getEncoded());
+        String pem = "-----BEGIN PRIVATE KEY-----\n" + encodedKey + "\n-----END PRIVATE KEY-----\n";
+
+        Map<String, Object> key = new LinkedHashMap<>();
+        key.put("type", "service_account");
+        if (projectId != null) {
+            key.put("project_id", projectId);
+        }
+        key.put("private_key_id", "private-key-id");
+        key.put("private_key", pem);
+        key.put("client_email", "test@example.iam.gserviceaccount.com");
+        key.put("client_id", "client-id");
+        key.put("token_uri", "https://oauth2.googleapis.com/token");
+
+        return JacksonMapper.ofJson().writeValueAsString(key);
+    }
+
+    private static KeyPair cachedKeyPair() throws NoSuchAlgorithmException {
+        if (cachedKeyPair == null) {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            cachedKeyPair = keyPairGenerator.generateKeyPair();
+        }
+        return cachedKeyPair;
     }
 }

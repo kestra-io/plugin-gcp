@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.dataflow.Dataflow;
 import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.GoogleCredentials;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
@@ -32,11 +33,27 @@ public abstract class AbstractDataflow extends AbstractTask implements DataflowC
     protected Property<String> location;
 
     protected Dataflow dataflowClient(RunContext runContext) throws Exception {
-        return dataflowClient(runContext, this);
+        // credentials() writes an inferred project id back; callers must read projectId after this returns.
+        return buildDataflowClient(this.credentials(runContext));
     }
 
+    protected Dataflow buildDataflowClient(GoogleCredentials credentials) throws Exception {
+        return createDataflowClient(credentials);
+    }
+
+    static String requireProjectId(RunContext runContext, Property<String> projectId) throws Exception {
+        return runContext.render(projectId).as(String.class)
+            .orElseThrow(() -> new IllegalStateException(
+                "Missing projectId — set projectId or use a service account whose key contains a project_id"
+            ));
+    }
+
+    // Static entry point does not write an inferred project id back. Trigger assigns it itself.
     public static Dataflow dataflowClient(RunContext runContext, DataflowConnectionInterface connection) throws Exception {
-        var credentials = CredentialService.connection(runContext, connection).credentials();
+        return createDataflowClient(CredentialService.connection(runContext, connection).credentials());
+    }
+
+    static Dataflow createDataflowClient(GoogleCredentials credentials) throws Exception {
         var credentialsAdapter = new HttpCredentialsAdapter(credentials);
         var requestInitializer = new com.google.api.client.http.HttpRequestInitializer() {
             @Override

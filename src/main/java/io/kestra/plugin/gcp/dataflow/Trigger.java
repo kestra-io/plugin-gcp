@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.Job;
+import com.google.auth.oauth2.GoogleCredentials;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -17,6 +18,7 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.gcp.shared.CredentialService;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -67,8 +69,10 @@ import static io.kestra.core.models.triggers.StatefulTriggerService.*;
 public class Trigger extends AbstractTrigger
     implements PollingTriggerInterface, TriggerOutput<Trigger.Output>, DataflowConnectionInterface, StatefulTriggerInterface {
 
-    @NotNull
-    @Schema(title = "The GCP project ID")
+    @Schema(
+        title = "The GCP project ID",
+        description = "Inferred from the service account key when omitted and that key carries a project id."
+    )
     @PluginProperty(group = "connection")
     private Property<String> projectId;
 
@@ -143,7 +147,8 @@ public class Trigger extends AbstractTrigger
         var runContext = conditionContext.getRunContext();
         var logger = runContext.logger();
 
-        var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
+        var dataflow = this.dataflowClient(runContext);
+        var rProjectId = AbstractDataflow.requireProjectId(runContext, this.projectId);
         var rLocation = runContext.render(this.location).as(String.class).orElseThrow();
         var rJobNamePrefix = runContext.render(this.jobNamePrefix).as(String.class).orElse("");
         var rTargetState = runContext.render(this.targetState).as(JobState.class).orElse(JobState.JOB_STATE_DONE).name();
@@ -154,8 +159,6 @@ public class Trigger extends AbstractTrigger
 
         var end = Instant.now();
         var start = end.minus(rLookback);
-
-        var dataflow = this.dataflowClient(runContext);
 
         Map<String, Entry> state = readState(runContext, rStateKey, rStateTtl);
 
@@ -230,7 +233,14 @@ public class Trigger extends AbstractTrigger
     }
 
     protected Dataflow dataflowClient(RunContext runContext) throws Exception {
-        return AbstractDataflow.dataflowClient(runContext, this);
+        // Triggers do not extend AbstractTask, so mirror credentials(): write the resolved project id back.
+        var connection = CredentialService.connection(runContext, this);
+        this.projectId = connection.projectId();
+        return buildDataflowClient(connection.credentials());
+    }
+
+    protected Dataflow buildDataflowClient(GoogleCredentials credentials) throws Exception {
+        return AbstractDataflow.createDataflowClient(credentials);
     }
 
     @Builder

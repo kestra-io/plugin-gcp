@@ -11,6 +11,8 @@ All tasks inherit GCP authentication properties from the common GCP plugin struc
 - Environment-provided credentials (e.g. `GOOGLE_APPLICATION_CREDENTIALS` environment variable).
 - Metadata-service-provided IAM credentials when running inside Google Cloud.
 
+`projectId` is optional when the credentials come from a service account key that contains a `project_id`: either the `serviceAccount` property or the key file pointed to by `GOOGLE_APPLICATION_CREDENTIALS`. Metadata-server credentials (GCE, GKE Workload Identity) never carry a project id, so set `projectId` explicitly there. Tasks and the trigger fail if no project id can be resolved.
+
 ## Tasks
 
 ### LaunchTemplate
