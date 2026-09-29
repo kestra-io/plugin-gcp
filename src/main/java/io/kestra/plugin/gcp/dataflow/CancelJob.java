@@ -61,7 +61,8 @@ public class CancelJob extends AbstractDataflow implements RunnableTask<CancelJo
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
+        var dataflow = this.dataflowClient(runContext);
+        var rProjectId = requireProjectId(runContext, this.projectId);
         var rLocation = runContext.render(this.location).as(String.class).orElseThrow();
         var rJobId = runContext.render(this.jobId).as(String.class).orElseThrow();
         var rDrain = runContext.render(this.drain).as(Boolean.class).orElse(false);
@@ -71,7 +72,6 @@ public class CancelJob extends AbstractDataflow implements RunnableTask<CancelJo
         var jobPayload = new Job()
             .setRequestedState(requestedState);
 
-        var dataflow = this.dataflowClient(runContext);
         var updateRequest = dataflow.projects().locations().jobs()
             .update(rProjectId, rLocation, rJobId, jobPayload);
 

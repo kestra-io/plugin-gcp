@@ -7,6 +7,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.services.dataflow.model.Job;
 
 import io.kestra.core.models.annotations.Example;
@@ -17,7 +18,6 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -103,13 +103,12 @@ public class WaitForJob extends AbstractDataflow implements RunnableTask<WaitFor
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
+        var dataflow = this.dataflowClient(runContext);
+        var rProjectId = requireProjectId(runContext, this.projectId);
         var rLocation = runContext.render(this.location).as(String.class).orElseThrow();
         var rJobId = runContext.render(this.jobId).as(String.class).orElseThrow();
         var rPollInterval = runContext.render(this.pollInterval).as(Duration.class).orElse(Duration.ofSeconds(15));
         var rMaxDuration = runContext.render(this.maxDuration).as(Duration.class).orElse(Duration.ofHours(1));
-
-        var dataflow = this.dataflowClient(runContext);
 
         killable.set(() ->
         {

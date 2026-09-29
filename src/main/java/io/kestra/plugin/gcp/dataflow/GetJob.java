@@ -57,11 +57,11 @@ public class GetJob extends AbstractDataflow implements RunnableTask<GetJob.Outp
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        var rProjectId = runContext.render(this.projectId).as(String.class).orElseThrow();
+        var dataflow = this.dataflowClient(runContext);
+        var rProjectId = requireProjectId(runContext, this.projectId);
         var rLocation = runContext.render(this.location).as(String.class).orElseThrow();
         var rJobId = runContext.render(this.jobId).as(String.class).orElseThrow();
 
-        var dataflow = this.dataflowClient(runContext);
         var job = dataflow.projects().locations().jobs()
             .get(rProjectId, rLocation, rJobId)
             .execute();
