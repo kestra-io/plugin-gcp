@@ -240,6 +240,58 @@ class BigQueryTransientErrorTest {
     }
 
     /**
+     * A job failure with `jobInternalError` is a documented default retry reason, and must trigger
+     * an automatic retry rather than stopping on attempt 1.
+     *
+     * @see <a href="https://github.com/kestra-io/plugin-gcp/issues/713">#713</a>
+     */
+    @Test
+    void shouldRetryWhenJobFailsWithJobInternalErrorAndSucceedOnNextAttempt() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var submitted1 = runningJob("job_internal_err_1");
+        var submitted2 = runningJob("job_internal_err_2");
+        var jobId1 = submitted1.getJobId();
+        var jobId2 = submitted2.getJobId();
+
+        var failedJob = terminalJob(
+            "job_internal_err_1",
+            new BigQueryError(
+                "jobInternalError", null,
+                "The job encountered an internal error during execution and was unable to complete successfully."
+            )
+        );
+        var successJob = terminalJob("job_internal_err_2", null);
+
+        var connection = Mockito.mock(BigQuery.class);
+        Mockito.when(connection.getJob(jobId1)).thenReturn(failedJob);
+        Mockito.when(connection.getJob(jobId2)).thenReturn(successJob);
+
+        var attempts = new AtomicInteger(0);
+        var completedJob = task.waitForJob(
+            runContext.logger(),
+            () -> attempts.incrementAndGet() == 1 ? submitted1 : submitted2,
+            runContext,
+            connection
+        );
+
+        assertThat(attempts.get(), is(2));
+        assertThat(completedJob.getJobId(), is(jobId2));
+    }
+
+    @Test
+    void shouldMatchRetryReasonsCaseInsensitively() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var error = new BigQueryError("JOBINTERNALERROR", null, "internal error occurred");
+        var bqException = new BigQueryException(List.of(error));
+
+        assertThat(task.shouldRetry(bqException, runContext.logger(), runContext), is(true));
+    }
+
+    /**
      * A submission-time rejection leaves a bare job reference whose getStatus() is null, because
      * Job#isDone() reloads internally and reports terminal without populating the handle we hold.
      * Without a re-fetch, handleErrors() throws "has no status to report" -- an IllegalStateException

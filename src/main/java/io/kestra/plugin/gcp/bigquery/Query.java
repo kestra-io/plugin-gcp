@@ -337,7 +337,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                     .type("exponential")
                     .interval(Duration.ofSeconds(5))
                     .maxInterval(Duration.ofMinutes(60))
-                    .maxDuration(Duration.ofMinutes(15))
                     .maxAttempts(10)
                     .build();
 

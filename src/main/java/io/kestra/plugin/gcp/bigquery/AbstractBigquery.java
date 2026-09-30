@@ -50,7 +50,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
     @Schema(
         title = "Automatic BigQuery retry policy",
-        description = "Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s (per-attempt interval capped at 60m), with a total duration of up to 15m and a maximum of 10 attempts."
+        description = "Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s (per-attempt interval capped at 60m) with a maximum of 10 attempts."
     )
     @PluginProperty(group = "advanced")
     protected AbstractRetry retryAuto;
@@ -187,7 +187,6 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                             .type("exponential")
                             .interval(Duration.ofSeconds(5))
                             .maxInterval(Duration.ofMinutes(60))
-                            .maxDuration(Duration.ofMinutes(15))
                             .maxAttempts(10)
                             .build()
                 )
@@ -450,8 +449,11 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         }
 
         for (BigQueryError error : bigQueryException.getErrors()) {
-            if (error.getReason() != null && runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
-                return true;
+            if (this.retryReasons != null && error.getReason() != null) {
+                var reasons = runContext.render(this.retryReasons).asList(String.class);
+                if (reasons != null && reasons.stream().anyMatch(reason -> reason.equalsIgnoreCase(error.getReason()))) {
+                    return true;
+                }
             }
 
             if (this.retryMessages != null && error.getMessage() != null) {
