@@ -229,6 +229,69 @@ class BigQueryJobIdTest {
     }
 
     @Test
+    void shouldResubmitAnAdoptedFailureEvenWithASubSecondRetryInterval() {
+        // Created 500 ms ago, inside the margin: only the adopted job's shape (no status) can tell it apart.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var adopted = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 500);
+        var failed = job(new BigQueryError("rateLimitExceeded", null, "x"));
+        var replacement = job(null);
+        var submitted = new AtomicReference<JobInfo>();
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(failed);
+        Mockito.when(connection.create(Mockito.<JobInfo> argThat(info -> info != null && !jobInfo.equals(info))))
+            .thenAnswer(invocation ->
+            {
+                submitted.set(invocation.getArgument(0));
+                return replacement;
+            });
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(replacement));
+        assertThat(submitted.get().getJobId().getJob(), is("kestra_taskrun_1"));
+    }
+
+    @Test
+    void shouldTreatAJobCreatedWithinTheMarginAsThisSubmissions() {
+        // Created 1 s ago, inside the 2 s margin: clock skew must not turn a fresh failure into a resubmit.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var justCreated = job(new BigQueryError("invalidQuery", null, "Syntax error"), JobStatus.State.DONE, System.currentTimeMillis() - 1_000);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(justCreated);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(justCreated));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
+    void shouldResubmitAJobWithAStatusCreatedOutsideTheMargin() {
+        // The other side of the margin: a job carrying a status, created 3 s ago, is a previous attempt's.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var stale = job(new BigQueryError("rateLimitExceeded", null, "x"), JobStatus.State.DONE, System.currentTimeMillis() - 3_000);
+        var replacement = job(null);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(stale);
+        Mockito.when(connection.create(Mockito.<JobInfo> argThat(info -> info != null && !jobInfo.equals(info)))).thenReturn(replacement);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(replacement));
+    }
+
+    @Test
+    void shouldLeaveAJobThatVanishedAfterAdoptionToThePoll() {
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var adopted = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 60_000);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(null);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(adopted));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
     void shouldReportAJobThatFailedAtThisSubmission() {
         // A statement can fail the moment it is submitted (a syntax error). That job was created by this
         // call, so its failure is the answer; resubmitting it would only run a broken statement twice.

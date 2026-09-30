@@ -91,25 +91,34 @@ public class BigQueryService {
             // For a caller-supplied id the client swallows "Already Exists" and returns the existing job when it is
             // under 24 hours old (BigQueryImpl.create), fetched with fields(STATISTICS) only, so it has no status.
             // A job created before this call is not this call's, and only a full fetch says whether it failed.
-            if (!createdBefore(job, submittedAt)) {
+            if (!isAdopted(job, submittedAt)) {
                 return job;
             }
 
             var current = job.getStatus() != null ? job : connection.getJob(job.getJobId());
-            if (current == null || !isFailed(current)) {
+            // A vanished job has nothing to resubmit under, so leave it to the caller's poll to report.
+            if (current == null) {
+                return job;
+            }
+            if (!isFailed(current)) {
                 return adopt(job, candidate, logger);
             }
 
             logger.warn("Job '{}' already ran and failed, trying the next id", candidate.getJobId().getJob());
         }
 
-        logger.warn("Job '{}' failed {} times, submitting under a BigQuery-assigned id", base.getJob(), MAX_RESUBMITS + 1);
+        logger.warn(
+            "Job '{}' failed {} times, submitting under a BigQuery-assigned id; worker-loss deduplication no longer applies to this attempt",
+            base.getJob(),
+            MAX_RESUBMITS + 1
+        );
         return connection.create(withJobId(jobInfo, randomJobId(base)));
     }
 
     static final int MAX_RESUBMITS = 100;
 
-    // Absorbs clock skew between the worker and BigQuery; a real retry is at least one retry interval later.
+    // Absorbs clock skew between the worker and BigQuery for jobs that carry a status. Status-less adopted jobs
+    // are recognised by shape instead, so sub-second retry intervals do not depend on this margin.
     static final long ADOPTED_JOB_MARGIN_MS = 2_000;
 
     private static Job adopt(Job job, JobInfo candidate, Logger logger) {
@@ -120,6 +129,13 @@ public class BigQueryService {
     private static boolean isFailed(Job job) {
         var status = job.getStatus();
         return status != null && status.getState() == JobStatus.State.DONE && status.getError() != null;
+    }
+
+    // The client's adopt path fetches with fields(STATISTICS), so an adopted job has statistics but no status,
+    // whereas a job this call created comes back from jobs.insert with its status. That needs no clock; the
+    // creation-time check backs it up should the client ever return the full job.
+    private static boolean isAdopted(Job job, long submittedAt) {
+        return (job.getStatus() == null && job.getStatistics() != null) || createdBefore(job, submittedAt);
     }
 
     private static boolean createdBefore(Job job, long submittedAt) {
