@@ -58,7 +58,7 @@ import lombok.experimental.SuperBuilder;
 )
 @Schema(
     title = "Export BigQuery table to GCS",
-    description = "Runs an extract job from a table or partition to one or more GCS URIs. Supports CSV/JSON/AVRO, optional compression, custom delimiter, and AVRO logical types. Prints a header row by default. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
+    description = "Runs an extract job from a table or partition to one or more GCS URIs. Supports CSV/JSON/AVRO, optional compression, custom delimiter, and AVRO logical types. Prints a header row by default. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice. A retry after a failed job submits under the next id in a deterministic chain (`kestra_<taskRunId>_1`, `_2`, ...)."
 )
 public class ExtractToGcs extends AbstractBigquery implements RunnableTask<ExtractToGcs.Output> {
 

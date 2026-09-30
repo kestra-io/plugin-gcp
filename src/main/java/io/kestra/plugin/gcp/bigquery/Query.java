@@ -123,7 +123,7 @@ import reactor.core.publisher.Mono;
 )
 @Schema(
     title = "Execute a BigQuery SQL job",
-    description = "Runs a SQL statement with standard SQL by default, optionally writing into a destination table. Supports cache usage, priority selection, schema updates, and deprecated fetch/store outputs (superseded by `fetchType`). Uses task-level project, service account, and scopes. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
+    description = "Runs a SQL statement with standard SQL by default, optionally writing into a destination table. Supports cache usage, priority selection, schema updates, and deprecated fetch/store outputs (superseded by `fetchType`). Uses task-level project, service account, and scopes. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice. A retry after a failed job submits under the next id in a deterministic chain (`kestra_<taskRunId>_1`, `_2`, ...)."
 )
 @StoreFetchValidation
 @StoreFetchDestinationValidation
