@@ -56,7 +56,7 @@ import lombok.experimental.SuperBuilder;
 )
 @Schema(
     title = "Copy or snapshot BigQuery tables",
-    description = "Runs a table copy job between tables or partitions. Supports COPY, SNAPSHOT, RESTORE, or CLONE operations and honors create/write dispositions. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
+    description = "Runs a table copy job between tables or partitions. Supports COPY, SNAPSHOT, RESTORE, or CLONE operations and honors create/write dispositions. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice. A retry after a failed job submits under the next id in a deterministic chain (`kestra_<taskRunId>_1`, `_2`, ...)."
 )
 public class Copy extends AbstractJob implements RunnableTask<Copy.Output> {
     @Schema(

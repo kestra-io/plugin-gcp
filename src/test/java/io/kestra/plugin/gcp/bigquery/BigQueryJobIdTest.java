@@ -137,9 +137,225 @@ class BigQueryJobIdTest {
         var created = BigQueryService.createOrAdoptJob(connection, jobInfo, logger());
 
         assertThat(created, is(replacement));
-        assertThat("a burnt id must be replaced by one BigQuery assigns", submitted.get().getJobId().getJob(), nullValue());
+        assertThat("a burnt id is replaced by the next deterministic one", submitted.get().getJobId().getJob(), is("kestra_exec_taskrun_1"));
         assertThat(submitted.get().getJobId().getProject(), is("my-project"));
         assertThat(submitted.get().getJobId().getLocation(), is("EU"));
+    }
+
+    // The client does not surface the 409 for a caller-supplied id: BigQueryImpl.create catches "Already Exists"
+    // and returns getJob(id, fields(STATISTICS)) for a job under 24 hours old, i.e. a creation time and no status.
+    // adoptedByClient models that shape, which is what a task retry after a real failure receives.
+
+    @Test
+    void shouldStartAFreshJobWhenTheClientHandsBackTheOldFailedJob() {
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var adopted = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 60_000);
+        var oldFailure = job(new BigQueryError("rateLimitExceeded", null, "too many table dml insert operations"));
+        var replacement = job(null);
+        var submitted = new AtomicReference<JobInfo>();
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(oldFailure);
+        Mockito.when(connection.create(Mockito.<JobInfo> argThat(info -> info != null && !jobInfo.equals(info))))
+            .thenAnswer(invocation ->
+            {
+                submitted.set(invocation.getArgument(0));
+                return replacement;
+            });
+
+        var created = BigQueryService.createOrAdoptJob(connection, jobInfo, logger());
+
+        assertThat("a retry must run again, not re-report the previous attempt's failure", created, is(replacement));
+        assertThat("the retry keeps the kestra_ prefix and its taskrun", submitted.get().getJobId().getJob(), is("kestra_taskrun_1"));
+        assertThat(submitted.get().getJobId().getLocation(), is("EU"));
+        Mockito.verify(connection, Mockito.times(2)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
+    void shouldWalkTheChainPastEveryFailedRetry() {
+        // Attempt 3: both kestra_taskrun and kestra_taskrun_1 already ran and failed.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var first = withJob(jobInfo, "kestra_taskrun_1");
+        var adopted0 = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 120_000);
+        var adopted1 = adoptedByClient(first.getJobId(), System.currentTimeMillis() - 60_000);
+        var failed0 = job(new BigQueryError("rateLimitExceeded", null, "x"));
+        var failed1 = job(new BigQueryError("rateLimitExceeded", null, "x"));
+        var replacement = job(null);
+        var submitted = new AtomicReference<JobInfo>();
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted0);
+        Mockito.when(connection.create(first)).thenReturn(adopted1);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(failed0);
+        Mockito.when(connection.getJob(first.getJobId())).thenReturn(failed1);
+        Mockito.when(connection.create(Mockito.<JobInfo> argThat(i -> i != null && !jobInfo.equals(i) && !first.equals(i))))
+            .thenAnswer(invocation ->
+            {
+                submitted.set(invocation.getArgument(0));
+                return replacement;
+            });
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(replacement));
+        assertThat(submitted.get().getJobId().getJob(), is("kestra_taskrun_2"));
+    }
+
+    @Test
+    void shouldAdoptTheRetrysJobWhenAWorkerIsLostDuringTheRetry() {
+        // #688's guarantee must hold for retries too: the retry's job is still running, so a resubmit
+        // re-derives kestra_taskrun_1 and adopts it instead of starting a duplicate.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var first = withJob(jobInfo, "kestra_taskrun_1");
+        var adopted0 = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 120_000);
+        var adopted1 = adoptedByClient(first.getJobId(), System.currentTimeMillis() - 60_000);
+        var failed0 = job(new BigQueryError("rateLimitExceeded", null, "x"));
+        var running1 = job(null, JobStatus.State.RUNNING);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted0);
+        Mockito.when(connection.create(first)).thenReturn(adopted1);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(failed0);
+        Mockito.when(connection.getJob(first.getJobId())).thenReturn(running1);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(adopted1));
+        Mockito.verify(connection, Mockito.times(2)).create(Mockito.any(JobInfo.class));
+    }
+
+    private static JobInfo withJob(JobInfo jobInfo, String job) {
+        var id = jobInfo.getJobId();
+        return JobInfo.newBuilder(jobInfo.getConfiguration())
+            .setJobId(JobId.newBuilder().setProject(id.getProject()).setLocation(id.getLocation()).setJob(job).build())
+            .build();
+    }
+
+    @Test
+    void shouldResubmitAnAdoptedFailureEvenWithASubSecondRetryInterval() {
+        // Created 500 ms ago, inside the margin: only the adopted job's shape (no status) can tell it apart.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var adopted = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 500);
+        var failed = job(new BigQueryError("rateLimitExceeded", null, "x"));
+        var replacement = job(null);
+        var submitted = new AtomicReference<JobInfo>();
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(failed);
+        Mockito.when(connection.create(Mockito.<JobInfo> argThat(info -> info != null && !jobInfo.equals(info))))
+            .thenAnswer(invocation ->
+            {
+                submitted.set(invocation.getArgument(0));
+                return replacement;
+            });
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(replacement));
+        assertThat(submitted.get().getJobId().getJob(), is("kestra_taskrun_1"));
+    }
+
+    @Test
+    void shouldTreatAJobCreatedWithinTheMarginAsThisSubmissions() {
+        // Created 1 s ago, inside the 2 s margin: clock skew must not turn a fresh failure into a resubmit.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var justCreated = job(new BigQueryError("invalidQuery", null, "Syntax error"), JobStatus.State.DONE, System.currentTimeMillis() - 1_000);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(justCreated);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(justCreated));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
+    void shouldResubmitAJobWithAStatusCreatedOutsideTheMargin() {
+        // The other side of the margin: a job carrying a status, created 3 s ago, is a previous attempt's.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var stale = job(new BigQueryError("rateLimitExceeded", null, "x"), JobStatus.State.DONE, System.currentTimeMillis() - 3_000);
+        var replacement = job(null);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(stale);
+        Mockito.when(connection.create(Mockito.<JobInfo> argThat(info -> info != null && !jobInfo.equals(info)))).thenReturn(replacement);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(replacement));
+    }
+
+    @Test
+    void shouldLeaveAJobThatVanishedAfterAdoptionToThePoll() {
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var adopted = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 60_000);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(null);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(adopted));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
+    void shouldReportAJobThatFailedAtThisSubmission() {
+        // A statement can fail the moment it is submitted (a syntax error). That job was created by this
+        // call, so its failure is the answer; resubmitting it would only run a broken statement twice.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var freshFailure = job(
+            new BigQueryError("invalidQuery", null, "Syntax error"),
+            JobStatus.State.DONE, System.currentTimeMillis()
+        );
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(freshFailure);
+
+        var created = BigQueryService.createOrAdoptJob(connection, jobInfo, logger());
+
+        assertThat(created, is(freshFailure));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
+    void shouldKeepAdoptingAnOldJobThatIsStillRunning() {
+        // The worker-loss resubmit #688 exists for: the original job is still running and must be adopted.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var adopted = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 600_000);
+
+        var full = job(null, JobStatus.State.RUNNING);
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(full);
+
+        var created = BigQueryService.createOrAdoptJob(connection, jobInfo, logger());
+
+        assertThat("never duplicate work that is still in flight", created, is(adopted));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
+    void shouldKeepAdoptingAnOldJobThatSucceeded() {
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = jobInfo("kestra_taskrun");
+        var adopted = adoptedByClient(jobInfo.getJobId(), System.currentTimeMillis() - 600_000);
+
+        var full = job(null, JobStatus.State.DONE);
+        Mockito.when(connection.create(jobInfo)).thenReturn(adopted);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(full);
+
+        var created = BigQueryService.createOrAdoptJob(connection, jobInfo, logger());
+
+        assertThat("a finished job with no error is the outcome, not a reason to rerun", created, is(adopted));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
+    }
+
+    @Test
+    void shouldNotResubmitWhenBigQueryAssignedTheId() {
+        // Without our own id there is nothing to adopt, so whatever came back is this submission's job.
+        var connection = Mockito.mock(BigQuery.class);
+        var jobInfo = JobInfo.newBuilder(CONFIGURATION)
+            .setJobId(JobId.newBuilder().setProject("my-project").setLocation("EU").build())
+            .build();
+        var failure = job(new BigQueryError("invalidQuery", null, "boom"), JobStatus.State.DONE, System.currentTimeMillis() - 60_000);
+
+        Mockito.when(connection.create(jobInfo)).thenReturn(failure);
+
+        assertThat(BigQueryService.createOrAdoptJob(connection, jobInfo, logger()), is(failure));
+        Mockito.verify(connection, Mockito.times(1)).create(Mockito.any(JobInfo.class));
     }
 
     @Test
@@ -212,6 +428,27 @@ class BigQueryJobIdTest {
 
         var job = Mockito.mock(Job.class);
         Mockito.when(job.getStatus()).thenReturn(status);
+
+        return job;
+    }
+
+    /** What BigQueryImpl.create hands back for a taken id: statistics only, no status. */
+    private static Job adoptedByClient(JobId jobId, long creationTimeMs) {
+        var statistics = Mockito.mock(com.google.cloud.bigquery.JobStatistics.class);
+        Mockito.when(statistics.getCreationTime()).thenReturn(creationTimeMs);
+        var job = Mockito.mock(Job.class);
+        Mockito.when(job.getStatus()).thenReturn(null);
+        Mockito.when(job.getStatistics()).thenReturn(statistics);
+        Mockito.when(job.getJobId()).thenReturn(jobId);
+
+        return job;
+    }
+
+    private static Job job(BigQueryError error, JobStatus.State state, long creationTimeMs) {
+        var job = job(error, state);
+        var statistics = Mockito.mock(com.google.cloud.bigquery.JobStatistics.class);
+        Mockito.when(statistics.getCreationTime()).thenReturn(creationTimeMs);
+        Mockito.when(job.getStatistics()).thenReturn(statistics);
 
         return job;
     }

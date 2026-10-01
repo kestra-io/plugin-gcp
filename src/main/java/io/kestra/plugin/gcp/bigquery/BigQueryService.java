@@ -50,41 +50,107 @@ public class BigQueryService {
     }
 
     /**
-     * Submits the job, adopting the existing one when its deterministic id is already taken. A job that
-     * already failed has burnt its id for good, so that case falls back to a fresh random id and lets the
-     * retry make progress rather than re-reporting the old failure.
+     * Submits the job, adopting the existing one when its deterministic id is already taken.
+     *
+     * <p>
+     * A failed job burns its id for good, so a retry walks {@code kestra_<taskRunId>}, {@code _1}, {@code _2}, ...
+     * and adopts the first job that has not failed, or submits under the first free id. The chain is deterministic so
+     * a worker-loss resubmit during a retry still adopts that retry's job rather than duplicating it.
      */
     public static Job createOrAdoptJob(BigQuery connection, JobInfo jobInfo, Logger logger) {
-        try {
+        var base = jobInfo.getJobId();
+        if (base == null || base.getJob() == null) {
             return connection.create(jobInfo);
-        } catch (com.google.cloud.bigquery.BigQueryException e) {
-            // Without a job id of our own the conflict cannot be about a job this taskrun submitted.
-            if (e.getCode() != HttpURLConnection.HTTP_CONFLICT || jobInfo.getJobId().getJob() == null) {
-                throw e;
-            }
-
-            // BigQuery says the id is taken but will not hand the job over, so there is nothing to adopt
-            // and nothing safe to resubmit under. Failing here duplicates no work, which is the point.
-            var existing = connection.getJob(jobInfo.getJobId());
-            if (existing == null) {
-                throw e;
-            }
-
-            var status = existing.getStatus();
-            if (status != null && status.getState() == JobStatus.State.DONE && status.getError() != null) {
-                logger.warn("Job '{}' already ran and failed, starting a new one", jobInfo.getJobId().getJob());
-
-                return connection.create(
-                    JobInfo.newBuilder(jobInfo.getConfiguration())
-                        .setJobId(randomJobId(jobInfo.getJobId()))
-                        .build()
-                );
-            }
-
-            logger.warn("Adopting job '{}' already started by this taskrun instead of submitting a duplicate", jobInfo.getJobId().getJob());
-
-            return existing;
         }
+
+        for (int n = 0; n <= MAX_RESUBMITS; n++) {
+            var candidate = n == 0 ? jobInfo : withJob(jobInfo, base.getJob() + "_" + n);
+            var submittedAt = System.currentTimeMillis();
+            Job job;
+
+            try {
+                job = connection.create(candidate);
+            } catch (com.google.cloud.bigquery.BigQueryException e) {
+                if (e.getCode() != HttpURLConnection.HTTP_CONFLICT) {
+                    throw e;
+                }
+
+                // BigQuery says the id is taken but will not hand the job over, so there is nothing to adopt
+                // and nothing safe to resubmit under. Failing here duplicates no work, which is the point.
+                var existing = connection.getJob(candidate.getJobId());
+                if (existing == null) {
+                    throw e;
+                }
+                if (!isFailed(existing)) {
+                    return adopt(existing, candidate, logger);
+                }
+                logger.warn("Job '{}' already ran and failed, trying the next id", candidate.getJobId().getJob());
+                continue;
+            }
+
+            // For a caller-supplied id the client swallows "Already Exists" and returns the existing job when it is
+            // under 24 hours old (BigQueryImpl.create), fetched with fields(STATISTICS) only, so it has no status.
+            // A job created before this call is not this call's, and only a full fetch says whether it failed.
+            if (!isAdopted(job, submittedAt)) {
+                return job;
+            }
+
+            var current = job.getStatus() != null ? job : connection.getJob(job.getJobId());
+            // A vanished job has nothing to resubmit under, so leave it to the caller's poll to report.
+            if (current == null) {
+                return job;
+            }
+            if (!isFailed(current)) {
+                return adopt(job, candidate, logger);
+            }
+
+            logger.warn("Job '{}' already ran and failed, trying the next id", candidate.getJobId().getJob());
+        }
+
+        logger.warn(
+            "Job '{}' failed {} times, submitting under a BigQuery-assigned id; worker-loss deduplication no longer applies to this attempt",
+            base.getJob(),
+            MAX_RESUBMITS + 1
+        );
+        return connection.create(withJobId(jobInfo, randomJobId(base)));
+    }
+
+    static final int MAX_RESUBMITS = 100;
+
+    // Absorbs clock skew between the worker and BigQuery for jobs that carry a status. Status-less adopted jobs
+    // are recognised by shape instead, so sub-second retry intervals do not depend on this margin.
+    static final long ADOPTED_JOB_MARGIN_MS = 2_000;
+
+    private static Job adopt(Job job, JobInfo candidate, Logger logger) {
+        logger.warn("Adopting job '{}' already started by this taskrun instead of submitting a duplicate", candidate.getJobId().getJob());
+        return job;
+    }
+
+    private static boolean isFailed(Job job) {
+        var status = job.getStatus();
+        return status != null && status.getState() == JobStatus.State.DONE && status.getError() != null;
+    }
+
+    // The client's adopt path fetches with fields(STATISTICS), so an adopted job has statistics but no status,
+    // whereas a job this call created comes back from jobs.insert with its status. That needs no clock; the
+    // creation-time check backs it up should the client ever return the full job.
+    private static boolean isAdopted(Job job, long submittedAt) {
+        return (job.getStatus() == null && job.getStatistics() != null) || createdBefore(job, submittedAt);
+    }
+
+    private static boolean createdBefore(Job job, long submittedAt) {
+        var statistics = job.getStatistics();
+        var creationTime = statistics != null ? statistics.getCreationTime() : null;
+        return creationTime != null && creationTime < submittedAt - ADOPTED_JOB_MARGIN_MS;
+    }
+
+    private static JobInfo withJob(JobInfo jobInfo, String job) {
+        var id = jobInfo.getJobId();
+        return withJobId(jobInfo, JobId.newBuilder().setProject(id.getProject()).setLocation(id.getLocation()).setJob(job).build());
+    }
+
+    private static JobInfo withJobId(JobInfo jobInfo, JobId jobId) {
+        return JobInfo.newBuilder(jobInfo.getConfiguration()).setJobId(jobId).build();
     }
 
     public static TableId tableId(String table) {

@@ -126,7 +126,7 @@ import lombok.experimental.SuperBuilder;
 )
 @Schema(
     title = "Load GCS objects into BigQuery",
-    description = "Runs a BigQuery load job from one or more GCS URIs into the destination table. Supports wildcard paths, format-specific options, and standard load limits. Table must exist unless schema is supplied with a write disposition that creates it. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice."
+    description = "Runs a BigQuery load job from one or more GCS URIs into the destination table. Supports wildcard paths, format-specific options, and standard load limits. Table must exist unless schema is supplied with a write disposition that creates it. The job id is derived from the taskrun, so a worker-loss resubmit adopts the job the lost worker started instead of running it twice. A retry after a failed job submits under the next id in a deterministic chain (`kestra_<taskRunId>_1`, `_2`, ...)."
 )
 public class LoadFromGcs extends AbstractLoad implements RunnableTask<AbstractLoad.Output> {
     @Schema(
