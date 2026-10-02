@@ -1,8 +1,17 @@
 package io.kestra.plugin.gcp.pubsub;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutures;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -16,10 +25,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.util.concurrent.TimeUnit;
-
 import static io.kestra.core.utils.Rethrow.throwFunction;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -64,6 +70,8 @@ import io.kestra.core.models.annotations.PluginProperty;
     }
 )
 public class Publish extends AbstractPubSub implements RunnableTask<Publish.Output>, io.kestra.core.models.property.Data.From {
+    private static final int MAX_PENDING_MESSAGES = 1000;
+
     @NotNull
     @Schema(
         title = io.kestra.core.models.property.Data.From.TITLE,
@@ -93,18 +101,25 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
                 .build()
         );
 
+        List<ApiFuture<String>> futures = new ArrayList<>();
         Integer count;
         try {
             count = io.kestra.core.models.property.Data.from(from)
                 .readAs(runContext, Message.class, map -> JacksonMapper.toMap(map, Message.class))
                 .map(throwFunction(message ->
                 {
-                    publisher.publish(message.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow()));
+                    futures.add(publisher.publish(message.to(runContext, runContext.render(this.serdeType).as(SerdeType.class).orElseThrow())));
+                    if (futures.size() >= MAX_PENDING_MESSAGES) {
+                        awaitPublished(futures);
+                    }
                     return 1;
                 }))
                 .reduce(Integer::sum)
                 .blockOptional()
                 .orElse(0);
+
+            // publish() is asynchronous, so wait for the results to fail the task on errors such as a missing topic
+            awaitPublished(futures);
         } finally {
             publisher.shutdown();
             publisher.awaitTermination(1, TimeUnit.MINUTES);
@@ -116,6 +131,15 @@ public class Publish extends AbstractPubSub implements RunnableTask<Publish.Outp
         return Output.builder()
             .messagesCount(count)
             .build();
+    }
+
+    static void awaitPublished(List<ApiFuture<String>> futures) throws Exception {
+        try {
+            ApiFutures.allAsList(futures).get();
+            futures.clear();
+        } catch (ExecutionException e) {
+            throw e.getCause() instanceof Exception cause ? cause : e;
+        }
     }
 
     private boolean checkForOrderingKeys(RunContext runContext) {
