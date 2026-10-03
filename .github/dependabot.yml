@@ -8,6 +8,9 @@ updates:
     schedule:
       # Check for updates to GitHub Actions every weekday
       interval: "weekly"
+    labels:
+      - "dependency-upgrade"
+    open-pull-requests-limit: 50
 
   # Maintain dependencies for Gradle modules
   - package-ecosystem: "gradle"
@@ -15,6 +18,9 @@ updates:
     schedule:
       # Check for updates to Gradle modules every week
       interval: "weekly"
+    labels:
+      - "dependency-upgrade"
+    open-pull-requests-limit: 50
     groups:
       kestra-gradle-plugins:
         patterns:
