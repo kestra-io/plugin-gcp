@@ -152,6 +152,9 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
         this.trackedSubscriber.set(subscriber);
         this.trackedLatch.set(latch);
         this.trackedLogger.set(logger);
+        if (this.isCancelled.get()) {
+            cancelConsumer();
+        }
     }
 
     @Override

@@ -112,6 +112,12 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     @ToString.Exclude
     @Builder.Default
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicBoolean cancelSent = new AtomicBoolean(false);
 
     /**
      * Records the job currently submitted, so that {@link #kill()} or {@link #stop()} can cancel the
@@ -121,6 +127,9 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         this.trackedConnection.set(connection);
         this.trackedJobId.set(jobId);
         this.trackedLogger.set(logger);
+        if (this.isCancelled.get()) {
+            cancelTrackedJob();
+        }
     }
 
     @Override
@@ -134,20 +143,24 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     }
 
     private void cancelTrackedJob() {
-        if (isCancelled.compareAndSet(false, true)) {
-            BigQuery connection = this.trackedConnection.get();
-            JobId jobId = this.trackedJobId.get();
+        this.isCancelled.set(true);
 
-            if (connection != null && jobId != null) {
-                try {
-                    connection.cancel(jobId);
-                } catch (Exception e) {
-                    Logger logger = this.trackedLogger.get();
-                    if (logger != null) {
-                        logger.warn("Failed to cancel BigQuery job '{}'", jobId, e);
-                    } else {
-                        LOG.warn("Failed to cancel BigQuery job '{}'", jobId, e);
-                    }
+        BigQuery connection = this.trackedConnection.get();
+        JobId jobId = this.trackedJobId.get();
+
+        if (connection == null || jobId == null) {
+            return;
+        }
+
+        if (this.cancelSent.compareAndSet(false, true)) {
+            try {
+                connection.cancel(jobId);
+            } catch (Exception e) {
+                Logger logger = this.trackedLogger.get();
+                if (logger != null) {
+                    logger.warn("Failed to cancel BigQuery job '{}'", jobId, e);
+                } else {
+                    LOG.warn("Failed to cancel BigQuery job '{}'", jobId, e);
                 }
             }
         }
