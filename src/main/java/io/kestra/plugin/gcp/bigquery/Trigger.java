@@ -3,8 +3,11 @@ package io.kestra.plugin.gcp.bigquery;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -110,6 +113,13 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @PluginProperty(group = "execution")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Query> queryTask = new AtomicReference<>();
+
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();
@@ -128,6 +138,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .fetchType(this.fetchType)
             .fetchOne(this.fetchOne)
             .build();
+        this.queryTask.set(task);
         Query.Output run = task.run(runContext);
 
         logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql));
@@ -139,5 +150,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         Execution execution = TriggerService.generateExecution(this, conditionContext, context, run);
 
         return Optional.of(execution);
+    }
+
+    @Override
+    public void kill() {
+        Query task = this.queryTask.get();
+
+        if (task != null) {
+            task.kill();
+        }
     }
 }
