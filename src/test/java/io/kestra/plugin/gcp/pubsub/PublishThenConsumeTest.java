@@ -11,6 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import com.google.api.gax.rpc.NotFoundException;
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.TopicAdminClient;
 import com.google.pubsub.v1.ProjectSubscriptionName;
@@ -33,6 +34,7 @@ import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 @EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
@@ -200,6 +202,17 @@ class PublishThenConsumeTest {
         } finally {
             deleteTopic(topic);
         }
+    }
+
+    @Test
+    void shouldFailWhenTopicDoesNotExist() {
+        var publish = Publish.builder()
+            .projectId(Property.ofValue(project))
+            .topic(Property.ofValue("missing-" + IdUtils.create()))
+            .from(List.of(Message.builder().data("Hello World").build()))
+            .build();
+
+        assertThrows(NotFoundException.class, () -> publish.run(runContextFactory.of()));
     }
 
     private URI createTestFile(RunContext runContext) throws Exception {
