@@ -4,8 +4,11 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -100,6 +103,13 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @PluginProperty(group = "execution")
     private Property<Duration> maxDuration;
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Consume> consumeTask = new AtomicReference<>();
+
     @Builder.Default
     @NotNull
     @Schema(
@@ -126,7 +136,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .serdeType(this.serdeType)
             .build();
 
-        Consume.Output run = task.run(runContext);
+        this.trackTask(task);
+
+        Consume.Output run;
+        try {
+            run = task.run(runContext);
+        } finally {
+            this.clearTask(task);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("Consumed '{}' messaged.", run.getCount());
@@ -139,5 +156,30 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         Execution execution = TriggerService.generateExecution(this, conditionContext, context, run);
 
         return Optional.of(execution);
+    }
+
+    void trackTask(Consume task) {
+        this.consumeTask.set(task);
+    }
+
+    void clearTask(Consume task) {
+        this.consumeTask.compareAndSet(task, null);
+    }
+
+    @Override
+    public void kill() {
+        var task = this.consumeTask.get();
+
+        if (task != null) {
+            task.kill();
+        }
+    }
+
+    @Override
+    public void stop() {
+        var task = this.consumeTask.get();
+        if (task != null) {
+            task.stop();
+        }
     }
 }

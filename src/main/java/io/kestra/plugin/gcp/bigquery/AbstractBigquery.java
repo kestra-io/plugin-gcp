@@ -112,6 +112,12 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     @ToString.Exclude
     @Builder.Default
     private final AtomicBoolean isCancelled = new AtomicBoolean(false);
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<JobId> lastCancelledJobId = new AtomicReference<>();
 
     /**
      * Records the job currently submitted, so that {@link #kill()} or {@link #stop()} can cancel the
@@ -121,6 +127,9 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         this.trackedConnection.set(connection);
         this.trackedJobId.set(jobId);
         this.trackedLogger.set(logger);
+        if (this.isCancelled.get()) {
+            cancelTrackedJob();
+        }
     }
 
     @Override
@@ -134,21 +143,29 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     }
 
     private void cancelTrackedJob() {
-        if (isCancelled.compareAndSet(false, true)) {
-            BigQuery connection = this.trackedConnection.get();
-            JobId jobId = this.trackedJobId.get();
+        this.isCancelled.set(true);
 
-            if (connection != null && jobId != null) {
-                try {
-                    connection.cancel(jobId);
-                } catch (Exception e) {
-                    Logger logger = this.trackedLogger.get();
-                    if (logger != null) {
-                        logger.warn("Failed to cancel BigQuery job '{}'", jobId, e);
-                    } else {
-                        LOG.warn("Failed to cancel BigQuery job '{}'", jobId, e);
-                    }
-                }
+        var connection = this.trackedConnection.get();
+        var jobId = this.trackedJobId.get();
+
+        if (connection == null || jobId == null) {
+            return;
+        }
+
+        var lastCancelledJobId = this.lastCancelledJobId.get();
+        if (jobId.equals(lastCancelledJobId)
+            || !this.lastCancelledJobId.compareAndSet(lastCancelledJobId, jobId)) {
+            return;
+        }
+
+        try {
+            connection.cancel(jobId);
+        } catch (Exception e) {
+            var logger = this.trackedLogger.get();
+            if (logger != null) {
+                logger.warn("Failed to cancel BigQuery job '{}'", jobId, e);
+            } else {
+                LOG.warn("Failed to cancel BigQuery job '{}'", jobId, e);
             }
         }
     }
@@ -434,6 +451,9 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     }
 
     boolean shouldRetry(Throwable failure, Logger logger, RunContext runContext) throws IllegalVariableEvaluationException {
+        if (this.isCancelled.get()) {
+            return false;
+        }
         // Structural, not a matter of which reasons are configured: an interrupted thread cannot back off.
         if (Thread.currentThread().isInterrupted()) {
             return false;
