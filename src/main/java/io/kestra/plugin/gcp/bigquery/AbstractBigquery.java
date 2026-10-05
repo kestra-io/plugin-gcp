@@ -81,7 +81,9 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         Arrays.asList(
             "due to concurrent update",
             "Retrying the job may solve the problem",
-            "Retrying may solve the problem"
+            "Retrying may solve the problem",
+            "CONNECTION_ERROR",
+            "This stub requires a minimum remaining timeout"
         )
     );
 
