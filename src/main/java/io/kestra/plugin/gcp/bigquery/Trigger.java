@@ -138,8 +138,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .fetchType(this.fetchType)
             .fetchOne(this.fetchOne)
             .build();
-        this.queryTask.set(task);
-        Query.Output run = task.run(runContext);
+        this.trackTask(task);
+
+        Query.Output run;
+        try {
+            run = task.run(runContext);
+        } finally {
+            this.clearTask(task);
+        }
 
         logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql));
 
@@ -152,12 +158,28 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         return Optional.of(execution);
     }
 
+    void trackTask(Query task) {
+        this.queryTask.set(task);
+    }
+
+    void clearTask(Query task) {
+        this.queryTask.compareAndSet(task, null);
+    }
+
     @Override
     public void kill() {
-        Query task = this.queryTask.get();
+        var task = this.queryTask.get();
 
         if (task != null) {
             task.kill();
+        }
+    }
+
+    @Override
+    public void stop() {
+        var task = this.queryTask.get();
+        if (task != null) {
+            task.stop();
         }
     }
 }

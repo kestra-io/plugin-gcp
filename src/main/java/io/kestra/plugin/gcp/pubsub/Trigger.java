@@ -136,9 +136,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .serdeType(this.serdeType)
             .build();
 
-        this.consumeTask.set(task);
+        this.trackTask(task);
 
-        Consume.Output run = task.run(runContext);
+        Consume.Output run;
+        try {
+            run = task.run(runContext);
+        } finally {
+            this.clearTask(task);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("Consumed '{}' messaged.", run.getCount());
@@ -153,12 +158,28 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         return Optional.of(execution);
     }
 
+    void trackTask(Consume task) {
+        this.consumeTask.set(task);
+    }
+
+    void clearTask(Consume task) {
+        this.consumeTask.compareAndSet(task, null);
+    }
+
     @Override
     public void kill() {
-        Consume task = this.consumeTask.get();
+        var task = this.consumeTask.get();
 
         if (task != null) {
             task.kill();
+        }
+    }
+
+    @Override
+    public void stop() {
+        var task = this.consumeTask.get();
+        if (task != null) {
+            task.stop();
         }
     }
 }

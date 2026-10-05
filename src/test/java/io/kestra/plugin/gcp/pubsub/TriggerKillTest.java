@@ -1,8 +1,6 @@
 package io.kestra.plugin.gcp.pubsub;
 
-import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -20,14 +18,14 @@ class TriggerKillTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TriggerKillTest.class);
 
     @Test
-    void killStopsTrackedSubscriber() throws Exception {
+    void killStopsTrackedSubscriber() {
         Trigger trigger = Trigger.builder().build();
         Consume consume = Consume.builder().build();
         Subscriber subscriber = mock(Subscriber.class);
         CountDownLatch latch = new CountDownLatch(1);
 
         consume.trackConsumer(subscriber, latch, LOGGER);
-        trackedConsumeTask(trigger).set(consume);
+        trigger.trackTask(consume);
 
         trigger.kill();
 
@@ -36,14 +34,14 @@ class TriggerKillTest {
     }
 
     @Test
-    void secondKillDoesNotStopSubscriberAgain() throws Exception {
+    void secondKillDoesNotStopSubscriberAgain() {
         Trigger trigger = Trigger.builder().build();
         Consume consume = Consume.builder().build();
         Subscriber subscriber = mock(Subscriber.class);
         CountDownLatch latch = new CountDownLatch(1);
 
         consume.trackConsumer(subscriber, latch, LOGGER);
-        trackedConsumeTask(trigger).set(consume);
+        trigger.trackTask(consume);
 
         trigger.kill();
         trigger.kill();
@@ -53,13 +51,13 @@ class TriggerKillTest {
     }
 
     @Test
-    void killBeforeSubscriberIsTrackedIsSafe() throws Exception {
+    void killBeforeSubscriberIsTrackedIsSafe() {
         Trigger trigger = Trigger.builder().build();
         Consume consume = Consume.builder().build();
         Subscriber subscriber = mock(Subscriber.class);
         CountDownLatch latch = new CountDownLatch(1);
 
-        trackedConsumeTask(trigger).set(consume);
+        trigger.trackTask(consume);
 
         assertDoesNotThrow(trigger::kill);
 
@@ -68,6 +66,39 @@ class TriggerKillTest {
 
         verify(subscriber, times(1)).stopAsync();
         assertEquals(0, latch.getCount());
+    }
+
+    @Test
+    void stopStopsTrackedSubscriber() {
+        Trigger trigger = Trigger.builder().build();
+        Consume consume = Consume.builder().build();
+        Subscriber subscriber = mock(Subscriber.class);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        consume.trackConsumer(subscriber, latch, LOGGER);
+        trigger.trackTask(consume);
+
+        trigger.stop();
+
+        verify(subscriber, times(1)).stopAsync();
+        assertEquals(0, latch.getCount());
+    }
+
+    @Test
+    void completedPollIsNotStoppedByLaterKill() {
+        Trigger trigger = Trigger.builder().build();
+        Consume consume = Consume.builder().build();
+        Subscriber subscriber = mock(Subscriber.class);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        consume.trackConsumer(subscriber, latch, LOGGER);
+        trigger.trackTask(consume);
+
+        trigger.clearTask(consume);
+        trigger.kill();
+
+        verify(subscriber, times(0)).stopAsync();
+        assertEquals(1, latch.getCount());
     }
 
     @Test
@@ -75,12 +106,5 @@ class TriggerKillTest {
         Trigger trigger = Trigger.builder().build();
 
         assertDoesNotThrow(trigger::kill);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static AtomicReference<Consume> trackedConsumeTask(Trigger trigger) throws Exception {
-        Field field = Trigger.class.getDeclaredField("consumeTask");
-        field.setAccessible(true);
-        return (AtomicReference<Consume>) field.get(trigger);
     }
 }

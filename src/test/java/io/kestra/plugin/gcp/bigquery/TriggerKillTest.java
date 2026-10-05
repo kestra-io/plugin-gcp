@@ -1,8 +1,5 @@
 package io.kestra.plugin.gcp.bigquery;
 
-import java.lang.reflect.Field;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +16,14 @@ class TriggerKillTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TriggerKillTest.class);
 
     @Test
-    void killCancelsTrackedBigQueryJob() throws Exception {
+    void killCancelsTrackedBigQueryJob() {
         Trigger trigger = Trigger.builder().build();
         Query query = Query.builder().build();
         BigQuery connection = mock(BigQuery.class);
         JobId jobId = JobId.of("my-project", "my-job");
 
         query.trackJob(connection, jobId, LOGGER);
-        trackedQueryTask(trigger).set(query);
+        trigger.trackTask(query);
 
         trigger.kill();
 
@@ -34,14 +31,14 @@ class TriggerKillTest {
     }
 
     @Test
-    void secondKillDoesNotCancelJobAgain() throws Exception {
+    void secondKillDoesNotCancelJobAgain() {
         Trigger trigger = Trigger.builder().build();
         Query query = Query.builder().build();
         BigQuery connection = mock(BigQuery.class);
         JobId jobId = JobId.of("my-project", "my-job");
 
         query.trackJob(connection, jobId, LOGGER);
-        trackedQueryTask(trigger).set(query);
+        trigger.trackTask(query);
 
         trigger.kill();
         trigger.kill();
@@ -50,13 +47,33 @@ class TriggerKillTest {
     }
 
     @Test
-    void killBeforeJobIsTrackedIsSafe() throws Exception {
+    void killCancelsSecondJobTrackedAfterRetry() {
+        Trigger trigger = Trigger.builder().build();
+        Query query = Query.builder().build();
+        BigQuery connection = mock(BigQuery.class);
+        JobId firstJobId = JobId.of("my-project", "first-job");
+        JobId secondJobId = JobId.of("my-project", "second-job");
+
+        query.trackJob(connection, firstJobId, LOGGER);
+        trigger.trackTask(query);
+
+        trigger.kill();
+
+        query.trackJob(connection, secondJobId, LOGGER);
+        trigger.kill();
+
+        verify(connection, times(1)).cancel(firstJobId);
+        verify(connection, times(1)).cancel(secondJobId);
+    }
+
+    @Test
+    void killBeforeJobIsTrackedIsSafe() {
         Trigger trigger = Trigger.builder().build();
         Query query = Query.builder().build();
         BigQuery connection = mock(BigQuery.class);
         JobId jobId = JobId.of("my-project", "my-job");
 
-        trackedQueryTask(trigger).set(query);
+        trigger.trackTask(query);
 
         trigger.kill();
 
@@ -69,16 +86,40 @@ class TriggerKillTest {
     }
 
     @Test
+    void stopCancelsTrackedBigQueryJob() {
+        Trigger trigger = Trigger.builder().build();
+        Query query = Query.builder().build();
+        BigQuery connection = mock(BigQuery.class);
+        JobId jobId = JobId.of("my-project", "my-job");
+
+        query.trackJob(connection, jobId, LOGGER);
+        trigger.trackTask(query);
+
+        trigger.stop();
+
+        verify(connection, times(1)).cancel(jobId);
+    }
+
+    @Test
+    void completedPollIsNotCancelledByLaterKill() {
+        Trigger trigger = Trigger.builder().build();
+        Query query = Query.builder().build();
+        BigQuery connection = mock(BigQuery.class);
+        JobId jobId = JobId.of("my-project", "my-job");
+
+        query.trackJob(connection, jobId, LOGGER);
+        trigger.trackTask(query);
+
+        trigger.clearTask(query);
+        trigger.kill();
+
+        verify(connection, times(0)).cancel(jobId);
+    }
+
+    @Test
     void killWithoutNestedQueryTaskIsNoOp() {
         Trigger trigger = Trigger.builder().build();
 
         assertDoesNotThrow(trigger::kill);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static AtomicReference<Query> trackedQueryTask(Trigger trigger) throws Exception {
-        Field field = Trigger.class.getDeclaredField("queryTask");
-        field.setAccessible(true);
-        return (AtomicReference<Query>) field.get(trigger);
     }
 }
