@@ -68,7 +68,7 @@ import io.kestra.core.models.annotations.PluginProperty;
                     serviceAccount: "{{ secret('GCP_SERVICE_ACCOUNT_KEY') }}"
                     region: europe-west3
                     name: pyspark-job
-                    mainPythonFileUri: "gs://my-bucket/jobs/{{ execution.id }}/job.py"
+                    mainPythonFileUri: "{{ outputs.upload_script.uri }}"
                 """
         ),
         @Example(
