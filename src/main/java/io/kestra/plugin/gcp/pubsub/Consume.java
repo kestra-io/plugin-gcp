@@ -167,8 +167,8 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
     private void cancelConsumer() {
         this.isCancelled.set(true);
 
-        Subscriber subscriber = this.trackedSubscriber.get();
-        CountDownLatch latch = this.trackedLatch.get();
+        var subscriber = this.trackedSubscriber.get();
+        var latch = this.trackedLatch.get();
 
         if (subscriber == null && latch == null) {
             return;
@@ -179,7 +179,7 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                 try {
                     subscriber.stopAsync();
                 } catch (Exception e) {
-                    Logger logger = this.trackedLogger.get();
+                    var logger = this.trackedLogger.get();
                     if (logger != null) {
                         logger.warn("Failed to stop Pub/Sub subscriber", e);
                     }

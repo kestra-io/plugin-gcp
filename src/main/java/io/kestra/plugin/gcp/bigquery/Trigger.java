@@ -3,8 +3,11 @@ package io.kestra.plugin.gcp.bigquery;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -110,6 +113,13 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @PluginProperty(group = "execution")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Builder.Default
+    private final AtomicReference<Query> queryTask = new AtomicReference<>();
+
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();
@@ -128,7 +138,14 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .fetchType(this.fetchType)
             .fetchOne(this.fetchOne)
             .build();
-        Query.Output run = task.run(runContext);
+        this.trackTask(task);
+
+        Query.Output run;
+        try {
+            run = task.run(runContext);
+        } finally {
+            this.clearTask(task);
+        }
 
         logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql));
 
@@ -139,5 +156,30 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
         Execution execution = TriggerService.generateExecution(this, conditionContext, context, run);
 
         return Optional.of(execution);
+    }
+
+    void trackTask(Query task) {
+        this.queryTask.set(task);
+    }
+
+    void clearTask(Query task) {
+        this.queryTask.compareAndSet(task, null);
+    }
+
+    @Override
+    public void kill() {
+        var task = this.queryTask.get();
+
+        if (task != null) {
+            task.kill();
+        }
+    }
+
+    @Override
+    public void stop() {
+        var task = this.queryTask.get();
+        if (task != null) {
+            task.stop();
+        }
     }
 }
