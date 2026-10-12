@@ -483,10 +483,6 @@ class BigQueryTransientErrorTest {
     }
 
     /**
-     * BigQuery can fail a routine or stored procedure with reason=invalidQuery due to an internal
-     * transient RPC deadline exceeded or CONNECTION_ERROR where the retry stub lacked minimum remaining
-     * timeout. This must be recognized as retryable rather than immediately aborting the execution.
-     *
      * @see <a href="https://github.com/kestra-io/plugin-gcp/issues/534">#534</a>
      */
     @Test
@@ -521,7 +517,7 @@ class BigQueryTransientErrorTest {
         }, connection);
 
         assertThat(failure.getErrors().getFirst().getReason(), is("invalidQuery"));
-        assertThat(failure.getMessage(), containsString("CONNECTION_ERROR"));
+        assertThat(failure.getMessage(), containsString("[CONNECTION_ERROR]"));
         assertThat(submissions.get(), greaterThan(1));
     }
 
