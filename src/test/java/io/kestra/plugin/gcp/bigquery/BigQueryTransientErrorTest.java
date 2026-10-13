@@ -482,6 +482,45 @@ class BigQueryTransientErrorTest {
         assertThat(reads.get(), greaterThan(5));
     }
 
+    /**
+     * @see <a href="https://github.com/kestra-io/plugin-gcp/issues/534">#534</a>
+     */
+    @Test
+    void shouldRetryWhenBigQueryReturnsConnectionErrorUnderInvalidQueryReason() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var jobId = JobId.of("project", "job_connection_error");
+        var submissions = new AtomicInteger();
+        var submittedStatus = runningStatus();
+
+        var submitted = Mockito.mock(Job.class);
+        Mockito.when(submitted.getJobId()).thenReturn(jobId);
+        Mockito.when(submitted.getStatus()).thenReturn(submittedStatus);
+
+        var connectionError = terminalJob(
+            "job_connection_error",
+            new BigQueryError(
+                "invalidQuery",
+                "q",
+                "domain: \"cloud.helix.ErrorDomain\" code: \"CONNECTION_ERROR\" debug_info: \"[CONNECTION_ERROR] message=com.google.net.rpc3.client.RpcClientException: <eye3 title='/ResourceCache.GetProjectIdMapping, DEADLINE_EXCEEDED'/> The timeout provided, PT0.000472574S, was too small. This stub requires a minimum remaining timeout of PT0.005S for each request.\""
+            )
+        );
+
+        var connection = Mockito.mock(BigQuery.class);
+        Mockito.when(connection.getJob(jobId)).thenReturn(connectionError);
+
+        var failure = failureOf(task, runContext, () ->
+        {
+            submissions.incrementAndGet();
+            return submitted;
+        }, connection);
+
+        assertThat(failure.getErrors().getFirst().getReason(), is("invalidQuery"));
+        assertThat(failure.getMessage(), containsString("[CONNECTION_ERROR]"));
+        assertThat(submissions.get(), greaterThan(1));
+    }
+
     private BigQueryException failureOf(Query task, io.kestra.core.runners.RunContext runContext, java.util.concurrent.Callable<Job> createJob) {
         return failureOf(task, runContext, createJob, Mockito.mock(BigQuery.class));
     }
