@@ -218,7 +218,7 @@ public class ExtractToGcs extends AbstractBigquery implements RunnableTask<Extra
         }
 
         if (this.compression != null) {
-            builder.setCompression(runContext.render(runContext.render(this.compression).as(String.class).orElseThrow()));
+            builder.setCompression(runContext.render(this.compression).as(String.class).orElseThrow());
         }
 
         if (this.fieldDelimiter != null) {
