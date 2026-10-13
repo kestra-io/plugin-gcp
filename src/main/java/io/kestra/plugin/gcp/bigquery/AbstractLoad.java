@@ -130,7 +130,7 @@ abstract public class AbstractLoad extends AbstractBigquery implements RunnableT
         if (this.timePartitioningField != null) {
             builder.setTimePartitioning(
                 TimePartitioning.newBuilder(runContext.render(this.timePartitioningType).as(TimePartitioning.Type.class).orElseThrow())
-                    .setField(runContext.render(runContext.render(this.timePartitioningField).as(String.class).orElseThrow()))
+                    .setField(runContext.render(this.timePartitioningField).as(String.class).orElseThrow())
                     .build()
             );
         }
