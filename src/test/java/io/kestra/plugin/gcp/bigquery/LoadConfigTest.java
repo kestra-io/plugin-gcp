@@ -9,7 +9,6 @@ import com.google.cloud.bigquery.WriteChannelConfiguration;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 
 import jakarta.inject.Inject;
@@ -25,7 +24,7 @@ class LoadConfigTest {
 
     @Test
     void shouldRenderTimePartitioningFieldWithoutDoubleEvaluation() throws Exception {
-        Load task = Load.builder()
+        var task = Load.builder()
             .id("load")
             .type(Load.class.getName())
             .format(AbstractLoad.Format.JSON)
@@ -34,21 +33,20 @@ class LoadConfigTest {
             .timePartitioningField(Property.ofExpression("{{ field }}"))
             .build();
 
-        // If timePartitioningField were double-rendered, a value containing braces like '{col}' would fail Pebble parsing
-        RunContext runContext = runContextFactory.of(Map.of("field", "{col}"));
+        var runContext = runContextFactory.of(Map.of("field", "{{ 'created_at' }}"));
 
-        WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
+        var builder = WriteChannelConfiguration
             .newBuilder(BigQueryService.tableId("my-project.my_dataset.my_table"));
         task.setOptions(builder, runContext);
 
-        WriteChannelConfiguration configuration = builder.build();
+        var configuration = builder.build();
         assertThat(configuration.getTimePartitioning(), notNullValue());
-        assertThat(configuration.getTimePartitioning().getField(), is("{col}"));
+        assertThat(configuration.getTimePartitioning().getField(), is("{{ 'created_at' }}"));
     }
 
     @Test
     void shouldRenderStandardTimePartitioningFieldExpression() throws Exception {
-        Load task = Load.builder()
+        var task = Load.builder()
             .id("load")
             .type(Load.class.getName())
             .format(AbstractLoad.Format.JSON)
@@ -57,13 +55,13 @@ class LoadConfigTest {
             .timePartitioningField(Property.ofExpression("{{ 'created_at' }}"))
             .build();
 
-        RunContext runContext = runContextFactory.of(Map.of());
+        var runContext = runContextFactory.of(Map.of());
 
-        WriteChannelConfiguration.Builder builder = WriteChannelConfiguration
+        var builder = WriteChannelConfiguration
             .newBuilder(BigQueryService.tableId("my-project.my_dataset.my_table"));
         task.setOptions(builder, runContext);
 
-        WriteChannelConfiguration configuration = builder.build();
+        var configuration = builder.build();
         assertThat(configuration.getTimePartitioning(), notNullValue());
         assertThat(configuration.getTimePartitioning().getField(), is("created_at"));
     }

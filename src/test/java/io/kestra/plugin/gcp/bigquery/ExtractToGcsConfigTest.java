@@ -5,11 +5,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.google.cloud.bigquery.ExtractJobConfiguration;
-
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 
@@ -25,7 +22,7 @@ class ExtractToGcsConfigTest {
 
     @Test
     void shouldRenderCompressionWithoutDoubleEvaluation() throws Exception {
-        ExtractToGcs task = ExtractToGcs.builder()
+        var task = ExtractToGcs.builder()
             .id("extract")
             .type(ExtractToGcs.class.getName())
             .sourceTable(Property.ofValue("my-project.my_dataset.my_table"))
@@ -33,20 +30,19 @@ class ExtractToGcsConfigTest {
             .compression(Property.ofExpression("{{ inputs.comp }}"))
             .build();
 
-        // If compression were double-rendered, a value containing braces like '{raw}' would fail Pebble parsing
-        RunContext runContext = TestsUtils.mockRunContext(
+        var runContext = TestsUtils.mockRunContext(
             runContextFactory,
             task,
-            Map.of("comp", "{raw}")
+            Map.of("comp", "{{ 'GZIP' }}")
         );
 
-        ExtractJobConfiguration configuration = task.buildExtractJob(runContext);
-        assertThat(configuration.getCompression(), is("{raw}"));
+        var configuration = task.buildExtractJob(runContext);
+        assertThat(configuration.getCompression(), is("{{ 'GZIP' }}"));
     }
 
     @Test
     void shouldRenderStandardCompressionExpression() throws Exception {
-        ExtractToGcs task = ExtractToGcs.builder()
+        var task = ExtractToGcs.builder()
             .id("extract")
             .type(ExtractToGcs.class.getName())
             .sourceTable(Property.ofValue("my-project.my_dataset.my_table"))
@@ -54,13 +50,13 @@ class ExtractToGcsConfigTest {
             .compression(Property.ofExpression("{{ 'GZIP' }}"))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(
+        var runContext = TestsUtils.mockRunContext(
             runContextFactory,
             task,
             Map.of()
         );
 
-        ExtractJobConfiguration configuration = task.buildExtractJob(runContext);
+        var configuration = task.buildExtractJob(runContext);
         assertThat(configuration.getCompression(), is("GZIP"));
     }
 }
