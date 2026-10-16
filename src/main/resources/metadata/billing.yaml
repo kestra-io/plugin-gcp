@@ -1,0 +1,8 @@
+group: io.kestra.plugin.gcp.billing
+name: "billing"
+title: "Google Cloud Billing"
+description: "Manage cloud costs, budgets, and FinOps workflows with Google Cloud Billing. Build event-driven workflows that respond to spend thresholds and query billing exports."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

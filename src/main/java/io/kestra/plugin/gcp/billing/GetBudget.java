@@ -1,5 +1,7 @@
 package io.kestra.plugin.gcp.billing;
 
+import com.google.api.gax.rpc.ApiException;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -34,7 +36,6 @@ import lombok.experimental.SuperBuilder;
                 tasks:
                   - id: get_budget
                     type: io.kestra.plugin.gcp.billing.GetBudget
-                    projectId: "{{ secret('GCP_PROJECT') }}"
                     serviceAccount: "{{ secret('GCP_SA') }}"
                     budgetName: "billingAccounts/0123AB-4567CD-89EF01/budgets/my-monthly-budget"
                 """
@@ -54,13 +55,16 @@ public class GetBudget extends AbstractBilling implements RunnableTask<GetBudget
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var renderedBudgetName = runContext.render(this.budgetName).as(String.class).orElseThrow();
-        logger.debug("Fetching budget: {}", renderedBudgetName);
+        var rBudgetName = runContext.render(this.budgetName).as(String.class)
+            .orElseThrow(() -> new IllegalArgumentException("Missing required property 'budgetName'"));
+        logger.debug("Fetching budget: {}", rBudgetName);
 
         Budget budget;
         try (var client = this.budgetServiceClient(runContext)) {
-            var response = client.getBudget(renderedBudgetName);
+            var response = client.getBudget(rBudgetName);
             budget = Budget.of(response);
+        } catch (ApiException e) {
+            throw handleApiException(e, "get budget '" + rBudgetName + "'", "billingbudgets.budgets.get");
         }
 
         logger.info(

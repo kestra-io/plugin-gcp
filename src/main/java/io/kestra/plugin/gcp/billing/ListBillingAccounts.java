@@ -3,6 +3,8 @@ package io.kestra.plugin.gcp.billing;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.api.gax.rpc.ApiException;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -34,7 +36,6 @@ import lombok.experimental.SuperBuilder;
                 tasks:
                   - id: list_accounts
                     type: io.kestra.plugin.gcp.billing.ListBillingAccounts
-                    projectId: "{{ secret('GCP_PROJECT') }}"
                     serviceAccount: "{{ secret('GCP_SA') }}"
                 """
         )
@@ -53,6 +54,8 @@ public class ListBillingAccounts extends AbstractBilling implements RunnableTask
             for (var account : response.iterateAll()) {
                 billingAccounts.add(BillingAccount.of(account));
             }
+        } catch (ApiException e) {
+            throw handleApiException(e, "list billing accounts", "billing.accounts.get or billing.accounts.list");
         }
 
         logger.info("Retrieved {} billing accounts", billingAccounts.size());

@@ -28,7 +28,9 @@ class BudgetAlertTriggerTest {
               "costIntervalStart": "2026-10-01T00:00:00Z",
               "budgetAmount": 100.00,
               "budgetAmountType": "SPECIFIED_AMOUNT",
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "alertThresholdExceeded": 0.9,
+              "forecastThresholdExceeded": 1.0
             }
             """;
 
@@ -45,13 +47,15 @@ class BudgetAlertTriggerTest {
         assertThat(alert.getBudgetAmount(), is(100.00));
         assertThat(alert.getCurrencyCode(), is("USD"));
         assertThat(alert.getPercentageUsed(), closeTo(0.955, 0.001));
+        assertThat(alert.getAlertThresholdExceeded(), is(0.9));
+        assertThat(alert.getForecastThresholdExceeded(), is(1.0));
         assertThat(alert.getBillingAccountId(), is("0123AB-4567CD-89EF01"));
         assertThat(alert.getBudgetId(), is("my-monthly-budget"));
     }
 
     @Test
-    void shouldReturnNullOnInvalidPayload() {
-        var alert = BudgetAlertTrigger.parseAlertPayload("invalid-json", Map.of());
+    void shouldReturnNullAndLogOnInvalidPayload() {
+        var alert = BudgetAlertTrigger.parseAlertPayload("invalid-json", Map.of(), "msg-123", null);
         assertThat(alert, nullValue());
     }
 
@@ -62,7 +66,7 @@ class BudgetAlertTriggerTest {
             .type(BudgetAlertTrigger.class.getName())
             .topic(Property.ofExpression("{{ topic_name }}"))
             .subscription(Property.ofExpression("{{ sub_name }}"))
-            .thresholdPercent(Property.ofValue(0.9))
+            .thresholdRatio(Property.ofValue(0.9))
             .thresholdAmount(Property.ofValue(500.0))
             .build();
 
@@ -73,12 +77,12 @@ class BudgetAlertTriggerTest {
 
         var renderedTopic = runContext.render(trigger.getTopic()).as(String.class).orElseThrow();
         var renderedSub = runContext.render(trigger.getSubscription()).as(String.class).orElseThrow();
-        var renderedPercent = runContext.render(trigger.getThresholdPercent()).as(Double.class).orElseThrow();
+        var renderedRatio = runContext.render(trigger.getThresholdRatio()).as(Double.class).orElseThrow();
         var renderedAmount = runContext.render(trigger.getThresholdAmount()).as(Double.class).orElseThrow();
 
         assertThat(renderedTopic, is("gcp-budget-alerts"));
         assertThat(renderedSub, is("kestra-budget-alerts-sub"));
-        assertThat(renderedPercent, is(0.9));
+        assertThat(renderedRatio, is(0.9));
         assertThat(renderedAmount, is(500.0));
     }
 }
