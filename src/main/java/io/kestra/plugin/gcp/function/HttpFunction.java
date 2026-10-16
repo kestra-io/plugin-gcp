@@ -58,6 +58,7 @@ import lombok.experimental.SuperBuilder;
     }
 )
 public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunction.Output> {
+    private static final Duration DEFAULT_MAX_DURATION = Duration.ofMinutes(60);
 
     @Schema(
         title = "HTTP method",
@@ -89,7 +90,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
     )
     @Builder.Default
     @PluginProperty(group = "execution")
-    protected Property<Duration> maxDuration = Property.ofValue(Duration.ofMinutes(60));
+    protected Property<Duration> maxDuration = Property.ofValue(DEFAULT_MAX_DURATION);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -107,17 +108,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
 
         Logger logger = runContext.logger();
 
-        try (
-            var client = new HttpClient(
-                runContext,
-                HttpConfiguration.builder()
-                    .timeout(
-                        TimeoutConfiguration.builder()
-                            .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
-                            .build()
-                    ).build()
-            )
-        ) {
+        try (var client = new HttpClient(runContext, this.httpConfiguration(runContext))) {
             HttpRequest.HttpRequestBuilder requestBuilder = HttpRequest.builder()
                 .uri(new URI(rUrl))
                 .method(rMethod)
@@ -155,6 +146,18 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
             logger.error("Variable evaluation error: {}", e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+
+    HttpConfiguration httpConfiguration(RunContext runContext) throws IllegalVariableEvaluationException {
+        Duration rMaxDuration = runContext.render(this.maxDuration).as(Duration.class).orElse(DEFAULT_MAX_DURATION);
+
+        return HttpConfiguration.builder()
+            .timeout(
+                TimeoutConfiguration.builder()
+                    .readIdleTimeout(Property.ofValue(rMaxDuration))
+                    .build()
+            )
+            .build();
     }
 
     @Getter
