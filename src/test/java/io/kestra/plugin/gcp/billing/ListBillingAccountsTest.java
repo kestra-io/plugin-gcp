@@ -32,8 +32,8 @@ class ListBillingAccountsTest {
             "project_var", "my-finops-project"
         ));
 
-        var renderedProjectId = runContext.render(task.getProjectId()).as(String.class).orElseThrow();
-        assertThat(renderedProjectId, is("my-finops-project"));
+        var rProjectId = runContext.render(task.getProjectId()).as(String.class).orElseThrow();
+        assertThat(rProjectId, is("my-finops-project"));
     }
 
     @Test

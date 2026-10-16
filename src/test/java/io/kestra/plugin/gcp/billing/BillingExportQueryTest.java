@@ -92,10 +92,10 @@ class BillingExportQueryTest {
             "date_start", "2026-09-15"
         ));
 
-        var renderedTable = runContext.render(task.getExportTable()).as(String.class).orElseThrow();
-        var renderedDate = runContext.render(task.getDateFrom()).as(String.class).orElseThrow();
+        var rTable = runContext.render(task.getExportTable()).as(String.class).orElseThrow();
+        var rDate = runContext.render(task.getDateFrom()).as(String.class).orElseThrow();
 
-        assertThat(renderedTable, is("billing.export_table_test"));
-        assertThat(renderedDate, is("2026-09-15"));
+        assertThat(rTable, is("billing.export_table_test"));
+        assertThat(rDate, is("2026-09-15"));
     }
 }

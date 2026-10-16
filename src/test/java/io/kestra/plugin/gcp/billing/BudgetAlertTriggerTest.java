@@ -75,14 +75,14 @@ class BudgetAlertTriggerTest {
             "sub_name", "kestra-budget-alerts-sub"
         ));
 
-        var renderedTopic = runContext.render(trigger.getTopic()).as(String.class).orElseThrow();
-        var renderedSub = runContext.render(trigger.getSubscription()).as(String.class).orElseThrow();
-        var renderedRatio = runContext.render(trigger.getThresholdRatio()).as(Double.class).orElseThrow();
-        var renderedAmount = runContext.render(trigger.getThresholdAmount()).as(Double.class).orElseThrow();
+        var rTopic = runContext.render(trigger.getTopic()).as(String.class).orElseThrow();
+        var rSub = runContext.render(trigger.getSubscription()).as(String.class).orElseThrow();
+        var rRatio = runContext.render(trigger.getThresholdRatio()).as(Double.class).orElseThrow();
+        var rAmount = runContext.render(trigger.getThresholdAmount()).as(Double.class).orElseThrow();
 
-        assertThat(renderedTopic, is("gcp-budget-alerts"));
-        assertThat(renderedSub, is("kestra-budget-alerts-sub"));
-        assertThat(renderedRatio, is(0.9));
-        assertThat(renderedAmount, is(500.0));
+        assertThat(rTopic, is("gcp-budget-alerts"));
+        assertThat(rSub, is("kestra-budget-alerts-sub"));
+        assertThat(rRatio, is(0.9));
+        assertThat(rAmount, is(500.0));
     }
 }
