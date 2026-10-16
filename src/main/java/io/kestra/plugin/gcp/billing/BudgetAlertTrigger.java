@@ -208,15 +208,15 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         var logger = runContext.logger();
 
         var consume = Consume.builder()
-            .topic(this.topic)
-            .subscription(this.subscription)
-            .autoCreateSubscription(this.autoCreateSubscription)
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .impersonatedServiceAccount(this.impersonatedServiceAccount)
-            .scopes(this.scopes)
-            .maxRecords(this.maxRecords)
-            .maxDuration(this.maxDuration)
+            .topic(this.getTopic())
+            .subscription(this.getSubscription())
+            .autoCreateSubscription(this.getAutoCreateSubscription())
+            .projectId(this.getProjectId())
+            .serviceAccount(this.getServiceAccount())
+            .impersonatedServiceAccount(this.getImpersonatedServiceAccount())
+            .scopes(this.getScopes())
+            .maxRecords(this.getMaxRecords())
+            .maxDuration(this.getMaxDuration())
             .serdeType(Property.ofValue(SerdeType.STRING))
             .build();
 
@@ -233,8 +233,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
             return Optional.empty();
         }
 
-        var rThresholdRatio = runContext.render(this.thresholdRatio).as(Double.class).orElse(null);
-        var rThresholdAmount = runContext.render(this.thresholdAmount).as(Double.class).orElse(null);
+        var rThresholdRatio = runContext.render(this.getThresholdRatio()).as(Double.class).orElse(null);
+        var rThresholdAmount = runContext.render(this.getThresholdAmount()).as(Double.class).orElse(null);
 
         var matchedAlerts = findMatchingAlerts(runContext, context, run.getUri(), rThresholdRatio, rThresholdAmount, logger);
         if (matchedAlerts.isEmpty()) {
@@ -250,22 +250,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         return Optional.of(execution);
     }
 
-    @Builder.Default
-    @JsonIgnore
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.PACKAGE)
-    private transient ConsumeRunner consumeRunner = null;
-
     Consume.Output runConsume(RunContext runContext, Consume consume) throws Exception {
-        if (this.consumeRunner != null) {
-            return this.consumeRunner.run(runContext, consume);
-        }
         return consume.run(runContext);
-    }
-
-    @FunctionalInterface
-    interface ConsumeRunner {
-        Consume.Output run(RunContext runContext, Consume consume) throws Exception;
     }
 
     private List<BudgetAlert> findMatchingAlerts(
@@ -362,7 +348,9 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         } else if (thresholdRatio != null) {
             currentThreshold = thresholdRatio;
         } else {
-            currentThreshold = thresholdAmount;
+            currentThreshold = (alert.getBudgetAmount() != null && alert.getBudgetAmount() > 0)
+                ? (thresholdAmount / alert.getBudgetAmount())
+                : 0.0;
         }
 
         try {

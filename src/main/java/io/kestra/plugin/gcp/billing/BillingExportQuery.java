@@ -239,14 +239,14 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
 
-        var rExportTable = runContext.render(this.exportTable).as(String.class)
+        var rExportTable = runContext.render(this.getExportTable()).as(String.class)
             .orElseThrow(() -> new IllegalArgumentException("Missing required property 'exportTable'"));
-        var rDateFrom = runContext.render(this.dateFrom).as(String.class)
+        var rDateFrom = runContext.render(this.getDateFrom()).as(String.class)
             .orElseThrow(() -> new IllegalArgumentException("Missing required property 'dateFrom'"));
-        var rDateTo = runContext.render(this.dateTo).as(String.class).orElse(null);
-        var rGroupBy = runContext.render(this.groupBy).asList(String.class);
-        var rFilter = runContext.render(this.filter).as(String.class).orElse(null);
-        var rIncludeCredits = runContext.render(this.includeCredits).as(Boolean.class).orElse(true);
+        var rDateTo = runContext.render(this.getDateTo()).as(String.class).orElse(null);
+        var rGroupBy = runContext.render(this.getGroupBy()).asList(String.class);
+        var rFilter = runContext.render(this.getFilter()).as(String.class).orElse(null);
+        var rIncludeCredits = runContext.render(this.getIncludeCredits()).as(Boolean.class).orElse(true);
 
         var generatedSql = buildSql(
             rExportTable,
@@ -262,13 +262,13 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
         var internalQuery = Query.builder()
             .id(this.getId() + "_query")
             .type(Query.class.getName())
-            .projectId(this.projectId)
-            .serviceAccount(this.serviceAccount)
-            .impersonatedServiceAccount(this.impersonatedServiceAccount)
-            .scopes(this.scopes)
+            .projectId(this.getProjectId())
+            .serviceAccount(this.getServiceAccount())
+            .impersonatedServiceAccount(this.getImpersonatedServiceAccount())
+            .scopes(this.getScopes())
             .sql(Property.ofValue(generatedSql))
-            .fetchType(this.fetchType)
-            .destinationTable(this.destinationTable)
+            .fetchType(this.getFetchType())
+            .destinationTable(this.getDestinationTable())
             .build();
 
         this.queryTask.set(internalQuery);
@@ -289,22 +289,8 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
             .build();
     }
 
-    @Builder.Default
-    @JsonIgnore
-    @Getter(AccessLevel.NONE)
-    @Setter(AccessLevel.PACKAGE)
-    private transient QueryRunner queryRunner = null;
-
     Query.Output executeQuery(RunContext runContext, Query query) throws Exception {
-        if (this.queryRunner != null) {
-            return this.queryRunner.run(runContext, query);
-        }
         return query.run(runContext);
-    }
-
-    @FunctionalInterface
-    interface QueryRunner {
-        Query.Output run(RunContext runContext, Query query) throws Exception;
     }
 
     @Override

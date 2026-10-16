@@ -14,6 +14,9 @@ import jakarta.inject.Inject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 @KestraTest
 class BillingExportQueryTest {
@@ -101,21 +104,21 @@ class BillingExportQueryTest {
 
     @Test
     void shouldRunTaskSuccessfully() throws Exception {
-        var task = BillingExportQuery.builder()
+        var task = spy(BillingExportQuery.builder()
             .id("run_billing_query")
             .type(BillingExportQuery.class.getName())
             .exportTable(Property.ofValue("my-proj.billing.gcp_billing_export_v1_0123AB_4567CD_89EF01"))
             .dateFrom(Property.ofValue("2026-09-01"))
             .dateTo(Property.ofValue("2026-10-01"))
             .groupBy(Property.ofValue(List.of("service.description")))
-            .build();
+            .build());
 
-        task.setQueryRunner((ctx, query) -> io.kestra.plugin.gcp.bigquery.Query.Output.builder()
+        var mockOutput = io.kestra.plugin.gcp.bigquery.Query.Output.builder()
             .rows(List.of(Map.of("service_description", "Compute Engine", "total_cost", 150.0)))
             .size(1L)
             .jobId("test-job-987")
-            .build()
-        );
+            .build();
+        doReturn(mockOutput).when(task).executeQuery(any(), any());
 
         var runContext = runContextFactory.of(Map.of());
         var output = task.run(runContext);

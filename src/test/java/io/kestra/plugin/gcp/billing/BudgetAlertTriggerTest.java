@@ -4,17 +4,15 @@ import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.core.models.conditions.ConditionContext;
-import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.pubsub.Consume;
 import io.kestra.plugin.gcp.pubsub.model.Message;
@@ -23,6 +21,9 @@ import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 @KestraTest
 class BudgetAlertTriggerTest {
@@ -112,13 +113,13 @@ class BudgetAlertTriggerTest {
 
     @Test
     void shouldEvaluateAndDeduplicateBudgetAlerts() throws Exception {
-        var trigger = BudgetAlertTrigger.builder()
-            .id("budget_trigger_eval")
+        var trigger = spy(BudgetAlertTrigger.builder()
+            .id("budget_trigger_eval_" + IdUtils.create())
             .type(BudgetAlertTrigger.class.getName())
             .topic(Property.ofValue("gcp-budget-alerts"))
             .subscription(Property.ofValue("sub-alerts"))
             .thresholdRatio(Property.ofValue(0.9))
-            .build();
+            .build());
 
         var context = TestsUtils.mockTrigger(runContextFactory, trigger);
         var runContext = context.getKey().getRunContext();
@@ -140,7 +141,7 @@ class BudgetAlertTriggerTest {
 
         // 1. First poll with 90% threshold alert: should trigger execution
         var uri1 = createMessageFile(runContext, payload90, attributes, "msg-001");
-        trigger.setConsumeRunner((ctx, c) -> Consume.Output.builder().count(1).uri(uri1).build());
+        doReturn(Consume.Output.builder().count(1).uri(uri1).build()).when(trigger).runConsume(any(), any());
 
         var execution1 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution1.isPresent(), is(true));
@@ -149,7 +150,7 @@ class BudgetAlertTriggerTest {
 
         // 2. Second poll with same snapshot: should be suppressed by KV deduplication
         var uri2 = createMessageFile(runContext, payload90, attributes, "msg-002");
-        trigger.setConsumeRunner((ctx, c) -> Consume.Output.builder().count(1).uri(uri2).build());
+        doReturn(Consume.Output.builder().count(1).uri(uri2).build()).when(trigger).runConsume(any(), any());
 
         var execution2 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution2.isEmpty(), is(true));
@@ -166,7 +167,7 @@ class BudgetAlertTriggerTest {
             }
             """;
         var uri3 = createMessageFile(runContext, payload100, attributes, "msg-003");
-        trigger.setConsumeRunner((ctx, c) -> Consume.Output.builder().count(1).uri(uri3).build());
+        doReturn(Consume.Output.builder().count(1).uri(uri3).build()).when(trigger).runConsume(any(), any());
 
         var execution3 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution3.isPresent(), is(true));
@@ -174,12 +175,12 @@ class BudgetAlertTriggerTest {
 
     @Test
     void shouldIgnorePeriodicSnapshotWhenNoThresholdExceededByDefault() throws Exception {
-        var trigger = BudgetAlertTrigger.builder()
-            .id("budget_trigger_default")
+        var trigger = spy(BudgetAlertTrigger.builder()
+            .id("budget_trigger_default_" + IdUtils.create())
             .type(BudgetAlertTrigger.class.getName())
             .topic(Property.ofValue("gcp-budget-alerts"))
             .subscription(Property.ofValue("sub-alerts"))
-            .build();
+            .build());
 
         var context = TestsUtils.mockTrigger(runContextFactory, trigger);
         var runContext = context.getKey().getRunContext();
@@ -195,9 +196,90 @@ class BudgetAlertTriggerTest {
             }
             """;
         var uri = createMessageFile(runContext, periodicPayload, Map.of("billingAccountId", "0123AB", "budgetId", "b-1"), "msg-periodic");
-        trigger.setConsumeRunner((ctx, c) -> Consume.Output.builder().count(1).uri(uri).build());
+        doReturn(Consume.Output.builder().count(1).uri(uri).build()).when(trigger).runConsume(any(), any());
 
         var execution = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution.isEmpty(), is(true));
+    }
+
+    @Test
+    void shouldNotSuppressGoogleAlertsWhenThresholdAmountIsConfigured() throws Exception {
+        var trigger = spy(BudgetAlertTrigger.builder()
+            .id("budget_trigger_amount_" + IdUtils.create())
+            .type(BudgetAlertTrigger.class.getName())
+            .topic(Property.ofValue("gcp-budget-alerts"))
+            .subscription(Property.ofValue("sub-alerts"))
+            .thresholdAmount(Property.ofValue(500.0))
+            .build());
+
+        var context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        var runContext = context.getKey().getRunContext();
+
+        var attributes = Map.of(
+            "billingAccountId", "0123AB-4567CD-89EF01",
+            "budgetId", "my-monthly-budget"
+        );
+
+        // 1. Initial alert crossing thresholdAmount ($500 out of $1000 budget): fires (stores ratio 0.5)
+        var payload500 = """
+            {
+              "budgetDisplayName": "Monthly Spending Limit",
+              "costAmount": 500.00,
+              "costIntervalStart": "2026-10-01T00:00:00Z",
+              "budgetAmount": 1000.00,
+              "currencyCode": "USD"
+            }
+            """;
+        var uri1 = createMessageFile(runContext, payload500, attributes, "msg-amt-1");
+        doReturn(Consume.Output.builder().count(1).uri(uri1).build()).when(trigger).runConsume(any(), any());
+        var execution1 = trigger.evaluate(context.getKey(), context.getValue());
+        assertThat(execution1.isPresent(), is(true));
+
+        // 2. Periodic snapshot without Google threshold: deduplicated (0.5 <= 0.5)
+        var payload520 = """
+            {
+              "budgetDisplayName": "Monthly Spending Limit",
+              "costAmount": 520.00,
+              "costIntervalStart": "2026-10-01T00:00:00Z",
+              "budgetAmount": 1000.00,
+              "currencyCode": "USD"
+            }
+            """;
+        var uri2 = createMessageFile(runContext, payload520, attributes, "msg-amt-2");
+        doReturn(Consume.Output.builder().count(1).uri(uri2).build()).when(trigger).runConsume(any(), any());
+        var execution2 = trigger.evaluate(context.getKey(), context.getValue());
+        assertThat(execution2.isEmpty(), is(true));
+
+        // 3. Subsequent Google 90% threshold alert: MUST NOT be suppressed by thresholdAmount
+        var payload900 = """
+            {
+              "budgetDisplayName": "Monthly Spending Limit",
+              "costAmount": 900.00,
+              "costIntervalStart": "2026-10-01T00:00:00Z",
+              "budgetAmount": 1000.00,
+              "currencyCode": "USD",
+              "alertThresholdExceeded": 0.9
+            }
+            """;
+        var uri3 = createMessageFile(runContext, payload900, attributes, "msg-amt-3");
+        doReturn(Consume.Output.builder().count(1).uri(uri3).build()).when(trigger).runConsume(any(), any());
+        var execution3 = trigger.evaluate(context.getKey(), context.getValue());
+        assertThat(execution3.isPresent(), is(true));
+
+        // 4. Subsequent Google 100% threshold alert: MUST NOT be suppressed
+        var payload1000 = """
+            {
+              "budgetDisplayName": "Monthly Spending Limit",
+              "costAmount": 1000.00,
+              "costIntervalStart": "2026-10-01T00:00:00Z",
+              "budgetAmount": 1000.00,
+              "currencyCode": "USD",
+              "alertThresholdExceeded": 1.0
+            }
+            """;
+        var uri4 = createMessageFile(runContext, payload1000, attributes, "msg-amt-4");
+        doReturn(Consume.Output.builder().count(1).uri(uri4).build()).when(trigger).runConsume(any(), any());
+        var execution4 = trigger.evaluate(context.getKey(), context.getValue());
+        assertThat(execution4.isPresent(), is(true));
     }
 }
