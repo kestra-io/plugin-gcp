@@ -274,7 +274,7 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
         this.queryTask.set(internalQuery);
         Query.Output queryOutput;
         try {
-            queryOutput = internalQuery.run(runContext);
+            queryOutput = executeQuery(runContext, internalQuery);
         } finally {
             this.queryTask.set(null);
         }
@@ -287,6 +287,24 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
             .jobId(queryOutput.getJobId())
             .sql(generatedSql)
             .build();
+    }
+
+    @Builder.Default
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.PACKAGE)
+    private transient QueryRunner queryRunner = null;
+
+    Query.Output executeQuery(RunContext runContext, Query query) throws Exception {
+        if (this.queryRunner != null) {
+            return this.queryRunner.run(runContext, query);
+        }
+        return query.run(runContext);
+    }
+
+    @FunctionalInterface
+    interface QueryRunner {
+        Query.Output run(RunContext runContext, Query query) throws Exception;
     }
 
     @Override

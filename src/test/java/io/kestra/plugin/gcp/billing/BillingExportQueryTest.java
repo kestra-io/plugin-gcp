@@ -98,4 +98,33 @@ class BillingExportQueryTest {
         assertThat(rTable, is("billing.export_table_test"));
         assertThat(rDate, is("2026-09-15"));
     }
+
+    @Test
+    void shouldRunTaskSuccessfully() throws Exception {
+        var task = BillingExportQuery.builder()
+            .id("run_billing_query")
+            .type(BillingExportQuery.class.getName())
+            .exportTable(Property.ofValue("my-proj.billing.gcp_billing_export_v1_0123AB_4567CD_89EF01"))
+            .dateFrom(Property.ofValue("2026-09-01"))
+            .dateTo(Property.ofValue("2026-10-01"))
+            .groupBy(Property.ofValue(List.of("service.description")))
+            .build();
+
+        task.setQueryRunner((ctx, query) -> io.kestra.plugin.gcp.bigquery.Query.Output.builder()
+            .rows(List.of(Map.of("service_description", "Compute Engine", "total_cost", 150.0)))
+            .size(1L)
+            .jobId("test-job-987")
+            .build()
+        );
+
+        var runContext = runContextFactory.of(Map.of());
+        var output = task.run(runContext);
+
+        assertThat(output, notNullValue());
+        assertThat(output.getJobId(), is("test-job-987"));
+        assertThat(output.getSize(), is(1L));
+        assertThat(output.getRows(), hasSize(1));
+        assertThat(output.getRows().getFirst().get("service_description"), is("Compute Engine"));
+        assertThat(output.getSql(), containsString("service.description AS service_description"));
+    }
 }

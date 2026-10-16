@@ -1,10 +1,11 @@
 package io.kestra.plugin.gcp.billing;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -19,6 +20,7 @@ import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.core.storages.kv.KVMetadata;
 import io.kestra.core.storages.kv.KVValueAndMetadata;
 import io.kestra.plugin.gcp.billing.models.BudgetAlert;
 import io.kestra.plugin.gcp.pubsub.Consume;
@@ -39,7 +41,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Trigger on GCP Cloud Billing Budget Alerts",
-    description = "Consumes budget notifications published to a Google Cloud Pub/Sub topic and starts a Flow when the cost crosses the configured threshold."
+    description = "Consumes budget notifications published to a Google Cloud Pub/Sub topic and starts a Flow when the cost crosses the configured threshold. State is deduplicated per budget and billing interval in the namespace KV store. In the event of a KV store failure, a warning is logged and the trigger proceeds with execution to avoid missing critical budget alerts."
 )
 @Plugin(
     examples = {
@@ -111,21 +113,12 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     @PluginProperty(group = "advanced")
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
-    @DecimalMin("0.0")
     @Schema(
         title = "Threshold ratio (between 0.0 and 1.0+)",
         description = "Minimum budget usage ratio required to trigger the flow (e.g. `0.9` for 90%, `1.0` for 100%). If unset, any notification that crosses a Google budget threshold will trigger."
     )
     @PluginProperty(group = "processing")
-    private Property<Double> thresholdRatio;
-
-    @Deprecated
-    @Schema(
-        title = "Threshold percentage",
-        description = "Deprecated: use `thresholdRatio` instead."
-    )
-    @PluginProperty(group = "processing")
-    private Property<Double> thresholdPercent;
+    private Property<@DecimalMin("0.0") Double> thresholdRatio;
 
     @Schema(
         title = "Threshold amount",
@@ -160,7 +153,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         return parseAlertPayload(payload, attributes, "unknown", null);
     }
 
-    public static BudgetAlert parseAlertPayload(String payload, Map<String, String> attributes, String messageId, org.slf4j.Logger logger) {
+    public static BudgetAlert parseAlertPayload(String payload, Map<String, String> attributes, String messageId, Logger logger) {
         if (payload == null || payload.isBlank()) {
             return null;
         }
@@ -177,11 +170,11 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
             var currencyCode = (String) map.get("currencyCode");
 
             var alertThresholdExceeded = map.get("alertThresholdExceeded") != null
-                ? Double.parseDouble(map.get("alertThresholdExceeded").toString())
-                : (Double) null;
+                ? Double.valueOf(map.get("alertThresholdExceeded").toString())
+                : null;
             var forecastThresholdExceeded = map.get("forecastThresholdExceeded") != null
-                ? Double.parseDouble(map.get("forecastThresholdExceeded").toString())
-                : (Double) null;
+                ? Double.valueOf(map.get("forecastThresholdExceeded").toString())
+                : null;
 
             var percentageUsed = budgetAmount > 0 ? (costAmount / budgetAmount) : 0.0;
 
@@ -231,7 +224,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
 
         Consume.Output run;
         try {
-            run = consume.run(runContext);
+            run = runConsume(runContext, consume);
         } finally {
             this.clearTask(consume);
         }
@@ -240,8 +233,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
             return Optional.empty();
         }
 
-        var rThresholdRatio = runContext.render(this.thresholdRatio != null ? this.thresholdRatio : this.thresholdPercent)
-            .as(Double.class).orElse(null);
+        var rThresholdRatio = runContext.render(this.thresholdRatio).as(Double.class).orElse(null);
         var rThresholdAmount = runContext.render(this.thresholdAmount).as(Double.class).orElse(null);
 
         var matchedAlerts = findMatchingAlerts(runContext, context, run.getUri(), rThresholdRatio, rThresholdAmount, logger);
@@ -250,12 +242,30 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         }
 
         var output = Output.builder()
-            .budgetAlert(matchedAlerts.get(0))
+            .budgetAlert(matchedAlerts.getFirst())
             .budgetAlerts(matchedAlerts)
             .build();
 
         var execution = TriggerService.generateExecution(this, conditionContext, context, output);
         return Optional.of(execution);
+    }
+
+    @Builder.Default
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.PACKAGE)
+    private transient ConsumeRunner consumeRunner = null;
+
+    Consume.Output runConsume(RunContext runContext, Consume consume) throws Exception {
+        if (this.consumeRunner != null) {
+            return this.consumeRunner.run(runContext, consume);
+        }
+        return consume.run(runContext);
+    }
+
+    @FunctionalInterface
+    interface ConsumeRunner {
+        Consume.Output run(RunContext runContext, Consume consume) throws Exception;
     }
 
     private List<BudgetAlert> findMatchingAlerts(
@@ -264,7 +274,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         URI fileUri,
         Double thresholdRatio,
         Double thresholdAmount,
-        org.slf4j.Logger logger
+        Logger logger
     ) throws Exception {
         var matched = new ArrayList<BudgetAlert>();
         try (var is = runContext.storage().getFile(fileUri)) {
@@ -304,8 +314,17 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         BudgetAlert alert,
         Double thresholdRatio,
         Double thresholdAmount,
-        org.slf4j.Logger logger
+        Logger logger
     ) {
+        var hasConfiguredThreshold = thresholdRatio != null || thresholdAmount != null;
+        if (!hasConfiguredThreshold && alert.getAlertThresholdExceeded() == null) {
+            logger.debug(
+                "Budget snapshot for '{}' ignored: no trigger threshold configured and alertThresholdExceeded is null",
+                alert.getBudgetDisplayName()
+            );
+            return false;
+        }
+
         var passesRatio = thresholdRatio == null || alert.getPercentageUsed() >= thresholdRatio;
         var passesAmount = thresholdAmount == null || alert.getCostAmount() >= thresholdAmount;
 
@@ -320,6 +339,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
             return false;
         }
 
+        var flowId = context.getFlowId() != null ? context.getFlowId() : "default";
+        var triggerId = this.getId() != null ? this.getId() : "default";
         var billingAccount = alert.getBillingAccountId() != null ? alert.getBillingAccountId() : "default";
         var budgetId = alert.getBudgetId() != null ? alert.getBudgetId() : (alert.getBudgetDisplayName() != null ? alert.getBudgetDisplayName() : "default");
         var intervalStart = alert.getCostIntervalStart() != null ? alert.getCostIntervalStart() : "default";
@@ -328,12 +349,21 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         var sanitizedBudget = budgetId.replaceAll("[^a-zA-Z0-9_-]", "_");
         var sanitizedInterval = intervalStart.replaceAll("[^a-zA-Z0-9_-]", "_");
 
-        var kvKey = ("budget_alert_" + context.getFlowId() + "_" + this.getId() + "_" + sanitizedBilling + "_" + sanitizedBudget + "_" + sanitizedInterval)
-            .toLowerCase();
+        var kvKey = "budget_alert_" +
+            flowId.length() + "_" + flowId + "_" +
+            triggerId.length() + "_" + triggerId + "_" +
+            sanitizedBilling.length() + "_" + sanitizedBilling + "_" +
+            sanitizedBudget.length() + "_" + sanitizedBudget + "_" +
+            sanitizedInterval.length() + "_" + sanitizedInterval;
 
-        var currentThreshold = alert.getAlertThresholdExceeded() != null
-            ? alert.getAlertThresholdExceeded()
-            : alert.getPercentageUsed();
+        double currentThreshold;
+        if (alert.getAlertThresholdExceeded() != null) {
+            currentThreshold = alert.getAlertThresholdExceeded();
+        } else if (thresholdRatio != null) {
+            currentThreshold = thresholdRatio;
+        } else {
+            currentThreshold = thresholdAmount;
+        }
 
         try {
             var kv = runContext.namespaceKv(context.getNamespace());
@@ -351,9 +381,9 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
                 }
             }
 
-            kv.put(kvKey, new KVValueAndMetadata(null, currentThreshold));
+            kv.put(kvKey, new KVValueAndMetadata(new KVMetadata(null, Duration.ofDays(400)), currentThreshold));
         } catch (Exception e) {
-            logger.debug("Namespace KV store access for key '{}': {}", kvKey, e.getMessage());
+            logger.warn("Namespace KV store access failed for key '{}': {}. Deduplication cannot be enforced; proceeding with execution.", kvKey, e.getMessage());
         }
 
         return true;
@@ -386,10 +416,14 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The primary or first matched budget alert")
+        @Schema(
+            title = "The primary or first matched budget alert",
+            description = "Convenience shortcut for `budgetAlerts.getFirst()`"
+        )
         private final BudgetAlert budgetAlert;
 
         @Schema(title = "All budget alerts that matched in this polling run")
         private final List<BudgetAlert> budgetAlerts;
     }
 }
+
