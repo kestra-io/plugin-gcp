@@ -64,14 +64,14 @@ class BudgetAlertTriggerTest {
             "budgetId", "my-monthly-budget"
         );
 
-        var alert = BudgetAlertTrigger.parseAlertPayload(payload, attributes);
+        var alert = BudgetAlertTrigger.parseAlertPayload(payload, attributes, "msg-1", null);
 
         assertThat(alert, notNullValue());
         assertThat(alert.getBudgetDisplayName(), is("Monthly Spending Limit"));
         assertThat(alert.getCostAmount(), is(95.50));
         assertThat(alert.getBudgetAmount(), is(100.00));
         assertThat(alert.getCurrencyCode(), is("USD"));
-        assertThat(alert.getPercentageUsed(), closeTo(0.955, 0.001));
+        assertThat(alert.getUsageRatio(), closeTo(0.955, 0.001));
         assertThat(alert.getAlertThresholdExceeded(), is(0.9));
         assertThat(alert.getForecastThresholdExceeded(), is(1.0));
         assertThat(alert.getBillingAccountId(), is("0123AB-4567CD-89EF01"));
@@ -87,7 +87,7 @@ class BudgetAlertTriggerTest {
     @Test
     void shouldRenderTriggerPropertiesCorrectly() throws Exception {
         var trigger = BudgetAlertTrigger.builder()
-            .id("budget_trigger")
+            .id("budget_trigger_" + IdUtils.create())
             .type(BudgetAlertTrigger.class.getName())
             .topic(Property.ofExpression("{{ topic_name }}"))
             .subscription(Property.ofExpression("{{ sub_name }}"))

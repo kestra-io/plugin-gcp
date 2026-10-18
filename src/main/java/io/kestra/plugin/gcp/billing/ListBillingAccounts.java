@@ -22,7 +22,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "List GCP Billing Accounts",
-    description = "Lists all Cloud Billing accounts that the authenticated service account has permission to view."
+    description = """
+        Lists all Cloud Billing accounts that the authenticated service account has permission to view."""
 )
 @Plugin(
     examples = {

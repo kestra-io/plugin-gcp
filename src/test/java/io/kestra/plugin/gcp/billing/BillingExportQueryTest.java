@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.gcp.bigquery.Query;
 
 import jakarta.inject.Inject;
 
@@ -83,7 +85,7 @@ class BillingExportQueryTest {
     @Test
     void shouldRenderPropertiesWithTemplateExpressions() throws Exception {
         var task = BillingExportQuery.builder()
-            .id("billing_query")
+            .id("billing_query_" + IdUtils.create())
             .type(BillingExportQuery.class.getName())
             .exportTable(Property.ofExpression("{{ export_tbl }}"))
             .dateFrom(Property.ofExpression("{{ date_start }}"))
@@ -105,7 +107,7 @@ class BillingExportQueryTest {
     @Test
     void shouldRunTaskSuccessfully() throws Exception {
         var task = spy(BillingExportQuery.builder()
-            .id("run_billing_query")
+            .id("run_billing_query_" + IdUtils.create())
             .type(BillingExportQuery.class.getName())
             .exportTable(Property.ofValue("my-proj.billing.gcp_billing_export_v1_0123AB_4567CD_89EF01"))
             .dateFrom(Property.ofValue("2026-09-01"))
@@ -113,7 +115,7 @@ class BillingExportQueryTest {
             .groupBy(Property.ofValue(List.of("service.description")))
             .build());
 
-        var mockOutput = io.kestra.plugin.gcp.bigquery.Query.Output.builder()
+        var mockOutput = Query.Output.builder()
             .rows(List.of(Map.of("service_description", "Compute Engine", "total_cost", 150.0)))
             .size(1L)
             .jobId("test-job-987")

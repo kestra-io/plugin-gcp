@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.billing.models;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.cloud.billing.budgets.v1.ThresholdRule;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -14,7 +15,11 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Budget {
-    @Schema(title = "The resource name of the budget", description = "Format: billingAccounts/{billingAccountId}/budgets/{budgetId}")
+    @Schema(
+        title = "The resource name of the budget",
+        description = """
+            Format: `billingAccounts/{billingAccountId}/budgets/{budgetId}`"""
+    )
     String name;
 
     @Schema(title = "The display name of the budget")
@@ -31,7 +36,7 @@ public class Budget {
 
     public static Budget of(com.google.cloud.billing.budgets.v1.Budget budget) {
         var thresholds = budget.getThresholdRulesList().stream()
-            .map(com.google.cloud.billing.budgets.v1.ThresholdRule::getThresholdPercent)
+            .map(ThresholdRule::getThresholdPercent)
             .toList();
 
         var builder = Budget.builder()

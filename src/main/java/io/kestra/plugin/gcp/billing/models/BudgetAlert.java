@@ -31,16 +31,13 @@ public class BudgetAlert {
     String currencyCode;
 
     @Schema(title = "The ratio of current cost to total budget amount (costAmount / budgetAmount)")
-    Double percentageUsed;
+    Double usageRatio;
 
     @Schema(title = "The percentage threshold exceeded that triggered this notification (from Google payload)")
     Double alertThresholdExceeded;
 
     @Schema(title = "The forecast threshold exceeded that triggered this notification (from Google payload)")
     Double forecastThresholdExceeded;
-
-    @Schema(title = "Whether this snapshot has crossed the configured alert threshold")
-    Boolean thresholdCrossed;
 
     @Schema(title = "The billing account ID associated with the budget alert")
     String billingAccountId;

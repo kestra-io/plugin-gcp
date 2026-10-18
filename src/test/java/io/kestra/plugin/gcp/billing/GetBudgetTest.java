@@ -11,6 +11,7 @@ import com.google.type.Money;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.gcp.billing.models.Budget;
 
 import jakarta.inject.Inject;
@@ -27,7 +28,7 @@ class GetBudgetTest {
     @Test
     void shouldBuildAndRenderBudgetNameProperty() throws Exception {
         var task = GetBudget.builder()
-            .id("get_budget")
+            .id("get_budget_" + IdUtils.create())
             .type(GetBudget.class.getName())
             .budgetName(Property.ofExpression("{{ budget_name_var }}"))
             .build();
@@ -36,8 +37,8 @@ class GetBudgetTest {
             "budget_name_var", "billingAccounts/0123AB-4567CD-89EF01/budgets/my-budget"
         ));
 
-        var rendered = runContext.render(task.getBudgetName()).as(String.class).orElseThrow();
-        assertThat(rendered, is("billingAccounts/0123AB-4567CD-89EF01/budgets/my-budget"));
+        var rBudgetName = runContext.render(task.getBudgetName()).as(String.class).orElseThrow();
+        assertThat(rBudgetName, is("billingAccounts/0123AB-4567CD-89EF01/budgets/my-budget"));
     }
 
     @Test

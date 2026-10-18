@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.gcp.billing.models.BillingAccount;
 
 import jakarta.inject.Inject;
@@ -23,7 +24,7 @@ class ListBillingAccountsTest {
     @Test
     void shouldBuildAndRenderTaskProperties() throws Exception {
         var task = ListBillingAccounts.builder()
-            .id("list_billing_accounts")
+            .id("list_billing_accounts_" + IdUtils.create())
             .type(ListBillingAccounts.class.getName())
             .projectId(Property.ofExpression("{{ project_var }}"))
             .build();

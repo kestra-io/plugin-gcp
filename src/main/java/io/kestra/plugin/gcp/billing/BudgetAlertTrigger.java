@@ -30,6 +30,8 @@ import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -41,7 +43,11 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Trigger on GCP Cloud Billing Budget Alerts",
-    description = "Consumes budget notifications published to a Google Cloud Pub/Sub topic and starts a Flow when the cost crosses the configured threshold. State is deduplicated per budget and billing interval in the namespace KV store. In the event of a KV store failure, a warning is logged and the trigger proceeds with execution to avoid missing critical budget alerts."
+    description = """
+        Consumes budget notifications published to a Google Cloud Pub/Sub topic and starts a Flow when \
+        the cost crosses the configured threshold. State is deduplicated per budget and billing interval \
+        in the namespace KV store. In the event of a KV store failure, a warning is logged and the trigger \
+        proceeds with execution to avoid missing critical budget alerts."""
 )
 @Plugin(
     examples = {
@@ -55,7 +61,7 @@ import lombok.experimental.SuperBuilder;
                 tasks:
                   - id: notify_slack
                     type: io.kestra.plugin.core.log.Log
-                    message: "ALERT: Budget '{{ trigger.budgetAlert.budgetDisplayName }}' reached {{ trigger.budgetAlert.percentageUsed * 100 }}% (Cost: {{ trigger.budgetAlert.costAmount }} {{ trigger.budgetAlert.currencyCode }})"
+                    message: "ALERT: Budget '{{ trigger.budgetAlert.budgetDisplayName }}' reached {{ trigger.budgetAlert.usageRatio * 100 }}% (Cost: {{ trigger.budgetAlert.costAmount }} {{ trigger.budgetAlert.currencyCode }})"
 
                 triggers:
                   - id: budget_alert
@@ -92,7 +98,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     @NotNull
     @Schema(
         title = "Topic ID",
-        description = "The Pub/Sub topic name receiving Cloud Billing budget notifications."
+        description = """
+            The Pub/Sub topic name receiving Cloud Billing budget notifications."""
     )
     @PluginProperty(group = "main")
     private Property<String> topic;
@@ -100,7 +107,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     @NotNull
     @Schema(
         title = "Subscription ID",
-        description = "The Pub/Sub subscription name to pull budget notifications from."
+        description = """
+            The Pub/Sub subscription name to pull budget notifications from."""
     )
     @PluginProperty(group = "source")
     private Property<String> subscription;
@@ -108,24 +116,29 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     @Builder.Default
     @Schema(
         title = "Auto-create subscription",
-        description = "Whether to create the subscription if it does not already exist."
+        description = """
+            Whether to create the subscription if it does not already exist."""
     )
     @PluginProperty(group = "advanced")
     private Property<Boolean> autoCreateSubscription = Property.ofValue(true);
 
     @Schema(
         title = "Threshold ratio (between 0.0 and 1.0+)",
-        description = "Minimum budget usage ratio required to trigger the flow (e.g. `0.9` for 90%, `1.0` for 100%). If unset, any notification that crosses a Google budget threshold will trigger."
+        description = """
+            Minimum budget usage ratio required to trigger the flow (e.g. `0.9` for 90%, `1.0` for 100%). \
+            If unset, any notification that crosses a Google budget threshold will trigger."""
     )
     @PluginProperty(group = "processing")
     private Property<@DecimalMin("0.0") Double> thresholdRatio;
 
     @Schema(
         title = "Threshold amount",
-        description = "Minimum absolute cost amount required to trigger the flow."
+        description = """
+            Minimum absolute cost amount in the budget's currency required to trigger the flow. \
+            When both `thresholdRatio` and `thresholdAmount` are specified, both conditions must be met (logical AND)."""
     )
     @PluginProperty(group = "processing")
-    private Property<Double> thresholdAmount;
+    private Property<@DecimalMin("0.0") Double> thresholdAmount;
 
     @Builder.Default
     @Schema(title = "The interval between polling iterations")
@@ -133,12 +146,21 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     private final Duration interval = Duration.ofSeconds(60);
 
     @Builder.Default
-    @Schema(title = "Max records per poll", description = "Maximum number of messages to consume per polling run")
+    @Schema(
+        title = "Max records per poll",
+        description = """
+            Maximum number of messages to consume per polling run (between 1 and 1000). Defaults to 10."""
+    )
     @PluginProperty(group = "execution")
-    private Property<Integer> maxRecords = Property.ofValue(10);
+    private Property<@Min(1) @Max(1000) Integer> maxRecords = Property.ofValue(10);
 
     @Builder.Default
-    @Schema(title = "Max duration", description = "Duration limit for a polling run; defaults to PT30S")
+    @Schema(
+        title = "Max duration",
+        description = """
+            Duration limit for a polling run; defaults to PT30S (30 seconds). \
+            Should stay below the polling `interval`."""
+    )
     @PluginProperty(group = "execution")
     private Property<Duration> maxDuration = Property.ofValue(Duration.ofSeconds(30));
 
@@ -148,10 +170,6 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     @ToString.Exclude
     @Builder.Default
     private final AtomicReference<Consume> consumeTask = new AtomicReference<>();
-
-    public static BudgetAlert parseAlertPayload(String payload, Map<String, String> attributes) {
-        return parseAlertPayload(payload, attributes, "unknown", null);
-    }
 
     public static BudgetAlert parseAlertPayload(String payload, Map<String, String> attributes, String messageId, Logger logger) {
         if (payload == null || payload.isBlank()) {
@@ -176,7 +194,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
                 ? Double.valueOf(map.get("forecastThresholdExceeded").toString())
                 : null;
 
-            var percentageUsed = budgetAmount > 0 ? (costAmount / budgetAmount) : 0.0;
+            var usageRatio = budgetAmount > 0 ? (costAmount / budgetAmount) : 0.0;
 
             var billingAccountId = attributes != null ? attributes.get("billingAccountId") : null;
             var budgetId = attributes != null ? attributes.get("budgetId") : null;
@@ -188,7 +206,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
                 .costIntervalStart(costIntervalStart)
                 .budgetAmountType(budgetAmountType)
                 .currencyCode(currencyCode)
-                .percentageUsed(percentageUsed)
+                .usageRatio(usageRatio)
                 .alertThresholdExceeded(alertThresholdExceeded)
                 .forecastThresholdExceeded(forecastThresholdExceeded)
                 .billingAccountId(billingAccountId)
@@ -280,7 +298,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
                             alert.getBudgetDisplayName(),
                             alert.getCostAmount()
                         );
-                        matched.add(alert.toBuilder().thresholdCrossed(true).build());
+                        matched.add(alert);
                     }
                 }
             }
@@ -311,7 +329,7 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
             return false;
         }
 
-        var passesRatio = thresholdRatio == null || alert.getPercentageUsed() >= thresholdRatio;
+        var passesRatio = thresholdRatio == null || alert.getUsageRatio() >= thresholdRatio;
         var passesAmount = thresholdAmount == null || alert.getCostAmount() >= thresholdAmount;
 
         if (!passesRatio || !passesAmount) {
@@ -406,7 +424,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
             title = "The primary or first matched budget alert",
-            description = "Convenience shortcut for `budgetAlerts.getFirst()`"
+            description = """
+                Convenience shortcut for `budgetAlerts.getFirst()`."""
         )
         private final BudgetAlert budgetAlert;
 

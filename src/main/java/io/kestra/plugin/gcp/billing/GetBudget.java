@@ -22,7 +22,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Get a GCP Cloud Billing Budget",
-    description = "Retrieves a specific Cloud Billing budget definition, including thresholds and notification rules."
+    description = """
+        Retrieves a specific Cloud Billing budget definition, including thresholds and notification rules."""
 )
 @Plugin(
     examples = {
@@ -47,7 +48,8 @@ public class GetBudget extends AbstractBilling implements RunnableTask<GetBudget
     @NotNull
     @Schema(
         title = "The resource name of the budget",
-        description = "Format: `billingAccounts/{billingAccountId}/budgets/{budgetId}`"
+        description = """
+            Format: `billingAccounts/{billingAccountId}/budgets/{budgetId}`"""
     )
     @PluginProperty(group = "source")
     private Property<String> budgetName;

@@ -6,8 +6,10 @@ This sub-package provides tasks and triggers to automate FinOps processes, monit
 
 ## Authentication
 
-All tasks inherit GCP authentication properties from the common GCP plugin structure (`io.kestra.plugin.gcp.shared.AbstractTask`). You can authenticate using:
-- A service account JSON key via the `serviceAccount` property.
+All tasks inherit GCP authentication properties from the common GCP plugin structure (`io.kestra.plugin.gcp.shared.AbstractTask`). Sensitive credentials should be stored securely using Kestra [secrets](https://kestra.io/docs/concepts/secret), and common settings can be configured across flows via [plugin defaults](https://kestra.io/docs/workflow-components/plugin-defaults).
+
+You can authenticate using:
+- A service account JSON key via the `serviceAccount` property (e.g. `serviceAccount: "{{ secret('GCP_SA') }}"`).
 - Service account impersonation via `impersonatedServiceAccount`.
 - Environment-provided credentials (e.g. `GOOGLE_APPLICATION_CREDENTIALS`).
 - Workload Identity or Compute Engine metadata IAM credentials when running inside GCP (GKE, GCE).
@@ -44,4 +46,4 @@ An event-driven polling trigger that consumes Google Cloud Billing budget notifi
 - `thresholdRatio`: Minimum budget usage ratio required to trigger (e.g., `0.9` for 90%).
 - `thresholdAmount`: Minimum absolute cost amount in budget currency units required to trigger.
 - **Deduplication**: Automatically deduplicates incoming snapshot notifications using the namespace KV store to ensure the workflow fires only when a snapshot crosses a newly exceeded threshold, preventing repeated executions on periodic status snapshots.
-- Outputs `trigger.budgetAlerts` (list of all alerts matching in the poll) and `trigger.budgetAlert` (the primary alert).
+- Outputs `trigger.budgetAlerts` (list of all alerts matching in the poll containing `usageRatio`, `costAmount`, etc.) and `trigger.budgetAlert` (the primary alert shortcut).

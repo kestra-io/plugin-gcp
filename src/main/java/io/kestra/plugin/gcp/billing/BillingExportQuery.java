@@ -34,7 +34,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Query GCP BigQuery Billing Export",
-    description = "Executes a parameterized cost aggregation query over standard or detailed GCP BigQuery billing export tables."
+    description = """
+        Executes a parameterized cost aggregation query over standard or detailed GCP BigQuery billing export tables."""
 )
 @Plugin(
     examples = {
@@ -65,7 +66,9 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
     @NotNull
     @Schema(
         title = "BigQuery Billing Export table",
-        description = "Fully-qualified table name (e.g. `my-project.dataset.gcp_billing_export_v1_XXXXXX` or `dataset.gcp_billing_export_v1_XXXXXX`)."
+        description = """
+            Fully-qualified table name (e.g. `my-project.dataset.gcp_billing_export_v1_XXXXXX` or \
+            `dataset.gcp_billing_export_v1_XXXXXX`)."""
     )
     @PluginProperty(group = "source")
     private Property<String> exportTable;
@@ -73,28 +76,38 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
     @NotNull
     @Schema(
         title = "Query start date or timestamp",
-        description = "Inclusive start timestamp or date (e.g. `2026-09-01` or `2026-09-01T00:00:00Z`). Will be parsed and validated as an ISO-8601 date or timestamp."
+        description = """
+            Inclusive start timestamp or date (e.g. `2026-09-01` or `2026-09-01T00:00:00Z`). \
+            Will be parsed and validated as an ISO-8601 date or timestamp."""
     )
     @PluginProperty(group = "source")
     private Property<String> dateFrom;
 
     @Schema(
         title = "Query end date or timestamp",
-        description = "Exclusive end timestamp or date (e.g. `2026-10-01` or `2026-10-01T00:00:00Z`). Will be parsed and validated as an ISO-8601 date or timestamp."
+        description = """
+            Exclusive end timestamp or date (e.g. `2026-10-01` or `2026-10-01T00:00:00Z`). \
+            Will be parsed and validated as an ISO-8601 date or timestamp."""
     )
     @PluginProperty(group = "source")
     private Property<String> dateTo;
 
     @Schema(
         title = "Fields to group by",
-        description = "(Raw SQL fragments or column expressions) List of columns or expressions to group costs by (e.g. `['service.description']`, `['project.id', 'sku.description']`). Dot-notated struct fields are automatically aliased (e.g. `service.description AS service_description`) to prevent duplicate column names in BigQuery."
+        description = """
+            (Raw SQL fragments or column expressions) List of columns or expressions to group costs by \
+            (e.g. `['service.description']`, `['project.id', 'sku.description']`). Dot-notated struct fields \
+            are automatically aliased (e.g. `service.description AS service_description`) to prevent duplicate \
+            column names in BigQuery."""
     )
     @PluginProperty(group = "processing")
     private Property<List<String>> groupBy;
 
     @Schema(
         title = "Additional SQL filter expression",
-        description = "(Raw SQL fragment) Optional custom WHERE clause conditions to apply (e.g. `project.id = 'my-project-id'`)."
+        description = """
+            (Raw SQL fragment) Optional custom WHERE clause conditions to apply \
+            (e.g. `project.id = 'my-project-id'`)."""
     )
     @PluginProperty(group = "processing")
     private Property<String> filter;
@@ -102,7 +115,8 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
     @Builder.Default
     @Schema(
         title = "Include credits calculation",
-        description = "Whether to calculate net cost including promotions, discounts, and credits (default: true)"
+        description = """
+            Whether to calculate net cost including promotions, discounts, and credits (default: true)."""
     )
     @PluginProperty(group = "processing")
     private Property<Boolean> includeCredits = Property.ofValue(true);
@@ -110,14 +124,16 @@ public class BillingExportQuery extends AbstractBilling implements RunnableTask<
     @Builder.Default
     @Schema(
         title = "Result handling mode",
-        description = "`FETCH` by default. Use `STORE` to save large result sets to Kestra internal storage."
+        description = """
+            `FETCH` by default. Use `STORE` to save large result sets to Kestra internal storage."""
     )
     @PluginProperty(group = "processing")
     private Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
 
     @Schema(
         title = "Destination BigQuery table",
-        description = "Optional destination table to write query results to"
+        description = """
+            Optional destination table to write query results to."""
     )
     @PluginProperty(group = "destination")
     private Property<String> destinationTable;
