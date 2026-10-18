@@ -113,7 +113,7 @@ public class HttpFunction extends AbstractTask implements RunnableTask<HttpFunct
                 HttpConfiguration.builder()
                     .timeout(
                         TimeoutConfiguration.builder()
-                            .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
+                            .readIdleTimeout(this.maxDuration)
                             .build()
                     ).build()
             )
