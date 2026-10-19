@@ -12,7 +12,12 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BillingAccount {
-    @Schema(title = "The resource name of the billing account", description = "Format: billingAccounts/{billingAccountId}")
+    @Schema(
+        title = "The resource name of the billing account",
+        description = """
+            Format: `billingAccounts/{billingAccountId}`
+            """
+    )
     String name;
 
     @Schema(title = "The display name of the billing account")

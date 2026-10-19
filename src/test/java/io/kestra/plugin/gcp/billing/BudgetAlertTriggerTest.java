@@ -7,6 +7,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.google.protobuf.ByteString;
+import com.google.pubsub.v1.PubsubMessage;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -16,6 +19,7 @@ import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.gcp.pubsub.Consume;
 import io.kestra.plugin.gcp.pubsub.model.Message;
+import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 
 import jakarta.inject.Inject;
 
@@ -34,11 +38,14 @@ class BudgetAlertTriggerTest {
     private URI createMessageFile(RunContext runContext, String payload, Map<String, String> attributes, String messageId) throws Exception {
         var tempFile = runContext.workingDir().createTempFile(".ion").toFile();
         try (var os = new BufferedOutputStream(new FileOutputStream(tempFile))) {
-            var msg = Message.builder()
-                .data(payload)
-                .attributes(attributes)
-                .messageId(messageId)
-                .build();
+            var msg = Message.of(
+                PubsubMessage.newBuilder()
+                    .setData(ByteString.copyFromUtf8(payload))
+                    .putAllAttributes(attributes)
+                    .setMessageId(messageId)
+                    .build(),
+                SerdeType.STRING
+            );
             FileSerde.write(os, msg);
         }
         return runContext.storage().putFile(tempFile);

@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.billing;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -126,7 +127,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         title = "Threshold ratio (between 0.0 and 1.0+)",
         description = """
             Minimum budget usage ratio required to trigger the flow (e.g. `0.9` for 90%, `1.0` for 100%). \
-            If unset, any notification that crosses a Google budget threshold will trigger."""
+            If unset, any notification that crosses a Google budget threshold will trigger. \
+            Out-of-range values cause the trigger to fail during evaluation."""
     )
     @PluginProperty(group = "processing")
     private Property<@DecimalMin("0.0") Double> thresholdRatio;
@@ -135,7 +137,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
         title = "Threshold amount",
         description = """
             Minimum absolute cost amount in the budget's currency required to trigger the flow. \
-            When both `thresholdRatio` and `thresholdAmount` are specified, both conditions must be met (logical AND)."""
+            When both `thresholdRatio` and `thresholdAmount` are specified, both conditions must be met (logical AND). \
+            Out-of-range values cause the trigger to fail during evaluation."""
     )
     @PluginProperty(group = "processing")
     private Property<@DecimalMin("0.0") Double> thresholdAmount;
@@ -149,7 +152,8 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
     @Schema(
         title = "Max records per poll",
         description = """
-            Maximum number of messages to consume per polling run (between 1 and 1000). Defaults to 10."""
+            Maximum number of messages to consume per polling run (between 1 and 1000). Defaults to 10. \
+            Out-of-range values cause the trigger to fail during evaluation."""
     )
     @PluginProperty(group = "execution")
     private Property<@Min(1) @Max(1000) Integer> maxRecords = Property.ofValue(10);
@@ -285,7 +289,11 @@ public class BudgetAlertTrigger extends AbstractTrigger implements PollingTrigge
             var messages = FileSerde.readAll(is, Message.class).collectList().block();
             if (messages != null) {
                 for (var msg : messages) {
-                    var dataStr = msg.getData() != null ? msg.getData().toString() : null;
+                    var dataStr = switch (msg.getData()) {
+                        case null -> null;
+                        case byte[] bytes -> new String(bytes, StandardCharsets.UTF_8);
+                        case Object data -> data.toString();
+                    };
                     var messageId = msg.getMessageId() != null ? msg.getMessageId() : "unknown";
                     var alert = parseAlertPayload(dataStr, msg.getAttributes(), messageId, logger);
                     if (alert == null) {
