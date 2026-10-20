@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.reactivestreams.Publisher;
 
 import com.google.api.core.ApiService;
-import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
@@ -21,6 +20,7 @@ import com.google.pubsub.v1.ProjectSubscriptionName;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -34,7 +34,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import reactor.core.publisher.Flux;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -190,7 +189,8 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
             runContext.render(subscription).as(String.class).orElse(null),
             runContext.render(autoCreateSubscription).as(Boolean.class).orElse(true)
         );
-        GoogleCredentials credentials = task.credentials(runContext);
+        var connection = PubSubClientConnection.current();
+        GoogleCredentials credentials = connection.usesEmulator() ? null : task.credentials(runContext);
 
         var serdeTypeRendered = runContext.render(serdeType).as(SerdeType.class).orElseThrow();
         return Flux.create(
@@ -209,10 +209,9 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
                     }
                 };
 
-                Subscriber subscriber = Subscriber
-                    .newBuilder(subscriptionName, receiver)
-                    .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
-                    .build();
+                var subscriberBuilder = Subscriber.newBuilder(subscriptionName, receiver);
+                connection.configure(subscriberBuilder, credentials);
+                Subscriber subscriber = subscriberBuilder.build();
 
                 this.subscriberReference.set(subscriber);
 

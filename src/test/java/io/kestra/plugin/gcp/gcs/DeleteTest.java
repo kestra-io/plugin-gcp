@@ -6,7 +6,7 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -19,16 +19,19 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.AbstractFlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class DeleteTest {
+@Testcontainers
+class DeleteTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -40,45 +43,59 @@ class DeleteTest {
 
     @Test
     void fromStorage() throws Exception {
-        File file = new File(
-            Objects.requireNonNull(
-                DeleteTest.class.getClassLoader()
-                    .getResource("application.yml")
-            )
-                .toURI()
-        );
-
-        URI source = storageInterface.put(
-            TenantService.MAIN_TENANT,
-            null,
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(file)
-        );
-
         String out = FriendlyId.createFriendlyId();
+        String objectName = "tasks/gcp/upload/" + out + ".yml";
+        URI source = null;
 
-        Upload upload = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
-            .build();
+        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+            File file = new File(
+                Objects.requireNonNull(
+                    DeleteTest.class.getClassLoader()
+                        .getResource("application.yml")
+                )
+                    .toURI()
+            );
 
-        Upload.Output uploadOutput = upload.run(runContext(upload));
+            try (FileInputStream input = new FileInputStream(file)) {
+                source = storageInterface.put(
+                    TenantService.MAIN_TENANT,
+                    null,
+                    new URI("/" + FriendlyId.createFriendlyId()),
+                    input
+                );
+            }
 
-        Delete task = Delete.builder()
-            .id(DeleteTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .uri(Property.ofValue(uploadOutput.getUri().toString()))
-            .build();
+            Upload upload = Upload.builder()
+                .id(UploadTest.class.getSimpleName())
+                .type(Upload.class.getName())
+                .from(Property.ofValue(source.toString()))
+                .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
+                .build();
 
-        Delete.Output run = task.run(runContext(task));
+            Upload.Output uploadOutput = upload.run(runContext(upload));
+            assertThat(uploadOutput.getUri().toString(), is("gs://" + bucket + "/" + objectName));
+            assertNotNull(storage.get(bucket, objectName));
 
-        assertThat(run.getDeleted(), is(true));
+            Delete task = Delete.builder()
+                .id(DeleteTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .uri(Property.ofValue(uploadOutput.getUri().toString()))
+                .build();
 
-        run = task.run(runContext(task));
+            Delete.Output run = task.run(runContext(task));
 
-        assertThat(run.getDeleted(), is(false));
+            assertThat(run.getDeleted(), is(true));
+            assertNull(storage.get(bucket, objectName));
+
+            run = task.run(runContext(task));
+
+            assertThat(run.getDeleted(), is(false));
+        } finally {
+            storage.delete(bucket, objectName);
+            if (source != null) {
+                storageInterface.delete(TenantService.MAIN_TENANT, null, source);
+            }
+        }
     }
 
     private RunContext runContext(Task task) {
