@@ -60,7 +60,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
     @Schema(
         title = "Source object URI",
-        description = "Fully qualified gs:// path to copy from"
+        description = "Fully qualified gs:// URI or an internal storage URI. Special characters and partition brackets are automatically percent-encoded if unencoded."
     )
     @PluginProperty(group = "source")
     private Property<String> from;
@@ -113,7 +113,7 @@ public class Copy extends AbstractGcs implements RunnableTask<Copy.Output> {
 
         return Output
             .builder()
-            .uri(new URI("gs://" + result.getBucket() + "/" + result.getName()))
+            .uri(new URI("gs://" + result.getBucket() + "/" + encodePath(result.getName())))
             .build();
     }
 

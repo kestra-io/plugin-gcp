@@ -23,7 +23,7 @@ public interface ListInterface {
 
     @Schema(
         title = "Regex filter",
-        description = "Optional regex applied to full object path (e.g., `.*2020-01-0.\\.csv`)"
+        description = "Optional regex applied to full object path (e.g., `.*2020-01-0.\\.csv`). Matches against raw URI or encoded URI."
     )
     @PluginProperty(group = "advanced")
     Property<String> getRegExp();

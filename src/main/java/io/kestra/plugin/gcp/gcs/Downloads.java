@@ -145,7 +145,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 Delete delete = Delete.builder()
                     .id("archive")
                     .type(Delete.class.getName())
-                    .uri(Property.ofValue(blob.getUri().toString()))
+                    .uri(Property.ofValue("gs://" + blob.getBucket() + "/" + blob.getName()))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
                     .scopes(scopes)
@@ -157,7 +157,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 Copy copy = Copy.builder()
                     .id("archive")
                     .type(Copy.class.getName())
-                    .from(Property.ofValue(blob.getUri().toString()))
+                    .from(Property.ofValue("gs://" + blob.getBucket() + "/" + blob.getName()))
                     .to(
                         Property.ofValue(
                             StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")

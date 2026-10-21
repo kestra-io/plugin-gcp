@@ -47,7 +47,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 public class Delete extends AbstractGcs implements RunnableTask<Delete.Output> {
     @Schema(
         title = "Object URI",
-        description = "gs:// path to delete"
+        description = "gs:// URI of the object to delete. Special characters and partition brackets are automatically percent-encoded if unencoded."
     )
     @PluginProperty(group = "connection")
     private Property<String> uri;
