@@ -36,7 +36,9 @@ const baseTask = {
 // The sample task-run outputs/metrics the post-execution stories' fetchOutputs/fetchMetrics fixtures
 // return — mirrors what the host would resolve server-side for this execution/task.
 const SAMPLE_OUTPUTS = {
-    jobId: "my-gcp-project:EU.bquxjob_1a2b3c4d_1234567890ab",
+    jobId: "bquxjob_1a2b3c4d_1234567890ab",
+    projectId: "resolved-gcp-project",
+    location: "EU",
     size: 15234,
     destinationTable: {
         project: "my-gcp-project",
@@ -89,9 +91,9 @@ export const WithExecution: Story = {
     } as any,
 };
 
-// Task whose GCP config is driven by Pebble expressions (flow vars). Server-side expression
-// rendering was dropped along with @kestra-io/kestra-sdk, so the panel now shows these RAW,
-// unresolved ("{{ vars.projectId }}", "{{ vars.location }}") instead of a resolved value.
+// Task whose GCP config is driven by Pebble expressions (flow vars). Before an execution the panel
+// shows the raw definition values marked as templates; after an execution it shows only what the
+// task outputs report, never the raw expression.
 // `displayMode: "full"` opens the full view where the Query section renders.
 const expressionTask = {
     id: "query-bq",
@@ -102,57 +104,74 @@ const expressionTask = {
     fetch: true,
 };
 
+const executionArgs = {
+    namespace: "company.team",
+    flowId: "bq-pipeline",
+    displayMode: "full",
+    execution: {
+        id: "exec-abc123",
+        namespace: "company.team",
+        flowId: "bq-pipeline",
+        state: { current: "SUCCESS", startDate: "2024-01-15T10:00:00Z" } as any,
+        taskRunList: [
+            {
+                id: "tr-001",
+                taskId: "query-bq",
+                executionId: "exec-abc123",
+            },
+        ],
+    } as any,
+    fetchMetrics: async () => SAMPLE_METRICS,
+};
+
 export const PreExecutionExpressions: Story = {
-    name: "Pre-execution — expressions shown raw",
+    name: "Pre-execution — expressions marked as templates",
     args: {
         task: expressionTask,
         namespace: "company.team",
         flowId: "bq-pipeline",
         displayMode: "full",
     } as any,
-    // Regression guard: the panel must show the raw "{{ … }}" template, unresolved.
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
         await waitFor(() =>
-            expect(canvas.getAllByText("{{ vars.projectId }}").length).toBeGreaterThan(0),
+            expect(canvas.getByText("{{ vars.projectId }} (template)")).toBeInTheDocument(),
         );
-        expect(canvas.getAllByText("{{ vars.location }}").length).toBeGreaterThan(0);
+        expect(canvas.getByText("{{ vars.location }} (template)")).toBeInTheDocument();
+        expect(canvas.getByText("Query (template)")).toBeInTheDocument();
     },
 };
 
 export const PostExecutionExpressions: Story = {
-    name: "Post-execution — expressions shown raw",
+    name: "Post-execution — resolved values from outputs",
     args: {
         task: expressionTask,
-        namespace: "company.team",
-        flowId: "bq-pipeline",
-        displayMode: "full",
-        execution: {
-            id: "exec-abc123",
-            namespace: "company.team",
-            flowId: "bq-pipeline",
-            state: { current: "SUCCESS", startDate: "2024-01-15T10:00:00Z" } as any,
-            taskRunList: [
-                {
-                    id: "tr-001",
-                    taskId: "query-bq",
-                    executionId: "exec-abc123",
-                },
-            ],
-        } as any,
+        ...executionArgs,
         fetchOutputs: async () => SAMPLE_OUTPUTS,
-        fetchMetrics: async () => SAMPLE_METRICS,
     } as any,
-    // Regression guard: raw "{{ … }}" templates AND the post-execution job details (from the
-    // fetchOutputs/fetchMetrics fixtures) must render together.
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
-        await waitFor(() =>
-            expect(canvas.getAllByText("{{ vars.projectId }}").length).toBeGreaterThan(0),
-        );
-        expect(canvas.getAllByText("{{ vars.location }}").length).toBeGreaterThan(0);
-        expect(
-            canvas.getByText("my-gcp-project:EU.bquxjob_1a2b3c4d_1234567890ab"),
-        ).toBeInTheDocument();
+        await waitFor(() => expect(canvas.getByText("resolved-gcp-project")).toBeInTheDocument());
+        expect(canvas.getByText("EU")).toBeInTheDocument();
+        expect(canvas.getByText("bquxjob_1a2b3c4d_1234567890ab")).toBeInTheDocument();
+        expect(canvas.queryByText(/\{\{ vars\.projectId \}\}$/)).toBeNull();
+        expect(canvas.queryByText(/\{\{ vars\.location \}\}$/)).toBeNull();
+    },
+};
+
+// Outputs from an older plugin version carry no projectId/location: show "—", never the definition.
+export const PostExecutionOutputsWithoutProjectAndLocation: Story = {
+    name: "Post-execution — outputs without project and location",
+    args: {
+        task: baseTask,
+        ...executionArgs,
+        fetchOutputs: async () => ({ jobId: SAMPLE_OUTPUTS.jobId, size: SAMPLE_OUTPUTS.size }),
+    } as any,
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
+        await waitFor(() => expect(canvas.getByText(SAMPLE_OUTPUTS.jobId)).toBeInTheDocument());
+        expect(canvas.queryByText("my-gcp-project")).toBeNull();
+        expect(canvas.queryByText("US")).toBeNull();
+        expect(canvas.getAllByText("—").length).toBeGreaterThanOrEqual(2);
     },
 };

@@ -12,6 +12,7 @@ const { t } = useI18n({
             project: "Project",
             location: "Location",
             query: "Query",
+            templateMarker: "(template)",
             duration: "Duration",
             estimatedCost: "Estimated cost",
             jobDetails: "Job details",
@@ -74,29 +75,29 @@ watch(
 
 const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.outputs ?? null);
 
-// Parse project and location from the job ID as fallback.
-// BigQuery job IDs have the format: project:location.jobname
-// projectId/location are shown raw (unresolved Pebble expressions like "{{ vars.project }}"
-// display literally) since server-side rendering was dropped along with @kestra-io/kestra-sdk.
-const resolvedProject = computed(() => {
-    if (projectId.value) return projectId.value;
-    const jid = taskOutputs.value?.jobId as string | undefined;
-    if (!jid) return undefined;
-    const colonIdx = jid.indexOf(":");
-    return colonIdx > 0 ? jid.slice(0, colonIdx) : undefined;
-});
+// Before an execution the raw definition values are shown, with templates marked as such. After an
+// execution only the task outputs are read: a templatable definition value would show the unresolved
+// expression instead of what BigQuery actually used.
+const isTemplate = (v?: string) => !!v && v.includes("{{");
+const markTemplate = (v?: string) =>
+    v ? (isTemplate(v) ? `${v} ${t("templateMarker")}` : v) : "—";
 
-const resolvedLocation = computed(() => {
-    if (location.value) return location.value;
-    const jid = taskOutputs.value?.jobId as string | undefined;
-    if (!jid) return undefined;
-    const colonIdx = jid.indexOf(":");
-    const dotIdx = jid.indexOf(".", colonIdx);
-    if (colonIdx < 0 || dotIdx < 0) return undefined;
-    return jid.slice(colonIdx + 1, dotIdx);
-});
+const resolvedProject = computed(() =>
+    hasExecution.value
+        ? ((taskOutputs.value?.projectId as string | undefined) ?? "—")
+        : markTemplate(projectId.value),
+);
+
+const resolvedLocation = computed(() =>
+    hasExecution.value
+        ? ((taskOutputs.value?.location as string | undefined) ?? "—")
+        : markTemplate(location.value),
+);
 
 const resolvedSql = computed(() => sql.value);
+const sqlTitle = computed(() =>
+    isTemplate(resolvedSql.value) ? `${t("query")} ${t("templateMarker")}` : t("query"),
+);
 
 // KsEditor needs an explicit "dark"/"light" theme. The host marks dark mode with a `dark` class on
 // <html> (same signal the design-system's own components observe), so mirror it and react to toggles.
@@ -179,8 +180,8 @@ function formatSlotMs(v?: number): string {
 
 const summaryRows = computed(() => {
     const rows = [
-        { label: t("project"), value: resolvedProject.value ?? "—" },
-        { label: t("location"), value: resolvedLocation.value ?? "—" },
+        { label: t("project"), value: resolvedProject.value },
+        { label: t("location"), value: resolvedLocation.value },
     ];
     if (hasExecution.value) {
         rows.push({ label: t("duration"), value: formatDuration(durationMs.value) });
@@ -223,7 +224,7 @@ const perfRows = computed(() => [
 
         <!-- Rendered SQL: full view (available pre-execution, straight from the flow definition) -->
         <section v-if="isFullView && resolvedSql" class="bq-section">
-            <h4 class="bq-section__title">{{ t("query") }}</h4>
+            <h4 class="bq-section__title">{{ sqlTitle }}</h4>
             <div class="bq-sql">
                 <KsEditor
                     :model-value="resolvedSql"
