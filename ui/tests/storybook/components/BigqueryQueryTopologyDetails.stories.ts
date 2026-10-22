@@ -135,9 +135,9 @@ export const PreExecutionExpressions: Story = {
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
         await waitFor(() =>
-            expect(canvas.getByText("{{ vars.projectId }} (template)")).toBeInTheDocument(),
+            expect(canvas.getByText("(template) {{ vars.projectId }}")).toBeInTheDocument(),
         );
-        expect(canvas.getByText("{{ vars.location }} (template)")).toBeInTheDocument();
+        expect(canvas.getByText("(template) {{ vars.location }}")).toBeInTheDocument();
         expect(canvas.getByText("Query (template)")).toBeInTheDocument();
     },
 };
@@ -173,5 +173,24 @@ export const PostExecutionOutputsWithoutProjectAndLocation: Story = {
         expect(canvas.queryByText("my-gcp-project")).toBeNull();
         expect(canvas.queryByText("US")).toBeNull();
         expect(canvas.getAllByText("—").length).toBeGreaterThanOrEqual(2);
+    },
+};
+
+// Pebble tags (`{% %}`) alone make a value templated, even without any `{{ }}` expression.
+export const PreExecutionTagOnlySql: Story = {
+    name: "Pre-execution — {% %}-only SQL marked as template",
+    args: {
+        task: {
+            ...baseTask,
+            sql: "SELECT id FROM t\n{% if inputs.full %}LIMIT 1000{% endif %}",
+        },
+        namespace: "company.team",
+        flowId: "bq-pipeline",
+        displayMode: "full",
+    } as any,
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
+        await waitFor(() => expect(canvas.getByText("Query (template)")).toBeInTheDocument());
+        expect(canvas.getByText("my-gcp-project")).toBeInTheDocument();
     },
 };

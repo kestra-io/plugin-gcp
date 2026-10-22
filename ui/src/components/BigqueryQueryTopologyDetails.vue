@@ -75,12 +75,11 @@ watch(
 
 const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.outputs ?? null);
 
-// Before an execution the raw definition values are shown, with templates marked as such. After an
-// execution only the task outputs are read: a templatable definition value would show the unresolved
-// expression instead of what BigQuery actually used.
-const isTemplate = (v?: string) => !!v && v.includes("{{");
+// After an execution read outputs only: the definition may hold unresolved templates.
+const isTemplate = (v?: string) => !!v && /\{[{%]/.test(v);
+// Marker first so it survives truncation in the compact node.
 const markTemplate = (v?: string) =>
-    v ? (isTemplate(v) ? `${v} ${t("templateMarker")}` : v) : "—";
+    v ? (isTemplate(v) ? `${t("templateMarker")} ${v}` : v) : "—";
 
 const resolvedProject = computed(() =>
     hasExecution.value
