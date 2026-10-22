@@ -87,7 +87,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
 
     @Schema(
         title = "Destination object URI",
-        description = "gs:// path for the composed object"
+        description = "gs:// path for the composed object. Special characters and partition brackets are automatically percent-encoded if unencoded."
     )
     @PluginProperty(group = "destination")
     private Property<String> to;
@@ -149,7 +149,7 @@ public class Compose extends AbstractGcs implements RunnableTask<Compose.Output>
 
         return Output
             .builder()
-            .uri(new URI("gs://" + compose.getBucket() + "/" + encode(destination.getName())))
+            .uri(new URI("gs://" + compose.getBucket() + "/" + encodePath(destination.getName())))
             .build();
     }
 

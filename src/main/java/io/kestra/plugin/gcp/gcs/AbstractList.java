@@ -47,7 +47,11 @@ public abstract class AbstractList extends AbstractGcs implements ListInterface 
     }
 
     protected boolean filter(com.google.cloud.storage.Blob blob, String regExp) {
-        return regExp == null || Blob.uri(blob).toString().matches(regExp);
+        if (regExp == null) {
+            return true;
+        }
+        var rawUri = "gs://" + blob.getBucket() + "/" + blob.getName();
+        return rawUri.matches(regExp) || Blob.uri(blob).toString().matches(regExp);
     }
 
     private Storage.BlobListOption[] options(URI from, RunContext runContext) throws IllegalVariableEvaluationException {

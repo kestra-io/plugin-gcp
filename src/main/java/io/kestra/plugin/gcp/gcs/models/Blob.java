@@ -4,6 +4,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 
+import io.kestra.plugin.gcp.gcs.AbstractGcs;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.With;
@@ -46,7 +48,7 @@ public class Blob {
     private final Long retentionExpirationTime;
 
     public static URI uri(com.google.cloud.storage.Blob blob) {
-        return URI.create("gs://" + blob.getBucket() + "/" + blob.getName().replace(" ", "+"));
+        return URI.create("gs://" + blob.getBucket() + "/" + AbstractGcs.encodePath(blob.getName()));
     }
 
     public static Blob of(com.google.cloud.storage.Blob blob) {

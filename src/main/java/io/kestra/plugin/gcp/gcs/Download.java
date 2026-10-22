@@ -86,7 +86,7 @@ public class Download extends AbstractGcs implements RunnableTask<Download.Outpu
 
     @Schema(
         title = "Source object URI",
-        description = "gs:// path to download"
+        description = "gs:// URI of the object to download. Special characters and partition brackets are automatically percent-encoded if unencoded."
     )
     @PluginProperty(group = "source")
     private Property<String> from;
