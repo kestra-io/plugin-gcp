@@ -125,7 +125,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
     @Schema(
         title = "Move destination",
-        description = "Target gs:// prefix when action is MOVE"
+        description = "Target gs:// prefix when action is MOVE. Relative directory paths under `from` are preserved in the destination."
     )
     @PluginProperty(group = "advanced")
     private Property<String> moveDirectory;
@@ -232,7 +232,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
                 return Optional.empty();
             }
 
-            Downloads.performAction(actionBlobs, runContext.render(action).as(Action.class).orElseThrow(), moveDirectory, runContext, projectId, serviceAccount, scopes);
+            Downloads.performAction(actionBlobs, runContext.render(action).as(Action.class).orElse(Action.NONE), moveDirectory, from, runContext, projectId, serviceAccount, scopes);
 
             var output = Output.builder().blobs(toFire).build();
             return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));

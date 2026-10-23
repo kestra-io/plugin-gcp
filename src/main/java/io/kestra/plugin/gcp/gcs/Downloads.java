@@ -4,7 +4,11 @@ import java.io.File;
 import java.net.URI;
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -111,7 +115,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
     @Schema(
         title = "Move destination",
-        description = "Required when action is MOVE; gs:// prefix for moved objects"
+        description = "Required when action is MOVE; gs:// prefix for moved objects. Relative directory paths under `from` are preserved in the destination."
     )
     @PluginProperty(group = "destination")
     private Property<String> moveDirectory;
@@ -132,6 +136,37 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
     @Builder.Default
     private Property<Boolean> validateChecksum = Property.ofValue(false);
 
+    static String destinationUri(String moveDirectory, String blobName, String prefix) {
+        var destPrefix = StringUtils.stripEnd(moveDirectory, "/");
+        var subpath = "";
+
+        if (prefix != null) {
+            var normPrefix = StringUtils.strip(prefix, "/");
+            var normKey = StringUtils.stripStart(blobName, "/");
+            if (!normPrefix.isEmpty()) {
+                if (normKey.startsWith(normPrefix + "/")) {
+                    subpath = normKey.substring(normPrefix.length() + 1);
+                } else if (normPrefix.contains("/")) {
+                    var folderBase = normPrefix.substring(0, normPrefix.lastIndexOf('/'));
+                    if (!folderBase.isEmpty() && normKey.startsWith(folderBase + "/")) {
+                        subpath = normKey.substring(folderBase.length() + 1);
+                    }
+                }
+            } else {
+                subpath = normKey;
+            }
+        }
+
+        if (subpath.isEmpty()) {
+            subpath = FilenameUtils.getName(blobName);
+        }
+
+        if (subpath.isEmpty()) {
+            return destPrefix;
+        }
+        return destPrefix.isEmpty() ? subpath : destPrefix + "/" + subpath;
+    }
+
     static void performAction(
         java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
         ActionInterface.Action action,
@@ -140,8 +175,23 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
         Property<String> projectId,
         Property<String> serviceAccount,
         Property<java.util.List<String>> scopes) throws Exception {
+        performAction(blobList, action, moveDirectory, null, runContext, projectId, serviceAccount, scopes);
+    }
+
+    static void performAction(
+        java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
+        ActionInterface.Action action,
+        Property<String> moveDirectory,
+        Property<String> from,
+        RunContext runContext,
+        Property<String> projectId,
+        Property<String> serviceAccount,
+        Property<java.util.List<String>> scopes) throws Exception {
         if (action == ActionInterface.Action.DELETE) {
             for (Blob blob : blobList) {
+                if (blob.isDirectory() || blob.getName().endsWith("/")) {
+                    continue;
+                }
                 Delete delete = Delete.builder()
                     .id("archive")
                     .type(Delete.class.getName())
@@ -153,17 +203,43 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 delete.run(runContext);
             }
         } else if (action == ActionInterface.Action.MOVE) {
+            String rMoveDirectory = runContext.render(moveDirectory).as(String.class).orElseThrow();
+            String sourcePrefix = null;
+            if (from != null) {
+                String rFrom = runContext.render(from).as(String.class).orElse(null);
+                if (rFrom != null) {
+                    URI fromUri = encode(runContext, rFrom);
+                    if (fromUri.getPath() != null) {
+                        sourcePrefix = StringUtils.stripStart(fromUri.getPath(), "/");
+                    }
+                }
+            }
+
+            Map<String, Blob> destinationMap = new HashMap<>();
+            java.util.List<Pair<Blob, String>> targets = new ArrayList<>();
             for (Blob blob : blobList) {
+                if (blob.isDirectory() || blob.getName().endsWith("/")) {
+                    continue;
+                }
+                String targetUri = destinationUri(rMoveDirectory, blob.getName(), sourcePrefix);
+                Blob existing = destinationMap.put(targetUri, blob);
+                if (existing != null) {
+                    throw new IllegalStateException(
+                        "Cannot move blobs to '%s': multiple source blobs would overwrite the same destination path: '%s' and '%s'. Set a `from` prefix that covers both folders, or narrow the listing with `regExp`, so each blob maps to its own path under `moveDirectory`."
+                            .formatted(targetUri, existing.getName(), blob.getName())
+                    );
+                }
+                targets.add(Pair.of(blob, targetUri));
+            }
+
+            for (Pair<Blob, String> target : targets) {
+                Blob blob = target.getLeft();
+                String targetUri = target.getRight();
                 Copy copy = Copy.builder()
                     .id("archive")
                     .type(Copy.class.getName())
                     .from(Property.ofValue("gs://" + blob.getBucket() + "/" + blob.getName()))
-                    .to(
-                        Property.ofValue(
-                            StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")
-                                + "/" + FilenameUtils.getName(blob.getName())
-                        )
-                    )
+                    .to(Property.ofValue(targetUri))
                     .delete(Property.ofValue(true))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
@@ -217,8 +293,9 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
         Downloads.performAction(
             run.getBlobs(),
-            runContext.render(this.action).as(Action.class).orElseThrow(),
+            runContext.render(this.action).as(Action.class).orElse(Action.NONE),
             this.moveDirectory,
+            this.from,
             runContext,
             this.projectId,
             this.serviceAccount,
