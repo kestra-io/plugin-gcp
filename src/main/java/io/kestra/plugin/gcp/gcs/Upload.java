@@ -97,7 +97,7 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
 
     @Schema(
         title = "Destination object URI",
-        description = "gs:// bucket/path for the uploaded object"
+        description = "gs:// bucket/path for the uploaded object. Special characters and partition brackets are automatically percent-encoded if unencoded."
     )
     @PluginProperty(group = "destination")
     private Property<String> to;
@@ -232,7 +232,7 @@ public class Upload extends AbstractGcs implements RunnableTask<Upload.Output> {
 
             return Output
                 .builder()
-                .uri(new URI("gs://" + destination.getBucket() + "/" + encode(destination.getName())))
+                .uri(new URI("gs://" + destination.getBucket() + "/" + encodePath(destination.getName())))
                 .md5(computedMd5)
                 .crc32c(computedCrc32c)
                 .build();

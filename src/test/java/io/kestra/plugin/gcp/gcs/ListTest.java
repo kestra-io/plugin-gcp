@@ -111,7 +111,7 @@ class ListTest extends AbstractFlociGcpTest {
                     .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
                     .filter(Property.ofValue(ListInterface.Filter.FILES))
                     .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
-                    .regExp(Property.ofValue(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)"))
+                    .regExp(Property.ofValue(".*\\/" + dir + "\\/" + lastFileName + " \\(1\\).(yaml|yml)"))
                     .build()
             );
             run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
