@@ -2,13 +2,14 @@ package io.kestra.plugin.gcp.gcs;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
+import com.google.cloud.storage.Blob;
 import com.google.common.collect.ImmutableMap;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -19,17 +20,19 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.AbstractFlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class CopyTest {
+class CopyTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -43,58 +46,90 @@ class CopyTest {
     void run() throws Exception {
         String in = FriendlyId.createFriendlyId();
         String out = FriendlyId.createFriendlyId();
-
-        URI source = storageInterface.put(
-            TenantService.MAIN_TENANT,
-            null,
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(
-                new File(
-                    Objects.requireNonNull(
-                        UploadTest.class.getClassLoader()
-                            .getResource("application.yml")
-                    )
-                        .toURI()
-                )
+        String inputObject = "tasks/gcp/copy/" + in + ".yml";
+        String outputObject = "tasks/gcp/copy/" + out + ".yml";
+        URI source = null;
+        byte[] expectedContents;
+        try (
+            InputStream input = Objects.requireNonNull(
+                CopyTest.class.getClassLoader().getResourceAsStream("application.yml")
             )
-        );
+        ) {
+            expectedContents = input.readAllBytes();
+        }
 
-        Upload upload = Upload.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            try (
+                FileInputStream input = new FileInputStream(
+                    new File(
+                        Objects.requireNonNull(
+                            UploadTest.class.getClassLoader()
+                                .getResource("application.yml")
+                        )
+                            .toURI()
+                    )
+                )
+            ) {
+                source = storageInterface.put(
+                    TenantService.MAIN_TENANT,
+                    null,
+                    new URI("/" + FriendlyId.createFriendlyId()),
+                    input
+                );
+            }
 
-        upload.run(runContext(upload));
+            Upload upload = connections.spy(
+                Upload.builder()
+                    .id(CopyTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + inputObject))
+                    .build()
+            );
 
-        Copy task = Copy.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Copy.class.getName())
-            .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + out + ".yml"))
-            .build();
+            upload.run(runContext(upload));
 
-        Copy.Output run = task.run(runContext(task));
+            Copy task = connections.spy(
+                Copy.builder()
+                    .id(CopyTest.class.getSimpleName())
+                    .type(Copy.class.getName())
+                    .from(Property.ofValue("gs://{{inputs.bucket}}/" + inputObject))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + outputObject))
+                    .build()
+            );
 
-        assertThat(run.getUri(), is(new URI("gs://" + bucket + "/tasks/gcp/copy/" + out + ".yml")));
+            Copy.Output run = task.run(runContext(task));
+
+            assertThat(run.getUri(), is(new URI("gs://" + bucket + "/" + outputObject)));
+
+            Blob copied = storage.get(bucket, outputObject);
+            assertThat(copied, notNullValue());
+            assertArrayEquals(expectedContents, copied.getContent());
+        } finally {
+            storage.delete(bucket, inputObject);
+            storage.delete(bucket, outputObject);
+            if (source != null) {
+                storageInterface.delete(TenantService.MAIN_TENANT, null, source);
+            }
+        }
     }
 
     @Test
-    void sameException() {
+    void sameException() throws Exception {
         String in = FriendlyId.createFriendlyId();
 
-        Copy task = Copy.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Copy.class.getName())
-            .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            Copy task = connections.spy(
+                Copy.builder()
+                    .id(CopyTest.class.getSimpleName())
+                    .type(Copy.class.getName())
+                    .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+                    .build()
+            );
 
-        assertThrows(IllegalArgumentException.class, () ->
-        {
-            task.run(runContext(task));
-        });
+            assertThrows(IllegalArgumentException.class, () -> task.run(runContext(task)));
+        }
     }
 
     private RunContext runContext(Task task) {

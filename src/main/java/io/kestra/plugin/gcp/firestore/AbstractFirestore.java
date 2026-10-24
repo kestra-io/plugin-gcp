@@ -43,8 +43,11 @@ abstract class AbstractFirestore extends AbstractTask {
     protected Property<String> databaseId = Property.ofValue("(default)");
 
     Firestore connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        return FirestoreOptions.newBuilder()
-            .setCredentials(this.credentials(runContext))
+        // Resolve credentials before projectId because credentials may infer it from the service account.
+        var builder = FirestoreOptions.newBuilder();
+        builder.setCredentials(this.credentials(runContext));
+
+        return builder
             .setProjectId(runContext.render(projectId).as(String.class).orElse(null))
             .setDatabaseId(runContext.render(databaseId).as(String.class).orElse("(default)"))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))

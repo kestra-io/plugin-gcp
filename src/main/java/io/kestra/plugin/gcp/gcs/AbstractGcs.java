@@ -29,8 +29,8 @@ public abstract class AbstractGcs extends AbstractTask {
     private static final Pattern SCHEME_AUTH_PATTERN = Pattern.compile("^([a-zA-Z][a-zA-Z0-9+.-]*://[^/]*)(/.*)?$");
 
     Storage connection(RunContext runContext) throws IOException, IllegalVariableEvaluationException {
-        return StorageOptions
-            .newBuilder()
+        // Resolve credentials before projectId because credentials may infer it from the service account.
+        return StorageOptions.newBuilder()
             .setCredentials(this.credentials(runContext))
             .setProjectId(runContext.render(projectId).as(String.class).orElse(null))
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))

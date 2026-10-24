@@ -21,6 +21,7 @@ import com.google.pubsub.v1.ProjectSubscriptionName;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -34,7 +35,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import reactor.core.publisher.Flux;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -209,8 +209,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
                     }
                 };
 
-                Subscriber subscriber = Subscriber
-                    .newBuilder(subscriptionName, receiver)
+                Subscriber subscriber = Subscriber.newBuilder(subscriptionName, receiver)
                     .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
                     .build();
 

@@ -135,6 +135,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-params"
     testImplementation "org.hamcrest:hamcrest"
     testImplementation "org.hamcrest:hamcrest-library"
+    testImplementation "io.floci:testcontainers-floci-gcp:2.17.0"
 
     testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id'
     testImplementation 'org.mockito:mockito-junit-jupiter'

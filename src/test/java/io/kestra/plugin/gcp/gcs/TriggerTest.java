@@ -1,16 +1,27 @@
 package io.kestra.plugin.gcp.gcs;
 
+import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
+import com.google.cloud.storage.Storage;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.conditions.ConditionContext;
@@ -18,9 +29,12 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.StatefulTriggerInterface;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.Await;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.AbstractFlociGcpTest;
 import io.kestra.plugin.gcp.gcs.models.Blob;
 
 import io.micronaut.context.annotation.Value;
@@ -32,16 +46,76 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class TriggerTest {
+class TriggerTest extends AbstractFlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
     @Inject
     private GcsTestUtils testUtils;
 
+    @Inject
+    private StorageInterface storageInterface;
+
     @Value("${kestra.tasks.gcs.bucket}")
     private String bucket;
+
+    private GcsTestConnections.Scope flociConnections;
+    private final List<String> cleanupPrefixes = new ArrayList<>();
+    private final Queue<URI> cleanupStorageFiles = new ConcurrentLinkedQueue<>();
+
+    @BeforeEach
+    void useFlociEndpoint() {
+        flociConnections = GcsTestConnections.useFloci(
+            FLOCI_GCP.getEndpoint(),
+            io.kestra.plugin.gcp.gcs.List.class,
+            Copy.class
+        );
+    }
+
+    @AfterEach
+    void cleanUpGcsObjects() throws Exception {
+        Exception cleanupFailure = null;
+        try {
+            for (String prefix : cleanupPrefixes) {
+                try {
+                    var objects = new ArrayList<com.google.cloud.storage.Blob>();
+                    storage.list(bucket, Storage.BlobListOption.prefix(prefix)).iterateAll().forEach(objects::add);
+                    objects.forEach(blob -> storage.delete(blob.getBlobId()));
+                } catch (Exception e) {
+                    cleanupFailure = addCleanupFailure(cleanupFailure, e);
+                }
+            }
+
+            for (URI uri : cleanupStorageFiles) {
+                try {
+                    storageInterface.delete(TenantService.MAIN_TENANT, null, uri);
+                } catch (Exception e) {
+                    cleanupFailure = addCleanupFailure(cleanupFailure, e);
+                }
+            }
+        } finally {
+            if (flociConnections != null) {
+                try {
+                    flociConnections.close();
+                } catch (Exception e) {
+                    cleanupFailure = addCleanupFailure(cleanupFailure, e);
+                }
+            }
+        }
+
+        if (cleanupFailure != null) {
+            throw cleanupFailure;
+        }
+    }
+
+    private Exception addCleanupFailure(Exception failure, Exception next) {
+        if (failure == null) {
+            return next;
+        }
+
+        failure.addSuppressed(next);
+        return failure;
+    }
 
     @Test
     void moveFromFlow() throws Exception {
@@ -49,12 +123,14 @@ class TriggerTest {
 
         var fromDir = "tasks/gcp/upload/trigger/move-from/" + folderId + "/";
         var moveDir = "tasks/gcp/move-to/" + folderId + "/";
+        cleanupPrefixes.add(fromDir);
+        cleanupPrefixes.add(moveDir);
 
         testUtils.upload("trigger/move-from/" + folderId + "/" + IdUtils.create());
         testUtils.upload("trigger/move-from/" + folderId + "/" + IdUtils.create());
 
         io.kestra.plugin.gcp.gcs.Trigger trigger = io.kestra.plugin.gcp.gcs.Trigger.builder()
-            .id("watch")
+            .id("watch-" + folderId)
             .type(io.kestra.plugin.gcp.gcs.Trigger.class.getName())
             .from(Property.ofValue(String.format("gs://%s/%s", bucket, fromDir)))
             .interval(java.time.Duration.ofSeconds(10))
@@ -64,32 +140,38 @@ class TriggerTest {
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
 
         @SuppressWarnings("unchecked")
         java.util.List<Blob> blobs = (List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
         assertThat(blobs.size(), is(2));
+        assertThat(objectCount(fromDir), is(0L));
+        assertThat(objectCount(moveDir), is(2L));
     }
 
     @Test
     void move() throws Exception {
         String out = FriendlyId.createFriendlyId();
         String fileId = IdUtils.create();
+        String sourcePrefix = "tasks/gcp/upload/trigger/" + out + "/";
+        String movePrefix = "test/move/" + out + "/";
+        cleanupPrefixes.add(sourcePrefix);
+        cleanupPrefixes.add(movePrefix);
 
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
             .type(Trigger.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/trigger/" + out + "/"))
+            .from(Property.ofValue("gs://" + bucket + "/" + sourcePrefix))
             .action(Property.ofValue(ActionInterface.Action.MOVE))
-            .moveDirectory(Property.ofValue("gs://" + bucket + "/test/move"))
+            .moveDirectory(Property.ofValue("gs://" + bucket + "/" + movePrefix))
             .build();
 
         Upload.Output upload = testUtils.upload("trigger/" + out + "/" + fileId);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -99,29 +181,36 @@ class TriggerTest {
 
         assertThrows(IllegalArgumentException.class, () ->
         {
-            Download task = Download.builder()
-                .id(DownloadTest.class.getSimpleName())
-                .type(Download.class.getName())
-                .from(Property.ofValue(upload.getUri().toString()))
-                .build();
+            Download task = flociConnections.spy(
+                Download.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(Property.ofValue(upload.getUri().toString()))
+                    .build()
+            );
 
             task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         });
 
-        Download task = Download.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/test/move/" + fileId + ".yml"))
-            .build();
+        Download task = flociConnections.spy(
+            Download.builder()
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .from(Property.ofValue("gs://" + bucket + "/" + movePrefix + fileId + ".yml"))
+                .build()
+        );
 
         Download.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getBucket(), is(bucket));
+        assertThat(objectCount(sourcePrefix), is(0L));
+        assertThat(objectCount(movePrefix), is(1L));
     }
 
     @Test
     void none() throws Exception {
         String base = "trigger/none/" + IdUtils.create() + "/";
         String file = base + FriendlyId.createFriendlyId();
+        cleanupPrefixes.add("tasks/gcp/upload/" + base);
 
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
@@ -134,7 +223,7 @@ class TriggerTest {
         Upload.Output upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -142,20 +231,24 @@ class TriggerTest {
         java.util.List<Blob> urls = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
         assertThat(urls.size(), is(1));
 
-        Download task = Download.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(Property.ofValue(upload.getUri().toString()))
-            .build();
+        Download task = flociConnections.spy(
+            Download.builder()
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .from(Property.ofValue(upload.getUri().toString()))
+                .build()
+        );
 
         Assertions.assertDoesNotThrow(() -> task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of())));
 
-        Delete delete = Delete.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .uri(Property.ofValue(upload.getUri().toString()))
-            .build();
-        delete.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+        Delete delete = flociConnections.spy(
+            Delete.builder()
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .uri(Property.ofValue(upload.getUri().toString()))
+                .build()
+        );
+        delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
     }
 
     @Test
@@ -164,6 +257,7 @@ class TriggerTest {
         // that detects files must not fail with "No value present" (NoSuchElementException).
         String base = "trigger/no-action/" + IdUtils.create() + "/";
         String file = base + FriendlyId.createFriendlyId();
+        cleanupPrefixes.add("tasks/gcp/upload/" + base);
 
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
@@ -176,7 +270,7 @@ class TriggerTest {
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = Assertions.assertDoesNotThrow(
-            () -> trigger.evaluate(context.getKey(), context.getValue())
+            () -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue())
         );
 
         assertThat(execution.isPresent(), is(true));
@@ -185,18 +279,63 @@ class TriggerTest {
         java.util.List<Blob> urls = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
         assertThat(urls.size(), is(1));
 
-        Delete delete = Delete.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .uri(Property.ofValue(upload.getUri().toString()))
-            .build();
+        Delete delete = flociConnections.spy(
+            Delete.builder()
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .uri(Property.ofValue(upload.getUri().toString()))
+                .build()
+        );
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
+    }
+
+    @Test
+    void shouldEvaluateOnWorkerThread() throws Exception {
+        String base = "trigger/worker-thread/" + IdUtils.create() + "/";
+        String sourcePrefix = "tasks/gcp/upload/" + base;
+        cleanupPrefixes.add(sourcePrefix);
+
+        testUtils.upload(base + FriendlyId.createFriendlyId());
+
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/" + sourcePrefix))
+            .action(Property.ofValue(ActionInterface.Action.NONE))
+            .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
+            .build();
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Optional<Execution> execution;
+        try {
+            execution = executor.submit(() ->
+            {
+                try (
+                    GcsTestConnections.Scope connections = GcsTestConnections.useFloci(
+                        FLOCI_GCP.getEndpoint(),
+                        io.kestra.plugin.gcp.gcs.List.class
+                    )
+                ) {
+                    return evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+                }
+            }).get(10, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(execution.isPresent(), is(true));
+
+        @SuppressWarnings("unchecked")
+        java.util.List<Blob> blobs = (java.util.List<Blob>) execution.get().getTrigger().getVariables().get("blobs");
+        assertThat(blobs.size(), is(1));
     }
 
     @Test
     void shouldExecuteOnCreate() throws Exception {
         String base = "trigger/on-create/" + IdUtils.create() + "/";
         String file = base + FriendlyId.createFriendlyId();
+        cleanupPrefixes.add("tasks/gcp/upload/" + base);
 
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
@@ -212,7 +351,7 @@ class TriggerTest {
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -220,11 +359,13 @@ class TriggerTest {
 
         assertThat(execution.isPresent(), is(true));
 
-        Delete delete = Delete.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .uri(Property.ofValue(upload.getUri().toString()))
-            .build();
+        Delete delete = flociConnections.spy(
+            Delete.builder()
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .uri(Property.ofValue(upload.getUri().toString()))
+                .build()
+        );
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
     }
 
@@ -232,6 +373,7 @@ class TriggerTest {
     void shouldExecuteOnUpdate() throws Exception {
         String base = "trigger/on-update/" + IdUtils.create() + "/";
         String file = base + FriendlyId.createFriendlyId();
+        cleanupPrefixes.add("tasks/gcp/upload/" + base);
         var upload = testUtils.upload(file);
 
         Trigger trigger = Trigger.builder()
@@ -245,7 +387,7 @@ class TriggerTest {
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-        trigger.evaluate(context.getKey(), context.getValue());
+        evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
 
         // we update the file to trigger the update event
         testUtils.update(file);
@@ -253,7 +395,7 @@ class TriggerTest {
 
         Optional<Execution> execution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -261,11 +403,13 @@ class TriggerTest {
 
         assertThat(execution.isPresent(), is(true));
 
-        Delete delete = Delete.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .uri(Property.ofValue(upload.getUri().toString()))
-            .build();
+        Delete delete = flociConnections.spy(
+            Delete.builder()
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .uri(Property.ofValue(upload.getUri().toString()))
+                .build()
+        );
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
     }
 
@@ -273,6 +417,7 @@ class TriggerTest {
     void shouldExecuteOnCreateOrUpdate() throws Exception {
         String base = "trigger/on-create_or_update/" + IdUtils.create() + "/";
         String file = base + FriendlyId.createFriendlyId();
+        cleanupPrefixes.add("tasks/gcp/upload/" + base);
 
         Trigger trigger = Trigger.builder()
             .id(TriggerTest.class.getSimpleName() + IdUtils.create())
@@ -285,7 +430,7 @@ class TriggerTest {
         var upload = testUtils.upload(file);
 
         Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> createExecution = trigger.evaluate(context.getKey(), context.getValue());
+        Optional<Execution> createExecution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
 
         assertThat(createExecution.isPresent(), is(true));
 
@@ -294,7 +439,7 @@ class TriggerTest {
 
         Optional<Execution> updateExecution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> trigger.evaluate(context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -302,11 +447,98 @@ class TriggerTest {
 
         assertThat(updateExecution.isPresent(), is(true));
 
-        Delete delete = Delete.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .uri(Property.ofValue(upload.getUri().toString()))
-            .build();
+        Delete delete = flociConnections.spy(
+            Delete.builder()
+                .id(DownloadTest.class.getSimpleName())
+                .type(Download.class.getName())
+                .uri(Property.ofValue(upload.getUri().toString()))
+                .build()
+        );
         delete.run(TestsUtils.mockRunContext(runContextFactory, delete, ImmutableMap.of()));
+    }
+
+    @Test
+    void shouldDeleteTriggeredObjectsAndPreserveUnrelatedObjects() throws Exception {
+        String id = IdUtils.create();
+        String sourcePrefix = "tasks/gcp/upload/trigger/delete/" + id + "/";
+        String sourceName = sourcePrefix + "source.yml";
+        String unrelatedName = "tasks/gcp/upload/trigger/delete/" + id + "-unrelated/keep.yml";
+        cleanupPrefixes.add(sourcePrefix);
+        cleanupPrefixes.add("tasks/gcp/upload/trigger/delete/" + id + "-unrelated/");
+
+        testUtils.upload("trigger/delete/" + id + "/source");
+        testUtils.upload("trigger/delete/" + id + "-unrelated/keep");
+
+        assertThat(storage.get(bucket, sourceName), notNullValue());
+        assertThat(storage.get(bucket, unrelatedName), notNullValue());
+
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + id)
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/" + sourcePrefix))
+            .action(Property.ofValue(ActionInterface.Action.DELETE))
+            .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
+            .build();
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+
+        Optional<Execution> execution;
+        try (
+            GcsTestConnections.Scope deleteConnection = GcsTestConnections.useFloci(
+                FLOCI_GCP.getEndpoint(),
+                Delete.class
+            )
+        ) {
+            execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+        }
+
+        assertThat(execution.isPresent(), is(true));
+        Object triggerBlobs = execution.get().getTrigger().getVariables().get("blobs");
+        assertThat(triggerBlobs, instanceOf(List.class));
+        List<?> blobs = (List<?>) triggerBlobs;
+        assertThat(blobs, hasSize(1));
+
+        Object triggeredBlob = blobs.get(0);
+        String triggeredName = triggeredBlob instanceof Blob blob
+            ? blob.getName()
+            : Objects.toString(((Map<?, ?>) triggeredBlob).get("name"), null);
+        assertThat(triggeredName, is(sourceName));
+        assertThat(storage.get(bucket, sourceName), nullValue());
+        assertThat(storage.get(bucket, unrelatedName), notNullValue());
+    }
+
+    private Optional<Execution> evaluateAndTrackStorage(
+        Trigger trigger,
+        ConditionContext conditionContext,
+        io.kestra.core.models.triggers.Trigger triggerContext) throws Exception {
+        Optional<Execution> execution = trigger.evaluate(conditionContext, triggerContext);
+        execution.ifPresent(this::trackStorageFiles);
+        return execution;
+    }
+
+    private void trackStorageFiles(Execution execution) {
+        Object triggerBlobs = execution.getTrigger().getVariables().get("blobs");
+        if (!(triggerBlobs instanceof Iterable<?> blobs)) {
+            return;
+        }
+
+        for (Object blob : blobs) {
+            URI uri = null;
+            if (blob instanceof Blob gcsBlob) {
+                uri = gcsBlob.getUri();
+            } else if (blob instanceof Map<?, ?> blobFields) {
+                Object value = blobFields.get("uri");
+                if (value != null) {
+                    uri = URI.create(value.toString());
+                }
+            }
+
+            if (uri != null) {
+                cleanupStorageFiles.add(uri);
+            }
+        }
+    }
+
+    private long objectCount(String prefix) {
+        return Iterables.size(storage.list(bucket, Storage.BlobListOption.prefix(prefix)).iterateAll());
     }
 }

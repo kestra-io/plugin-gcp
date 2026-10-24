@@ -42,11 +42,9 @@ class GcsTestUtils {
     }
 
     Upload.Output upload(String out, String resource) throws Exception {
-        URI source = storageInterface.put(
-            TenantService.MAIN_TENANT,
-            null,
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(
+        URI source;
+        try (
+            FileInputStream input = new FileInputStream(
                 new File(
                     Objects.requireNonNull(
                         UploadTest.class.getClassLoader()
@@ -55,38 +53,58 @@ class GcsTestUtils {
                         .toURI()
                 )
             )
-        );
+        ) {
+            source = storageInterface.put(
+                TenantService.MAIN_TENANT,
+                null,
+                new URI("/" + FriendlyId.createFriendlyId()),
+                input
+            );
+        }
 
-        Upload task = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource)))
-            .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci()) {
+            Upload task = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource)))
+                    .build()
+            );
 
-        return task.run(runContext(task));
+            return task.run(runContext(task));
+        } finally {
+            storageInterface.delete(TenantService.MAIN_TENANT, null, source);
+        }
     }
 
     Upload.Output update(String out) throws Exception {
         String content = "updated file: " + IdUtils.create();
 
-        InputStream input = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+        URI source;
+        try (InputStream input = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
+            source = storageInterface.put(
+                TenantService.MAIN_TENANT,
+                null,
+                new URI("/" + FriendlyId.createFriendlyId()),
+                input
+            );
+        }
 
-        URI source = storageInterface.put(
-            TenantService.MAIN_TENANT,
-            null,
-            new URI("/" + FriendlyId.createFriendlyId()),
-            input
-        );
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci()) {
+            Upload task = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
+                    .build()
+            );
 
-        Upload task = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
-            .build();
-
-        return task.run(runContext(task));
+            return task.run(runContext(task));
+        } finally {
+            storageInterface.delete(TenantService.MAIN_TENANT, null, source);
+        }
     }
 
     RunContext runContext(Task task) {

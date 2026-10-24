@@ -1,12 +1,18 @@
 package io.kestra.plugin.gcp.firestore;
 
-import com.google.cloud.firestore.Firestore;
+import java.util.concurrent.TimeUnit;
 
-import static io.kestra.core.utils.Rethrow.throwConsumer;
+import com.google.cloud.firestore.Firestore;
 
 abstract class FirestoreTestUtil {
     public static void clearCollection(Firestore firestore, String collectionName) throws Exception {
-        var collection = firestore.collection(collectionName);
-        collection.listDocuments().forEach(throwConsumer(doc -> doc.delete().get()));
+        var documents = firestore.collection(collectionName)
+            .get()
+            .get(30, TimeUnit.SECONDS)
+            .getDocuments();
+
+        for (var document : documents) {
+            document.getReference().delete().get(30, TimeUnit.SECONDS);
+        }
     }
 }
