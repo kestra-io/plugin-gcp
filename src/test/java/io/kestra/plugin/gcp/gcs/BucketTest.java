@@ -10,9 +10,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Acl;
-import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
-import com.google.cloud.storage.Storage;
 import com.google.common.collect.ImmutableMap;
 
 import io.kestra.core.junit.annotations.KestraTest;
@@ -28,11 +26,6 @@ import jakarta.inject.Inject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-/**
- * Floci 0.11.0 does not faithfully emulate bucket website index-page metadata or inline bucket ACL behavior.
- * {@code createUpdate()} and {@code update()} stay credential-gated for website metadata, and {@code acl()} stays
- * credential-gated for inline bucket ACL behavior. Emulator-compatible cases live in {@link FlociBucketTest}.
- */
 @KestraTest
 @EnabledIfEnvironmentVariable(
     named = "GOOGLE_APPLICATION_CREDENTIALS",
@@ -68,15 +61,15 @@ class BucketTest {
     }
 
     private void createExistingBucket(String bucketId) throws Exception {
-        CreateBucket task = createBuilder().build();
-        try (Storage connection = task.connection(runContext(bucketId))) {
+        var task = createBuilder().build();
+        try (var connection = task.connection(runContext(bucketId))) {
             connection.create(BucketInfo.of(bucketId));
         }
     }
 
     private void cleanUpBucket(String bucketId) throws Exception {
-        CreateBucket task = createBuilder().build();
-        try (Storage connection = task.connection(runContext(bucketId))) {
+        var task = createBuilder().build();
+        try (var connection = task.connection(runContext(bucketId))) {
             if (connection.get(bucketId) != null) {
                 connection.delete(bucketId);
             }
@@ -88,13 +81,13 @@ class BucketTest {
         try {
             createExistingBucket(CREATE_UPDATE_BUCKET);
 
-            CreateBucket task = createBuilder()
+            var task = createBuilder()
                 .indexPage(Property.ofValue("createUpdate"))
                 .ifExists(Property.ofValue(CreateBucket.IfExists.UPDATE))
                 .build();
 
-            RunContext runContext = runContext(CREATE_UPDATE_BUCKET);
-            AbstractBucket.Output run = task.run(runContext);
+            var runContext = runContext(CREATE_UPDATE_BUCKET);
+            var run = task.run(runContext);
 
             assertThat(run.getBucket().getName(), is(runContext.getVariables().get("bucket")));
             assertThat(run.getBucket().getIndexPage(), is("createUpdate"));
@@ -108,7 +101,7 @@ class BucketTest {
         try {
             createExistingBucket(UPDATE_BUCKET);
 
-            UpdateBucket task = UpdateBucket.builder()
+            var task = UpdateBucket.builder()
                 .id(UpdateBucket.class.getSimpleName())
                 .type(CreateBucket.class.getName())
                 .name(Property.ofExpression("{{bucket}}"))
@@ -116,8 +109,8 @@ class BucketTest {
                 .indexPage(Property.ofValue("update"))
                 .build();
 
-            RunContext runContext = runContext(UPDATE_BUCKET);
-            AbstractBucket.Output run = task.run(runContext);
+            var runContext = runContext(UPDATE_BUCKET);
+            var run = task.run(runContext);
 
             assertThat(run.getBucket().getName(), is(runContext.getVariables().get("bucket")));
             assertThat(run.getBucket().getIndexPage(), is("update"));
@@ -128,7 +121,7 @@ class BucketTest {
 
     @Test
     void acl() throws Exception {
-        CreateBucket task = createBuilder()
+        var task = createBuilder()
             .indexPage(Property.ofValue("createUpdate"))
             .acl(
                 Collections.singletonList(
@@ -145,16 +138,16 @@ class BucketTest {
             .ifExists(Property.ofValue(CreateBucket.IfExists.UPDATE))
             .build();
 
-        RunContext rc = runContext(ACL_BUCKET);
+        var rc = runContext(ACL_BUCKET);
 
         try {
-            AbstractBucket.Output run = task.run(rc);
+            var run = task.run(rc);
 
             assertThat(run.getBucket().getName(), is(rc.getVariables().get("bucket")));
             assertThat(run.getBucket().getIndexPage(), is("createUpdate"));
 
-            try (Storage connection = task.connection(rc)) {
-                Bucket bucket = connection.get(run.getBucket().getName());
+            try (var connection = task.connection(rc)) {
+                var bucket = connection.get(run.getBucket().getName());
 
                 assertThat(null, not(bucket));
 
@@ -169,7 +162,6 @@ class BucketTest {
         }
     }
 
-    // Custom match for Acl
     private Matcher<Acl> matchingAcl(Acl expected) {
         return new TypeSafeMatcher<>() {
             @Override

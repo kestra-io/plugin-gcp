@@ -6,7 +6,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -30,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @KestraTest
-@Testcontainers
 class DeleteTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
@@ -47,7 +45,7 @@ class DeleteTest extends AbstractFlociGcpTest {
         String objectName = "tasks/gcp/upload/" + out + ".yml";
         URI source = null;
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             File file = new File(
                 Objects.requireNonNull(
                     DeleteTest.class.getClassLoader()
@@ -65,22 +63,26 @@ class DeleteTest extends AbstractFlociGcpTest {
                 );
             }
 
-            Upload upload = Upload.builder()
-                .id(UploadTest.class.getSimpleName())
-                .type(Upload.class.getName())
-                .from(Property.ofValue(source.toString()))
-                .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
-                .build();
+            Upload upload = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
+                    .build()
+            );
 
             Upload.Output uploadOutput = upload.run(runContext(upload));
             assertThat(uploadOutput.getUri().toString(), is("gs://" + bucket + "/" + objectName));
             assertNotNull(storage.get(bucket, objectName));
 
-            Delete task = Delete.builder()
-                .id(DeleteTest.class.getSimpleName())
-                .type(Download.class.getName())
-                .uri(Property.ofValue(uploadOutput.getUri().toString()))
-                .build();
+            Delete task = connections.spy(
+                Delete.builder()
+                    .id(DeleteTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .uri(Property.ofValue(uploadOutput.getUri().toString()))
+                    .build()
+            );
 
             Delete.Output run = task.run(runContext(task));
 

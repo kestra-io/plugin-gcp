@@ -8,7 +8,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +32,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @KestraTest
-@Testcontainers
 class DownloadTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
@@ -51,7 +49,7 @@ class DownloadTest extends AbstractFlociGcpTest {
         URI source = null;
         URI downloaded = null;
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             File file = new File(
                 Objects.requireNonNull(
                     DownloadTest.class.getClassLoader()
@@ -69,21 +67,25 @@ class DownloadTest extends AbstractFlociGcpTest {
                 );
             }
 
-            Upload upload = Upload.builder()
-                .id(UploadTest.class.getSimpleName())
-                .type(Upload.class.getName())
-                .from(Property.ofValue(source.toString()))
-                .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
-                .build();
+            Upload upload = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
+                    .build()
+            );
 
             Upload.Output uploadOutput = upload.run(runContext(upload));
             assertNotNull(storage.get(bucket, objectName));
 
-            Download task = Download.builder()
-                .id(DownloadTest.class.getSimpleName())
-                .type(Download.class.getName())
-                .from(Property.ofValue(uploadOutput.getUri().toString()))
-                .build();
+            Download task = connections.spy(
+                Download.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(Property.ofValue(uploadOutput.getUri().toString()))
+                    .build()
+            );
 
             Download.Output run = task.run(runContext(task));
             downloaded = run.getUri();
@@ -116,7 +118,7 @@ class DownloadTest extends AbstractFlociGcpTest {
         URI source = null;
         URI downloaded = null;
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             File file = new File(
                 Objects.requireNonNull(
                     DownloadTest.class.getClassLoader()
@@ -134,22 +136,26 @@ class DownloadTest extends AbstractFlociGcpTest {
                 );
             }
 
-            Upload upload = Upload.builder()
-                .id(UploadTest.class.getSimpleName())
-                .type(Upload.class.getName())
-                .from(Property.ofValue(source.toString()))
-                .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
-                .build();
+            Upload upload = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
+                    .build()
+            );
 
             Upload.Output uploadOutput = upload.run(runContext(upload));
             assertNotNull(storage.get(bucket, objectName));
 
-            Download task = Download.builder()
-                .id(DownloadTest.class.getSimpleName())
-                .type(Download.class.getName())
-                .from(Property.ofValue(uploadOutput.getUri().toString()))
-                .validateChecksum(Property.ofValue(true))
-                .build();
+            Download task = connections.spy(
+                Download.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(Property.ofValue(uploadOutput.getUri().toString()))
+                    .validateChecksum(Property.ofValue(true))
+                    .build()
+            );
 
             Download.Output run = task.run(runContext(task));
             downloaded = run.getUri();

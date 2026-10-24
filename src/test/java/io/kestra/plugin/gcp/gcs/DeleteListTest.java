@@ -1,7 +1,6 @@
 package io.kestra.plugin.gcp.gcs;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Storage;
@@ -22,7 +21,6 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-@Testcontainers
 class DeleteListTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
@@ -38,18 +36,20 @@ class DeleteListTest extends AbstractFlociGcpTest {
         String dir = FriendlyId.createFriendlyId();
         String prefix = "tasks/gcp/" + dir + "/";
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             try {
                 for (int i = 0; i < 10; i++) {
                     ListTest.upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
                 }
 
-                DeleteList task = DeleteList.builder()
-                    .id(DeleteList.class.getSimpleName())
-                    .type(DeleteList.class.getName())
-                    .concurrent(8)
-                    .from(Property.ofValue("gs://" + this.bucket + "/" + prefix))
-                    .build();
+                DeleteList task = connections.spy(
+                    DeleteList.builder()
+                        .id(DeleteList.class.getSimpleName())
+                        .type(DeleteList.class.getName())
+                        .concurrent(8)
+                        .from(Property.ofValue("gs://" + this.bucket + "/" + prefix))
+                        .build()
+                );
                 DeleteList.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
 
                 assertThat(run.getCount(), is(10L));

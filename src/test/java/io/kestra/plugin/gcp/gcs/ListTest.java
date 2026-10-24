@@ -7,7 +7,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -28,7 +27,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-@Testcontainers
 class ListTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
@@ -44,7 +42,7 @@ class ListTest extends AbstractFlociGcpTest {
         String dir = FriendlyId.createFriendlyId();
         String prefix = "tasks/gcp/" + dir + "/";
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             String lastFileName = null;
 
             for (int i = 0; i < 10; i++) {
@@ -53,57 +51,69 @@ class ListTest extends AbstractFlociGcpTest {
             upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub");
 
             // directory listing
-            List task = task()
-                .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-                .build();
+            List task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+                    .build()
+            );
             List.Output run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
             assertThat(run.getBlobs().size(), is(11));
             assertThat(run.getBlobs().stream().filter(Blob::isDirectory).count(), is(1l));
 
             // only dir
-            task = task()
-                .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-                .filter(Property.ofValue(ListInterface.Filter.DIRECTORY))
-                .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
-                .build();
+            task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+                    .filter(Property.ofValue(ListInterface.Filter.DIRECTORY))
+                    .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
+                    .build()
+            );
             run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
             assertThat(run.getBlobs().size(), is(1));
             assertThat(run.getBlobs().get(0).isDirectory(), is(true));
 
             // files only
-            task = task()
-                .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-                .filter(Property.ofValue(ListInterface.Filter.FILES))
-                .build();
+            task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+                    .filter(Property.ofValue(ListInterface.Filter.FILES))
+                    .build()
+            );
             run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
             assertThat(run.getBlobs().size(), is(10));
 
             // recursive
-            task = task()
-                .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-                .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
-                .build();
+            task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+                    .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
+                    .build()
+            );
             run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
             assertThat(run.getBlobs().size(), is(11));
             run.getBlobs().forEach(blob -> assertThat(blob.isDirectory(), is(false)));
 
             // regexp
-            task = task()
-                .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-                .filter(Property.ofValue(ListInterface.Filter.FILES))
-                .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
-                .regExp(Property.ofValue(".*\\/" + dir + "\\/.*"))
-                .build();
+            task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+                    .filter(Property.ofValue(ListInterface.Filter.FILES))
+                    .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
+                    .regExp(Property.ofValue(".*\\/" + dir + "\\/.*"))
+                    .build()
+            );
             run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
             assertThat(run.getBlobs().size(), is(10));
 
             // regexp on file
-            task = task()
-                .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
-                .filter(Property.ofValue(ListInterface.Filter.FILES))
-                .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
-                .regExp(Property.ofValue(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)"))
-                .build();
+            task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + this.bucket + "/tasks/gcp/" + dir + "/"))
+                    .filter(Property.ofValue(ListInterface.Filter.FILES))
+                    .listingType(Property.ofValue(ListInterface.ListingType.DIRECTORY))
+                    .regExp(Property.ofValue(".*\\/" + dir + "\\/" + lastFileName + "\\+\\(1\\).(yaml|yml)"))
+                    .build()
+            );
             run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
             assertThat(run.getBlobs().size(), is(1));
         } finally {
@@ -116,17 +126,19 @@ class ListTest extends AbstractFlociGcpTest {
         var dir = FriendlyId.createFriendlyId();
         String prefix = "tasks/gcp/" + dir + "/";
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             uploadFolderMarker(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
 
             upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
 
             upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir + "/sub");
 
-            var task = task()
-                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
-                .filter(Property.ofValue(ListInterface.Filter.FILES))
-                .build();
+            var task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
+                    .filter(Property.ofValue(ListInterface.Filter.FILES))
+                    .build()
+            );
 
             var run = task.run(TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of()));
 
@@ -141,16 +153,18 @@ class ListTest extends AbstractFlociGcpTest {
         String dir = FriendlyId.createFriendlyId();
         String prefix = "tasks/gcp/" + dir + "/";
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             for (int i = 0; i < 5; i++) {
                 upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
             }
 
-            List task = task()
-                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
-                .filter(Property.ofValue(ListInterface.Filter.FILES))
-                .maxFiles(Property.ofValue(3))
-                .build();
+            List task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
+                    .filter(Property.ofValue(ListInterface.Filter.FILES))
+                    .maxFiles(Property.ofValue(3))
+                    .build()
+            );
 
             List.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
@@ -165,15 +179,17 @@ class ListTest extends AbstractFlociGcpTest {
         String dir = FriendlyId.createFriendlyId();
         String prefix = "tasks/gcp/" + dir + "/";
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             for (int i = 0; i < 5; i++) {
                 upload(storageInterface, bucket, runContextFactory, "/tasks/gcp/" + dir);
             }
 
-            List task = task()
-                .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
-                .filter(Property.ofValue(ListInterface.Filter.FILES))
-                .build();
+            List task = connections.spy(
+                task()
+                    .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/" + dir + "/"))
+                    .filter(Property.ofValue(ListInterface.Filter.FILES))
+                    .build()
+            );
 
             List.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
 
@@ -197,15 +213,18 @@ class ListTest extends AbstractFlociGcpTest {
             new ByteArrayInputStream(new byte[0])
         );
 
-        var task = Upload.builder()
-            .id("folder-marker")
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://" + bucket + dir + "/"))
-            .build();
-
         try {
-            task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+            try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci()) {
+                Upload task = connections.spy(
+                    Upload.builder()
+                        .id("folder-marker")
+                        .type(Upload.class.getName())
+                        .from(Property.ofValue(source.toString()))
+                        .to(Property.ofValue("gs://" + bucket + dir + "/"))
+                        .build()
+                );
+                task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+            }
         } finally {
             storageInterface.delete(TenantService.MAIN_TENANT, null, source);
         }
@@ -234,15 +253,18 @@ class ListTest extends AbstractFlociGcpTest {
 
         String out = FriendlyId.createFriendlyId();
 
-        Upload task = Upload.builder()
-            .id(ListTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://" + bucket + dir + "/" + out + " (1).yml"))
-            .build();
-
         try {
-            task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+            try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci()) {
+                Upload task = connections.spy(
+                    Upload.builder()
+                        .id(ListTest.class.getSimpleName())
+                        .type(Upload.class.getName())
+                        .from(Property.ofValue(source.toString()))
+                        .to(Property.ofValue("gs://" + bucket + dir + "/" + out + " (1).yml"))
+                        .build()
+                );
+                task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+            }
 
             return out;
         } finally {

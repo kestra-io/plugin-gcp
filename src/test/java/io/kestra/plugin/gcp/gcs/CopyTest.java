@@ -7,7 +7,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Blob;
@@ -33,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@Testcontainers
 class CopyTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
@@ -60,7 +58,7 @@ class CopyTest extends AbstractFlociGcpTest {
             expectedContents = input.readAllBytes();
         }
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             try (
                 FileInputStream input = new FileInputStream(
                     new File(
@@ -80,21 +78,25 @@ class CopyTest extends AbstractFlociGcpTest {
                 );
             }
 
-            Upload upload = Upload.builder()
-                .id(CopyTest.class.getSimpleName())
-                .type(Upload.class.getName())
-                .from(Property.ofValue(source.toString()))
-                .to(Property.ofValue("gs://{{inputs.bucket}}/" + inputObject))
-                .build();
+            Upload upload = connections.spy(
+                Upload.builder()
+                    .id(CopyTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + inputObject))
+                    .build()
+            );
 
             upload.run(runContext(upload));
 
-            Copy task = Copy.builder()
-                .id(CopyTest.class.getSimpleName())
-                .type(Copy.class.getName())
-                .from(Property.ofValue("gs://{{inputs.bucket}}/" + inputObject))
-                .to(Property.ofValue("gs://{{inputs.bucket}}/" + outputObject))
-                .build();
+            Copy task = connections.spy(
+                Copy.builder()
+                    .id(CopyTest.class.getSimpleName())
+                    .type(Copy.class.getName())
+                    .from(Property.ofValue("gs://{{inputs.bucket}}/" + inputObject))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + outputObject))
+                    .build()
+            );
 
             Copy.Output run = task.run(runContext(task));
 
@@ -116,14 +118,16 @@ class CopyTest extends AbstractFlociGcpTest {
     void sameException() throws Exception {
         String in = FriendlyId.createFriendlyId();
 
-        Copy task = Copy.builder()
-            .id(CopyTest.class.getSimpleName())
-            .type(Copy.class.getName())
-            .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
-            .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            Copy task = connections.spy(
+                Copy.builder()
+                    .id(CopyTest.class.getSimpleName())
+                    .type(Copy.class.getName())
+                    .from(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/copy/" + in + ".yml"))
+                    .build()
+            );
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
             assertThrows(IllegalArgumentException.class, () -> task.run(runContext(task)));
         }
     }

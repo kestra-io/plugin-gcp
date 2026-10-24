@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Storage;
@@ -33,7 +32,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 @KestraTest
-@Testcontainers
 class DownloadsTest extends AbstractFlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
@@ -54,7 +52,13 @@ class DownloadsTest extends AbstractFlociGcpTest {
         String prefix = "tasks/gcp/upload/" + random + "/";
         List<URI> downloadedFiles = new ArrayList<>();
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(
+                FLOCI_GCP.getEndpoint(),
+                io.kestra.plugin.gcp.gcs.List.class,
+                Delete.class
+            )
+        ) {
             byte[] expectedContents;
             try (
                 InputStream input = Objects.requireNonNull(
@@ -71,12 +75,14 @@ class DownloadsTest extends AbstractFlociGcpTest {
 
             assertThat(countObjects(prefix), is(2));
 
-            Downloads task = Downloads.builder()
-                .id(DownloadTest.class.getSimpleName())
-                .type(Downloads.class.getName())
-                .from(Property.ofValue("gs://" + bucket + "/" + prefix))
-                .action(Property.ofValue(ActionInterface.Action.DELETE))
-                .build();
+            Downloads task = connections.spy(
+                Downloads.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Downloads.class.getName())
+                    .from(Property.ofValue("gs://" + bucket + "/" + prefix))
+                    .action(Property.ofValue(ActionInterface.Action.DELETE))
+                    .build()
+            );
 
             Downloads.Output run = task.run(runContext(task));
             downloadedFiles.addAll(run.getOutputFiles().values());

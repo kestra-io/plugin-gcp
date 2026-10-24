@@ -62,13 +62,15 @@ class GcsTestUtils {
             );
         }
 
-        try {
-            Upload task = Upload.builder()
-                .id(UploadTest.class.getSimpleName())
-                .type(Upload.class.getName())
-                .from(Property.ofValue(source.toString()))
-                .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource)))
-                .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci()) {
+            Upload task = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + "." + FilenameUtils.getExtension(resource)))
+                    .build()
+            );
 
             return task.run(runContext(task));
         } finally {
@@ -89,14 +91,16 @@ class GcsTestUtils {
             );
         }
 
-        Upload task = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
-            .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci()) {
+            Upload task = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
+                    .build()
+            );
 
-        try {
             return task.run(runContext(task));
         } finally {
             storageInterface.delete(TenantService.MAIN_TENANT, null, source);

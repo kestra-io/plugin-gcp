@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -22,7 +21,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
-@Testcontainers
 class SetTest extends AbstractFlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
@@ -63,35 +61,36 @@ class SetTest extends AbstractFlociGcpTest {
         String collection = "persons-" + UUID.randomUUID();
         String documentId = UUID.randomUUID().toString();
 
-        try (var emulatorScope = AbstractFirestore.useEmulatorEndpoint(FLOCI_GCP.getEmulatorHost())) {
-            var runContext = runContextFactory.of();
+        var runContext = runContextFactory.of();
 
-            var set = Set.builder()
+        var set = FirestoreTestConnections.spy(
+            Set.builder()
                 .projectId(Property.ofValue(project))
                 .collection(Property.ofValue(collection))
                 .childPath(Property.ofValue(documentId))
                 .document(document)
-                .build();
+                .build(),
+            FLOCI_GCP.getEmulatorHost()
+        );
 
-            try (var firestore = set.connection(runContext)) {
-                try {
-                    var output = set.run(runContext);
+        try (var firestore = set.connection(runContext)) {
+            try {
+                var output = set.run(runContext);
 
-                    assertThat(output.getUpdatedTime(), is(notNullValue()));
+                assertThat(output.getUpdatedTime(), is(notNullValue()));
 
-                    var snapshot = firestore.collection(collection)
-                        .document(documentId)
-                        .get()
-                        .get(30, TimeUnit.SECONDS);
+                var snapshot = firestore.collection(collection)
+                    .document(documentId)
+                    .get()
+                    .get(30, TimeUnit.SECONDS);
 
-                    assertThat(snapshot.exists(), is(true));
-                    assertThat(snapshot.getData(), is(equalTo(expectedFields)));
-                } finally {
-                    firestore.collection(collection)
-                        .document(documentId)
-                        .delete()
-                        .get(30, TimeUnit.SECONDS);
-                }
+                assertThat(snapshot.exists(), is(true));
+                assertThat(snapshot.getData(), is(equalTo(expectedFields)));
+            } finally {
+                firestore.collection(collection)
+                    .document(documentId)
+                    .delete()
+                    .get(30, TimeUnit.SECONDS);
             }
         }
     }

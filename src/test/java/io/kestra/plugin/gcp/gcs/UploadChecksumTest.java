@@ -10,7 +10,6 @@ import java.util.Base64;
 import java.util.zip.CRC32C;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Blob;
@@ -37,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@Testcontainers
 class UploadChecksumTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
@@ -53,10 +51,10 @@ class UploadChecksumTest extends AbstractFlociGcpTest {
         byte[] content = ("kestra-" + FriendlyId.createFriendlyId()).getBytes(StandardCharsets.UTF_8);
 
         try (
-            AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint());
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint());
             UploadFixture fixture = uploadOf(content)
         ) {
-            Upload task = fixture.task.build();
+            Upload task = connections.spy(fixture.task.build());
             Upload.Output run = task.run(mockRunContext(task));
 
             assertThat(run.getUri(), notNullValue());
@@ -71,12 +69,14 @@ class UploadChecksumTest extends AbstractFlociGcpTest {
         byte[] content = "no-checksum".getBytes(StandardCharsets.UTF_8);
 
         try (
-            AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint());
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint());
             UploadFixture fixture = uploadOf(content)
         ) {
-            Upload task = fixture.task
-                .validateChecksum(Property.ofValue(false))
-                .build();
+            Upload task = connections.spy(
+                fixture.task
+                    .validateChecksum(Property.ofValue(false))
+                    .build()
+            );
 
             Upload.Output run = task.run(mockRunContext(task));
 
@@ -92,13 +92,15 @@ class UploadChecksumTest extends AbstractFlociGcpTest {
         byte[] content = "explicit-assertion".getBytes(StandardCharsets.UTF_8);
 
         try (
-            AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint());
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint());
             UploadFixture fixture = uploadOf(content)
         ) {
-            Upload task = fixture.task
-                .validateChecksum(Property.ofValue(false))
-                .expectedMd5(Property.ofValue(md5Base64(content)))
-                .build();
+            Upload task = connections.spy(
+                fixture.task
+                    .validateChecksum(Property.ofValue(false))
+                    .expectedMd5(Property.ofValue(md5Base64(content)))
+                    .build()
+            );
 
             Upload.Output run = task.run(mockRunContext(task));
 
@@ -112,12 +114,14 @@ class UploadChecksumTest extends AbstractFlociGcpTest {
         byte[] content = "mismatch".getBytes(StandardCharsets.UTF_8);
 
         try (
-            AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint());
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint());
             UploadFixture fixture = uploadOf(content)
         ) {
-            Upload task = fixture.task
-                .expectedMd5(Property.ofValue("AAAAAAAAAAAAAAAAAAAAAA=="))
-                .build();
+            Upload task = connections.spy(
+                fixture.task
+                    .expectedMd5(Property.ofValue("AAAAAAAAAAAAAAAAAAAAAA=="))
+                    .build()
+            );
 
             IllegalStateException ex = assertThrows(IllegalStateException.class, () -> task.run(mockRunContext(task)));
             assertThat(ex.getMessage(), containsString("Source MD5 mismatch"));

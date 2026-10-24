@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.reactivestreams.Publisher;
 
 import com.google.api.core.ApiService;
+import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
@@ -189,8 +190,7 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
             runContext.render(subscription).as(String.class).orElse(null),
             runContext.render(autoCreateSubscription).as(Boolean.class).orElse(true)
         );
-        var connection = PubSubClientConnection.current();
-        GoogleCredentials credentials = connection.usesEmulator() ? null : task.credentials(runContext);
+        GoogleCredentials credentials = task.credentials(runContext);
 
         var serdeTypeRendered = runContext.render(serdeType).as(SerdeType.class).orElseThrow();
         return Flux.create(
@@ -209,9 +209,9 @@ public class RealtimeTrigger extends AbstractTrigger implements RealtimeTriggerI
                     }
                 };
 
-                var subscriberBuilder = Subscriber.newBuilder(subscriptionName, receiver);
-                connection.configure(subscriberBuilder, credentials);
-                Subscriber subscriber = subscriberBuilder.build();
+                Subscriber subscriber = Subscriber.newBuilder(subscriptionName, receiver)
+                    .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
+                    .build();
 
                 this.subscriberReference.set(subscriber);
 

@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Blob;
@@ -22,7 +21,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 @KestraTest
-@Testcontainers
 class UploadTest extends AbstractFlociGcpTest {
     @Inject
     private GcsTestUtils testUtils;
@@ -43,7 +41,7 @@ class UploadTest extends AbstractFlociGcpTest {
             expectedContents = input.readAllBytes();
         }
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try {
             Upload.Output run = testUtils.upload(out);
 
             assertThat(run.getUri(), is(new URI("gs://" + bucket + "/" + objectName)));

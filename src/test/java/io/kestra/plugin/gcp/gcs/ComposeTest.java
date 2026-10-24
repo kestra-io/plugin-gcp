@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.storage.Blob;
@@ -32,7 +31,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-@Testcontainers
 class ComposeTest extends AbstractFlociGcpTest {
     @Inject
     private GcsTestUtils testUtils;
@@ -53,22 +51,29 @@ class ComposeTest extends AbstractFlociGcpTest {
         String outputObject = "tasks/gcp/compose-result/" + dir + "/compose.txt";
         URI downloaded = null;
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(
+                FLOCI_GCP.getEndpoint(),
+                io.kestra.plugin.gcp.gcs.List.class
+            )
+        ) {
             testUtils.upload("compose-" + dir + "/compose1/" + FriendlyId.createFriendlyId(), "data/1.txt");
             testUtils.upload("compose-" + dir + "/compose2/" + FriendlyId.createFriendlyId(), "data/2.txt");
             testUtils.upload("compose-" + dir + "/compose3/" + FriendlyId.createFriendlyId(), "data/3.txt");
 
-            Compose task = Compose.builder()
-                .id(ComposeTest.class.getSimpleName())
-                .type(Compose.class.getName())
-                .list(
-                    Compose.List.builder()
-                        .from(Property.ofValue("gs://" + bucket + "/" + sourcePrefix))
-                        .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
-                        .build()
-                )
-                .to(Property.ofValue("gs://" + bucket + "/" + outputObject))
-                .build();
+            Compose task = connections.spy(
+                Compose.builder()
+                    .id(ComposeTest.class.getSimpleName())
+                    .type(Compose.class.getName())
+                    .list(
+                        Compose.List.builder()
+                            .from(Property.ofValue("gs://" + bucket + "/" + sourcePrefix))
+                            .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
+                            .build()
+                    )
+                    .to(Property.ofValue("gs://" + bucket + "/" + outputObject))
+                    .build()
+            );
 
             RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
             Compose.Output run = task.run(runContext);
@@ -77,11 +82,13 @@ class ComposeTest extends AbstractFlociGcpTest {
             assertThat(composed, notNullValue());
             assertThat(new String(composed.getContent(), StandardCharsets.UTF_8), is("1\n2\n3\n"));
 
-            Download download = Download.builder()
-                .id(DownloadTest.class.getSimpleName())
-                .type(Download.class.getName())
-                .from(Property.ofValue(run.getUri().toString()))
-                .build();
+            Download download = connections.spy(
+                Download.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(Property.ofValue(run.getUri().toString()))
+                    .build()
+            );
 
             downloaded = download.run(runContext).getUri();
             try (InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, downloaded)) {
@@ -113,21 +120,28 @@ class ComposeTest extends AbstractFlociGcpTest {
         String outputObject = "tasks/gcp/compose-result/" + dir + "/compose-default.txt";
         URI downloaded = null;
 
-        try (AutoCloseable ignored = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(
+                FLOCI_GCP.getEndpoint(),
+                io.kestra.plugin.gcp.gcs.List.class
+            )
+        ) {
             testUtils.upload(basePath + FriendlyId.createFriendlyId(), "data/1.txt");
             testUtils.upload(basePath + FriendlyId.createFriendlyId(), "data/2.txt");
             testUtils.upload(basePath + FriendlyId.createFriendlyId(), "data/3.txt");
 
-            Compose task = Compose.builder()
-                .id("compose-default-listingType")
-                .type(Compose.class.getName())
-                .list(
-                    Compose.List.builder()
-                        .from(Property.ofValue("gs://" + bucket + "/" + sourcePrefix))
-                        .build()
-                )
-                .to(Property.ofValue("gs://" + bucket + "/" + outputObject))
-                .build();
+            Compose task = connections.spy(
+                Compose.builder()
+                    .id("compose-default-listingType")
+                    .type(Compose.class.getName())
+                    .list(
+                        Compose.List.builder()
+                            .from(Property.ofValue("gs://" + bucket + "/" + sourcePrefix))
+                            .build()
+                    )
+                    .to(Property.ofValue("gs://" + bucket + "/" + outputObject))
+                    .build()
+            );
 
             RunContext runContext = TestsUtils.mockRunContext(this.runContextFactory, task, ImmutableMap.of());
             Compose.Output run = task.run(runContext);
@@ -137,11 +151,13 @@ class ComposeTest extends AbstractFlociGcpTest {
             List<String> gcsLines = Arrays.asList(new String(composed.getContent(), StandardCharsets.UTF_8).split("\\R"));
             assertThat(gcsLines, containsInAnyOrder("1", "2", "3"));
 
-            Download download = Download.builder()
-                .id(DownloadTest.class.getSimpleName())
-                .type(Download.class.getName())
-                .from(Property.ofValue(run.getUri().toString()))
-                .build();
+            Download download = connections.spy(
+                Download.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(Property.ofValue(run.getUri().toString()))
+                    .build()
+            );
 
             downloaded = download.run(runContext).getUri();
             String result;

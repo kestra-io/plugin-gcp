@@ -11,13 +11,10 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.devskiller.friendly_id.FriendlyId;
-import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.BucketInfo.LifecycleRule;
-import com.google.cloud.storage.StorageClass;
 import com.google.common.collect.ImmutableMap;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -36,7 +33,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@Testcontainers
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class FlociBucketTest extends AbstractFlociGcpTest {
     private static final String RANDOM_ID = "tu_" + FriendlyId.createFriendlyId().toLowerCase();
@@ -92,9 +88,9 @@ class FlociBucketTest extends AbstractFlociGcpTest {
     @Test
     @Order(1)
     void create() throws Exception {
-        try (AutoCloseable emulatorScope = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
-            CreateBucket task = createBuilder().build();
-            AbstractBucket.Output run = task.run(runContext());
+        try (GcsTestConnections.Scope emulatorScope = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            var task = emulatorScope.spy(createBuilder().build());
+            var run = task.run(runContext());
 
             assertThat(run.getBucket().getName(), is(runContext().getVariables().get("bucket")));
         }
@@ -102,29 +98,29 @@ class FlociBucketTest extends AbstractFlociGcpTest {
 
     @Test
     @Order(2)
-    void createException() {
-        try (AutoCloseable emulatorScope = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
-            CreateBucket task = createBuilder().build();
+    void createException() throws Exception {
+        try (GcsTestConnections.Scope emulatorScope = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            var task = emulatorScope.spy(createBuilder().build());
 
             assertThrows(RuntimeException.class, () ->
             {
                 task.run(runContext());
             });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
     @Test
     @Order(3)
     void createNoException() throws Exception {
-        try (AutoCloseable emulatorScope = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
-            CreateBucket task = createBuilder()
-                .indexPage(Property.ofValue("createUpdate"))
-                .ifExists(Property.ofValue(CreateBucket.IfExists.SKIP))
-                .build();
+        try (GcsTestConnections.Scope emulatorScope = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            var task = emulatorScope.spy(
+                createBuilder()
+                    .indexPage(Property.ofValue("createUpdate"))
+                    .ifExists(Property.ofValue(CreateBucket.IfExists.SKIP))
+                    .build()
+            );
 
-            AbstractBucket.Output run = task.run(runContext());
+            var run = task.run(runContext());
 
             assertThat(run.getBucket().getName(), is(runContext().getVariables().get("bucket")));
         }
@@ -133,8 +129,8 @@ class FlociBucketTest extends AbstractFlociGcpTest {
     @Test
     @Order(4)
     void iamPolicy() throws Exception {
-        try (AutoCloseable emulatorScope = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
-            CreateBucketIamPolicy.CreateBucketIamPolicyBuilder<?, ?> builder = CreateBucketIamPolicy.builder()
+        try (GcsTestConnections.Scope emulatorScope = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            var builder = CreateBucketIamPolicy.builder()
                 .id(UpdateBucket.class.getSimpleName())
                 .type(CreateBucket.class.getName())
                 .name(Property.ofExpression("{{bucket}}"))
@@ -142,15 +138,17 @@ class FlociBucketTest extends AbstractFlociGcpTest {
                 .member(Property.ofValue("domain:kestra.io"))
                 .role(Property.ofValue("roles/storage.objectViewer"));
 
-            CreateBucketIamPolicy.Output run = builder.build().run(runContext());
+            var run = emulatorScope.spy(builder.build()).run(runContext());
             assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
 
             assertThrows(Exception.class, () ->
             {
-                builder.ifExists(Property.ofValue(CreateBucketIamPolicy.IfExists.ERROR)).build().run(runContext());
+                emulatorScope.spy(builder.ifExists(Property.ofValue(CreateBucketIamPolicy.IfExists.ERROR)).build())
+                    .run(runContext());
             });
 
-            run = builder.ifExists(Property.ofValue(CreateBucketIamPolicy.IfExists.SKIP)).build().run(runContext());
+            run = emulatorScope.spy(builder.ifExists(Property.ofValue(CreateBucketIamPolicy.IfExists.SKIP)).build())
+                .run(runContext());
             assertThat(run.getBucket(), is(runContext().getVariables().get("bucket")));
         }
     }
@@ -158,32 +156,36 @@ class FlociBucketTest extends AbstractFlociGcpTest {
     @Test
     @Order(5)
     void delete() throws Exception {
-        try (AutoCloseable emulatorScope = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
+        try (GcsTestConnections.Scope emulatorScope = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
             // The original ACL test created this second bucket. Keep delete independent of that cloud-only case.
             if (storage.get(RANDOM_ID_2) == null) {
                 storage.create(BucketInfo.of(RANDOM_ID_2));
             }
 
-            RunContext runContext = runContext();
+            var runContext = runContext();
 
-            DeleteBucket task = DeleteBucket.builder()
-                .id(FlociBucketTest.class.getSimpleName())
-                .type(DeleteBucket.class.getName())
-                .name(Property.ofExpression("{{bucket}}"))
-                .projectId(Property.ofExpression("{{project}}"))
-                .build();
+            var task = emulatorScope.spy(
+                DeleteBucket.builder()
+                    .id(FlociBucketTest.class.getSimpleName())
+                    .type(DeleteBucket.class.getName())
+                    .name(Property.ofExpression("{{bucket}}"))
+                    .projectId(Property.ofExpression("{{project}}"))
+                    .build()
+            );
 
-            DeleteBucket.Output run = task.run(runContext);
+            var run = task.run(runContext);
             assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
 
             runContext = runContext(RANDOM_ID_2);
 
-            task = DeleteBucket.builder()
-                .id(FlociBucketTest.class.getSimpleName())
-                .type(DeleteBucket.class.getName())
-                .name(Property.ofExpression("{{bucket}}"))
-                .projectId(Property.ofExpression("{{project}}"))
-                .build();
+            task = emulatorScope.spy(
+                DeleteBucket.builder()
+                    .id(FlociBucketTest.class.getSimpleName())
+                    .type(DeleteBucket.class.getName())
+                    .name(Property.ofExpression("{{bucket}}"))
+                    .projectId(Property.ofExpression("{{project}}"))
+                    .build()
+            );
 
             run = task.run(runContext);
             assertThat(run.getBucket(), is(runContext.getVariables().get("bucket")));
@@ -191,25 +193,31 @@ class FlociBucketTest extends AbstractFlociGcpTest {
     }
 
     @SuppressWarnings("unchecked")
-    private void createBucketWithLifecycleRule(RunContext rc, String bucketId, List<BucketLifecycleRule> rules) throws Exception {
-        CreateBucket task = createBuilder()
-            .lifecycleRules(rules)
-            .ifExists(Property.ofValue(CreateBucket.IfExists.ERROR))
-            .build();
+    private void createBucketWithLifecycleRule(
+        GcsTestConnections.Scope connections,
+        RunContext rc,
+        String bucketId,
+        List<BucketLifecycleRule> rules) throws Exception {
+        var task = connections.spy(
+            createBuilder()
+                .lifecycleRules(rules)
+                .ifExists(Property.ofValue(CreateBucket.IfExists.ERROR))
+                .build()
+        );
 
         try {
-            AbstractBucket.Output run = task.run(rc);
+            var run = task.run(rc);
 
             assertThat(run.getBucket().getName(), is(rc.getVariables().get("bucket")));
 
-            Bucket bucket = storage.get(run.getBucket().getName());
+            var bucket = storage.get(run.getBucket().getName());
 
             assertThat(null, not(bucket));
 
             assertThat(bucket.getLifecycleRules(), notNullValue());
             assertThat(bucket.getLifecycleRules().size(), is(rules.size()));
 
-            List<Matcher<LifecycleRule>> matchers = task
+            var matchers = task
                 .getLifecycleRules()
                 .stream()
                 .map(rule ->
@@ -239,9 +247,10 @@ class FlociBucketTest extends AbstractFlociGcpTest {
     @Test
     @Order(6)
     void createBucketWithDeleteLifecycleRule() throws Exception {
-        try (AutoCloseable emulatorScope = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
-            RunContext rc = runContext(LIFECYCLE_DELETE_BUCKET);
+        try (GcsTestConnections.Scope emulatorScope = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            var rc = runContext(LIFECYCLE_DELETE_BUCKET);
             createBucketWithLifecycleRule(
+                emulatorScope,
                 rc,
                 LIFECYCLE_DELETE_BUCKET,
                 Collections.singletonList(
@@ -261,9 +270,10 @@ class FlociBucketTest extends AbstractFlociGcpTest {
     @Test
     @Order(7)
     void createBucketWithSetStorageClassLifecycleRule() throws Exception {
-        try (AutoCloseable emulatorScope = AbstractGcs.useEmulatorEndpoint(FLOCI_GCP.getEndpoint())) {
-            RunContext rc = runContext(LIFECYCLE_STORAGE_CLASS_BUCKET);
+        try (GcsTestConnections.Scope emulatorScope = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            var rc = runContext(LIFECYCLE_STORAGE_CLASS_BUCKET);
             createBucketWithLifecycleRule(
+                emulatorScope,
                 rc,
                 LIFECYCLE_STORAGE_CLASS_BUCKET,
                 List.of(
@@ -329,8 +339,8 @@ class FlociBucketTest extends AbstractFlociGcpTest {
                     return true;
                 }
 
-                StorageClass actualStorageClass = ((LifecycleRule.SetStorageClassLifecycleAction) actual.getAction()).getStorageClass();
-                StorageClass expectedStorageClass = ((LifecycleRule.SetStorageClassLifecycleAction) expected.getAction()).getStorageClass();
+                var actualStorageClass = ((LifecycleRule.SetStorageClassLifecycleAction) actual.getAction()).getStorageClass();
+                var expectedStorageClass = ((LifecycleRule.SetStorageClassLifecycleAction) expected.getAction()).getStorageClass();
 
                 return actualStorageClass != null && actualStorageClass.equals(expectedStorageClass);
             }

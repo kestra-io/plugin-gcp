@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
 
@@ -228,11 +229,9 @@ public class Consume extends AbstractPubSub implements RunnableTask<Consume.Outp
                     latch.countDown();
                 }
             };
-            var connection = PubSubClientConnection.current();
-            var credentials = connection.usesEmulator() ? null : this.credentials(runContext);
-            var subscriberBuilder = Subscriber.newBuilder(subscriptionName, receiver);
-            connection.configure(subscriberBuilder, credentials);
-            var subscriber = subscriberBuilder.build();
+            var subscriber = Subscriber.newBuilder(subscriptionName, receiver)
+                .setCredentialsProvider(FixedCredentialsProvider.create(this.credentials(runContext)))
+                .build();
 
             this.trackConsumer(subscriber, latch, runContext.logger());
 

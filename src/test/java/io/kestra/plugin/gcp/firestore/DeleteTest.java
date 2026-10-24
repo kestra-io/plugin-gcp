@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -22,7 +21,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
-@Testcontainers
 class DeleteTest extends AbstractFlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
@@ -40,33 +38,34 @@ class DeleteTest extends AbstractFlociGcpTest {
             "lastname", "Doe"
         );
 
-        try (var emulatorScope = AbstractFirestore.useEmulatorEndpoint(FLOCI_GCP.getEmulatorHost())) {
-            var runContext = runContextFactory.of();
+        var runContext = runContextFactory.of();
 
-            var delete = Delete.builder()
+        var delete = FirestoreTestConnections.spy(
+            Delete.builder()
                 .projectId(Property.ofValue(project))
                 .collection(Property.ofValue(collection))
                 .childPath(Property.ofValue(documentId))
-                .build();
+                .build(),
+            FLOCI_GCP.getEmulatorHost()
+        );
 
-            try (var firestore = delete.connection(runContext)) {
-                var document = firestore.collection(collection).document(documentId);
+        try (var firestore = delete.connection(runContext)) {
+            var document = firestore.collection(collection).document(documentId);
 
-                try {
-                    document.set(expected).get(30, TimeUnit.SECONDS);
+            try {
+                document.set(expected).get(30, TimeUnit.SECONDS);
 
-                    var beforeDelete = document.get().get(30, TimeUnit.SECONDS);
-                    assertThat(beforeDelete.exists(), is(true));
-                    assertThat(beforeDelete.getData(), is(equalTo(expected)));
+                var beforeDelete = document.get().get(30, TimeUnit.SECONDS);
+                assertThat(beforeDelete.exists(), is(true));
+                assertThat(beforeDelete.getData(), is(equalTo(expected)));
 
-                    var output = delete.run(runContext);
-                    assertThat(output.getUpdatedTime(), is(notNullValue()));
+                var output = delete.run(runContext);
+                assertThat(output.getUpdatedTime(), is(notNullValue()));
 
-                    var afterDelete = document.get().get(30, TimeUnit.SECONDS);
-                    assertThat(afterDelete.exists(), is(false));
-                } finally {
-                    document.delete().get(30, TimeUnit.SECONDS);
-                }
+                var afterDelete = document.get().get(30, TimeUnit.SECONDS);
+                assertThat(afterDelete.exists(), is(false));
+            } finally {
+                document.delete().get(30, TimeUnit.SECONDS);
             }
         }
     }

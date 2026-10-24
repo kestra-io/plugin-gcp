@@ -2,7 +2,6 @@ package io.kestra.plugin.gcp;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.junit.jupiter.Container;
 
 import com.google.cloud.NoCredentials;
 import com.google.cloud.storage.BucketInfo;
@@ -15,9 +14,16 @@ public abstract class AbstractFlociGcpTest {
     protected static final String PROJECT_ID = "kestra-unit-test";
     protected static final String BUCKET_NAME = "kestra-unit-test";
 
-    @Container
     protected static final FlociGcpContainer FLOCI_GCP = new FlociGcpContainer("floci/floci-gcp:0.11.0")
         .withProjectId(PROJECT_ID);
+
+    static {
+        FLOCI_GCP.start();
+    }
+
+    public static String flociEndpoint() {
+        return FLOCI_GCP.getEndpoint();
+    }
 
     protected static Storage storage;
 
