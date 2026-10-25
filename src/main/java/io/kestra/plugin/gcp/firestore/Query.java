@@ -240,7 +240,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
 
         try (var output = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-            Flux<Map<String, Object>> flux = Flux.fromIterable(documents).map(snapshot -> snapshot.getData());
+            Flux<Map<String, Object>> flux = Flux.fromIterable(documents).map(Query::toRow);
             Long count = FileSerde.writeAll(output, flux).block();
 
             return Pair.of(
@@ -257,7 +257,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         documents.forEach(throwConsumer(snapshot ->
         {
             count.incrementAndGet();
-            result.add(snapshot.getData());
+            result.add(toRow(snapshot));
         }));
 
         return Pair.of(result, count.get());
@@ -268,7 +268,15 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             return null;
         }
 
-        return documents.get(0).getData();
+        return toRow(documents.get(0));
+    }
+
+    // Adds the document ID under "_id"; a real "_id" field of the document wins
+    private static Map<String, Object> toRow(QueryDocumentSnapshot snapshot) {
+        Map<String, Object> row = new java.util.LinkedHashMap<>();
+        row.put("_id", snapshot.getId());
+        row.putAll(snapshot.getData());
+        return row;
     }
 
     @SuperBuilder
