@@ -69,6 +69,7 @@ class QueryTest {
 
         assertThat(output.getSize(), is(2L));
         assertThat(output.getRows().size(), is(2));
+        assertThat(((Map<?, ?>) output.getRows().get(0)).get("_id"), is(notNullValue()));
         assertThat(output.getUri(), is(nullValue()));
 
         // clear the collection
