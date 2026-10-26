@@ -104,6 +104,7 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.rcs.SendRichCard`
 - `io.kestra.plugin.gcp.vertexai.ChatCompletion`
 - `io.kestra.plugin.gcp.vertexai.CustomJob`
+- `io.kestra.plugin.gcp.vertexai.Embeddings`
 - `io.kestra.plugin.gcp.vertexai.MultimodalCompletion`
 - `io.kestra.plugin.gcp.vertexai.TextCompletion`
 
