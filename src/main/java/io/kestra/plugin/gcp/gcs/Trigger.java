@@ -125,7 +125,9 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
     @Schema(
         title = "Move destination",
-        description = "Target gs:// prefix when action is MOVE"
+        description = """
+            Target gs:// prefix when action is MOVE.
+            Relative directory paths under `from` are preserved in the destination. When `from` ends with `/`, the full prefix is stripped; when it does not end with `/`, the parent folder of `from` is stripped so sibling prefixes remain differentiated."""
     )
     @PluginProperty(group = "advanced")
     private Property<String> moveDirectory;
@@ -191,53 +193,59 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
 
             Map<String, StatefulTriggerService.Entry> state = readState(runContext, rStateKey, rStateTtl);
 
-            java.util.List<Blob> actionBlobs = new ArrayList<>();
+            var actionBlobs = new ArrayList<Blob>();
+            var toFireCandidates = new ArrayList<Candidate>();
 
-            java.util.List<TriggeredBlob> toFire = blobs.stream()
-                .flatMap(throwFunction(blob ->
-                {
-                    var uri = "gs://" + blob.getBucket() + "/" + blob.getName();
-                    var meta = connection.get(BlobId.of(blob.getBucket(), blob.getName()));
-                    var version = String
-                        .format("generation:%d_metageneration:%d", Objects.requireNonNullElse(meta.getGeneration(), 0L), Objects.requireNonNullElse(meta.getMetageneration(), 0L));
+            for (var blob : blobs) {
+                var uri = "gs://" + blob.getBucket() + "/" + blob.getName();
+                var meta = connection.get(BlobId.of(blob.getBucket(), blob.getName()));
+                var version = String
+                    .format("generation:%d_metageneration:%d", Objects.requireNonNullElse(meta.getGeneration(), 0L), Objects.requireNonNullElse(meta.getMetageneration(), 0L));
 
-                    Instant modifiedAt = Optional.ofNullable(meta.getUpdateTimeOffsetDateTime())
-                        .map(OffsetDateTime::toInstant)
-                        .orElse(Instant.now());
+                Instant modifiedAt = Optional.ofNullable(meta.getUpdateTimeOffsetDateTime())
+                    .map(OffsetDateTime::toInstant)
+                    .orElse(Instant.now());
 
-                    var candidate = StatefulTriggerService.Entry.candidate(uri, version, modifiedAt);
-                    var update = computeAndUpdateState(state, candidate, rOn);
+                var candidate = StatefulTriggerService.Entry.candidate(uri, version, modifiedAt);
+                var update = computeAndUpdateState(state, candidate, rOn);
 
-                    if (update.fire()) {
-                        var changeType = update.isNew() ? ChangeType.CREATE : ChangeType.UPDATE;
-                        actionBlobs.add(blob);
+                if (update.fire()) {
+                    var changeType = update.isNew() ? ChangeType.CREATE : ChangeType.UPDATE;
+                    actionBlobs.add(blob);
+                    toFireCandidates.add(new Candidate(blob, changeType));
+                }
+            }
 
-                        File downloaded = Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName()), false);
-                        URI kestraUri = runContext.storage().putFile(downloaded);
-
-                        return Stream.of(
-                            TriggeredBlob.builder()
-                                .blob(blob.withUri(kestraUri))
-                                .changeType(changeType)
-                                .build()
-                        );
-                    }
-                    return Stream.empty();
-                }))
-                .toList();
-
-            writeState(runContext, rStateKey, state, rStateTtl);
-
-            if (toFire.isEmpty()) {
+            if (toFireCandidates.isEmpty()) {
+                writeState(runContext, rStateKey, state, rStateTtl);
                 return Optional.empty();
             }
 
-            Downloads.performAction(actionBlobs, runContext.render(action).as(Action.class).orElseThrow(), moveDirectory, runContext, projectId, serviceAccount, scopes);
+            var rAction = runContext.render(action).as(Action.class).orElse(Action.NONE);
+            Downloads.destinations(actionBlobs, rAction, moveDirectory, from, runContext);
+
+            java.util.List<TriggeredBlob> toFire = new ArrayList<>();
+            for (var candidate : toFireCandidates) {
+                var blob = candidate.blob();
+                File downloaded = Download.download(runContext, connection, BlobId.of(blob.getBucket(), blob.getName()), false);
+                URI kestraUri = runContext.storage().putFile(downloaded);
+
+                toFire.add(TriggeredBlob.builder()
+                    .blob(blob.withUri(kestraUri))
+                    .changeType(candidate.changeType())
+                    .build());
+            }
+
+            Downloads.performAction(actionBlobs, rAction, moveDirectory, from, runContext, projectId, serviceAccount, scopes);
+
+            writeState(runContext, rStateKey, state, rStateTtl);
 
             var output = Output.builder().blobs(toFire).build();
             return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
         }
     }
+
+    private record Candidate(Blob blob, ChangeType changeType) {}
 
     public enum ChangeType {
         CREATE,
