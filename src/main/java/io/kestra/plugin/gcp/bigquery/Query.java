@@ -329,7 +329,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         this.metrics(runContext, queryJobStatistics, queryJob, fetchTypeRendered);
 
         Output.OutputBuilder output = Output.builder()
-            .jobId(queryJob.getJobId().getJob());
+            .jobId(queryJob.getJobId().getJob())
+            .projectId(queryJob.getJobId().getProject())
+            .location(queryJob.getJobId().getLocation());
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
             var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto()
@@ -518,6 +520,20 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             title = "The job id"
         )
         private String jobId;
+
+        @Schema(
+            title = "The project the job ran in",
+            description = """
+                The project ID returned by BigQuery for the job, resolved even when `projectId` is templated."""
+        )
+        private String projectId;
+
+        @Schema(
+            title = "The location the job ran in",
+            description = """
+                The location returned by BigQuery for the job, resolved even when `location` is omitted or templated."""
+        )
+        private String location;
 
         @Schema(
             title = "List containing the fetched data",

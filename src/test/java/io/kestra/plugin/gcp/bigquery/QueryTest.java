@@ -113,6 +113,8 @@ class QueryTest {
 
         List<Map<String, Object>> rows = run.getRows();
         assertThat(rows.size(), is(1));
+        assertThat(run.getProjectId(), is(project));
+        assertThat(run.getLocation(), is("EU"));
 
         assertThat(rows.getFirst().get("string"), is("hello"));
         assertThat(rows.getFirst().get("nullable"), is(nullValue()));
@@ -155,6 +157,8 @@ class QueryTest {
             .build();
 
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
+        assertThat(run.getProjectId(), is(project));
+        assertThat(run.getLocation(), is(notNullValue()));
         String ionResult = CharStreams.toString(new InputStreamReader(storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri())));
 
         assertThat(ionResult, containsString("string:\"hello\""));
