@@ -24,7 +24,7 @@ Generates dense vector embeddings for semantic search, retrieval-augmented gener
 - `region`: Regional endpoint for Vertex AI (e.g., `us-central1`, `europe-west1`).
 - `modelId`: Identifier of the embedding model (defaults to `text-embedding-005`).
 - `text`: Single text string to vectorize (mutually exclusive with `texts`).
-- `texts`: List of text strings for high-throughput batch vectorization.
+- `texts`: List of text strings for high-throughput batch vectorization (maximum 250 texts per request).
 - `taskType`: Downstream task optimization (`RETRIEVAL_QUERY`, `RETRIEVAL_DOCUMENT`, `SEMANTIC_SIMILARITY`, `CLASSIFICATION`, `CLUSTERING`, `QUESTION_ANSWERING`, or `FACT_VERIFICATION`).
 - `title`: Document title (recommended when `taskType` is `RETRIEVAL_DOCUMENT`).
 - `outputDimensionality`: Optional reduced vector dimensionality (e.g., 256, 512, 768).

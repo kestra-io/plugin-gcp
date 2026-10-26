@@ -91,7 +91,7 @@ class EmbeddingsTest {
         assertThat(output.getEmbedding(), notNullValue());
         assertThat(output.getEmbedding(), is(mockVector));
         assertThat(output.getEmbeddings(), hasSize(1));
-        assertThat(output.getEmbeddings().get(0), is(mockVector));
+        assertThat(output.getEmbeddings().getFirst(), is(mockVector));
 
         var reqCaptor = ArgumentCaptor.forClass(PredictRequest.class);
         var settingsCaptor = ArgumentCaptor.forClass(PredictionServiceSettings.class);
@@ -141,7 +141,7 @@ class EmbeddingsTest {
         assertThat(output.getDimension(), is(3));
         assertThat(output.getEmbedding(), nullValue());
         assertThat(output.getEmbeddings(), hasSize(2));
-        assertThat(output.getEmbeddings().get(0), is(vec1));
+        assertThat(output.getEmbeddings().getFirst(), is(vec1));
         assertThat(output.getEmbeddings().get(1), is(vec2));
 
         var reqCaptor = ArgumentCaptor.forClass(PredictRequest.class);
@@ -236,7 +236,7 @@ class EmbeddingsTest {
     }
 
     @Test
-    void shouldHandleEmptyPredictionsGracefully() throws Exception {
+    void shouldFailWhenPredictionsCountDoesNotMatchInputCount() throws Exception {
         var task = spy(Embeddings.builder()
             .id("embed_empty_resp_" + IdUtils.create())
             .type(Embeddings.class.getName())
@@ -249,13 +249,8 @@ class EmbeddingsTest {
         doReturn(PredictResponse.getDefaultInstance()).when(task).executePrediction(any(), any());
 
         var runContext = runContextFactory.of(Map.of());
-        var output = task.run(runContext);
-
-        assertThat(output, notNullValue());
-        assertThat(output.getCount(), is(0));
-        assertThat(output.getDimension(), is(0));
-        assertThat(output.getEmbedding(), nullValue());
-        assertThat(output.getEmbeddings(), empty());
+        var exception = assertThrows(IllegalStateException.class, () -> task.run(runContext));
+        assertThat(exception.getMessage(), containsString("Expected 1:1 correspondence"));
     }
 
     @Test
@@ -299,8 +294,7 @@ class EmbeddingsTest {
     }
 
     @Test
-    void shouldVerifyExample1QueryEmbeddingFlow() throws Exception {
-        // Verifies the exact configuration from @Example 1: query_embedding
+    void shouldExecuteSingleQueryEmbeddingFlow() throws Exception {
         var task = spy(Embeddings.builder()
             .id("embed_query_" + IdUtils.create())
             .type(Embeddings.class.getName())
@@ -326,8 +320,7 @@ class EmbeddingsTest {
     }
 
     @Test
-    void shouldVerifyExample2BatchEmbeddingsFlow() throws Exception {
-        // Verifies the exact configuration from @Example 2: document_chunk_embedding
+    void shouldExecuteBatchChunksEmbeddingFlow() throws Exception {
         var task = spy(Embeddings.builder()
             .id("embed_chunks_" + IdUtils.create())
             .type(Embeddings.class.getName())
@@ -353,7 +346,38 @@ class EmbeddingsTest {
         assertThat(output.getDimension(), is(2));
         assertThat(output.getEmbedding(), nullValue());
         assertThat(output.getEmbeddings(), hasSize(2));
-        assertThat(output.getEmbeddings().get(0), contains(0.1, 0.2));
+        assertThat(output.getEmbeddings().getFirst(), contains(0.1, 0.2));
         assertThat(output.getEmbeddings().get(1), contains(0.3, 0.4));
+    }
+
+    @Test
+    void shouldFailWhenRegionIsInvalid() {
+        var task = spy(Embeddings.builder()
+            .id("embed_invalid_region_" + IdUtils.create())
+            .type(Embeddings.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .region(Property.ofValue("us-central1.evil.com"))
+            .text(Property.ofValue("Some text"))
+            .build());
+
+        var runContext = runContextFactory.of(Map.of());
+        var exception = assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+        assertThat(exception.getMessage(), containsString("Property 'region' must be a valid GCP region"));
+    }
+
+    @Test
+    void shouldFailWhenBatchSizeExceedsLimit() {
+        var oversizedList = java.util.Collections.nCopies(251, "Sample chunk");
+        var task = spy(Embeddings.builder()
+            .id("embed_oversized_" + IdUtils.create())
+            .type(Embeddings.class.getName())
+            .projectId(Property.ofValue("test-project"))
+            .region(Property.ofValue("us-central1"))
+            .texts(Property.ofValue(oversizedList))
+            .build());
+
+        var runContext = runContextFactory.of(Map.of());
+        var exception = assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+        assertThat(exception.getMessage(), containsString("exceeds the maximum allowed batch size of 250"));
     }
 }

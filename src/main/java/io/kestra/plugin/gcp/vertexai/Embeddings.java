@@ -2,9 +2,9 @@ package io.kestra.plugin.gcp.vertexai;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.aiplatform.v1.EndpointName;
 import com.google.cloud.aiplatform.v1.PredictRequest;
@@ -105,6 +105,8 @@ import lombok.experimental.SuperBuilder;
 public class Embeddings extends AbstractTask implements RunnableTask<Embeddings.Output> {
 
     private static final String DEFAULT_MODEL = "text-embedding-005";
+    private static final int MAX_BATCH_SIZE = 250;
+    private static final Pattern REGION_PATTERN = Pattern.compile("^[a-z]+(-[a-z]+)*[0-9]+$");
 
     @Schema(
         title = "Region",
@@ -131,14 +133,23 @@ public class Embeddings extends AbstractTask implements RunnableTask<Embeddings.
 
     @Schema(
         title = "Texts",
-        description = "List of text strings to generate embeddings for in a batch. Mutually exclusive with `text`."
+        description = "List of text strings to generate embeddings for in a batch (maximum 250 texts per request). Mutually exclusive with `text`."
     )
     @PluginProperty(group = "main")
     private Property<List<String>> texts;
 
     @Schema(
         title = "Task type",
-        description = "Intended downstream use case for the embedding vector (e.g., RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT)."
+        description = """
+            Intended downstream use case for the embedding vector:
+            - `RETRIEVAL_QUERY`: Specifies the given text is a query in a search/retrieval setting.
+            - `RETRIEVAL_DOCUMENT`: Specifies the given text is a document in a search/retrieval setting.
+            - `SEMANTIC_SIMILARITY`: Specifies the given text will be used for STS (semantic textual similarity).
+            - `CLASSIFICATION`: Specifies that the embeddings will be used for classification.
+            - `CLUSTERING`: Specifies that the embeddings will be used for clustering.
+            - `QUESTION_ANSWERING`: Specifies that the embeddings will be used for question answering.
+            - `FACT_VERIFICATION`: Specifies that the embeddings will be used for fact verification.
+            """
     )
     @PluginProperty(group = "advanced")
     private Property<TaskType> taskType;
@@ -170,6 +181,10 @@ public class Embeddings extends AbstractTask implements RunnableTask<Embeddings.
         var rRegion = runContext.render(this.region).as(String.class)
             .orElseThrow(() -> new IllegalArgumentException("Property 'region' is required"));
 
+        if (!REGION_PATTERN.matcher(rRegion).matches()) {
+            throw new IllegalArgumentException("Property 'region' must be a valid GCP region (e.g., 'us-central1', 'europe-west1'), got: '" + rRegion + "'");
+        }
+
         var rProjectId = runContext.render(this.getProjectId()).as(String.class).orElse(null);
 
         var rModelId = runContext.render(this.modelId).as(String.class)
@@ -189,6 +204,15 @@ public class Embeddings extends AbstractTask implements RunnableTask<Embeddings.
         }
 
         var inputTexts = hasSingleText ? List.of(rText) : rTexts;
+
+        if (inputTexts.size() > MAX_BATCH_SIZE) {
+            throw new IllegalArgumentException(String.format(
+                "Batch size of %d exceeds the maximum allowed batch size of %d instances per request. Please split your texts into batches of up to %d.",
+                inputTexts.size(),
+                MAX_BATCH_SIZE,
+                MAX_BATCH_SIZE
+            ));
+        }
 
         var rTaskType = this.taskType != null
             ? runContext.render(this.taskType).as(TaskType.class).orElse(null)
@@ -305,13 +329,21 @@ public class Embeddings extends AbstractTask implements RunnableTask<Embeddings.
             }
         }
 
+        if (allEmbeddings.size() != inputTexts.size()) {
+            throw new IllegalStateException(String.format(
+                "Vertex AI returned %d embeddings for %d input texts. Expected 1:1 correspondence.",
+                allEmbeddings.size(),
+                inputTexts.size()
+            ));
+        }
+
         runContext.metric(Counter.of("embeddings.count", allEmbeddings.size()));
         if (totalTokens > 0) {
             runContext.metric(Counter.of("token.count", totalTokens));
         }
 
-        var singleEmbedding = (hasSingleText && !allEmbeddings.isEmpty()) ? allEmbeddings.get(0) : null;
-        var dimension = !allEmbeddings.isEmpty() ? allEmbeddings.get(0).size() : 0;
+        var singleEmbedding = (hasSingleText && !allEmbeddings.isEmpty()) ? allEmbeddings.getFirst() : null;
+        var dimension = !allEmbeddings.isEmpty() ? allEmbeddings.getFirst().size() : 0;
 
         return Output.builder()
             .embeddings(allEmbeddings)
