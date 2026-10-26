@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { setup } from "@storybook/vue3";
 import { within, expect, waitFor } from "storybook/test";
+import { reactive } from "vue";
 import { createI18n } from "vue-i18n";
 import KestraDesignSystem from "@kestra-io/design-system";
 import BigqueryQueryTopologyDetails from "../../../src/components/BigqueryQueryTopologyDetails.vue";
@@ -192,5 +193,30 @@ export const PreExecutionTagOnlySql: Story = {
         const canvas = within(canvasElement);
         await waitFor(() => expect(canvas.getByText("Query (template)")).toBeInTheDocument());
         expect(canvas.getByText("my-gcp-project")).toBeInTheDocument();
+    },
+};
+
+// Node opened while the query runs: outputs are empty until the task run reaches SUCCESS, then the
+// state change triggers a refetch. `reactive` lets the play function advance the task run in place.
+const runningExecution = reactive({
+    ...executionArgs.execution,
+    taskRunList: [{ ...executionArgs.execution.taskRunList[0], state: { current: "RUNNING" } }],
+});
+
+export const PostExecutionOutputsAfterRunning: Story = {
+    name: "Post-execution — outputs refetched when the running task succeeds",
+    args: {
+        task: expressionTask,
+        ...executionArgs,
+        execution: runningExecution,
+        fetchOutputs: async () =>
+            runningExecution.taskRunList[0].state.current === "SUCCESS" ? SAMPLE_OUTPUTS : {},
+    } as any,
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
+        expect(canvas.queryByText("resolved-gcp-project")).toBeNull();
+        runningExecution.taskRunList[0].state.current = "SUCCESS";
+        await waitFor(() => expect(canvas.getByText("resolved-gcp-project")).toBeInTheDocument());
+        expect(canvas.getByText("EU")).toBeInTheDocument();
     },
 };

@@ -114,7 +114,7 @@ class QueryTest {
         List<Map<String, Object>> rows = run.getRows();
         assertThat(rows.size(), is(1));
         assertThat(run.getProjectId(), is(project));
-        assertThat(run.getLocation(), is(notNullValue()));
+        assertThat(run.getLocation(), is("EU"));
 
         assertThat(rows.getFirst().get("string"), is("hello"));
         assertThat(rows.getFirst().get("nullable"), is(nullValue()));

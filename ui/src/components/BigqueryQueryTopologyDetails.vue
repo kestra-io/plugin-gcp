@@ -65,9 +65,12 @@ async function loadTaskOutputs() {
     }
 }
 
+// Refetch when the task run changes state too, so a node opened mid-run picks up final outputs.
+const taskRunState = computed(() => taskRun.value?.state?.current as string | undefined);
+
 watch(
-    executionId,
-    (id) => {
+    [executionId, taskRunState],
+    ([id]) => {
         if (id) loadTaskOutputs();
     },
     { immediate: true },
@@ -75,12 +78,12 @@ watch(
 
 const taskOutputs = computed(() => fetchedOutputs.value ?? taskRun.value?.outputs ?? null);
 
-// After an execution read outputs only: the definition may hold unresolved templates.
 const isTemplate = (v?: string) => !!v && /\{[{%]/.test(v);
 // Marker first so it survives truncation in the compact node.
 const markTemplate = (v?: string) =>
     v ? (isTemplate(v) ? `${t("templateMarker")} ${v}` : v) : "—";
 
+// After an execution read outputs only: the definition may hold unresolved templates.
 const resolvedProject = computed(() =>
     hasExecution.value
         ? ((taskOutputs.value?.projectId as string | undefined) ?? "—")
@@ -135,8 +138,8 @@ async function loadMetrics() {
 }
 
 watch(
-    executionId,
-    (id) => {
+    [executionId, taskRunState],
+    ([id]) => {
         if (id) loadMetrics();
     },
     { immediate: true },
