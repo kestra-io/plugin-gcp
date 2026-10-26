@@ -697,12 +697,17 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         return row;
     }
 
-    private Object convertCell(Field field, FieldValue value, boolean isRepeated) {
+    private static Instant parseDatetime(String str) {
+        String s = str.replace(' ', 'T');
+        return Instant.parse(s.endsWith("Z") ? s : s + "Z");
+    }
+
+    Object convertCell(Field field, FieldValue value, boolean isRepeated) {
         if (field.getMode() == Field.Mode.REPEATED && !isRepeated) {
             return value
                 .getRepeatedValue()
                 .stream()
-                .map(fieldValue -> this.convertCell(field, fieldValue, true))
+                .map(fieldValue -> convertCell(field, fieldValue, true))
                 .collect(Collectors.toList());
         }
 
@@ -766,7 +771,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 .map(
                     sub -> new AbstractMap.SimpleEntry<>(
                         sub.getName(),
-                        this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
+                        convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
                     )
                 )
                 .peek(u -> counter.getAndIncrement())
@@ -799,23 +804,29 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (LegacySQLTypeName.RANGE.equals(field.getType())) {
-            if (LegacySQLTypeName.DATE.toString().equals(field.getRangeElementType().getType())) {
-                return Map.of(
-                    "start", LocalDate.parse(value.getRangeValue().getStart().getStringValue()),
-                    "end", LocalDate.parse(value.getRangeValue().getEnd().getStringValue())
-                );
-            } else if (LegacySQLTypeName.DATETIME.toString().equals(field.getRangeElementType().getType())) {
-                return Map.of(
-                    "start", Instant.parse(value.getRangeValue().getStart().getStringValue() + "Z"),
-                    "end", LocalDate.parse(value.getRangeValue().getEnd().getStringValue() + "Z")
-                );
-            } else if (LegacySQLTypeName.TIMESTAMP.toString().equals(field.getRangeElementType().getType())) {
-                return Map.of(
-                    "start", value.getRangeValue().getStart().getTimestampInstant(),
-                    "end", value.getRangeValue().getEnd().getTimestampInstant()
-                );
+            var rangeValue = value.getRangeValue();
+            if (rangeValue == null) {
+                return null;
+            }
+            var startVal = rangeValue.getStart();
+            var endVal = rangeValue.getEnd();
+            var elementType = field.getRangeElementType() != null ? field.getRangeElementType().getType() : null;
+
+            Map<String, Object> rangeMap = new LinkedHashMap<>();
+            if (LegacySQLTypeName.DATE.toString().equals(elementType)) {
+                rangeMap.put("start", startVal != null && !startVal.isNull() ? LocalDate.parse(startVal.getStringValue()) : null);
+                rangeMap.put("end", endVal != null && !endVal.isNull() ? LocalDate.parse(endVal.getStringValue()) : null);
+                return rangeMap;
+            } else if (LegacySQLTypeName.DATETIME.toString().equals(elementType)) {
+                rangeMap.put("start", startVal != null && !startVal.isNull() ? parseDatetime(startVal.getStringValue()) : null);
+                rangeMap.put("end", endVal != null && !endVal.isNull() ? parseDatetime(endVal.getStringValue()) : null);
+                return rangeMap;
+            } else if (LegacySQLTypeName.TIMESTAMP.toString().equals(elementType)) {
+                rangeMap.put("start", startVal != null && !startVal.isNull() ? startVal.getTimestampInstant() : null);
+                rangeMap.put("end", endVal != null && !endVal.isNull() ? endVal.getTimestampInstant() : null);
+                return rangeMap;
             } else {
-                return value.getRangeValue().getValues();
+                return rangeValue.getValues();
             }
         }
 
