@@ -131,7 +131,7 @@ class DownloadsTest extends AbstractFlociGcpTest {
         assertThat(run.getBlobs().size(), is(2));
         assertThat(run.getOutputFiles().size(), is(2));
 
-        var listSource = List.builder()
+        var listSource = io.kestra.plugin.gcp.gcs.List.builder()
             .id(DownloadsTest.class.getSimpleName() + "_source")
             .type(List.class.getName())
             .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + dir + "/"))
@@ -140,7 +140,7 @@ class DownloadsTest extends AbstractFlociGcpTest {
         var sourceRun = listSource.run(runContext(listSource));
         assertThat(sourceRun.getBlobs().size(), is(0));
 
-        var listArchive = List.builder()
+        var listArchive = io.kestra.plugin.gcp.gcs.List.builder()
             .id(DownloadsTest.class.getSimpleName() + "_archive")
             .type(List.class.getName())
             .from(Property.ofValue(archiveDir + "/"))
