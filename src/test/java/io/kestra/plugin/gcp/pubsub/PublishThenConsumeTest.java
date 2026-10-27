@@ -5,18 +5,19 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.google.api.gax.rpc.NotFoundException;
-import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
+import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.cloud.pubsub.v1.TopicAdminClient;
-import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
-import com.google.pubsub.v1.PushConfig;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -26,19 +27,25 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.gcp.AbstractFlociGcpTest;
 import io.kestra.plugin.gcp.pubsub.model.Message;
 import io.kestra.plugin.gcp.pubsub.model.SerdeType;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class PublishThenConsumeTest {
+class PublishThenConsumeTest extends AbstractFlociGcpTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -50,11 +57,14 @@ class PublishThenConsumeTest {
 
     @Test
     void runWithList() throws Exception {
-        var runContext = runContextFactory.of();
-        String topic = createTopic();
-        String subscription = createSubscription(topic);
+        try (
+            var connections = PubSubTestConnections.open(FLOCI_GCP.getEmulatorHost());
+            var resources = PubSubTestUtils.forFloci(project, connections)
+        ) {
+            var runContext = runContextFactory.of();
+            String topic = resources.createTopic();
+            String subscription = resources.createSubscription(topic);
 
-        try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
                 .topic(Property.ofValue(topic))
@@ -69,28 +79,58 @@ class PublishThenConsumeTest {
             var publishOutput = publish.run(runContext);
             assertThat(publishOutput.getMessagesCount(), is(2));
 
+            var consumeContext = runContextFactory.of();
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
                 .topic(Property.ofValue(topic))
                 .subscription(Property.ofValue(subscription))
                 .maxRecords(Property.ofValue(2))
-
                 .build();
 
-            var consumeOutput = consume.run(runContextFactory.of());
+            var consumeOutput = consume.run(consumeContext);
+            URI consumedMessagesUri = consumeOutput.getUri();
+            resources.registerCleanup(
+                () -> storageInterface.delete(TenantService.MAIN_TENANT, null, consumedMessagesUri)
+            );
             assertThat(consumeOutput.getCount(), is(2));
-        } finally {
-            deleteTopic(topic);
+
+            List<Message> consumedMessages;
+            try (var messagesFile = consumeContext.storage().getFile(consumedMessagesUri)) {
+                consumedMessages = FileSerde.readAll(messagesFile, Message.class)
+                    .collectList()
+                    .block();
+            }
+
+            assertThat(consumedMessages, hasSize(2));
+            var messagesWithData = consumedMessages.stream()
+                .filter(message -> "Hello World".equals(messageData(message.getData())))
+                .toList();
+            assertThat(messagesWithData, hasSize(1));
+            assertThat(messageData(messagesWithData.getFirst().getData()), is("Hello World"));
+            assertThat(messagesWithData.getFirst().getAttributes(), anEmptyMap());
+
+            var messagesWithAttributes = consumedMessages.stream()
+                .filter(message -> Map.of("key", "value").equals(message.getAttributes()))
+                .toList();
+            assertThat(messagesWithAttributes, hasSize(1));
+            // Pub/Sub represents an omitted payload as an empty byte string on delivery.
+            assertThat(messageData(messagesWithAttributes.getFirst().getData()), is(emptyString()));
+
+            resources.assertSubscriptionAcknowledged(subscription);
         }
     }
 
     @Test
     void runWithJson() throws Exception {
-        var runContext = runContextFactory.of();
-        String topic = createTopic();
-        String subscription = createSubscription(topic);
+        try (
+            var connections = PubSubTestConnections.open(FLOCI_GCP.getEmulatorHost());
+            var resources = PubSubTestUtils.forFloci(project, connections)
+        ) {
+            String topic = resources.createTopic();
+            String subscription = resources.createSubscription(topic);
 
-        try {
+            var runContext = runContextFactory.of();
+
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
                 .topic(Property.ofValue(topic))
@@ -106,6 +146,7 @@ class PublishThenConsumeTest {
             var publishOutput = publish.run(runContext);
             assertThat(publishOutput.getMessagesCount(), is(1));
 
+            var consumeContext = runContextFactory.of();
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
                 .topic(Property.ofValue(topic))
@@ -114,31 +155,51 @@ class PublishThenConsumeTest {
                 .maxRecords(Property.ofValue(1))
                 .build();
 
-            var consumeOutput = consume.run(runContextFactory.of());
+            var consumeOutput = consume.run(consumeContext);
+            URI consumedMessagesUri = consumeOutput.getUri();
+            resources.registerCleanup(
+                () -> storageInterface.delete(TenantService.MAIN_TENANT, null, consumedMessagesUri)
+            );
             assertThat(consumeOutput.getCount(), is(1));
-        } finally {
-            deleteTopic(topic);
+
+            List<Message> consumedMessages;
+            try (var messagesFile = consumeContext.storage().getFile(consumedMessagesUri)) {
+                consumedMessages = FileSerde.readAll(messagesFile, Message.class)
+                    .collectList()
+                    .block();
+            }
+
+            assertThat(consumedMessages, hasSize(1));
+            assertThat(consumedMessages.getFirst().getData(), is(Map.of("hello", "world")));
+            assertThat(consumedMessages.getFirst().getAttributes(), anEmptyMap());
+
+            resources.assertSubscriptionAcknowledged(subscription);
         }
     }
 
     @Test
     void runWithFile() throws Exception {
-        var runContext = runContextFactory.of();
-        String topic = createTopic();
-        String subscription = createSubscription(topic);
+        try (
+            var connections = PubSubTestConnections.open(FLOCI_GCP.getEmulatorHost());
+            var resources = PubSubTestUtils.forFloci(project, connections)
+        ) {
+            String topic = resources.createTopic();
+            String subscription = resources.createSubscription(topic);
+            URI sourceUri;
 
-        var uri = createTestFile(runContext);
+            var runContext = runContextFactory.of();
+            sourceUri = createTestFile(runContext, resources);
 
-        try {
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
                 .topic(Property.ofValue(topic))
-                .from(uri.toString())
+                .from(sourceUri.toString())
                 .build();
 
             var publishOutput = publish.run(runContext);
             assertThat(publishOutput.getMessagesCount(), is(2));
 
+            var consumeContext = runContextFactory.of();
             var consume = Consume.builder()
                 .projectId(Property.ofValue(project))
                 .topic(Property.ofValue(topic))
@@ -146,20 +207,55 @@ class PublishThenConsumeTest {
                 .maxRecords(Property.ofValue(2))
                 .build();
 
-            var consumeOutput = consume.run(runContextFactory.of());
+            var consumeOutput = consume.run(consumeContext);
+            URI consumedMessagesUri = consumeOutput.getUri();
+            resources.registerCleanup(
+                () -> storageInterface.delete(TenantService.MAIN_TENANT, null, consumedMessagesUri)
+            );
             assertThat(consumeOutput.getCount(), is(2));
-        } finally {
-            deleteTopic(topic);
+
+            List<Message> consumedMessages;
+            try (var messagesFile = consumeContext.storage().getFile(consumedMessagesUri)) {
+                consumedMessages = FileSerde.readAll(messagesFile, Message.class)
+                    .collectList()
+                    .block();
+            }
+
+            assertThat(consumedMessages, hasSize(2));
+            var messageWithPayload = consumedMessages.stream()
+                .filter(message -> "Hello World".equals(messageData(message.getData())))
+                .toList();
+            assertThat(
+                "Received messages: " + consumedMessages.stream()
+                    .map(message -> "data=" + messageData(message.getData()) + ", attributes=" + message.getAttributes())
+                    .toList(),
+                messageWithPayload,
+                hasSize(1)
+            );
+            assertThat(messageWithPayload.getFirst().getAttributes(), anEmptyMap());
+
+            var messageWithAttributes = consumedMessages.stream()
+                .filter(message -> Map.of("key", "value").equals(message.getAttributes()))
+                .toList();
+            assertThat(messageWithAttributes, hasSize(1));
+            assertThat(messageData(messageWithAttributes.getFirst().getData()), is(emptyString()));
+
+            resources.assertSubscriptionAcknowledged(subscription);
         }
     }
 
+    // Floci 0.11.0 does not faithfully emulate ordered-subscription delivery semantics.
     @Test
+    @EnabledIfEnvironmentVariable(
+        named = "GOOGLE_APPLICATION_CREDENTIALS",
+        matches = ".+",
+        disabledReason = "Floci 0.11.0 does not faithfully emulate ordered-subscription delivery semantics."
+    )
     void runWithMessagesWithOrderingKey() throws Exception {
-        var runContext = runContextFactory.of();
-        String topic = createTopic();
-        String subscription = createSubscription(topic);
-
-        try {
+        try (var resources = PubSubTestUtils.withDefaultCredentials(project)) {
+            String topic = resources.createTopic();
+            String subscription = resources.createSubscription(topic);
+            var runContext = runContextFactory.of();
             var publish = Publish.builder()
                 .projectId(Property.ofValue(project))
                 .topic(Property.ofValue(topic))
@@ -199,65 +295,66 @@ class PublishThenConsumeTest {
 
             var consumeOutput = consume.run(runContextFactory.of());
             assertThat(consumeOutput.getCount(), is(4));
-        } finally {
-            deleteTopic(topic);
         }
     }
 
     @Test
-    void shouldFailWhenTopicDoesNotExist() {
-        var publish = Publish.builder()
-            .projectId(Property.ofValue(project))
-            .topic(Property.ofValue("missing-" + IdUtils.create()))
-            .from(List.of(Message.builder().data("Hello World").build()))
-            .build();
+    void shouldFailWhenTopicDoesNotExist() throws Exception {
+        try (var connections = PubSubTestConnections.open(FLOCI_GCP.getEmulatorHost())) {
+            String topic = "missing-" + IdUtils.create();
+            var topicName = ProjectTopicName.of(project, topic);
 
-        assertThrows(NotFoundException.class, () -> publish.run(runContextFactory.of()));
+            try (TopicAdminClient topicAdmin = connections.topicAdminClient()) {
+                var missingTopic = assertThrows(NotFoundException.class, () -> topicAdmin.getTopic(topicName));
+                assertThat(missingTopic.getStatusCode().getCode(), is(Code.NOT_FOUND));
+            }
+
+            var publish = Publish.builder()
+                .projectId(Property.ofValue(project))
+                .topic(Property.ofValue(topic))
+                .from(List.of(Message.builder().data("Hello World").build()))
+                .build();
+
+            var publishFailure = assertThrows(NotFoundException.class, () -> publish.run(runContextFactory.of()));
+            assertThat(publishFailure.getStatusCode().getCode(), is(Code.NOT_FOUND));
+            assertThat(publishFailure.getCause(), instanceOf(StatusRuntimeException.class));
+            assertThat(((StatusRuntimeException) publishFailure.getCause()).getStatus().getCode(), is(Status.Code.NOT_FOUND));
+        }
     }
 
-    private URI createTestFile(RunContext runContext) throws Exception {
+    private URI createTestFile(RunContext runContext, PubSubTestUtils resources) throws Exception {
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-        OutputStream output = new FileOutputStream(tempFile);
+        try {
+            try (OutputStream output = new FileOutputStream(tempFile)) {
+                FileSerde.write(
+                    output,
+                    Message.builder().data("Hello World").build()
+                );
+                FileSerde.write(
+                    output,
+                    Message.builder().attributes(Map.of("key", "value")).build()
+                );
+            }
 
-        FileSerde.write(
-            output,
-            Message.builder().data("Hello World".getBytes()).build()
-        );
-        FileSerde.write(
-            output,
-            Message.builder().attributes(Map.of("key", "value")).build()
-        );
-        return storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+            try (FileInputStream input = new FileInputStream(tempFile)) {
+                URI uri = storageInterface.put(
+                    TenantService.MAIN_TENANT,
+                    null,
+                    URI.create("/" + IdUtils.create() + ".ion"),
+                    input
+                );
+                resources.registerCleanup(() -> storageInterface.delete(TenantService.MAIN_TENANT, null, uri));
+                return uri;
+            }
+        } finally {
+            Files.deleteIfExists(tempFile.toPath());
+        }
     }
 
-    private String createSubscription(String topicId) throws Exception {
-        String subId = "test-subscription-" + IdUtils.create();
-
-        ProjectTopicName topicName = ProjectTopicName.of(project, topicId);
-        ProjectSubscriptionName subName = ProjectSubscriptionName.of(project, subId);
-
-        try (SubscriptionAdminClient subAdmin = SubscriptionAdminClient.create()) {
-            subAdmin.createSubscription(
-                subName,
-                topicName,
-                PushConfig.getDefaultInstance(),
-                10
-            );
+    private String messageData(Object data) {
+        if (data instanceof byte[] bytes) {
+            return new String(bytes, StandardCharsets.UTF_8);
         }
-        return subId;
-    }
-
-    private String createTopic() throws Exception {
-        String topicId = "test-topic-" + IdUtils.create();
-        try (TopicAdminClient client = TopicAdminClient.create()) {
-            client.createTopic(ProjectTopicName.of(project, topicId));
-        }
-        return topicId;
-    }
-
-    private void deleteTopic(String topic) throws Exception {
-        try (TopicAdminClient client = TopicAdminClient.create()) {
-            client.deleteTopic(ProjectTopicName.of(project, topic));
-        }
+        return Objects.toString(data, null);
     }
 }

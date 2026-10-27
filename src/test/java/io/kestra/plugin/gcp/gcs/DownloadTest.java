@@ -8,7 +8,6 @@ import java.net.URI;
 import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.common.collect.ImmutableMap;
@@ -22,6 +21,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.gcp.AbstractFlociGcpTest;
 
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -29,10 +29,10 @@ import jakarta.inject.Inject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @KestraTest
-@EnabledIfEnvironmentVariable(named = "GOOGLE_APPLICATION_CREDENTIALS", matches = ".+")
-class DownloadTest {
+class DownloadTest extends AbstractFlociGcpTest {
     @Inject
     private StorageInterface storageInterface;
 
@@ -44,93 +44,141 @@ class DownloadTest {
 
     @Test
     void fromStorage() throws Exception {
-        File file = new File(
-            Objects.requireNonNull(
-                DownloadTest.class.getClassLoader()
-                    .getResource("application.yml")
-            )
-                .toURI()
-        );
-
-        URI source = storageInterface.put(
-            TenantService.MAIN_TENANT,
-            null,
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(file)
-        );
-
         String out = FriendlyId.createFriendlyId();
+        String objectName = "tasks/gcp/upload/" + out + ".yml";
+        URI source = null;
+        URI downloaded = null;
 
-        Upload upload = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
-            .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            File file = new File(
+                Objects.requireNonNull(
+                    DownloadTest.class.getClassLoader()
+                        .getResource("application.yml")
+                )
+                    .toURI()
+            );
 
-        Upload.Output uploadOutput = upload.run(runContext(upload));
+            try (InputStream input = new FileInputStream(file)) {
+                source = storageInterface.put(
+                    TenantService.MAIN_TENANT,
+                    null,
+                    new URI("/" + FriendlyId.createFriendlyId()),
+                    input
+                );
+            }
 
-        Download task = Download.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(Property.ofValue(uploadOutput.getUri().toString()))
-            .build();
+            Upload upload = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
+                    .build()
+            );
 
-        Download.Output run = task.run(runContext(task));
-        assertThat(run.getUri().toString(), endsWith(".yml"));
+            Upload.Output uploadOutput = upload.run(runContext(upload));
+            assertNotNull(storage.get(bucket, objectName));
 
-        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri());
+            Download task = connections.spy(
+                Download.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(Property.ofValue(uploadOutput.getUri().toString()))
+                    .build()
+            );
 
-        assertThat(
-            CharStreams.toString(new InputStreamReader(get)),
-            is(CharStreams.toString(new InputStreamReader(new FileInputStream(file))))
-        );
+            Download.Output run = task.run(runContext(task));
+            downloaded = run.getUri();
+            assertThat(downloaded.toString(), endsWith(".yml"));
+
+            try (
+                InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, downloaded);
+                InputStream expected = new FileInputStream(file)
+            ) {
+                assertThat(
+                    CharStreams.toString(new InputStreamReader(get)),
+                    is(CharStreams.toString(new InputStreamReader(expected)))
+                );
+            }
+        } finally {
+            storage.delete(bucket, objectName);
+            if (source != null) {
+                storageInterface.delete(TenantService.MAIN_TENANT, null, source);
+            }
+            if (downloaded != null) {
+                storageInterface.delete(TenantService.MAIN_TENANT, null, downloaded);
+            }
+        }
     }
 
     @Test
     void fromStorageWithChecksumValidation() throws Exception {
-        File file = new File(
-            Objects.requireNonNull(
-                DownloadTest.class.getClassLoader()
-                    .getResource("application.yml")
-            )
-                .toURI()
-        );
-
-        URI source = storageInterface.put(
-            TenantService.MAIN_TENANT,
-            null,
-            new URI("/" + FriendlyId.createFriendlyId()),
-            new FileInputStream(file)
-        );
-
         String out = FriendlyId.createFriendlyId();
+        String objectName = "tasks/gcp/upload/" + out + ".yml";
+        URI source = null;
+        URI downloaded = null;
 
-        Upload upload = Upload.builder()
-            .id(UploadTest.class.getSimpleName())
-            .type(Upload.class.getName())
-            .from(Property.ofValue(source.toString()))
-            .to(Property.ofValue("gs://{{inputs.bucket}}/tasks/gcp/upload/" + out + ".yml"))
-            .build();
+        try (GcsTestConnections.Scope connections = GcsTestConnections.useFloci(FLOCI_GCP.getEndpoint())) {
+            File file = new File(
+                Objects.requireNonNull(
+                    DownloadTest.class.getClassLoader()
+                        .getResource("application.yml")
+                )
+                    .toURI()
+            );
 
-        Upload.Output uploadOutput = upload.run(runContext(upload));
+            try (InputStream input = new FileInputStream(file)) {
+                source = storageInterface.put(
+                    TenantService.MAIN_TENANT,
+                    null,
+                    new URI("/" + FriendlyId.createFriendlyId()),
+                    input
+                );
+            }
 
-        Download task = Download.builder()
-            .id(DownloadTest.class.getSimpleName())
-            .type(Download.class.getName())
-            .from(Property.ofValue(uploadOutput.getUri().toString()))
-            .validateChecksum(Property.ofValue(true))
-            .build();
+            Upload upload = connections.spy(
+                Upload.builder()
+                    .id(UploadTest.class.getSimpleName())
+                    .type(Upload.class.getName())
+                    .from(Property.ofValue(source.toString()))
+                    .to(Property.ofValue("gs://{{inputs.bucket}}/" + objectName))
+                    .build()
+            );
 
-        Download.Output run = task.run(runContext(task));
-        assertThat(run.getUri().toString(), endsWith(".yml"));
+            Upload.Output uploadOutput = upload.run(runContext(upload));
+            assertNotNull(storage.get(bucket, objectName));
 
-        InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri());
+            Download task = connections.spy(
+                Download.builder()
+                    .id(DownloadTest.class.getSimpleName())
+                    .type(Download.class.getName())
+                    .from(Property.ofValue(uploadOutput.getUri().toString()))
+                    .validateChecksum(Property.ofValue(true))
+                    .build()
+            );
 
-        assertThat(
-            CharStreams.toString(new InputStreamReader(get)),
-            is(CharStreams.toString(new InputStreamReader(new FileInputStream(file))))
-        );
+            Download.Output run = task.run(runContext(task));
+            downloaded = run.getUri();
+            assertThat(downloaded.toString(), endsWith(".yml"));
+
+            try (
+                InputStream get = storageInterface.get(TenantService.MAIN_TENANT, null, downloaded);
+                InputStream expected = new FileInputStream(file)
+            ) {
+                assertThat(
+                    CharStreams.toString(new InputStreamReader(get)),
+                    is(CharStreams.toString(new InputStreamReader(expected)))
+                );
+            }
+        } finally {
+            storage.delete(bucket, objectName);
+            if (source != null) {
+                storageInterface.delete(TenantService.MAIN_TENANT, null, source);
+            }
+            if (downloaded != null) {
+                storageInterface.delete(TenantService.MAIN_TENANT, null, downloaded);
+            }
+        }
     }
 
     private RunContext runContext(Task task) {
