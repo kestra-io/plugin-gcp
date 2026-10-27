@@ -112,45 +112,47 @@ class DownloadsTest extends AbstractFlociGcpTest {
     @Test
     void runMoveRecursive() throws Exception {
         var dir = random + "/move_recursive";
-        testUtils.upload(dir + "/sub_a/file.yml");
-        testUtils.upload(dir + "/sub_b/file.yml");
-
         var archiveDir = "gs://" + bucket + "/tasks/gcp/upload/" + random + "/archive";
 
-        var task = Downloads.builder()
-            .id(DownloadsTest.class.getSimpleName())
-            .type(Downloads.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + dir + "/"))
-            .action(Property.ofValue(ActionInterface.Action.MOVE))
-            .moveDirectory(Property.ofValue(archiveDir))
-            .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
-            .build();
+        try (
+            GcsTestConnections.Scope connections = GcsTestConnections.useFloci(
+                FLOCI_GCP.getEndpoint(),
+                io.kestra.plugin.gcp.gcs.List.class,
+                Copy.class,
+                Delete.class
+            )
+        ) {
+            testUtils.upload(dir + "/sub_a/file.yml");
+            testUtils.upload(dir + "/sub_b/file.yml");
 
-        var run = task.run(runContext(task));
+            var task = connections.spy(
+                Downloads.builder()
+                    .id(DownloadsTest.class.getSimpleName())
+                    .type(Downloads.class.getName())
+                    .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + dir + "/"))
+                    .action(Property.ofValue(ActionInterface.Action.MOVE))
+                    .moveDirectory(Property.ofValue(archiveDir))
+                    .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
+                    .build()
+            );
 
-        assertThat(run.getBlobs().size(), is(2));
-        assertThat(run.getOutputFiles().size(), is(2));
+            var run = task.run(runContext(task));
 
-        var listSource = List.builder()
-            .id(DownloadsTest.class.getSimpleName() + "_source")
-            .type(List.class.getName())
-            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + dir + "/"))
-            .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
-            .build();
-        var sourceRun = listSource.run(runContext(listSource));
-        assertThat(sourceRun.getBlobs().size(), is(0));
+            assertThat(run.getBlobs().size(), is(2));
+            assertThat(run.getOutputFiles().size(), is(2));
 
-        var listArchive = List.builder()
-            .id(DownloadsTest.class.getSimpleName() + "_archive")
-            .type(List.class.getName())
-            .from(Property.ofValue(archiveDir + "/"))
-            .listingType(Property.ofValue(ListInterface.ListingType.RECURSIVE))
-            .build();
-        var archiveRun = listArchive.run(runContext(listArchive));
-        assertThat(archiveRun.getBlobs().size(), is(2));
-        var archiveNames = archiveRun.getBlobs().stream().map(Blob::getName).toList();
-        assertThat(archiveNames.stream().anyMatch(n -> n.endsWith("/sub_a/file.yml")), is(true));
-        assertThat(archiveNames.stream().anyMatch(n -> n.endsWith("/sub_b/file.yml")), is(true));
+            assertThat(countObjects("tasks/gcp/upload/" + dir + "/"), is(0));
+
+            var archiveNames = new ArrayList<String>();
+            storage.list(bucket, Storage.BlobListOption.prefix("tasks/gcp/upload/" + random + "/archive/"))
+                .iterateAll()
+                .forEach(blob -> archiveNames.add(blob.getName()));
+            assertThat(archiveNames.size(), is(2));
+            assertThat(archiveNames.stream().anyMatch(n -> n.contains("/sub_a/file.yml")), is(true));
+            assertThat(archiveNames.stream().anyMatch(n -> n.contains("/sub_b/file.yml")), is(true));
+        } finally {
+            deleteObjects("tasks/gcp/upload/" + random + "/");
+        }
     }
 
     private RunContext runContext(Task task) {
