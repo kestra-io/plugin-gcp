@@ -3,6 +3,8 @@ package io.kestra.plugin.gcp.gcs;
 import java.io.File;
 import java.net.URI;
 import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -15,6 +17,7 @@ import com.google.cloud.storage.Storage;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -26,7 +29,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -132,17 +134,105 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
     @Builder.Default
     private Property<Boolean> validateChecksum = Property.ofValue(false);
 
-    static void performAction(
-        java.util.List<io.kestra.plugin.gcp.gcs.models.Blob> blobList,
+    static String destinationUri(String moveDirectory, String blobName, String prefix) {
+        var destPrefix = StringUtils.stripEnd(moveDirectory, "/");
+        var subpath = "";
+
+        if (prefix != null) {
+            var normKey = StringUtils.stripStart(blobName, "/");
+            var endsWithSlash = prefix.endsWith("/");
+            var normPrefix = StringUtils.strip(prefix, "/");
+
+            if (!normPrefix.isEmpty()) {
+                if (normKey.equals(normPrefix)) {
+                    subpath = FilenameUtils.getName(normKey);
+                } else if (endsWithSlash) {
+                    if (normKey.startsWith(normPrefix + "/")) {
+                        subpath = normKey.substring(normPrefix.length() + 1);
+                    } else {
+                        subpath = normKey;
+                    }
+                } else if (normPrefix.contains("/")) {
+                    var parent = normPrefix.substring(0, normPrefix.lastIndexOf('/'));
+                    if (!parent.isEmpty() && normKey.startsWith(parent + "/")) {
+                        subpath = normKey.substring(parent.length() + 1);
+                    } else {
+                        subpath = normKey;
+                    }
+                } else {
+                    subpath = normKey;
+                }
+            } else {
+                subpath = normKey;
+            }
+        }
+
+        if (subpath.isEmpty()) {
+            subpath = FilenameUtils.getName(blobName);
+        }
+
+        if (subpath.isEmpty()) {
+            return destPrefix;
+        }
+        return destPrefix.isEmpty() ? subpath : destPrefix + "/" + subpath;
+    }
+
+    static Map<Blob, String> destinations(
+        java.util.List<Blob> blobList,
         ActionInterface.Action action,
         Property<String> moveDirectory,
+        Property<String> from,
+        RunContext runContext) throws Exception {
+        if (action != ActionInterface.Action.MOVE) {
+            return Map.of();
+        }
+
+        var rMoveDirectory = runContext.render(moveDirectory).as(String.class).orElseThrow();
+        String sourcePrefix = null;
+        if (from != null) {
+            var rFrom = runContext.render(from).as(String.class).orElse(null);
+            if (rFrom != null) {
+                var fromUri = encode(runContext, rFrom);
+                if (fromUri.getPath() != null) {
+                    sourcePrefix = StringUtils.stripStart(fromUri.getPath(), "/");
+                }
+            }
+        }
+
+        var destinationMap = new HashMap<String, Blob>();
+        var targets = new LinkedHashMap<Blob, String>();
+        for (var blob : blobList) {
+            if (blob.isDirectory() || blob.getName().endsWith("/")) {
+                continue;
+            }
+            var targetUri = destinationUri(rMoveDirectory, blob.getName(), sourcePrefix);
+            var existing = destinationMap.put(targetUri, blob);
+            if (existing != null) {
+                throw new IllegalStateException(
+                    "Cannot move blobs to '%s': multiple source blobs would overwrite the same destination path: '%s' and '%s'. Set a `from` prefix that covers both folders, or narrow the listing with `regExp`, so each blob maps to its own path under `moveDirectory`."
+                        .formatted(targetUri, existing.getName(), blob.getName())
+                );
+            }
+            targets.put(blob, targetUri);
+        }
+        return targets;
+    }
+
+    static void performAction(
+        java.util.List<Blob> blobList,
+        ActionInterface.Action action,
+        Property<String> moveDirectory,
+        Property<String> from,
         RunContext runContext,
         Property<String> projectId,
         Property<String> serviceAccount,
         Property<java.util.List<String>> scopes) throws Exception {
         if (action == ActionInterface.Action.DELETE) {
-            for (Blob blob : blobList) {
-                Delete delete = Delete.builder()
+            for (var blob : blobList) {
+                if (blob.isDirectory() || blob.getName().endsWith("/")) {
+                    continue;
+                }
+                var delete = Delete.builder()
                     .id("archive")
                     .type(Delete.class.getName())
                     .uri(Property.ofValue("gs://" + blob.getBucket() + "/" + blob.getName()))
@@ -153,17 +243,15 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
                 delete.run(runContext);
             }
         } else if (action == ActionInterface.Action.MOVE) {
-            for (Blob blob : blobList) {
-                Copy copy = Copy.builder()
+            var targets = destinations(blobList, action, moveDirectory, from, runContext);
+            for (var entry : targets.entrySet()) {
+                var blob = entry.getKey();
+                var targetUri = entry.getValue();
+                var copy = Copy.builder()
                     .id("archive")
                     .type(Copy.class.getName())
                     .from(Property.ofValue("gs://" + blob.getBucket() + "/" + blob.getName()))
-                    .to(
-                        Property.ofValue(
-                            StringUtils.stripEnd(runContext.render(moveDirectory).as(String.class).orElseThrow() + "/", "/")
-                                + "/" + FilenameUtils.getName(blob.getName())
-                        )
-                    )
+                    .to(Property.ofValue(targetUri))
                     .delete(Property.ofValue(true))
                     .serviceAccount(serviceAccount)
                     .projectId(projectId)
@@ -217,8 +305,9 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
         Downloads.performAction(
             run.getBlobs(),
-            runContext.render(this.action).as(Action.class).orElseThrow(),
+            runContext.render(this.action).as(Action.class).orElse(Action.NONE),
             this.moveDirectory,
+            this.from,
             runContext,
             this.projectId,
             this.serviceAccount,
