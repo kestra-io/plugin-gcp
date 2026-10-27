@@ -44,6 +44,10 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.bigtable.ReadRows`
 - `io.kestra.plugin.gcp.bigtable.Trigger`
 - `io.kestra.plugin.gcp.bigtable.WriteRows`
+- `io.kestra.plugin.gcp.billing.BillingExportQuery`
+- `io.kestra.plugin.gcp.billing.BudgetAlertTrigger`
+- `io.kestra.plugin.gcp.billing.GetBudget`
+- `io.kestra.plugin.gcp.billing.ListBillingAccounts`
 - `io.kestra.plugin.gcp.spanner.BatchDml`
 - `io.kestra.plugin.gcp.spanner.CreateDatabase`
 - `io.kestra.plugin.gcp.spanner.DeleteDatabase`
@@ -100,6 +104,7 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.rcs.SendRichCard`
 - `io.kestra.plugin.gcp.vertexai.ChatCompletion`
 - `io.kestra.plugin.gcp.vertexai.CustomJob`
+- `io.kestra.plugin.gcp.vertexai.Embeddings`
 - `io.kestra.plugin.gcp.vertexai.MultimodalCompletion`
 - `io.kestra.plugin.gcp.vertexai.TextCompletion`
 

@@ -93,6 +93,8 @@ dependencies {
     api 'com.google.cloud:google-cloud-vertexai'
     api 'com.google.cloud:google-cloud-dataform'
     api 'com.google.cloud:google-cloud-compute'
+    api 'com.google.cloud:google-cloud-billing'
+    api 'com.google.cloud:google-cloud-billingbudgets'
 }
 
 
