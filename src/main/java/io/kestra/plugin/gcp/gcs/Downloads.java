@@ -113,9 +113,7 @@ public class Downloads extends AbstractGcs implements RunnableTask<Downloads.Out
 
     @Schema(
         title = "Move destination",
-        description = """
-            Required when action is MOVE; gs:// prefix for moved objects.
-            Relative directory paths under `from` are preserved in the destination. When `from` ends with `/`, the full prefix is stripped; when it does not end with `/`, the parent folder of `from` is stripped so sibling prefixes remain differentiated."""
+        description = "Required when action is MOVE; gs:// prefix for moved objects"
     )
     @PluginProperty(group = "destination")
     private Property<String> moveDirectory;
