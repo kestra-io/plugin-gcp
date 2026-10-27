@@ -49,8 +49,6 @@ public class Message implements Output {
             if (data instanceof String dataStr) {
                 var rendered = runContext.render(dataStr);
                 serializedData = rendered.getBytes();
-            } else if (data instanceof byte[] dataBytes && serdeType == SerdeType.STRING) {
-                serializedData = dataBytes;
             } else {
                 serializedData = serdeType.serialize(data);
             }

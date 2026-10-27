@@ -328,7 +328,7 @@ class PublishThenConsumeTest extends AbstractFlociGcpTest {
             try (OutputStream output = new FileOutputStream(tempFile)) {
                 FileSerde.write(
                     output,
-                    Message.builder().data("Hello World".getBytes(StandardCharsets.UTF_8)).build()
+                    Message.builder().data("Hello World").build()
                 );
                 FileSerde.write(
                     output,
