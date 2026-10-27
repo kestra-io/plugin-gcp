@@ -3,6 +3,7 @@ package io.kestra.plugin.gcp.firestore;
 import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,7 +42,7 @@ import static io.kestra.core.utils.Rethrow.throwConsumer;
 @NoArgsConstructor
 @Schema(
     title = "Query documents from Firestore",
-    description = "Executes a Firestore query with optional filters, ordering, pagination, and fetch mode. Supports fetching first/all rows or storing results to a file."
+    description = "Executes a Firestore query with optional filters, ordering, pagination, and fetch mode. Supports fetching first/all rows or storing results to a file. Each row carries the document ID in an `_id` field, unless the document already has its own `_id` field."
 )
 @Plugin(
     examples = {
@@ -240,7 +241,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
 
         try (var output = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-            Flux<Map<String, Object>> flux = Flux.fromIterable(documents).map(snapshot -> snapshot.getData());
+            Flux<Map<String, Object>> flux = Flux.fromIterable(documents).map(Query::toRow);
             Long count = FileSerde.writeAll(output, flux).block();
 
             return Pair.of(
@@ -257,7 +258,7 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
         documents.forEach(throwConsumer(snapshot ->
         {
             count.incrementAndGet();
-            result.add(snapshot.getData());
+            result.add(toRow(snapshot));
         }));
 
         return Pair.of(result, count.get());
@@ -268,7 +269,14 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             return null;
         }
 
-        return documents.get(0).getData();
+        return toRow(documents.getFirst());
+    }
+
+    private static Map<String, Object> toRow(QueryDocumentSnapshot snapshot) {
+        Map<String, Object> row = new HashMap<>(snapshot.getData().size() + 1);
+        row.put("_id", snapshot.getId());
+        row.putAll(snapshot.getData());
+        return row;
     }
 
     @SuperBuilder
