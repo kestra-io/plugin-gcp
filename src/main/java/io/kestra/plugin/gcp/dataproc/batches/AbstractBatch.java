@@ -88,35 +88,8 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
             Batch.Builder builder = Batch.newBuilder();
             this.buildBatch(builder, runContext);
 
-            ExecutionConfig.Builder executionConfig = ExecutionConfig.newBuilder();
-
-            if (this.execution != null) {
-                if (this.execution.networkUri != null) {
-                    executionConfig.setNetworkUri(runContext.render(this.execution.networkUri).as(String.class).orElseThrow());
-                }
-
-                if (this.execution.subnetworkUri != null) {
-                    executionConfig.setSubnetworkUri(runContext.render(this.execution.subnetworkUri).as(String.class).orElseThrow());
-                }
-
-                var tagsList = runContext.render(this.execution.networkTags).asList(String.class);
-                if (!tagsList.isEmpty()) {
-                    for (int i = 0; i < tagsList.size(); i++) {
-                        executionConfig.setNetworkTags(i, tagsList.get(i));
-                    }
-                }
-
-                if (this.execution.serviceAccountEmail != null) {
-                    executionConfig.setServiceAccount(runContext.render(this.execution.serviceAccountEmail).as(String.class).orElseThrow());
-                }
-
-                if (this.execution.kmsKey != null) {
-                    executionConfig.setKmsKey(runContext.render(this.execution.kmsKey).as(String.class).orElseThrow());
-                }
-            }
-
             EnvironmentConfig.Builder environmentConfig = EnvironmentConfig.newBuilder()
-                .setExecutionConfig(executionConfig.build());
+                .setExecutionConfig(this.buildExecutionConfig(runContext));
 
             if (this.peripherals != null) {
                 PeripheralsConfig.Builder peripheralsConfig = PeripheralsConfig.newBuilder();
@@ -183,6 +156,33 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
 
             return Output.builder().state(response.getState()).build();
         }
+    }
+
+    ExecutionConfig buildExecutionConfig(RunContext runContext) throws IllegalVariableEvaluationException {
+        var executionConfig = ExecutionConfig.newBuilder();
+
+        if (this.execution != null) {
+            if (this.execution.networkUri != null) {
+                executionConfig.setNetworkUri(runContext.render(this.execution.networkUri).as(String.class).orElseThrow());
+            }
+
+            if (this.execution.subnetworkUri != null) {
+                executionConfig.setSubnetworkUri(runContext.render(this.execution.subnetworkUri).as(String.class).orElseThrow());
+            }
+
+            var rNetworkTags = runContext.render(this.execution.networkTags).asList(String.class);
+            executionConfig.addAllNetworkTags(rNetworkTags);
+
+            if (this.execution.serviceAccountEmail != null) {
+                executionConfig.setServiceAccount(runContext.render(this.execution.serviceAccountEmail).as(String.class).orElseThrow());
+            }
+
+            if (this.execution.kmsKey != null) {
+                executionConfig.setKmsKey(runContext.render(this.execution.kmsKey).as(String.class).orElseThrow());
+            }
+        }
+
+        return executionConfig.build();
     }
 
     @Builder
