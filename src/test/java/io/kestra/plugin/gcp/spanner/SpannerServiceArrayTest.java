@@ -24,7 +24,7 @@ class SpannerServiceArrayTest {
             .set("c").toTimestampArray(Arrays.asList(Timestamp.ofTimeSecondsAndNanos(0, 0), null))
             .build();
 
-        List<?> values = (List<?>) SpannerService.rowToMap(row).get("c");
+        var values = (List<?>) SpannerService.rowToMap(row).get("c");
 
         assertThat(values, is(Arrays.asList(Instant.EPOCH, null)));
     }
@@ -35,7 +35,7 @@ class SpannerServiceArrayTest {
             .set("c").toDateArray(Arrays.asList(Date.fromYearMonthDay(2024, 1, 2), null))
             .build();
 
-        List<?> values = (List<?>) SpannerService.rowToMap(row).get("c");
+        var values = (List<?>) SpannerService.rowToMap(row).get("c");
 
         assertThat(values, is(Arrays.asList(LocalDate.of(2024, 1, 2), null)));
     }
@@ -47,7 +47,7 @@ class SpannerServiceArrayTest {
             .set("c").toStructArray(Type.struct(Type.StructField.of("id", Type.int64())), Arrays.asList(element, null))
             .build();
 
-        List<?> values = (List<?>) SpannerService.rowToMap(row).get("c");
+        var values = (List<?>) SpannerService.rowToMap(row).get("c");
 
         assertThat(values.size(), is(2));
         assertThat(values.get(0), is(Map.of("id", 1L)));

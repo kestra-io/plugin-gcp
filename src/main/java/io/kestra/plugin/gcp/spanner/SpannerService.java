@@ -213,7 +213,7 @@ public class SpannerService {
                     .toList();
             case DATE:
                 return row.getDateList(columnName).stream()
-                    .map(date -> date == null ? null : java.time.LocalDate.of(date.getYear(), date.getMonth(), date.getDayOfMonth()))
+                    .map(date -> date == null ? null : LocalDate.of(date.getYear(), date.getMonth(), date.getDayOfMonth()))
                     .toList();
             case STRUCT:
                 return row.getStructList(columnName).stream()
