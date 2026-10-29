@@ -209,15 +209,15 @@ public class SpannerService {
                 return row.getJsonList(columnName);
             case TIMESTAMP:
                 return row.getTimestampList(columnName).stream()
-                    .map(t -> t.toSqlTimestamp().toInstant())
+                    .map(t -> t == null ? null : t.toSqlTimestamp().toInstant())
                     .toList();
             case DATE:
                 return row.getDateList(columnName).stream()
-                    .map(date -> java.time.LocalDate.of(date.getYear(), date.getMonth(), date.getDayOfMonth()))
+                    .map(date -> date == null ? null : LocalDate.of(date.getYear(), date.getMonth(), date.getDayOfMonth()))
                     .toList();
             case STRUCT:
                 return row.getStructList(columnName).stream()
-                    .map(SpannerService::rowToMap)
+                    .map(struct -> struct == null ? null : rowToMap(struct))
                     .toList();
             default:
                 return row.getValue(columnName).toString();
