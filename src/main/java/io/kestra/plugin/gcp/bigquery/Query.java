@@ -697,7 +697,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         return row;
     }
 
-    Object convertCell(Field field, FieldValue value, boolean isRepeated) {
+    private Object convertCell(Field field, FieldValue value, boolean isRepeated) {
         if (field.getMode() == Field.Mode.REPEATED && !isRepeated) {
             return value
                 .getRepeatedValue()
@@ -788,9 +788,9 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         if (LegacySQLTypeName.JSON.equals(field.getType())) {
             try {
-                return JacksonMapper.ofJson().readValue(value.getStringValue(), Object.class);
+                return JacksonMapper.toObject(value.getStringValue());
             } catch (JsonProcessingException e) {
-                throw new IllegalArgumentException("Invalid data type [" + type + "] with value [" + value.getStringValue() + "]");
+                throw new IllegalArgumentException("Invalid JSON in column '" + field.getName() + "': " + e.getOriginalMessage(), e);
             }
         }
 
