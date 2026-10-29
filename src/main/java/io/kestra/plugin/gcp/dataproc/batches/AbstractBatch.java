@@ -159,7 +159,7 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
     }
 
     ExecutionConfig buildExecutionConfig(RunContext runContext) throws IllegalVariableEvaluationException {
-        ExecutionConfig.Builder executionConfig = ExecutionConfig.newBuilder();
+        var executionConfig = ExecutionConfig.newBuilder();
 
         if (this.execution != null) {
             if (this.execution.networkUri != null) {
@@ -170,10 +170,8 @@ public abstract class AbstractBatch extends AbstractTask implements RunnableTask
                 executionConfig.setSubnetworkUri(runContext.render(this.execution.subnetworkUri).as(String.class).orElseThrow());
             }
 
-            var tagsList = runContext.render(this.execution.networkTags).asList(String.class);
-            if (!tagsList.isEmpty()) {
-                executionConfig.addAllNetworkTags(tagsList);
-            }
+            var rNetworkTags = runContext.render(this.execution.networkTags).asList(String.class);
+            executionConfig.addAllNetworkTags(rNetworkTags);
 
             if (this.execution.serviceAccountEmail != null) {
                 executionConfig.setServiceAccount(runContext.render(this.execution.serviceAccountEmail).as(String.class).orElseThrow());

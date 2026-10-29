@@ -1,10 +1,9 @@
 package io.kestra.plugin.gcp.dataproc.batches;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-
-import com.google.cloud.dataproc.v1.ExecutionConfig;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -23,7 +22,7 @@ class AbstractBatchExecutionConfigTest {
 
     @Test
     void shouldSetEveryNetworkTag() throws Exception {
-        PySparkSubmit task = PySparkSubmit.builder()
+        var task = PySparkSubmit.builder()
             .execution(
                 AbstractBatch.ExecutionConfiguration.builder()
                     .networkTags(Property.ofValue(List.of("dataproc", "etl")))
@@ -31,18 +30,33 @@ class AbstractBatchExecutionConfigTest {
             )
             .build();
 
-        ExecutionConfig config = task.buildExecutionConfig(runContextFactory.of());
+        var config = task.buildExecutionConfig(runContextFactory.of());
+
+        assertThat(config.getNetworkTagsList(), contains("dataproc", "etl"));
+    }
+
+    @Test
+    void shouldRenderNetworkTagsFromAnExpression() throws Exception {
+        var task = PySparkSubmit.builder()
+            .execution(
+                AbstractBatch.ExecutionConfiguration.builder()
+                    .networkTags(Property.ofExpression("{{ tags }}"))
+                    .build()
+            )
+            .build();
+
+        var config = task.buildExecutionConfig(runContextFactory.of(Map.of("tags", List.of("dataproc", "etl"))));
 
         assertThat(config.getNetworkTagsList(), contains("dataproc", "etl"));
     }
 
     @Test
     void shouldNotSetNetworkTagsWhenNoneAreGiven() throws Exception {
-        PySparkSubmit task = PySparkSubmit.builder()
+        var task = PySparkSubmit.builder()
             .execution(AbstractBatch.ExecutionConfiguration.builder().build())
             .build();
 
-        ExecutionConfig config = task.buildExecutionConfig(runContextFactory.of());
+        var config = task.buildExecutionConfig(runContextFactory.of());
 
         assertThat(config.getNetworkTagsList(), empty());
     }
