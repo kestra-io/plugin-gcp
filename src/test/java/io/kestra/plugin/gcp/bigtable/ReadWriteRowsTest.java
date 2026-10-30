@@ -1,7 +1,5 @@
 package io.kestra.plugin.gcp.bigtable;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,15 +70,15 @@ class ReadWriteRowsTest extends BigtableTestUtils {
         try (BigtableDataClient client = createDataClient()) {
             for (var i = 1; i <= 3; i++) {
                 client.mutateRow(
-                    RowMutation.create(TABLE_ID, "store-00" + i)
-                        .setCell(COLUMN_FAMILY, "value", timestampMicros(), "v" + i)
+                    RowMutation.create(TABLE_ID, "store-00%d".formatted(i))
+                        .setCell(COLUMN_FAMILY, "value", timestampMicros(), "v%d".formatted(i))
                 );
             }
         }
 
-        RunContext runContext = runContextFactory.of();
+        var runContext = runContextFactory.of();
 
-        ReadRows task = ReadRows.builder()
+        var task = ReadRows.builder()
             .id("read")
             .type(ReadRows.class.getName())
             .projectId(Property.ofValue(PROJECT_ID))
@@ -91,12 +89,12 @@ class ReadWriteRowsTest extends BigtableTestUtils {
             .emulatorHost(Property.ofValue(getEmulatorHost()))
             .build();
 
-        ReadRows.Output output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getRowCount(), is(3L));
 
-        try (var reader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(output.getUri())))) {
-            var rows = FileSerde.readAll(reader).collectList().block();
+        try (var input = runContext.storage().getFile(output.getUri())) {
+            var rows = FileSerde.readAll(input).collectList().block();
 
             assertThat(rows.size(), is(3));
         }
