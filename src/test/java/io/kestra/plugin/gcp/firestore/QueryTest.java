@@ -171,6 +171,34 @@ class QueryTest extends AbstractFlociGcpTest {
 
     @Test
     @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void runFetchOne() throws Exception {
+        var collectionName = "persons_%s".formatted(UUID.randomUUID());
+
+        var runContext = runContextFactory.of();
+        var query = Query.builder()
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue(collectionName))
+            .filters(
+                List.of(
+                    Query.Filter.builder().field(Property.ofValue("firstname")).value(Property.ofValue("John")).build()
+                )
+            )
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .build();
+        query = FirestoreTestConnections.spy(query, FLOCI_GCP.getEmulatorHost());
+
+        try {
+            var people = seedPeople(query, runContext, collectionName);
+            var output = query.run(runContext);
+
+            assertThat(output.getRow(), is(people.getFirst()));
+        } finally {
+            clearCollection(query, runContext, collectionName);
+        }
+    }
+
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
     void runStored() throws Exception {
         String collectionName = "persons_" + UUID.randomUUID();
 
@@ -209,13 +237,13 @@ class QueryTest extends AbstractFlociGcpTest {
 
     private List<Map<String, Object>> seedPeople(Query query, RunContext runContext, String collectionName) throws Exception {
         // Jane carries her own _id field, which must win over the document ID in the returned row.
-        List<Map.Entry<String, Map<String, Object>>> documents = List.of(
+        var documents = List.of(
             Map.entry("john", person("John", "Doe")),
             Map.entry("jane", Map.of("_id", "jane-own-id", "firstname", "Jane", "lastname", "Doe")),
             Map.entry("charles", person("Charles", "Baudelaire"))
         );
 
-        List<Map<String, Object>> rows = new ArrayList<>(documents.size());
+        var rows = new ArrayList<Map<String, Object>>(documents.size());
         try (var firestore = query.connection(runContext)) {
             var collection = firestore.collection(collectionName);
             for (var document : documents) {
@@ -223,7 +251,7 @@ class QueryTest extends AbstractFlociGcpTest {
                     .set(document.getValue())
                     .get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
-                Map<String, Object> row = new HashMap<>(document.getValue());
+                var row = new HashMap<String, Object>(document.getValue());
                 row.putIfAbsent("_id", document.getKey());
                 rows.add(row);
             }
