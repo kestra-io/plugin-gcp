@@ -1,6 +1,8 @@
 package io.kestra.plugin.gcp.firestore;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -169,6 +171,34 @@ class QueryTest extends AbstractFlociGcpTest {
 
     @Test
     @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void runFetchOne() throws Exception {
+        var collectionName = "persons_%s".formatted(UUID.randomUUID());
+
+        var runContext = runContextFactory.of();
+        var query = Query.builder()
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue(collectionName))
+            .filters(
+                List.of(
+                    Query.Filter.builder().field(Property.ofValue("firstname")).value(Property.ofValue("John")).build()
+                )
+            )
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .build();
+        query = FirestoreTestConnections.spy(query, FLOCI_GCP.getEmulatorHost());
+
+        try {
+            var people = seedPeople(query, runContext, collectionName);
+            var output = query.run(runContext);
+
+            assertThat(output.getRow(), is(people.getFirst()));
+        } finally {
+            clearCollection(query, runContext, collectionName);
+        }
+    }
+
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
     void runStored() throws Exception {
         String collectionName = "persons_" + UUID.randomUUID();
 
@@ -206,22 +236,28 @@ class QueryTest extends AbstractFlociGcpTest {
     }
 
     private List<Map<String, Object>> seedPeople(Query query, RunContext runContext, String collectionName) throws Exception {
-        List<Map<String, Object>> people = List.of(
-            person("John", "Doe"),
-            person("Jane", "Doe"),
-            person("Charles", "Baudelaire")
+        // Jane carries her own _id field, which must win over the document ID in the returned row.
+        var documents = List.of(
+            Map.entry("john", person("John", "Doe")),
+            Map.entry("jane", Map.of("_id", "jane-own-id", "firstname", "Jane", "lastname", "Doe")),
+            Map.entry("charles", person("Charles", "Baudelaire"))
         );
 
+        var rows = new ArrayList<Map<String, Object>>(documents.size());
         try (var firestore = query.connection(runContext)) {
             var collection = firestore.collection(collectionName);
-            for (var person : people) {
-                collection.document(UUID.randomUUID().toString())
-                    .set(person)
+            for (var document : documents) {
+                collection.document(document.getKey())
+                    .set(document.getValue())
                     .get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+                var row = new HashMap<String, Object>(document.getValue());
+                row.putIfAbsent("_id", document.getKey());
+                rows.add(row);
             }
         }
 
-        return people;
+        return rows;
     }
 
     private void clearCollection(Query query, RunContext runContext, String collectionName) throws Exception {
