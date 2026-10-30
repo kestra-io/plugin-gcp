@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigtable;
 
+import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
@@ -193,7 +194,7 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
                 }
                 case NONE, STORE -> {
                     java.io.File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (OutputStream output = Files.newOutputStream(tempFile.toPath())) {
+                    try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(tempFile.toPath()), FileSerde.BUFFER_SIZE)) {
                         for (Row row : client.readRows(query)) {
                             FileSerde.write(output, rowToMap(row));
                             count++;

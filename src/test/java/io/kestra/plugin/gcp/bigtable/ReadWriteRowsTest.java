@@ -15,6 +15,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.serializers.FileSerde;
 
 import jakarta.inject.Inject;
 
@@ -62,6 +63,41 @@ class ReadWriteRowsTest extends BigtableTestUtils {
 
         assertThat(output.getRowCount(), is(1L));
         assertThat(output.getRow(), is(notNullValue()));
+    }
+
+    @Test
+    void storeRowsInAFile() throws Exception {
+        try (BigtableDataClient client = createDataClient()) {
+            for (var i = 1; i <= 3; i++) {
+                client.mutateRow(
+                    RowMutation.create(TABLE_ID, "store-00%d".formatted(i))
+                        .setCell(COLUMN_FAMILY, "value", timestampMicros(), "v%d".formatted(i))
+                );
+            }
+        }
+
+        var runContext = runContextFactory.of();
+
+        var task = ReadRows.builder()
+            .id("read")
+            .type(ReadRows.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .tableId(Property.ofValue(TABLE_ID))
+            .rowKeyPrefix(Property.ofValue("store-"))
+            .fetchType(Property.ofValue(FetchType.STORE))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        var output = task.run(runContext);
+
+        assertThat(output.getRowCount(), is(3L));
+
+        try (var input = runContext.storage().getFile(output.getUri())) {
+            var rows = FileSerde.readAll(input).collectList().block();
+
+            assertThat(rows.size(), is(3));
+        }
     }
 
     @Test
