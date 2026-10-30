@@ -5,7 +5,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -799,27 +801,36 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (LegacySQLTypeName.RANGE.equals(field.getType())) {
-            if (LegacySQLTypeName.DATE.toString().equals(field.getRangeElementType().getType())) {
-                return Map.of(
-                    "start", LocalDate.parse(value.getRangeValue().getStart().getStringValue()),
-                    "end", LocalDate.parse(value.getRangeValue().getEnd().getStringValue())
-                );
-            } else if (LegacySQLTypeName.DATETIME.toString().equals(field.getRangeElementType().getType())) {
-                return Map.of(
-                    "start", Instant.parse(value.getRangeValue().getStart().getStringValue() + "Z"),
-                    "end", LocalDate.parse(value.getRangeValue().getEnd().getStringValue() + "Z")
-                );
-            } else if (LegacySQLTypeName.TIMESTAMP.toString().equals(field.getRangeElementType().getType())) {
-                return Map.of(
-                    "start", value.getRangeValue().getStart().getTimestampInstant(),
-                    "end", value.getRangeValue().getEnd().getTimestampInstant()
-                );
-            } else {
-                return value.getRangeValue().getValues();
+            var rangeValue = value.getRangeValue();
+            var elementType = field.getRangeElementType().getType();
+            if (
+                LegacySQLTypeName.DATE.toString().equals(elementType)
+                    || LegacySQLTypeName.DATETIME.toString().equals(elementType)
+                    || LegacySQLTypeName.TIMESTAMP.toString().equals(elementType)
+            ) {
+                // an unbounded endpoint is null, which Map.of rejects
+                var rangeMap = new LinkedHashMap<String, Object>();
+                rangeMap.put("start", convertRangeBound(elementType, rangeValue.getStart()));
+                rangeMap.put("end", convertRangeBound(elementType, rangeValue.getEnd()));
+                return rangeMap;
             }
+            return rangeValue.getValues();
         }
 
         throw new IllegalArgumentException("Invalid type '" + field.getType() + "'");
+    }
+
+    private static Object convertRangeBound(String elementType, FieldValue bound) {
+        if (bound.isNull()) {
+            return null;
+        }
+        if (LegacySQLTypeName.DATE.toString().equals(elementType)) {
+            return LocalDate.parse(bound.getStringValue());
+        }
+        if (LegacySQLTypeName.DATETIME.toString().equals(elementType)) {
+            return LocalDateTime.parse(bound.getStringValue().replace(' ', 'T')).toInstant(ZoneOffset.UTC);
+        }
+        return bound.getTimestampInstant();
     }
 
 }
