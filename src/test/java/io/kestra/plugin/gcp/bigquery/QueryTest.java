@@ -137,6 +137,44 @@ class QueryTest {
         assertThat(((Map<String, Object>) rows.getFirst().get("json")).get("age"), is(30));
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void fetchRangeEndpoints() throws Exception {
+        var runContext = runContextFactory.of(
+            ImmutableMap.of(
+                "flow", ImmutableMap.of("id", FriendlyId.createFriendlyId(), "namespace", "io.kestra.tests"),
+                "execution", ImmutableMap.of("id", FriendlyId.createFriendlyId()),
+                "taskrun", ImmutableMap.of("id", FriendlyId.createFriendlyId())
+            )
+        );
+
+        var task = Query.builder()
+            .projectId(Property.ofValue(project))
+            .sql(Property.ofValue("""
+                SELECT
+                  RANGE(DATETIME '2026-01-01 00:00:00', DATETIME '2026-12-31 23:59:59.123456') AS range_datetime,
+                  RANGE(DATE '2026-01-01', NULL) AS range_date_unbounded,
+                  RANGE(NULL, TIMESTAMP '2026-01-01 00:00:00 UTC') AS range_timestamp_unbounded
+                """))
+            .location(Property.ofValue("EU"))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+
+        var row = task.run(runContext).getRows().getFirst();
+
+        var datetime = (Map<String, Object>) row.get("range_datetime");
+        assertThat(datetime.get("start"), is(Instant.parse("2026-01-01T00:00:00Z")));
+        assertThat(datetime.get("end"), is(Instant.parse("2026-12-31T23:59:59.123456Z")));
+
+        var date = (Map<String, Object>) row.get("range_date_unbounded");
+        assertThat(date.get("start"), is(LocalDate.parse("2026-01-01")));
+        assertThat(date.get("end"), is(nullValue()));
+
+        var timestamp = (Map<String, Object>) row.get("range_timestamp_unbounded");
+        assertThat(timestamp.get("start"), is(nullValue()));
+        assertThat(timestamp.get("end"), is(Instant.parse("2026-01-01T00:00:00Z")));
+    }
+
     private static Stream<Arguments> provideStoreOrFetchType() {
         return Stream.of(
             Arguments.of(true, null),

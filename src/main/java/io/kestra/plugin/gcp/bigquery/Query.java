@@ -5,7 +5,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -697,17 +699,12 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         return row;
     }
 
-    private static Instant parseDatetime(String str) {
-        String s = str.replace(' ', 'T');
-        return Instant.parse(s.endsWith("Z") ? s : s + "Z");
-    }
-
-    Object convertCell(Field field, FieldValue value, boolean isRepeated) {
+    private Object convertCell(Field field, FieldValue value, boolean isRepeated) {
         if (field.getMode() == Field.Mode.REPEATED && !isRepeated) {
             return value
                 .getRepeatedValue()
                 .stream()
-                .map(fieldValue -> convertCell(field, fieldValue, true))
+                .map(fieldValue -> this.convertCell(field, fieldValue, true))
                 .collect(Collectors.toList());
         }
 
@@ -771,7 +768,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
                 .map(
                     sub -> new AbstractMap.SimpleEntry<>(
                         sub.getName(),
-                        convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
+                        this.convertCell(sub, value.getRepeatedValue().get(counter.get()), false)
                     )
                 )
                 .peek(u -> counter.getAndIncrement())
@@ -805,32 +802,35 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
         if (LegacySQLTypeName.RANGE.equals(field.getType())) {
             var rangeValue = value.getRangeValue();
-            if (rangeValue == null) {
-                return null;
+            var elementType = field.getRangeElementType().getType();
+            if (
+                LegacySQLTypeName.DATE.toString().equals(elementType)
+                    || LegacySQLTypeName.DATETIME.toString().equals(elementType)
+                    || LegacySQLTypeName.TIMESTAMP.toString().equals(elementType)
+            ) {
+                // an unbounded endpoint is null, which Map.of rejects
+                var rangeMap = new LinkedHashMap<String, Object>();
+                rangeMap.put("start", convertRangeBound(elementType, rangeValue.getStart()));
+                rangeMap.put("end", convertRangeBound(elementType, rangeValue.getEnd()));
+                return rangeMap;
             }
-            var startVal = rangeValue.getStart();
-            var endVal = rangeValue.getEnd();
-            var elementType = field.getRangeElementType() != null ? field.getRangeElementType().getType() : null;
-
-            Map<String, Object> rangeMap = new LinkedHashMap<>();
-            if (LegacySQLTypeName.DATE.toString().equals(elementType)) {
-                rangeMap.put("start", startVal != null && !startVal.isNull() ? LocalDate.parse(startVal.getStringValue()) : null);
-                rangeMap.put("end", endVal != null && !endVal.isNull() ? LocalDate.parse(endVal.getStringValue()) : null);
-                return rangeMap;
-            } else if (LegacySQLTypeName.DATETIME.toString().equals(elementType)) {
-                rangeMap.put("start", startVal != null && !startVal.isNull() ? parseDatetime(startVal.getStringValue()) : null);
-                rangeMap.put("end", endVal != null && !endVal.isNull() ? parseDatetime(endVal.getStringValue()) : null);
-                return rangeMap;
-            } else if (LegacySQLTypeName.TIMESTAMP.toString().equals(elementType)) {
-                rangeMap.put("start", startVal != null && !startVal.isNull() ? startVal.getTimestampInstant() : null);
-                rangeMap.put("end", endVal != null && !endVal.isNull() ? endVal.getTimestampInstant() : null);
-                return rangeMap;
-            } else {
-                return rangeValue.getValues();
-            }
+            return rangeValue.getValues();
         }
 
         throw new IllegalArgumentException("Invalid type '" + field.getType() + "'");
+    }
+
+    private static Object convertRangeBound(String elementType, FieldValue bound) {
+        if (bound.isNull()) {
+            return null;
+        }
+        if (LegacySQLTypeName.DATE.toString().equals(elementType)) {
+            return LocalDate.parse(bound.getStringValue());
+        }
+        if (LegacySQLTypeName.DATETIME.toString().equals(elementType)) {
+            return LocalDateTime.parse(bound.getStringValue().replace(' ', 'T')).toInstant(ZoneOffset.UTC);
+        }
+        return bound.getTimestampInstant();
     }
 
 }
