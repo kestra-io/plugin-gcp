@@ -77,7 +77,12 @@ class QueryTest {
             "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`," +
             "  RANGE(DATE '2022-12-01', DATE '2022-12-31') AS `range`," +
             "  INTERVAL 1 YEAR AS `interval`," +
-            "  JSON '{\"name\": \"Alice\", \"age\": 30}' AS `json`";
+            "  JSON '{\"name\": \"Alice\", \"age\": 30}' AS `json`," +
+            "  JSON '[1, 2, 3]' AS `json_array`," +
+            "  JSON '\"text\"' AS `json_string`," +
+            "  JSON '5' AS `json_number`," +
+            "  JSON 'true' AS `json_bool`," +
+            "  JSON 'null' AS `json_null`";
 
     }
 
@@ -135,6 +140,11 @@ class QueryTest {
         assertThat(rows.getFirst().get("interval"), is("1-0 0 0:0:0"));
         assertThat(((Map<String, Object>) rows.getFirst().get("json")).get("name"), is("Alice"));
         assertThat(((Map<String, Object>) rows.getFirst().get("json")).get("age"), is(30));
+        assertThat(rows.getFirst().get("json_array"), is(List.of(1, 2, 3)));
+        assertThat(rows.getFirst().get("json_string"), is("text"));
+        assertThat(rows.getFirst().get("json_number"), is(5));
+        assertThat(rows.getFirst().get("json_bool"), is(true));
+        assertThat(rows.getFirst().get("json_null"), is(nullValue()));
     }
 
     private static Stream<Arguments> provideStoreOrFetchType() {
