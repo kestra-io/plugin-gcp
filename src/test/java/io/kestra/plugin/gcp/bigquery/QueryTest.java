@@ -68,6 +68,7 @@ class QueryTest {
             "  1 as int,\n" +
             "  1.25 AS float,\n" +
             "  CAST(1.25 AS BIGNUMERIC) AS bignumeric,\n" +
+            "  CAST('1234567890123456789.25' AS NUMERIC) AS `numeric`,\n" +
             "  DATE(\"2008-12-25\") AS date,\n" +
             "  DATETIME \"2008-12-25 15:30:00.123456\" AS datetime,\n" +
             "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
@@ -126,6 +127,7 @@ class QueryTest {
         assertThat(rows.getFirst().get("int"), is(1L));
         assertThat(rows.getFirst().get("float"), is(1.25D));
         assertThat(rows.getFirst().get("bignumeric"), is(new BigDecimal("1.25")));
+        assertThat(rows.getFirst().get("numeric"), is(new BigDecimal("1234567890123456789.25")));
         assertThat(rows.getFirst().get("date"), is(LocalDate.parse("2008-12-25")));
         assertThat(rows.getFirst().get("time"), is(LocalTime.parse("15:30:00.123456")));
         assertThat(rows.getFirst().get("timestamp"), is(Instant.parse("2008-12-25T15:30:00.123456Z")));
