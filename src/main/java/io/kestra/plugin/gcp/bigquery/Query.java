@@ -752,7 +752,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (LegacySQLTypeName.NUMERIC.equals(field.getType())) {
-            return value.getDoubleValue();
+            return value.getNumericValue();
         }
 
         if (LegacySQLTypeName.BIGNUMERIC.equals(field.getType())) {
