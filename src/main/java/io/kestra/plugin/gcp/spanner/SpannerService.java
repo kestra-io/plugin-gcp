@@ -172,9 +172,9 @@ public class SpannerService {
             case JSON:
                 String jsonVal = row.getJson(columnName);
                 try {
-                    return JacksonMapper.toMap(jsonVal);
-                } catch (Exception e) {
-                    return jsonVal;
+                    return JacksonMapper.toObject(jsonVal);
+                } catch (JsonProcessingException e) {
+                    throw new IllegalArgumentException("Invalid JSON in column '" + columnName + "': " + e.getOriginalMessage(), e);
                 }
             case BYTES:
                 return row.getBytes(columnName).toByteArray();
