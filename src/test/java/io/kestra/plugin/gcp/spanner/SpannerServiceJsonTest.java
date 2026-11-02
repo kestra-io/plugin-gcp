@@ -1,5 +1,7 @@
 package io.kestra.plugin.gcp.spanner;
 
+import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -25,6 +27,7 @@ class SpannerServiceJsonTest {
         var exception = assertThrows(IllegalArgumentException.class, () -> SpannerService.rowToMap(row));
 
         assertThat(exception.getMessage(), containsString("Invalid JSON in column 'payload'"));
+        assertThat(exception.getMessage(), containsString("Check the JSON value stored in this column."));
     }
 
     @ParameterizedTest
@@ -39,8 +42,13 @@ class SpannerServiceJsonTest {
         return Stream.of(
             Arguments.of("{\"a\":1}", Map.of("a", 1)),
             Arguments.of("[1,2,3]", List.of(1, 2, 3)),
+            Arguments.of("{\"a\":[1,{\"b\":null}]}", Map.of("a", List.of(1, Collections.singletonMap("b", null)))),
+            Arguments.of("{}", Map.of()),
+            Arguments.of("[]", List.of()),
             Arguments.of("\"text\"", "text"),
             Arguments.of("5", 5),
+            Arguments.of("12345678901234567890", new BigInteger("12345678901234567890")),
+            Arguments.of("1.5", 1.5D),
             Arguments.of("true", true),
             Arguments.of("null", null),
             Arguments.of(null, null)
