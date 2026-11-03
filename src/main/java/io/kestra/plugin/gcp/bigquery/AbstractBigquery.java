@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.NoCredentials;
 import com.google.cloud.bigquery.*;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -47,6 +49,15 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     )
     @PluginProperty(group = "advanced")
     protected Property<String> location;
+
+    @Schema(
+        title = "Custom BigQuery endpoint",
+        description = "Optional base URL of the BigQuery REST API, for example `http://localhost:4588` to target a local emulator. "
+            + "When set and neither `serviceAccount` nor `impersonatedServiceAccount` is provided, the call is made without credentials. "
+            + "If unset, the default Google endpoint is used."
+    )
+    @PluginProperty(group = "connection")
+    protected Property<String> endpoint;
 
     @Schema(
         title = "Automatic BigQuery retry policy",
@@ -173,22 +184,37 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     }
 
     BigQuery connection(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
-        GoogleCredentials credentials = this.credentials(runContext);
+        String endpoint = runContext.render(this.endpoint).as(String.class).orElse(null);
+        // An emulator has no auth: skip the credential lookup, which would otherwise fall back to
+        // application default credentials and fail when none exist.
+        Credentials credentials = endpoint != null
+            && runContext.render(this.getServiceAccount()).as(String.class).isEmpty()
+            && runContext.render(this.getImpersonatedServiceAccount()).as(String.class).isEmpty()
+                ? NoCredentials.getInstance()
+                : this.credentials(runContext);
         String projectId = runContext.render(this.projectId).as(String.class).orElse(null);
         String location = runContext.render(this.location).as(String.class).orElse(null);
 
-        return connection(runContext, credentials, projectId, location);
+        return connection(runContext, credentials, projectId, location, endpoint);
     }
 
     protected static BigQuery connection(RunContext runContext, GoogleCredentials googleCredentials, String projectId, String location) throws IllegalVariableEvaluationException {
-        return BigQueryOptions
+        return connection(runContext, googleCredentials, projectId, location, null);
+    }
+
+    protected static BigQuery connection(RunContext runContext, Credentials credentials, String projectId, String location, String endpoint) throws IllegalVariableEvaluationException {
+        var builder = BigQueryOptions
             .newBuilder()
-            .setCredentials(googleCredentials)
+            .setCredentials(credentials)
             .setProjectId(projectId)
             .setLocation(location)
-            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
-            .build()
-            .getService();
+            .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()));
+
+        if (endpoint != null) {
+            builder.setHost(endpoint);
+        }
+
+        return builder.build().getService();
     }
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob, RunContext runContext, BigQuery connection) {
