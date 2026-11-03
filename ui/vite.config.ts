@@ -23,7 +23,7 @@ export default defaultViteConfig({
             },
             {
                 slotName: "execution-artifact/details",
-                path: "./src/components/BigqueryQueryTopologyDetails.vue",
+                path: "./src/components/BigqueryQueryArtifact.vue",
                 additionalProperties: { title: "Query details" },
             },
         ],
