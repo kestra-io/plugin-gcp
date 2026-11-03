@@ -8,5 +8,5 @@ const props = defineProps<KnownSlotProps["execution-artifact"]>();
 </script>
 
 <template>
-    <BigqueryQueryTopologyDetails v-bind="props" :progress="[]" display-mode="full" />
+    <BigqueryQueryTopologyDetails v-bind="props" :progress="[]" displayMode="full" />
 </template>
