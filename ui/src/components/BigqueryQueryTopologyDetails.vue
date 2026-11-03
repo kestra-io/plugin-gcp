@@ -30,7 +30,7 @@ const { t } = useI18n({
     },
 });
 
-const props = defineProps<KnownSlotProps["topology-details"]>();
+const props = defineProps<KnownSlotProps["execution-artifact"]>();
 const attrs = useAttrs();
 const isFullView = computed(() => attrs.displayMode === "full");
 

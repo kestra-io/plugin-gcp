@@ -21,6 +21,11 @@ export default defaultViteConfig({
                 slotName: "topology-task-drawer",
                 path: "./src/components/BigqueryQueryTopologyDetails.vue",
             },
+            {
+                slotName: "execution-artifact/details",
+                path: "./src/components/BigqueryQueryTopologyDetails.vue",
+                additionalProperties: { title: "Query details" },
+            },
         ],
     },
 });
