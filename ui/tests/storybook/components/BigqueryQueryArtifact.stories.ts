@@ -4,7 +4,7 @@ import { within, expect, waitFor } from "storybook/test";
 import { reactive } from "vue";
 import { createI18n } from "vue-i18n";
 import KestraDesignSystem from "@kestra-io/design-system";
-import BigqueryQueryTopologyDetails from "../../../src/components/BigqueryQueryTopologyDetails.vue";
+import BigqueryQueryArtifact from "../../../src/components/BigqueryQueryArtifact.vue";
 
 // The addon-vitest browser runner renders stories without the interactive Storybook's `initApp`
 // preview hook, so install the app context the component needs (i18n + design system) via the
@@ -16,14 +16,14 @@ setup((app) => {
     app.use(KestraDesignSystem);
 });
 
-const meta: Meta<typeof BigqueryQueryTopologyDetails> = {
-    title: "Plugin UI / topology-details / BigqueryQueryTopologyDetails",
-    component: BigqueryQueryTopologyDetails,
+const meta: Meta<typeof BigqueryQueryArtifact> = {
+    title: "Plugin UI / execution-artifact / BigqueryQueryArtifact",
+    component: BigqueryQueryArtifact,
     tags: ["autodocs"],
 };
 
 export default meta;
-type Story = StoryObj<typeof BigqueryQueryTopologyDetails>;
+type Story = StoryObj<typeof BigqueryQueryArtifact>;
 
 const baseTask = {
     id: "query-bq",
@@ -59,43 +59,9 @@ const SAMPLE_METRICS = {
     total: 5,
 };
 
-export const Default: Story = {
-    name: "Pre-execution",
-    args: {
-        task: baseTask,
-        namespace: "company.team",
-        flowId: "bq-pipeline",
-    },
-};
-
-export const WithExecution: Story = {
-    name: "Post-execution",
-    args: {
-        task: baseTask,
-        namespace: "company.team",
-        flowId: "bq-pipeline",
-        execution: {
-            id: "exec-abc123",
-            namespace: "company.team",
-            flowId: "bq-pipeline",
-            state: { current: "SUCCESS", startDate: "2024-01-15T10:00:00Z" } as any,
-            taskRunList: [
-                {
-                    id: "tr-001",
-                    taskId: "query-bq",
-                    executionId: "exec-abc123",
-                },
-            ],
-        } as any,
-        fetchOutputs: async () => SAMPLE_OUTPUTS,
-        fetchMetrics: async () => SAMPLE_METRICS,
-    } as any,
-};
-
 // Task whose GCP config is driven by Pebble expressions (flow vars). Before an execution the panel
 // shows the raw definition values marked as templates; after an execution it shows only what the
 // task outputs report, never the raw expression.
-// `displayMode: "full"` opens the full view where the Query section renders.
 const expressionTask = {
     id: "query-bq",
     type: "io.kestra.plugin.gcp.bigquery.Query",
@@ -108,7 +74,6 @@ const expressionTask = {
 const executionArgs = {
     namespace: "company.team",
     flowId: "bq-pipeline",
-    displayMode: "full",
     execution: {
         id: "exec-abc123",
         namespace: "company.team",
@@ -131,7 +96,6 @@ export const PreExecutionExpressions: Story = {
         task: expressionTask,
         namespace: "company.team",
         flowId: "bq-pipeline",
-        displayMode: "full",
     } as any,
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
@@ -187,7 +151,6 @@ export const PreExecutionTagOnlySql: Story = {
         },
         namespace: "company.team",
         flowId: "bq-pipeline",
-        displayMode: "full",
     } as any,
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
