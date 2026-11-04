@@ -823,6 +823,10 @@ public class QueryErrorTest {
             .setHost(bigQueryApiHost)
             .setCredentials(NoCredentials.getInstance())
             .setProjectId(this.project)
+            // Newer BigQuery clients retry 503s on jobs.get/getQueryResults internally and would absorb the
+            // stubbed failures. Disabling that lets them reach the plugin's own retry and lookback, as they
+            // do once the client has exhausted its retries.
+            .setRetrySettings(com.google.cloud.ServiceOptions.getNoRetrySettings())
             .setLocation("europe-west3")
             .setHeaderProvider(() -> Map.of("user-agent", "kestra-unit-test"))
             .build()
