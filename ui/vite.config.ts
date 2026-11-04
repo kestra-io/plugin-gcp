@@ -12,8 +12,8 @@ export default defaultViteConfig({
                     // node base (56) + KsTopologyDetails rows (~31px each)
                     // no execution: Project + Location (2 rows)
                     height: 120,
-                    // with execution: + Duration + Estimated cost (4 rows)
-                    heightWithExecution: 185,
+                    // with an execution the host adds a ~30px badge row under the node, so this is height + 30
+                    heightWithExecution: 150,
                     customAction: { label: "Show Details", taskProp: "sql", lang: "sql" },
                 },
             },
