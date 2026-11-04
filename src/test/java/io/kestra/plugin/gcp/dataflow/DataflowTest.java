@@ -299,7 +299,7 @@ class DataflowTest {
         when(mockJobsList.execute()).thenReturn(response);
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
-        var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
         var variables = execution.get().getTrigger().getVariables();
@@ -341,11 +341,11 @@ class DataflowTest {
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
 
-        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution1.isPresent(), is(true));
         assertThat(execution1.get().getTrigger().getVariables().get("jobId"), is("job-123"));
 
-        var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution2.isPresent(), is(false));
 
         var time2 = Instant.now().minus(Duration.ofSeconds(2));
@@ -373,12 +373,12 @@ class DataflowTest {
         doReturn(mockDataflow).when(spyTriggerUpdated).dataflowClient(any());
         when(mockJobsList.execute()).thenReturn(response2);
 
-        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution3.isPresent(), is(true));
         assertThat(execution3.get().getTrigger().getVariables().get("jobId"), is("job-123"));
         assertThat(execution3.get().getTrigger().getVariables().get("state"), is("JOB_STATE_UPDATED"));
 
-        var execution4 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution4 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution4.isPresent(), is(false));
     }
 
@@ -415,10 +415,10 @@ class DataflowTest {
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
 
-        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution1.isPresent(), is(true));
 
-        var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution2 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution2.isPresent(), is(false));
 
         var time2 = Instant.now().minus(Duration.ofSeconds(2));
@@ -446,7 +446,7 @@ class DataflowTest {
         doReturn(mockDataflow).when(spyTriggerUpdated).dataflowClient(any());
         when(mockJobsList.execute()).thenReturn(response2);
 
-        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution3.isPresent(), is(false));
     }
 
@@ -483,7 +483,7 @@ class DataflowTest {
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
 
-        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution1 = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution1.isPresent(), is(false));
 
         var time2 = Instant.now().minus(Duration.ofSeconds(2));
@@ -511,12 +511,12 @@ class DataflowTest {
         doReturn(mockDataflow).when(spyTriggerUpdated).dataflowClient(any());
         when(mockJobsList.execute()).thenReturn(response2);
 
-        var execution2 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution2 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution2.isPresent(), is(true));
         assertThat(execution2.get().getTrigger().getVariables().get("jobId"), is("job-123"));
         assertThat(execution2.get().getTrigger().getVariables().get("state"), is("JOB_STATE_UPDATED"));
 
-        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution3 = spyTriggerUpdated.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
         assertThat(execution3.isPresent(), is(false));
     }
 
@@ -689,7 +689,7 @@ class DataflowTest {
         when(mockJobsList.execute()).thenReturn(response);
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
-        var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
 
         assertThat(execution.isPresent(), is(false));
     }
@@ -836,7 +836,7 @@ class DataflowTest {
         useResolvedCredentials(spyTrigger);
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
-        var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        var execution = spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
 
         assertThat(execution.isPresent(), is(false));
         assertThat(spyTrigger.getProjectId(), is(Property.ofValue("inferred-project")));
@@ -873,7 +873,7 @@ class DataflowTest {
         useResolvedCredentials(spyTrigger);
 
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
-        spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
+        spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
 
         assertThat(spyTrigger.getProjectId(), is(Property.ofValue("explicit-project")));
         verify(mockJobs).list(eq("explicit-project"), eq("us-central1"));
@@ -903,7 +903,7 @@ class DataflowTest {
         var triggerContext = TestsUtils.mockTrigger(runContextFactory, spyTrigger);
         var error = org.junit.jupiter.api.Assertions.assertThrows(
             IllegalStateException.class,
-            () -> spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue())
+            () -> spyTrigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context())
         );
         assertThat(error.getMessage(), containsString("projectId"));
 

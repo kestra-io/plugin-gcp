@@ -59,8 +59,8 @@ public class TriggerTest {
             .window(Property.ofValue(java.time.Duration.ofMinutes(10)))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = io.kestra.core.utils.TestsUtils.mockTrigger(runContextFactory, trigger);
-        var execution = trigger.evaluate(context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = io.kestra.core.utils.TestsUtils.mockTrigger(runContextFactory, trigger);
+        var execution = trigger.evaluate(context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
     }

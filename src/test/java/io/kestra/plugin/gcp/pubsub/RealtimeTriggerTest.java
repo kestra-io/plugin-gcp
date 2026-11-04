@@ -72,8 +72,8 @@ class RealtimeTriggerTest extends AbstractFlociGcpTest {
                 () -> assertTimeoutPreemptively(Duration.ofSeconds(10), trigger::kill)
             );
 
-            Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-            Mono<Execution> executionMono = Mono.from(trigger.evaluate(context.getKey(), context.getValue()));
+            Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+            Mono<Execution> executionMono = Mono.from(trigger.evaluate(context.getKey(), context.getValue().context()));
 
             Execution execution = executionMono.timeout(Duration.ofSeconds(30)).block();
 

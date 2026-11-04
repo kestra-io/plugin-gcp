@@ -138,9 +138,9 @@ class TriggerTest extends AbstractFlociGcpTest {
             .moveDirectory(Property.ofValue(String.format("gs://%s/%s", bucket, moveDir)))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -170,8 +170,8 @@ class TriggerTest extends AbstractFlociGcpTest {
 
         Upload.Output upload = testUtils.upload("trigger/" + out + "/" + fileId);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -222,8 +222,8 @@ class TriggerTest extends AbstractFlociGcpTest {
 
         Upload.Output upload = testUtils.upload(file);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context());
 
         assertThat(execution.isPresent(), is(true));
 
@@ -268,9 +268,9 @@ class TriggerTest extends AbstractFlociGcpTest {
 
         Upload.Output upload = testUtils.upload(file);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = Assertions.assertDoesNotThrow(
-            () -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue())
+            () -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context())
         );
 
         assertThat(execution.isPresent(), is(true));
@@ -305,7 +305,7 @@ class TriggerTest extends AbstractFlociGcpTest {
             .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Optional<Execution> execution;
         try {
@@ -317,7 +317,7 @@ class TriggerTest extends AbstractFlociGcpTest {
                         io.kestra.plugin.gcp.gcs.List.class
                     )
                 ) {
-                    return evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+                    return evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context());
                 }
             }).get(10, TimeUnit.SECONDS);
         } finally {
@@ -348,10 +348,10 @@ class TriggerTest extends AbstractFlociGcpTest {
 
         var upload = testUtils.upload(file);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
         Optional<Execution> execution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -385,9 +385,9 @@ class TriggerTest extends AbstractFlociGcpTest {
             .interval(Duration.ofSeconds(10))
             .build();
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
-        evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+        evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context());
 
         // we update the file to trigger the update event
         testUtils.update(file);
@@ -395,7 +395,7 @@ class TriggerTest extends AbstractFlociGcpTest {
 
         Optional<Execution> execution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -429,8 +429,8 @@ class TriggerTest extends AbstractFlociGcpTest {
 
         var upload = testUtils.upload(file);
 
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
-        Optional<Execution> createExecution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> createExecution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context());
 
         assertThat(createExecution.isPresent(), is(true));
 
@@ -439,7 +439,7 @@ class TriggerTest extends AbstractFlociGcpTest {
 
         Optional<Execution> updateExecution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue()).orElse(null)),
+                throwSupplier(() -> evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context()).orElse(null)),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(20)
             )
@@ -479,7 +479,7 @@ class TriggerTest extends AbstractFlociGcpTest {
             .action(Property.ofValue(ActionInterface.Action.DELETE))
             .on(Property.ofValue(StatefulTriggerInterface.On.CREATE))
             .build();
-        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Map.Entry<ConditionContext, io.kestra.core.scheduler.model.TriggerState> context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
         Optional<Execution> execution;
         try (
@@ -488,7 +488,7 @@ class TriggerTest extends AbstractFlociGcpTest {
                 Delete.class
             )
         ) {
-            execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue());
+            execution = evaluateAndTrackStorage(trigger, context.getKey(), context.getValue().context());
         }
 
         assertThat(execution.isPresent(), is(true));
@@ -509,7 +509,7 @@ class TriggerTest extends AbstractFlociGcpTest {
     private Optional<Execution> evaluateAndTrackStorage(
         Trigger trigger,
         ConditionContext conditionContext,
-        io.kestra.core.models.triggers.Trigger triggerContext) throws Exception {
+        io.kestra.core.models.triggers.TriggerContext triggerContext) throws Exception {
         Optional<Execution> execution = trigger.evaluate(conditionContext, triggerContext);
         execution.ifPresent(this::trackStorageFiles);
         return execution;

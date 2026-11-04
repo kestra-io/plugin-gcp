@@ -23,7 +23,7 @@ repositories {
     }
 }
 
-final targetJavaVersion = JavaVersion.VERSION_21
+final targetJavaVersion = JavaVersion.VERSION_25
 
 java {
     sourceCompatibility = targetJavaVersion
@@ -42,8 +42,8 @@ tasks.withType(JavaCompile) {
 // enforcedPlatform can't be overridden by constraints, so force at the plugin level.
 configurations.all {
     resolutionStrategy {
-        force 'com.google.protobuf:protobuf-java:4.35.1'
-        force 'com.google.protobuf:protobuf-java-util:4.35.1'
+        force 'com.google.protobuf:protobuf-java:4.36.1'
+        force 'com.google.protobuf:protobuf-java-util:4.36.1'
     }
 }
 
@@ -139,7 +139,7 @@ dependencies {
     testImplementation "org.hamcrest:hamcrest-library"
     testImplementation "io.floci:testcontainers-floci-gcp:2.17.0"
 
-    testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id'
+    testImplementation group: 'com.devskiller.friendly-id', name: 'friendly-id', version: '1.1.0'
     testImplementation 'org.mockito:mockito-junit-jupiter'
 
     testImplementation "org.testcontainers:testcontainers:2.0.5"
