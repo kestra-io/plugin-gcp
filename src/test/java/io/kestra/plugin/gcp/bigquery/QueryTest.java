@@ -1,5 +1,6 @@
 package io.kestra.plugin.gcp.bigquery;
 
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -21,6 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.devskiller.friendly_id.FriendlyId;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.CharStreams;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -28,7 +30,6 @@ import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.TestsUtils;
@@ -195,7 +196,6 @@ class QueryTest {
 
     @ParameterizedTest
     @MethodSource("provideStoreOrFetchType")
-    @SuppressWarnings("unchecked")
     void store(boolean store, Property<FetchType> fetchType) throws Exception {
         Query task = Query.builder()
             .id(QueryTest.class.getSimpleName())
@@ -209,19 +209,12 @@ class QueryTest {
         Query.Output run = task.run(TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of()));
         assertThat(run.getProjectId(), is(project));
         assertThat(run.getLocation(), is(notNullValue()));
-        List<Object> rows;
-        try (var stored = storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri())) {
-            // stored Ion is binary since core 2.1, so read it through core instead of matching text
-            rows = FileSerde.readAll(stored).collectList().block();
-        }
+        String ionResult = CharStreams.toString(new InputStreamReader(storageInterface.get(TenantService.MAIN_TENANT, null, run.getUri())));
 
-        assertThat(rows, hasSize(2));
-        for (Object o : rows) {
-            Map<String, Object> row = (Map<String, Object>) o;
-            assertThat(row.get("string"), is("hello"));
-            assertThat(row.get("datetime"), is("2008-12-25T15:30:00.123456Z"));
-            assertThat(row.get("interval"), is("1-0 0 0:0:0"));
-        }
+        assertThat(ionResult, containsString("string:\"hello\""));
+        assertThat(ionResult, containsString("datetime:\"2008-12-25T15:30:00.123456Z\""));
+        assertThat(ionResult, containsString("string:\"hello\""));
+        assertThat(ionResult, containsString("interval:\"1-0 0 0:0:0\""));
     }
 
     @ParameterizedTest
