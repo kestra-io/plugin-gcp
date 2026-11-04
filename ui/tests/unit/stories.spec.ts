@@ -16,13 +16,13 @@ vi.mock("@kestra-io/design-system", async (importOriginal) => {
     };
 });
 
-import * as artifactStories from "../storybook/components/BigqueryQueryArtifact.stories";
+import * as topologyStories from "../storybook/components/BigqueryQueryTopologyDetails.stories";
 
 // composeStories turns each exported story into a portable, runnable component. Story.run() renders
 // it and executes its `play` function (the resolved-value assertions) in jsdom — no browser needed.
-const stories = composeStories(artifactStories);
+const stories = composeStories(topologyStories);
 
-describe("BigqueryQueryArtifact stories", () => {
+describe("BigqueryQueryTopologyDetails stories", () => {
     for (const [storyName, Story] of Object.entries(stories)) {
         if (typeof Story.play !== "function") continue;
         test(storyName, async () => {
