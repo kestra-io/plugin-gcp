@@ -150,7 +150,7 @@ class BudgetAlertTriggerTest {
         var uri1 = createMessageFile(runContext, payload90, attributes, "msg-001");
         doReturn(Consume.Output.builder().count(1).uri(uri1).build()).when(trigger).runConsume(any(), any());
 
-        var execution1 = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution1 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution1.isPresent(), is(true));
         assertThat(execution1.get().getTrigger().getVariables().get("budgetAlert"), notNullValue());
         assertThat(execution1.get().getTrigger().getVariables().get("budgetAlerts"), notNullValue());
@@ -159,7 +159,7 @@ class BudgetAlertTriggerTest {
         var uri2 = createMessageFile(runContext, payload90, attributes, "msg-002");
         doReturn(Consume.Output.builder().count(1).uri(uri2).build()).when(trigger).runConsume(any(), any());
 
-        var execution2 = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution2 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution2.isEmpty(), is(true));
 
         // 3. Third poll with higher threshold (100% threshold exceeded): should trigger
@@ -176,7 +176,7 @@ class BudgetAlertTriggerTest {
         var uri3 = createMessageFile(runContext, payload100, attributes, "msg-003");
         doReturn(Consume.Output.builder().count(1).uri(uri3).build()).when(trigger).runConsume(any(), any());
 
-        var execution3 = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution3 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution3.isPresent(), is(true));
     }
 
@@ -205,7 +205,7 @@ class BudgetAlertTriggerTest {
         var uri = createMessageFile(runContext, periodicPayload, Map.of("billingAccountId", "0123AB", "budgetId", "b-1"), "msg-periodic");
         doReturn(Consume.Output.builder().count(1).uri(uri).build()).when(trigger).runConsume(any(), any());
 
-        var execution = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution.isEmpty(), is(true));
     }
 
@@ -239,7 +239,7 @@ class BudgetAlertTriggerTest {
             """;
         var uri1 = createMessageFile(runContext, payload500, attributes, "msg-amt-1");
         doReturn(Consume.Output.builder().count(1).uri(uri1).build()).when(trigger).runConsume(any(), any());
-        var execution1 = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution1 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution1.isPresent(), is(true));
 
         // 2. Periodic snapshot without Google threshold: deduplicated (0.5 <= 0.5)
@@ -254,7 +254,7 @@ class BudgetAlertTriggerTest {
             """;
         var uri2 = createMessageFile(runContext, payload520, attributes, "msg-amt-2");
         doReturn(Consume.Output.builder().count(1).uri(uri2).build()).when(trigger).runConsume(any(), any());
-        var execution2 = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution2 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution2.isEmpty(), is(true));
 
         // 3. Subsequent Google 90% threshold alert: MUST NOT be suppressed by thresholdAmount
@@ -270,7 +270,7 @@ class BudgetAlertTriggerTest {
             """;
         var uri3 = createMessageFile(runContext, payload900, attributes, "msg-amt-3");
         doReturn(Consume.Output.builder().count(1).uri(uri3).build()).when(trigger).runConsume(any(), any());
-        var execution3 = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution3 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution3.isPresent(), is(true));
 
         // 4. Subsequent Google 100% threshold alert: MUST NOT be suppressed
@@ -286,7 +286,7 @@ class BudgetAlertTriggerTest {
             """;
         var uri4 = createMessageFile(runContext, payload1000, attributes, "msg-amt-4");
         doReturn(Consume.Output.builder().count(1).uri(uri4).build()).when(trigger).runConsume(any(), any());
-        var execution4 = trigger.evaluate(context.getKey(), context.getValue().context());
+        var execution4 = trigger.evaluate(context.getKey(), context.getValue());
         assertThat(execution4.isPresent(), is(true));
     }
 }

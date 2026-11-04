@@ -375,7 +375,7 @@ class SpannerTest {
 
         var execution = Optional.ofNullable(
             Await.until(
-                throwSupplier(() -> trigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context()).orElse(null)),
+                throwSupplier(() -> trigger.evaluate(triggerContext.getKey(), triggerContext.getValue()).orElse(null)),
                 java.time.Duration.ofMillis(500),
                 java.time.Duration.ofSeconds(15)
             )
@@ -408,7 +408,7 @@ class SpannerTest {
         var triggerContext = io.kestra.core.utils.TestsUtils.mockTrigger(runContextFactory, trigger);
 
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            trigger.evaluate(triggerContext.getKey(), triggerContext.getValue().context());
+            trigger.evaluate(triggerContext.getKey(), triggerContext.getValue());
         });
     }
 
