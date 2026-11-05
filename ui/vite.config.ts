@@ -1,9 +1,5 @@
 import defaultViteConfig from "@kestra-io/artifact-sdk/vite.config";
 
-// Post-execution card has 4 rows (node base 56 + 4 x ~31 = 180, measured 184 on Kestra 2.0.9)
-// + 1px border, so it is not height + the host badge row.
-const POST_EXECUTION_CONTENT_HEIGHT = 185;
-
 export default defaultViteConfig({
     plugin: "io.kestra.plugin.gcp",
 
@@ -13,8 +9,11 @@ export default defaultViteConfig({
                 slotName: "topology-details",
                 path: "./src/components/BigqueryQueryTopologyDetails.vue",
                 additionalProperties: {
+                    // node base (56) + KsTopologyDetails rows (~31px each)
+                    // no execution: Project + Location (2 rows)
                     height: 120,
-                    heightWithExecution: POST_EXECUTION_CONTENT_HEIGHT,
+                    // with execution: + Duration + Estimated cost (4 rows), measured 184px on 2.0.9
+                    heightWithExecution: 185,
                     customAction: { label: "Show Details", taskProp: "sql", lang: "sql" },
                 },
             },
