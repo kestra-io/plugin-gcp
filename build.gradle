@@ -44,6 +44,8 @@ configurations.all {
     resolutionStrategy {
         force 'com.google.protobuf:protobuf-java:4.35.1'
         force 'com.google.protobuf:protobuf-java-util:4.35.1'
+        // SEC-0369: platform BOM pins guava 33.4.8-jre, remove once it ships >= 33.7.2.
+        force 'com.google.guava:guava:33.7.2-jre'
     }
 }
 
