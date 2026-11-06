@@ -112,6 +112,7 @@ dependencies {
     testAnnotationProcessor enforcedPlatform("io.kestra:platform:$kestraVersion")
     testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
     testImplementation 'org.wiremock:wiremock-jetty12:3.13.2'
+    testImplementation "ch.qos.logback:logback-classic"
 
     // lombok
     testAnnotationProcessor "org.projectlombok:lombok"

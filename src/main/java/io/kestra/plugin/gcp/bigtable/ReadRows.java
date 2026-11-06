@@ -39,7 +39,7 @@ import lombok.experimental.SuperBuilder;
 @Schema(
     title = "Read rows from a Google Cloud Bigtable table",
     description = "Reads rows from a Bigtable table using an optional row key range, row key prefix, or cell filter. " +
-        "Supports FETCH (return all rows in the output), FETCH_ONE (return only the first row), and STORE " +
+        "Supports FETCH (return the rows in the output, at most 5000 when `limit` is not set), FETCH_ONE (return only the first row), and STORE " +
         "(persist all rows to internal storage as ion, recommended for large result sets) fetch types"
 )
 @Plugin(
@@ -82,6 +82,7 @@ import lombok.experimental.SuperBuilder;
     }
 )
 public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.Output> {
+    private static final int DEFAULT_FETCH_LIMIT = 5000;
 
     @NotNull
     @Schema(
@@ -120,14 +121,14 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
 
     @Schema(
         title = "Maximum number of rows to read",
-        description = "If not set, all matching rows are read"
+        description = "If not set, all matching rows are read, except with fetchType FETCH, which returns at most 5000 rows and logs a warning when there are more"
     )
     @PluginProperty(group = "processing")
     private Property<Integer> limit;
 
     @Schema(
         title = "Data storage method",
-        description = "FETCH_ONE outputs the first row, FETCH outputs all rows in the output variable, " +
+        description = "FETCH_ONE outputs the first row, FETCH outputs the rows in the output variable (at most 5000 when `limit` is not set), " +
             "STORE stores all rows to a file in internal storage and is recommended for large result sets"
     )
     @Builder.Default
@@ -184,12 +185,19 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
                 }
                 case FETCH -> {
                     List<Map<String, Object>> rows = new ArrayList<>();
-                    int maxFetch = rLimit.orElse(5000);
-                    if (!rLimit.isPresent()) {
-                        query = query.limit(maxFetch);
+                    if (rLimit.isEmpty()) {
+                        // read one more row than the cap, to know if the result was cut
+                        query = query.limit(DEFAULT_FETCH_LIMIT + 1L);
                     }
                     for (Row row : client.readRows(query)) {
                         rows.add(rowToMap(row));
+                    }
+                    if (rLimit.isEmpty() && rows.size() > DEFAULT_FETCH_LIMIT) {
+                        rows.removeLast();
+                        runContext.logger().warn(
+                            "Only the first {} rows were returned because `limit` is not set. Set `limit` or use fetchType STORE to read more rows",
+                            DEFAULT_FETCH_LIMIT
+                        );
                     }
                     count = rows.size();
                     outputBuilder.rows(rows);
@@ -254,7 +262,7 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
         )
         private final Map<String, Object> row;
 
-        @Schema(title = "All matching rows (only set when fetchType is FETCH)")
+        @Schema(title = "Rows read (only set when fetchType is FETCH)")
         private final List<Map<String, Object>> rows;
 
         @Schema(title = "URI of the file storing all rows (only set when fetchType is STORE)")

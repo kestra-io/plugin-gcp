@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
+import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
@@ -17,9 +18,16 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.FileSerde;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -98,6 +106,64 @@ class ReadWriteRowsTest extends BigtableTestUtils {
 
             assertThat(rows.size(), is(3));
         }
+    }
+
+    @Test
+    void fetchStopsAtTheDefaultLimitAndWarns() throws Exception {
+        fillTable("fetch-over-limit", 5001);
+
+        var logs = new ListAppender<ILoggingEvent>();
+        var output = fetchWithoutLimit("fetch-over-limit", logs);
+
+        assertThat(output.getRowCount(), is(5000L));
+        assertThat(output.getRows().size(), is(5000));
+        assertThat(warnings(logs), hasItem(containsString("Only the first 5000 rows were returned")));
+    }
+
+    @Test
+    void fetchWithExactlyTheDefaultLimitDoesNotWarn() throws Exception {
+        fillTable("fetch-at-limit", 5000);
+
+        var logs = new ListAppender<ILoggingEvent>();
+        var output = fetchWithoutLimit("fetch-at-limit", logs);
+
+        assertThat(output.getRowCount(), is(5000L));
+        assertThat(warnings(logs), is(empty()));
+    }
+
+    private void fillTable(String tableId, int rowCount) throws Exception {
+        createTestTable(tableId, COLUMN_FAMILY);
+        try (BigtableDataClient client = createDataClient(); var batcher = client.newBulkMutationBatcher(tableId)) {
+            for (var i = 0; i < rowCount; i++) {
+                batcher.add(RowMutationEntry.create("row-%05d".formatted(i)).setCell(COLUMN_FAMILY, "value", timestampMicros(), "v"));
+            }
+            batcher.flush();
+        }
+    }
+
+    private ReadRows.Output fetchWithoutLimit(String tableId, ListAppender<ILoggingEvent> logs) throws Exception {
+        RunContext runContext = runContextFactory.of();
+        logs.start();
+        ((Logger) runContext.logger()).addAppender(logs);
+
+        ReadRows task = ReadRows.builder()
+            .id("read")
+            .type(ReadRows.class.getName())
+            .projectId(Property.ofValue(PROJECT_ID))
+            .instanceId(Property.ofValue(INSTANCE_ID))
+            .tableId(Property.ofValue(tableId))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .emulatorHost(Property.ofValue(getEmulatorHost()))
+            .build();
+
+        return task.run(runContext);
+    }
+
+    private static List<String> warnings(ListAppender<ILoggingEvent> logs) {
+        return logs.list.stream()
+            .filter(event -> event.getLevel() == Level.WARN)
+            .map(ILoggingEvent::getFormattedMessage)
+            .toList();
     }
 
     @Test
