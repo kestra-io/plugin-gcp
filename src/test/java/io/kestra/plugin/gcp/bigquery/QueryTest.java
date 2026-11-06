@@ -74,6 +74,8 @@ class QueryTest {
             "  TIME(DATETIME \"2008-12-25 15:30:00.123456\") AS time,\n" +
             "  TIMESTAMP(\"2008-12-25 15:30:00.123456\") AS timestamp,\n" +
             "  ST_GEOGPOINT(50.6833, 2.9) AS geopoint,\n" +
+            "  ST_GEOGPOINT(-74.006, 40.7128) AS negative_geopoint,\n" +
+            "  ST_GEOGFROMTEXT('POLYGON((0 0, 1 0, 1 1, 0 0))') AS polygon,\n" +
             "  ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS `array`,\n" +
             "  STRUCT(NULL as v, 4 AS x, 0 AS y, ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3) AS z) AS `struct`," +
             "  RANGE(DATE '2022-12-01', DATE '2022-12-31') AS `range`," +
@@ -132,6 +134,8 @@ class QueryTest {
         assertThat(rows.getFirst().get("time"), is(LocalTime.parse("15:30:00.123456")));
         assertThat(rows.getFirst().get("timestamp"), is(Instant.parse("2008-12-25T15:30:00.123456Z")));
         assertThat((List<Double>) rows.getFirst().get("geopoint"), containsInAnyOrder(50.6833, 2.9));
+        assertThat((List<Double>) rows.getFirst().get("negative_geopoint"), contains(-74.006d, 40.7128d));
+        assertThat(rows.getFirst().get("polygon"), is("POLYGON((0 0, 1 0, 1 1, 0 0))"));
         assertThat((List<Long>) rows.getFirst().get("array"), containsInAnyOrder(1L, 2L, 3L));
         assertThat(((Map<String, Object>) rows.getFirst().get("struct")).get("v"), is(nullValue()));
         assertThat(((Map<String, Object>) rows.getFirst().get("struct")).get("x"), is(4L));

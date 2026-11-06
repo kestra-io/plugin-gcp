@@ -129,6 +129,11 @@ import reactor.core.publisher.Mono;
 @StoreFetchValidation
 @StoreFetchDestinationValidation
 public class Query extends AbstractJob implements RunnableTask<Query.Output>, QueryInterface {
+    // A point is two numbers, including a negative coordinate or an exponent. Any other shape is returned as WKT so the query still succeeds.
+    private static final Pattern GEOGRAPHY_POINT = Pattern.compile(
+        "^POINT\\((-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?) (-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)\\)$"
+    );
+
     @Schema(
         title = "SQL query",
         description = "Rendered SQL string to execute; uses standard SQL unless `legacySql` is true"
@@ -821,9 +826,6 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
         return bound.getTimestampInstant();
     }
-
-    // A point is two numbers, including a negative coordinate. Any other shape is returned as WKT so the query still succeeds.
-    private static final Pattern GEOGRAPHY_POINT = Pattern.compile("^POINT\\((-?\\d+(?:\\.\\d+)?) (-?\\d+(?:\\.\\d+)?)\\)$");
 
     static Object geographyValue(String wkt) {
         var point = GEOGRAPHY_POINT.matcher(wkt);
