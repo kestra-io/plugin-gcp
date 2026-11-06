@@ -10,7 +10,6 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -130,6 +129,11 @@ import reactor.core.publisher.Mono;
 @StoreFetchValidation
 @StoreFetchDestinationValidation
 public class Query extends AbstractJob implements RunnableTask<Query.Output>, QueryInterface {
+    // A point is two numbers, including a negative coordinate or an exponent. Any other shape is returned as WKT so the query still succeeds.
+    private static final Pattern GEOGRAPHY_POINT = Pattern.compile(
+        "^POINT\\((-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?) (-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)\\)$"
+    );
+
     @Schema(
         title = "SQL query",
         description = "Rendered SQL string to execute; uses standard SQL unless `legacySql` is true"
@@ -734,17 +738,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
         }
 
         if (LegacySQLTypeName.GEOGRAPHY.equals(field.getType())) {
-            Pattern p = Pattern.compile("^POINT\\(([0-9.]+) ([0-9.]+)\\)$");
-            Matcher m = p.matcher(value.getStringValue());
-
-            if (m.find()) {
-                return Arrays.asList(
-                    Double.parseDouble(m.group(1)),
-                    Double.parseDouble(m.group(2))
-                );
-            }
-
-            throw new IllegalFormatFlagsException("Couldn't match '" + value.getStringValue() + "'");
+            return geographyValue(value.getStringValue());
         }
 
         if (LegacySQLTypeName.INTEGER.equals(field.getType())) {
@@ -831,6 +825,14 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             return LocalDateTime.parse(bound.getStringValue().replace(' ', 'T')).toInstant(ZoneOffset.UTC);
         }
         return bound.getTimestampInstant();
+    }
+
+    static Object geographyValue(String wkt) {
+        var point = GEOGRAPHY_POINT.matcher(wkt);
+        if (point.matches()) {
+            return List.of(Double.parseDouble(point.group(1)), Double.parseDouble(point.group(2)));
+        }
+        return wkt;
     }
 
 }
