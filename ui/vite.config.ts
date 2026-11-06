@@ -12,7 +12,7 @@ export default defaultViteConfig({
                     // node base (56) + KsTopologyDetails rows (~31px each)
                     // no execution: Project + Location (2 rows)
                     height: 120,
-                    // with execution: + Duration + Estimated cost (4 rows)
+                    // with execution: + Duration + Estimated cost (4 rows), measured 184px on 2.0.9
                     heightWithExecution: 185,
                     customAction: { label: "Show Details", taskProp: "sql", lang: "sql" },
                 },
@@ -20,6 +20,11 @@ export default defaultViteConfig({
             {
                 slotName: "topology-task-drawer",
                 path: "./src/components/BigqueryQueryTopologyDetails.vue",
+            },
+            {
+                slotName: "execution-artifact/details",
+                path: "./src/components/BigqueryQueryArtifact.vue",
+                additionalProperties: { title: "Query details" },
             },
         ],
     },
