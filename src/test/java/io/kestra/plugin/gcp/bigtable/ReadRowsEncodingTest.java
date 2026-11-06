@@ -7,7 +7,6 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
 import com.google.protobuf.ByteString;
 
@@ -15,6 +14,7 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 
 import jakarta.inject.Inject;
@@ -47,7 +47,7 @@ class ReadRowsEncodingTest extends BigtableTestUtils {
         var key = writeBinaryRow("bin-");
 
         var task = ReadRows.builder()
-            .id("read")
+            .id(IdUtils.create())
             .type(ReadRows.class.getName())
             .projectId(Property.ofValue(PROJECT_ID))
             .instanceId(Property.ofValue(INSTANCE_ID))
@@ -71,7 +71,7 @@ class ReadRowsEncodingTest extends BigtableTestUtils {
     @Test
     @SuppressWarnings("unchecked")
     void textKeyQualifierAndValueAreNotChanged() throws Exception {
-        try (BigtableDataClient client = createDataClient()) {
+        try (var client = createDataClient()) {
             client.mutateRow(
                 RowMutation.create(TABLE_ID, "text-001")
                     .setCell(COLUMN_FAMILY, "name", timestampMicros(), "héllo")
@@ -79,7 +79,7 @@ class ReadRowsEncodingTest extends BigtableTestUtils {
         }
 
         var task = ReadRows.builder()
-            .id("read")
+            .id(IdUtils.create())
             .type(ReadRows.class.getName())
             .projectId(Property.ofValue(PROJECT_ID))
             .instanceId(Property.ofValue(INSTANCE_ID))
@@ -105,8 +105,8 @@ class ReadRowsEncodingTest extends BigtableTestUtils {
     void triggerReturnsBinaryValuesAsBase64() throws Exception {
         var key = writeBinaryRow("trigbin-");
 
-        Trigger trigger = Trigger.builder()
-            .id("trigger")
+        var trigger = Trigger.builder()
+            .id(IdUtils.create())
             .type(Trigger.class.getName())
             .projectId(Property.ofValue(PROJECT_ID))
             .instanceId(Property.ofValue(INSTANCE_ID))
@@ -130,7 +130,7 @@ class ReadRowsEncodingTest extends BigtableTestUtils {
 
     private byte[] writeBinaryRow(String prefix) throws Exception {
         var key = ByteString.copyFromUtf8(prefix).concat(ByteString.copyFrom(BINARY_SUFFIX));
-        try (BigtableDataClient client = createDataClient()) {
+        try (var client = createDataClient()) {
             client.mutateRow(
                 RowMutation.create(TABLE_ID, key)
                     .setCell(COLUMN_FAMILY, ByteString.copyFrom(BINARY_QUALIFIER), timestampMicros(), ByteString.copyFrom(BINARY_VALUE))

@@ -239,8 +239,7 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
         return map;
     }
 
-    // Bigtable stores bytes. Text is kept as it is, anything that is not valid UTF-8 is written as base64
-    // and flagged, so the original bytes are not lost
+    // base64 keeps non UTF-8 bytes lossless
     private static void putText(Map<String, Object> map, String name, ByteString bytes) {
         if (bytes.isValidUtf8()) {
             map.put(name, bytes.toStringUtf8());
@@ -258,14 +257,24 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
 
         @Schema(
             title = "The first matching row (only set when fetchType is FETCH_ONE)",
-            description = "Row keys, column qualifiers and values that are not valid UTF-8 are returned as base64, with a matching `rowKeyEncoding`, `qualifierEncoding` or `valueEncoding` key set to `base64`. The same applies to `rows` and to the stored file"
+            description = """
+                Row keys, column qualifiers and values that are not valid UTF-8 are returned as base64.
+                A matching `rowKeyEncoding`, `qualifierEncoding` or `valueEncoding` key is set to `base64`."""
         )
         private final Map<String, Object> row;
 
-        @Schema(title = "Rows read (only set when fetchType is FETCH)")
+        @Schema(
+            title = "Rows read (only set when fetchType is FETCH)",
+            description = """
+                Row keys, column qualifiers and values that are not valid UTF-8 are returned as base64.
+                A matching `rowKeyEncoding`, `qualifierEncoding` or `valueEncoding` key is set to `base64`."""
+        )
         private final List<Map<String, Object>> rows;
 
-        @Schema(title = "URI of the file storing all rows (only set when fetchType is STORE)")
+        @Schema(
+            title = "URI of the file storing all rows (only set when fetchType is STORE)",
+            description = "Values that are not valid UTF-8 are stored as base64, see `row` for the format"
+        )
         private final URI uri;
     }
 }

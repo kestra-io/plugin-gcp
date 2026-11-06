@@ -245,7 +245,9 @@ public class Trigger extends AbstractTrigger
 
         @Schema(
             title = "The matched rows, each with its row key and cells",
-            description = "Row keys, qualifiers and values that are not valid UTF-8 are returned as base64, with a matching `rowKeyEncoding`, `qualifierEncoding` or `valueEncoding` key set to `base64`"
+            description = """
+                Row keys, qualifiers and values that are not valid UTF-8 are returned as base64.
+                A matching `rowKeyEncoding`, `qualifierEncoding` or `valueEncoding` key is set to `base64`."""
         )
         private final List<Map<String, Object>> rows;
     }
