@@ -2,7 +2,6 @@ package io.kestra.plugin.gcp.bigtable;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,7 +10,6 @@ import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.Filters;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
-import com.google.cloud.bigtable.data.v2.models.RowCell;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -219,19 +217,7 @@ public class Trigger extends AbstractTrigger
 
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Row row : matchedRows) {
-            Map<String, Object> rowMap = new LinkedHashMap<>();
-            rowMap.put("rowKey", row.getKey().toStringUtf8());
-            List<Map<String, Object>> cells = new ArrayList<>();
-            for (RowCell cell : row.getCells()) {
-                Map<String, Object> cellMap = new LinkedHashMap<>();
-                cellMap.put("family", cell.getFamily());
-                cellMap.put("qualifier", cell.getQualifier().toStringUtf8());
-                cellMap.put("value", cell.getValue().toStringUtf8());
-                cellMap.put("timestamp", cell.getTimestamp());
-                cells.add(cellMap);
-            }
-            rowMap.put("cells", cells);
-            rows.add(rowMap);
+            rows.add(ReadRows.rowToMap(row));
         }
 
         Output output = Output.builder()
@@ -257,7 +243,10 @@ public class Trigger extends AbstractTrigger
         @Schema(title = "Number of rows matched on this poll")
         private final Long rowCount;
 
-        @Schema(title = "The matched rows, each with its row key and cells")
+        @Schema(
+            title = "The matched rows, each with its row key and cells",
+            description = "Row keys, qualifiers and values that are not valid UTF-8 are returned as base64, with a matching `rowKeyEncoding`, `qualifierEncoding` or `valueEncoding` key set to `base64`"
+        )
         private final List<Map<String, Object>> rows;
     }
 }

@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import com.google.cloud.bigtable.data.v2.models.Filters;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowCell;
+import com.google.protobuf.ByteString;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -212,21 +214,32 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
         }
     }
 
-    private static Map<String, Object> rowToMap(Row row) {
+    static Map<String, Object> rowToMap(Row row) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("rowKey", row.getKey().toStringUtf8());
+        putText(map, "rowKey", row.getKey());
 
         List<Map<String, Object>> cells = new ArrayList<>();
         for (RowCell cell : row.getCells()) {
             Map<String, Object> cellMap = new LinkedHashMap<>();
             cellMap.put("family", cell.getFamily());
-            cellMap.put("qualifier", cell.getQualifier().toStringUtf8());
-            cellMap.put("value", cell.getValue().toStringUtf8());
+            putText(cellMap, "qualifier", cell.getQualifier());
+            putText(cellMap, "value", cell.getValue());
             cellMap.put("timestamp", cell.getTimestamp());
             cells.add(cellMap);
         }
         map.put("cells", cells);
         return map;
+    }
+
+    // Bigtable stores bytes. Text is kept as it is, anything that is not valid UTF-8 is written as base64
+    // and flagged, so the original bytes are not lost
+    private static void putText(Map<String, Object> map, String name, ByteString bytes) {
+        if (bytes.isValidUtf8()) {
+            map.put(name, bytes.toStringUtf8());
+        } else {
+            map.put(name, Base64.getEncoder().encodeToString(bytes.toByteArray()));
+            map.put(name + "Encoding", "base64");
+        }
     }
 
     @Builder
@@ -235,7 +248,10 @@ public class ReadRows extends AbstractBigtable implements RunnableTask<ReadRows.
         @Schema(title = "Number of rows read")
         private final Long rowCount;
 
-        @Schema(title = "The first matching row (only set when fetchType is FETCH_ONE)")
+        @Schema(
+            title = "The first matching row (only set when fetchType is FETCH_ONE)",
+            description = "Row keys, column qualifiers and values that are not valid UTF-8 are returned as base64, with a matching `rowKeyEncoding`, `qualifierEncoding` or `valueEncoding` key set to `base64`. The same applies to `rows` and to the stored file"
+        )
         private final Map<String, Object> row;
 
         @Schema(title = "All matching rows (only set when fetchType is FETCH)")
