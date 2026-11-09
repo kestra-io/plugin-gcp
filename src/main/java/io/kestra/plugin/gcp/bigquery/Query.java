@@ -92,9 +92,9 @@ import reactor.core.publisher.Mono;
                       SELECT 1 as id, "John" as name
                       UNION ALL
                       SELECT 2 as id, "Doe" as name
-                  - id: use_fetched_data
-                    type: io.kestra.plugin.core.debug.Return
-                    format: |
+                  - id: log_fetched_data
+                    type: io.kestra.plugin.core.log.Log
+                    message: |
                       {% for row in outputs.fetch.rows %}
                       id : {{ row.id }}, name: {{ row.name }}
                       {% endfor %}
