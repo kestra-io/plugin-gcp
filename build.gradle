@@ -42,8 +42,8 @@ tasks.withType(JavaCompile) {
 // enforcedPlatform can't be overridden by constraints, so force at the plugin level.
 configurations.all {
     resolutionStrategy {
-        force 'com.google.protobuf:protobuf-java:4.35.1'
-        force 'com.google.protobuf:protobuf-java-util:4.35.1'
+        force 'com.google.protobuf:protobuf-java:4.36.2'
+        force 'com.google.protobuf:protobuf-java-util:4.36.2'
         // SEC-0369: platform BOM pins guava 33.4.8-jre, remove once it ships >= 33.7.2.
         force 'com.google.guava:guava:33.7.2-jre'
     }
@@ -82,8 +82,8 @@ dependencies {
     api 'com.google.cloud:google-cloud-storage'
     api 'com.google.cloud:google-cloud-bigquery'
     api 'com.google.cloud:google-cloud-bigquerystorage'
-    api 'com.google.cloud:google-cloud-bigtable:2.82.0'
-    api 'com.google.cloud:google-cloud-spanner:6.124.0'
+    api 'com.google.cloud:google-cloud-bigtable:2.86.0'
+    api 'com.google.cloud:google-cloud-spanner:6.125.0'
     api 'com.google.cloud:google-cloud-bigquerydatatransfer'
     api 'com.google.apis:google-api-services-dataflow:v1b3-rev20240430-2.0.0'
     api 'com.google.cloud:google-cloud-container'
