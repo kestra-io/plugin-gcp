@@ -46,9 +46,9 @@ import lombok.experimental.SuperBuilder;
                     type: io.kestra.plugin.core.flow.ForEach
                     values: "{{ trigger.rows }}"
                     tasks:
-                      - id: return
-                        type: io.kestra.plugin.core.debug.Return
-                        format: "{{ taskrun.value }}"
+                      - id: log_row
+                        type: io.kestra.plugin.core.log.Log
+                        message: "{{ taskrun.value }}"
 
                 triggers:
                   - id: watch
