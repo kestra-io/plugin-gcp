@@ -48,6 +48,10 @@
 - Provides plugin components under `io.kestra.plugin.gcp`.
 - Includes classes such as `CredentialService`, `StoreFetchDestinationValidator`, `LoadCsvValidator`, `StoreFetchValidator`.
 
+## UI
+
+The BigQuery `Query` task ships a details card. Kestra 2.0.x shows it in the topology. Kestra 2.1+ shows it behind the Artifacts button and in the Artifacts tab of the task popup.
+
 ## Documentation
 * Full documentation can be found under [kestra.io/docs](https://kestra.io/docs)
 * Documentation for developing a plugin is included in the [Plugin Developer Guide](https://kestra.io/docs/plugin-developer-guide/).

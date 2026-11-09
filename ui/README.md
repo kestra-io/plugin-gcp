@@ -2,6 +2,13 @@
 
 Vue 3 + Vite micro-frontend for the `io.kestra.plugin.gcp` plugin.
 
+## Slots
+
+The BigQuery `Query` task exposes its details card through two slot sets that coexist:
+
+- `topology-details` and `topology-task-drawer`: Kestra 2.0.x shows the card in the topology.
+- `execution-artifact/details`: Kestra 2.1+ shows it behind the Artifacts button and in the Artifacts tab of the task popup. Kestra 2.1+ ignores the topology slots.
+
 ## Development
 
 ```bash
