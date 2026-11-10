@@ -50,10 +50,21 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
 
     @Schema(
         title = "Automatic BigQuery retry policy",
-        description = "Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s (per-attempt interval capped at 60m), with a total duration of up to 15m and a maximum of 10 attempts."
+        description = """
+            Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s (per-attempt interval capped at 60m) with a maximum of 10 attempts and no overall time limit, so long-running queries are still retried. Set `maxDuration` to cap the total time.
+            """
     )
     @PluginProperty(group = "advanced")
     protected AbstractRetry retryAuto;
+
+    public static Exponential defaultRetry() {
+        return Exponential.builder()
+            .type("exponential")
+            .interval(Duration.ofSeconds(5))
+            .maxInterval(Duration.ofMinutes(60))
+            .maxAttempts(10)
+            .build();
+    }
 
     @Builder.Default
     @Schema(
@@ -201,14 +212,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         return Failsafe
             .with(
                 AbstractRetry.<Job> retryPolicy(
-                    this.getRetryAuto() != null ? this.getRetryAuto()
-                        : Exponential.builder()
-                            .type("exponential")
-                            .interval(Duration.ofSeconds(5))
-                            .maxInterval(Duration.ofMinutes(60))
-                            .maxDuration(Duration.ofMinutes(15))
-                            .maxAttempts(10)
-                            .build()
+                    this.getRetryAuto() != null ? this.getRetryAuto() : defaultRetry()
                 )
                     .handleIf(throwable -> this.shouldRetry(throwable, logger, runContext))
                     .onFailure(
@@ -472,14 +476,20 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         }
 
         for (BigQueryError error : bigQueryException.getErrors()) {
-            if (error.getReason() != null && runContext.render(this.retryReasons).asList(String.class).contains(error.getReason())) {
-                return true;
+            if (error.getReason() != null && this.retryReasons != null) {
+                var reasons = runContext.render(this.retryReasons).asList(String.class);
+                if (reasons != null && reasons.stream().anyMatch(reason -> reason.equalsIgnoreCase(error.getReason()))) {
+                    return true;
+                }
             }
 
             if (this.retryMessages != null && error.getMessage() != null) {
-                for (String message : runContext.render(this.retryMessages).asList(String.class)) {
-                    if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
-                        return true;
+                var messages = runContext.render(this.retryMessages).asList(String.class);
+                if (messages != null) {
+                    for (String message : messages) {
+                        if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
+                            return true;
+                        }
                     }
                 }
             }

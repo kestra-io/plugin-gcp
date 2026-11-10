@@ -340,14 +340,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             .location(queryJob.getJobId().getLocation());
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
-            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto()
-                : Exponential.builder()
-                    .type("exponential")
-                    .interval(Duration.ofSeconds(5))
-                    .maxInterval(Duration.ofMinutes(60))
-                    .maxDuration(Duration.ofMinutes(15))
-                    .maxAttempts(10)
-                    .build();
+            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto() : defaultRetry();
 
             TableResult result = Failsafe.with(
                 AbstractRetry.<TableResult> retryPolicy(retryConfig)
