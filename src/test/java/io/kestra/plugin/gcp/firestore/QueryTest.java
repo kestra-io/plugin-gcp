@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import com.google.cloud.firestore.Query.Direction;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -164,6 +166,111 @@ class QueryTest extends AbstractFlociGcpTest {
             assertThat(output.getRows().size(), is(1));
             assertThat(output.getUri(), is(nullValue()));
             assertThat(output.getRows(), contains(people.get(2)));
+        } finally {
+            clearCollection(query, runContext, collectionName);
+        }
+    }
+
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void runFetchWithOrderBy() throws Exception {
+        var collectionName = "persons_" + UUID.randomUUID();
+
+        var runContext = runContextFactory.of();
+        var queryAsc = Query.builder()
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue(collectionName))
+            .orderBy(Property.ofValue("firstname"))
+            .orderDirection(Property.ofValue(Direction.ASCENDING))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+        queryAsc = FirestoreTestConnections.spy(queryAsc, FLOCI_GCP.getEmulatorHost());
+
+        var queryDefault = Query.builder()
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue(collectionName))
+            .orderBy(Property.ofValue("firstname"))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+        queryDefault = FirestoreTestConnections.spy(queryDefault, FLOCI_GCP.getEmulatorHost());
+
+        var queryDesc = Query.builder()
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue(collectionName))
+            .orderBy(Property.ofValue("firstname"))
+            .orderDirection(Property.ofValue(Direction.DESCENDING))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+        queryDesc = FirestoreTestConnections.spy(queryDesc, FLOCI_GCP.getEmulatorHost());
+
+        try {
+            var people = seedPeople(queryAsc, runContext, collectionName);
+
+            var outputAsc = queryAsc.run(runContext);
+            assertThat(outputAsc.getSize(), is(3L));
+            assertThat(outputAsc.getRows(), contains(people.get(2), people.get(1), people.get(0)));
+
+            var outputDefault = queryDefault.run(runContext);
+            assertThat(outputDefault.getSize(), is(3L));
+            assertThat(outputDefault.getRows(), contains(people.get(2), people.get(1), people.get(0)));
+
+            var outputDesc = queryDesc.run(runContext);
+            assertThat(outputDesc.getSize(), is(3L));
+            assertThat(outputDesc.getRows(), contains(people.get(0), people.get(1), people.get(2)));
+        } finally {
+            clearCollection(queryAsc, runContext, collectionName);
+        }
+    }
+
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void runFetchWithLimit() throws Exception {
+        var collectionName = "persons_" + UUID.randomUUID();
+
+        var runContext = runContextFactory.of();
+        var query = Query.builder()
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue(collectionName))
+            .limit(Property.ofValue(2))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+        query = FirestoreTestConnections.spy(query, FLOCI_GCP.getEmulatorHost());
+
+        try {
+            seedPeople(query, runContext, collectionName);
+            var output = query.run(runContext);
+
+            assertThat(output.getSize(), is(2L));
+            assertThat(output.getRows().size(), is(2));
+        } finally {
+            clearCollection(query, runContext, collectionName);
+        }
+    }
+
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void runFetchWithOffsetAndLimit() throws Exception {
+        var collectionName = "persons_" + UUID.randomUUID();
+
+        var runContext = runContextFactory.of();
+        var query = Query.builder()
+            .projectId(Property.ofValue(project))
+            .collection(Property.ofValue(collectionName))
+            .orderBy(Property.ofValue("firstname"))
+            .orderDirection(Property.ofValue(Direction.ASCENDING))
+            .offset(Property.ofValue(1))
+            .limit(Property.ofValue(1))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+        query = FirestoreTestConnections.spy(query, FLOCI_GCP.getEmulatorHost());
+
+        try {
+            var people = seedPeople(query, runContext, collectionName);
+            var output = query.run(runContext);
+
+            assertThat(output.getSize(), is(1L));
+            assertThat(output.getRows().size(), is(1));
+            assertThat(output.getRows(), contains(people.get(1)));
         } finally {
             clearCollection(query, runContext, collectionName);
         }

@@ -28,6 +28,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -91,14 +92,19 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
     private List<Filter> filters;
 
     @Schema(
-        title = "Order by field"
+        title = "Order by field",
+        description = """
+            The field to sort results by. Documents lacking this field are omitted by Firestore.
+            """
     )
     @PluginProperty(group = "processing")
     private Property<String> orderBy;
 
     @Schema(
         title = "Order direction",
-        description = "ASCENDING by default"
+        description = """
+            Direction of ordering. Defaults to ASCENDING.
+            """
     )
     @Builder.Default
     @PluginProperty(group = "processing")
@@ -106,17 +112,21 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
 
     @Schema(
         title = "Offset",
-        description = "Start offset for paginating results"
+        description = """
+            The number of results to skip. Must be greater than or equal to 0. Defaults to no offset if not set.
+            """
     )
     @PluginProperty(group = "processing")
-    private Property<Integer> offset;
+    private Property<@Min(0) Integer> offset;
 
     @Schema(
         title = "Limit",
-        description = "Maximum number of results"
+        description = """
+            The maximum number of results to return. Must be greater than or equal to 1. Defaults to no limit if not set.
+            """
     )
     @PluginProperty(group = "processing")
-    private Property<Integer> limit;
+    private Property<@Min(1) Integer> limit;
 
     @Override
     public FetchOutput run(RunContext runContext) throws Exception {
@@ -126,24 +136,24 @@ public class Query extends AbstractFirestore implements RunnableTask<FetchOutput
             var query = getQuery(runContext, collectionRef, this.filters);
 
             if (this.orderBy != null) {
-                query.orderBy(
-                    runContext.render(this.orderBy).as(String.class).orElseThrow(),
-                    runContext.render(this.orderDirection).as(Direction.class).orElseThrow()
+                query = query.orderBy(
+                    runContext.render(this.orderBy).as(String.class).orElseThrow(() -> new IllegalArgumentException("Property 'orderBy' rendered to an empty value; check the expression or remove the property")),
+                    runContext.render(this.orderDirection).as(Direction.class).orElse(Direction.ASCENDING)
                 );
             }
 
             if (this.offset != null) {
-                query.offset(runContext.render(this.offset).as(Integer.class).orElseThrow());
+                query = query.offset(runContext.render(this.offset).as(Integer.class).orElseThrow(() -> new IllegalArgumentException("Property 'offset' rendered to an empty value; check the expression or remove the property")));
             }
 
             if (this.limit != null) {
-                query.limit(runContext.render(this.limit).as(Integer.class).orElseThrow());
+                query = query.limit(runContext.render(this.limit).as(Integer.class).orElseThrow(() -> new IllegalArgumentException("Property 'limit' rendered to an empty value; check the expression or remove the property")));
             }
 
             var queryDocumentSnapshots = query.get().get().getDocuments();
 
             var outputBuilder = FetchOutput.builder();
-            switch (runContext.render(fetchType).as(FetchType.class).orElseThrow()) {
+            switch (runContext.render(fetchType).as(FetchType.class).orElse(FetchType.STORE)) {
                 case FETCH:
                     Pair<List<Object>, Long> fetch = this.fetch(queryDocumentSnapshots);
                     outputBuilder
