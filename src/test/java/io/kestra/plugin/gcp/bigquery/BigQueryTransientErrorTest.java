@@ -522,12 +522,7 @@ class BigQueryTransientErrorTest {
         assertThat(submissions.get(), greaterThan(1));
     }
 
-    /**
-     * The default retry policy must not cap overall execution time with maxDuration,
-     * so that queries taking longer than 15 minutes are still retried when failing with a retryable reason.
-     *
-     * @see <a href="https://github.com/kestra-io/plugin-gcp/issues/713">#713</a>
-     */
+    // #713: maxDuration counts from the first attempt, so any cap blocks retrying long jobs.
     @Test
     void defaultRetryPolicyHasNoOverallTimeCap() {
         var defaultRetry = AbstractBigquery.defaultRetry();

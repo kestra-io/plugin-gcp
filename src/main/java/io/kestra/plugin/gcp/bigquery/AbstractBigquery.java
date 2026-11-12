@@ -51,25 +51,18 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     @Schema(
         title = "Automatic BigQuery retry policy",
         description = """
-            Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s (per-attempt interval capped at 60m) with a maximum of 10 attempts and no overall time limit, so long-running queries are still retried. Set `maxDuration` to cap the total time.
+            Optional custom retry policy for retryable BigQuery errors. If unset, uses an exponential backoff starting at 5s (per-attempt interval capped at 60m) with a maximum of 10 attempts and no overall time limit, so long-running queries are still retried. Set `maxDuration` or task timeout to cap the total time.
             """
     )
     @PluginProperty(group = "advanced")
     protected AbstractRetry retryAuto;
 
-    public static Exponential defaultRetry() {
-        return Exponential.builder()
-            .type("exponential")
-            .interval(Duration.ofSeconds(5))
-            .maxInterval(Duration.ofMinutes(60))
-            .maxAttempts(10)
-            .build();
-    }
-
     @Builder.Default
     @Schema(
         title = "Retry reasons",
-        description = "BigQuery error reasons that trigger an automatic retry; evaluated against error reason strings"
+        description = """
+            BigQuery error reasons (matched case-insensitively) that trigger an automatic retry.
+            """
     )
     @PluginProperty(group = "advanced")
     protected Property<List<String>> retryReasons = Property.ofValue(
@@ -85,7 +78,9 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     @Builder.Default
     @Schema(
         title = "Retry message substrings",
-        description = "Case-insensitive substrings that, if found in the error message, trigger an automatic retry"
+        description = """
+            Case-insensitive substrings that, if found in the error message, trigger an automatic retry.
+            """
     )
     @PluginProperty(group = "advanced")
     protected Property<List<String>> retryMessages = Property.ofValue(
@@ -200,6 +195,15 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
             .setHeaderProvider(() -> Map.of("user-agent", "Kestra/" + runContext.version()))
             .build()
             .getService();
+    }
+
+    protected static Exponential defaultRetry() {
+        return Exponential.builder()
+            .type("exponential")
+            .interval(Duration.ofSeconds(5))
+            .maxInterval(Duration.ofMinutes(60))
+            .maxAttempts(10)
+            .build();
     }
 
     protected Job waitForJob(Logger logger, Callable<Job> createJob, RunContext runContext, BigQuery connection) {
@@ -476,20 +480,17 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         }
 
         for (BigQueryError error : bigQueryException.getErrors()) {
-            if (error.getReason() != null && this.retryReasons != null) {
+            if (error.getReason() != null) {
                 var reasons = runContext.render(this.retryReasons).asList(String.class);
-                if (reasons != null && reasons.stream().anyMatch(reason -> reason.equalsIgnoreCase(error.getReason()))) {
+                if (reasons.stream().anyMatch(reason -> error.getReason().equalsIgnoreCase(reason))) {
                     return true;
                 }
             }
 
-            if (this.retryMessages != null && error.getMessage() != null) {
-                var messages = runContext.render(this.retryMessages).asList(String.class);
-                if (messages != null) {
-                    for (String message : messages) {
-                        if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
-                            return true;
-                        }
+            if (error.getMessage() != null) {
+                for (String message : runContext.render(this.retryMessages).asList(String.class)) {
+                    if (error.getMessage().toLowerCase().contains(message.toLowerCase())) {
+                        return true;
                     }
                 }
             }
