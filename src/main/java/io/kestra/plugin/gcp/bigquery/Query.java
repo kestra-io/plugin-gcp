@@ -31,7 +31,6 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.tasks.retrys.AbstractRetry;
-import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
@@ -340,14 +339,7 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             .location(queryJob.getJobId().getLocation());
 
         if (!FetchType.NONE.equals(fetchTypeRendered)) {
-            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto()
-                : Exponential.builder()
-                    .type("exponential")
-                    .interval(Duration.ofSeconds(5))
-                    .maxInterval(Duration.ofMinutes(60))
-                    .maxDuration(Duration.ofMinutes(15))
-                    .maxAttempts(10)
-                    .build();
+            var retryConfig = this.getRetryAuto() != null ? this.getRetryAuto() : defaultRetry();
 
             TableResult result = Failsafe.with(
                 AbstractRetry.<TableResult> retryPolicy(retryConfig)

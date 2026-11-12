@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -519,6 +520,73 @@ class BigQueryTransientErrorTest {
         assertThat(failure.getErrors().getFirst().getReason(), is("invalidQuery"));
         assertThat(failure.getMessage(), containsString("[CONNECTION_ERROR]"));
         assertThat(submissions.get(), greaterThan(1));
+    }
+
+    // #713: maxDuration counts from the first attempt, so any cap blocks retrying long jobs.
+    @Test
+    void defaultRetryPolicyHasNoOverallTimeCap() {
+        var defaultRetry = AbstractBigquery.defaultRetry();
+        assertThat(defaultRetry.getMaxDuration(), is(nullValue()));
+        assertThat(defaultRetry.getMaxAttempts(), is(10));
+        assertThat(defaultRetry.getInterval(), is(Duration.ofSeconds(5)));
+        assertThat(defaultRetry.getMaxInterval(), is(Duration.ofMinutes(60)));
+    }
+
+    @Test
+    void shouldRetryWhenJobFailsWithJobInternalError() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var submissions = new AtomicInteger(0);
+        var jobId = JobId.of("project", "job_internal_error");
+
+        var submittedStatus = runningStatus();
+        var submitted = Mockito.mock(Job.class);
+        Mockito.when(submitted.getJobId()).thenReturn(jobId);
+        Mockito.when(submitted.getStatus()).thenReturn(submittedStatus);
+
+        var internalError = terminalJob(
+            "job_internal_error",
+            new BigQueryError(
+                "jobInternalError",
+                null,
+                "The job encountered an internal error during execution and was unable to complete successfully."
+            )
+        );
+
+        var connection = Mockito.mock(BigQuery.class);
+        Mockito.when(connection.getJob(jobId)).thenReturn(internalError);
+
+        var failure = failureOf(task, runContext, () ->
+        {
+            submissions.incrementAndGet();
+            return submitted;
+        }, connection);
+
+        assertThat(failure.getErrors().getFirst().getReason(), is("jobInternalError"));
+        assertThat(submissions.get(), greaterThan(1));
+    }
+
+    @Test
+    void shouldMatchRetryReasonsCaseInsensitively() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var errorUppercase = new BigQueryError("JOBINTERNALERROR", null, "Internal error");
+        var ex = new BigQueryException(List.of(errorUppercase));
+
+        var shouldRetry = task.shouldRetry(ex, runContext.logger(), runContext);
+        assertThat(shouldRetry, is(true));
+    }
+
+    @Test
+    void shouldHandleNullErrorsSafelyInShouldRetry() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var exWithoutErrors = new BigQueryException(null);
+        var shouldRetry = task.shouldRetry(exWithoutErrors, runContext.logger(), runContext);
+        assertThat(shouldRetry, is(false));
     }
 
     private BigQueryException failureOf(Query task, io.kestra.core.runners.RunContext runContext, java.util.concurrent.Callable<Job> createJob) {
