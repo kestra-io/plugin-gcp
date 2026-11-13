@@ -80,7 +80,8 @@ public class TableDefinition {
         VIEW,
         MATERIALIZED_VIEW,
         EXTERNAL,
-        MODEL
+        MODEL,
+        SNAPSHOT
     }
 
     @Builder

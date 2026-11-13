@@ -1,8 +1,8 @@
 group: io.kestra.plugin.gcp.bigquery
 name: "bigquery"
 title: "Google Cloud BigQuery"
-description: "Build high-performance data pipelines with BigQuery. Query, transform, and load data at scale without infrastructure management."
-body: ""
+description: "Build high-performance data pipelines with BigQuery. Query, transform, load, and manage point-in-time table snapshots at scale without infrastructure management."
+body: "Use these tasks to execute SQL queries, load and extract data, stream rows via Storage Write API, manage datasets and tables, take zero-cost point-in-time table snapshots with automated TTL expiration, and trigger flows on query results in Google Cloud BigQuery. Authentication follows the standard GCP service account pattern (CredentialService)."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
