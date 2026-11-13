@@ -24,6 +24,7 @@ Single-module plugin. Source packages under `io.kestra.plugin`:
 - `io.kestra.plugin.gcp.bigquery.Copy`
 - `io.kestra.plugin.gcp.bigquery.CopyPartitions`
 - `io.kestra.plugin.gcp.bigquery.CreateDataset`
+- `io.kestra.plugin.gcp.bigquery.CreateSnapshot`
 - `io.kestra.plugin.gcp.bigquery.CreateTable`
 - `io.kestra.plugin.gcp.bigquery.DeleteDataset`
 - `io.kestra.plugin.gcp.bigquery.DeletePartitions`
