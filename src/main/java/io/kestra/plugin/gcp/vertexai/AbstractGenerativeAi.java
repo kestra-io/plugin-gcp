@@ -137,16 +137,37 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     // common response objects
     public record Prediction(SafetyAttributes safetyAttributes, CitationMetadata citationMetadata, String content) {
         public static Prediction of(Candidate candidate) {
+            if (candidate == null) {
+                return null;
+            }
+
+            var content = (String) null;
+            if (candidate.hasContent() && candidate.getContent().getPartsCount() > 0) {
+                if (candidate.getContent().getPartsCount() == 1) {
+                    content = candidate.getContent().getParts(0).getText();
+                } else {
+                    var sb = new StringBuilder();
+                    for (var part : candidate.getContent().getPartsList()) {
+                        sb.append(part.getText());
+                    }
+                    content = sb.toString();
+                }
+            }
+
             return new Prediction(
-                SafetyAttributes.of(candidate.getSafetyRatingsList()),
+                SafetyAttributes.of(candidate.getSafetyRatingsList(), candidate.getFinishReason()),
                 CitationMetadata.of(candidate.getCitationMetadata()),
-                candidate.getContent().getParts(0).getText()
+                content
             );
         }
     }
 
     public record CitationMetadata(List<Citation> citations) {
         public static CitationMetadata of(com.google.cloud.vertexai.api.CitationMetadata citationMetadata) {
+            if (citationMetadata == null) {
+                return new CitationMetadata(List.of());
+            }
+
             return new CitationMetadata(
                 citationMetadata.getCitationsList().stream().map(citation -> new Citation(List.of(citation.getTitle()))).toList()
             );
@@ -158,10 +179,21 @@ abstract class AbstractGenerativeAi extends AbstractTask {
 
     public record SafetyAttributes(List<Float> scores, List<String> categories, Boolean blocked) {
         public static SafetyAttributes of(List<SafetyRating> safetyRatingsList) {
+            return of(safetyRatingsList, null);
+        }
+
+        static SafetyAttributes of(List<SafetyRating> safetyRatingsList, Candidate.FinishReason finishReason) {
+            var isBlockedByFinishReason = finishReason == Candidate.FinishReason.SAFETY
+                || finishReason == Candidate.FinishReason.RECITATION
+                || finishReason == Candidate.FinishReason.BLOCKLIST
+                || finishReason == Candidate.FinishReason.PROHIBITED_CONTENT
+                || finishReason == Candidate.FinishReason.SPII
+                || finishReason == Candidate.FinishReason.MODEL_ARMOR;
+
             return new SafetyAttributes(
-                safetyRatingsList.stream().map(safetyRating -> safetyRating.getSeverityScore()).toList(),
-                safetyRatingsList.stream().map(safetyRating -> safetyRating.getCategory().name()).toList(),
-                safetyRatingsList.stream().anyMatch(safetyRating -> safetyRating.getBlocked())
+                safetyRatingsList == null ? List.of() : safetyRatingsList.stream().map(SafetyRating::getSeverityScore).toList(),
+                safetyRatingsList == null ? List.of() : safetyRatingsList.stream().map(safetyRating -> safetyRating.getCategory().name()).toList(),
+                isBlockedByFinishReason || (safetyRatingsList != null && safetyRatingsList.stream().anyMatch(SafetyRating::getBlocked))
             );
         }
     }
