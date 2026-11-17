@@ -195,24 +195,18 @@ class AbstractGenerativeAiTest {
         assertThat(prediction, notNullValue());
         assertThat(prediction.content(), is("Citation test"));
         assertThat(prediction.citationMetadata().citations(), hasSize(1));
-        assertThat(prediction.citationMetadata().citations().get(0).citations(), contains("Vertex AI Documentation"));
+        assertThat(prediction.citationMetadata().citations().getFirst().citations(), contains("Vertex AI Documentation"));
     }
 
     @Test
-    void shouldHandleNullCandidate() {
-        var prediction = AbstractGenerativeAi.Prediction.of(null);
-        assertThat(prediction, nullValue());
-    }
-
-    @Test
-    void shouldHandleSafetyAttributesOfWithoutFinishReason() {
+    void shouldHandleSafetyAttributesWithUnspecifiedFinishReason() {
         var safetyRating = SafetyRating.newBuilder()
             .setCategory(HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT)
             .setSeverityScore(0.5f)
             .setBlocked(true)
             .build();
 
-        var attributes = AbstractGenerativeAi.SafetyAttributes.of(List.of(safetyRating));
+        var attributes = AbstractGenerativeAi.SafetyAttributes.of(List.of(safetyRating), Candidate.FinishReason.FINISH_REASON_UNSPECIFIED);
 
         assertThat(attributes.blocked(), is(true));
         assertThat(attributes.categories(), contains("HARM_CATEGORY_DANGEROUS_CONTENT"));

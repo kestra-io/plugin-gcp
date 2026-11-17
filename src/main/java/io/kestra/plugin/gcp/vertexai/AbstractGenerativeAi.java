@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.vertexai;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.*;
@@ -135,24 +136,21 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     }
 
     // common response objects
-    public record Prediction(SafetyAttributes safetyAttributes, CitationMetadata citationMetadata, String content) {
-        public static Prediction of(Candidate candidate) {
-            if (candidate == null) {
-                return null;
-            }
+    public record Prediction(
+        @Schema(title = "Safety attributes and moderation details")
+        SafetyAttributes safetyAttributes,
 
-            var content = (String) null;
-            if (candidate.hasContent() && candidate.getContent().getPartsCount() > 0) {
-                if (candidate.getContent().getPartsCount() == 1) {
-                    content = candidate.getContent().getParts(0).getText();
-                } else {
-                    var sb = new StringBuilder();
-                    for (var part : candidate.getContent().getPartsList()) {
-                        sb.append(part.getText());
-                    }
-                    content = sb.toString();
-                }
-            }
+        @Schema(title = "Citation metadata for the generated content")
+        CitationMetadata citationMetadata,
+
+        @Schema(
+            title = "Generated text content; null when the candidate was blocked by safety or moderation filters (see safetyAttributes.blocked)"
+        )
+        String content
+    ) {
+        public static Prediction of(Candidate candidate) {
+            var parts = candidate.getContent().getPartsList();
+            var content = parts.isEmpty() ? null : parts.stream().map(Part::getText).collect(Collectors.joining());
 
             return new Prediction(
                 SafetyAttributes.of(candidate.getSafetyRatingsList(), candidate.getFinishReason()),
@@ -162,26 +160,35 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         }
     }
 
-    public record CitationMetadata(List<Citation> citations) {
+    public record CitationMetadata(
+        @Schema(title = "List of citation sources")
+        List<Citation> citations
+    ) {
         public static CitationMetadata of(com.google.cloud.vertexai.api.CitationMetadata citationMetadata) {
-            if (citationMetadata == null) {
-                return new CitationMetadata(List.of());
-            }
-
             return new CitationMetadata(
                 citationMetadata.getCitationsList().stream().map(citation -> new Citation(List.of(citation.getTitle()))).toList()
             );
         }
     }
 
-    public record Citation(List<String> citations) {
+    public record Citation(
+        @Schema(title = "Citation source titles")
+        List<String> citations
+    ) {
     }
 
-    public record SafetyAttributes(List<Float> scores, List<String> categories, Boolean blocked) {
-        public static SafetyAttributes of(List<SafetyRating> safetyRatingsList) {
-            return of(safetyRatingsList, null);
-        }
+    public record SafetyAttributes(
+        @Schema(title = "Severity scores for each safety category")
+        List<Float> scores,
 
+        @Schema(title = "Safety categories evaluated for the response")
+        List<String> categories,
+
+        @Schema(
+            title = "Whether the response was blocked by safety filters or moderation reasons (SAFETY, RECITATION, BLOCKLIST, PROHIBITED_CONTENT, SPII, MODEL_ARMOR)"
+        )
+        Boolean blocked
+    ) {
         static SafetyAttributes of(List<SafetyRating> safetyRatingsList, Candidate.FinishReason finishReason) {
             var isBlockedByFinishReason = finishReason == Candidate.FinishReason.SAFETY
                 || finishReason == Candidate.FinishReason.RECITATION
@@ -191,9 +198,9 @@ abstract class AbstractGenerativeAi extends AbstractTask {
                 || finishReason == Candidate.FinishReason.MODEL_ARMOR;
 
             return new SafetyAttributes(
-                safetyRatingsList == null ? List.of() : safetyRatingsList.stream().map(SafetyRating::getSeverityScore).toList(),
-                safetyRatingsList == null ? List.of() : safetyRatingsList.stream().map(safetyRating -> safetyRating.getCategory().name()).toList(),
-                isBlockedByFinishReason || (safetyRatingsList != null && safetyRatingsList.stream().anyMatch(SafetyRating::getBlocked))
+                safetyRatingsList.stream().map(SafetyRating::getSeverityScore).toList(),
+                safetyRatingsList.stream().map(safetyRating -> safetyRating.getCategory().name()).toList(),
+                isBlockedByFinishReason || safetyRatingsList.stream().anyMatch(SafetyRating::getBlocked)
             );
         }
     }
