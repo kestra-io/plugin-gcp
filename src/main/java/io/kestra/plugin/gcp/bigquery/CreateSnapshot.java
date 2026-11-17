@@ -2,6 +2,7 @@ package io.kestra.plugin.gcp.bigquery;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,8 @@ import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
+import org.slf4j.Logger;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -47,7 +50,7 @@ import lombok.experimental.SuperBuilder;
                     destinationDataset: analytics_snapshots
                     snapshotTable: "customer_orders_snap_{{ execution.startDate | date('yyyyMMdd') }}"
                     expirationDuration: P7D
-                    description: "Daily automated pre-ETL snapshot"
+                    tableDescription: "Daily automated pre-ETL snapshot"
                 """
         ),
         @Example(
@@ -80,7 +83,7 @@ import lombok.experimental.SuperBuilder;
         Creates an instantaneous, zero-cost point-in-time table snapshot. Table snapshots charge $0 for unmodified bytes and support automatic TTL expiration. Accepts snapshotTimestamp for BigQuery Time Travel historical capture.
         """
 )
-public class CreateSnapshot extends AbstractBigquery implements RunnableTask<CreateSnapshot.Output> {
+public class CreateSnapshot extends AbstractBigquery implements RunnableTask<CreateSnapshot.Output>, JobInterface {
     @Schema(
         title = "Source dataset",
         description = """
@@ -116,7 +119,7 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
             Target dataset where the snapshot will be created; defaults to sourceDataset
             """
     )
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "destination")
     private Property<String> destinationDataset;
 
     @Schema(
@@ -135,7 +138,7 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
             GCP project ID for the snapshot table; defaults to projectId
             """
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "destination")
     private Property<String> destinationProject;
 
     @Schema(
@@ -144,7 +147,7 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
             TTL duration from now until the snapshot table automatically expires (e.g., P7D, P30D); if unset, the snapshot persists indefinitely
             """
     )
-    @PluginProperty(group = "execution")
+    @PluginProperty(group = "destination")
     private Property<Duration> expirationDuration;
 
     @Schema(
@@ -157,39 +160,21 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
     private Property<Instant> snapshotTimestamp;
 
     @Schema(
-        title = "Snapshot description",
+        title = "Table description",
         description = """
             Friendly description for the snapshot table
             """
     )
-    @PluginProperty(dynamic = true, group = "advanced")
-    protected String description;
+    @PluginProperty(group = "destination")
+    private Property<String> tableDescription;
 
-    @Schema(
-        title = "Job timeout",
-        description = """
-            Optional max duration for the snapshot job; BigQuery may terminate the job when exceeded
-            """
-    )
     @PluginProperty(group = "execution")
     private Property<Duration> jobTimeout;
 
-    @Schema(
-        title = "Job labels",
-        description = """
-            Labels to apply to the BigQuery copy job
-            """
-    )
     @PluginProperty(group = "advanced")
     private Property<Map<String, String>> labels;
 
     @Builder.Default
-    @Schema(
-        title = "Dry run",
-        description = """
-            If true, validates the snapshot job without creating the table
-            """
-    )
     @PluginProperty(group = "advanced")
     private Property<Boolean> dryRun = Property.ofValue(false);
 
@@ -201,9 +186,35 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
         var jobConfiguration = this.jobConfiguration(runContext);
         var destinationTableId = jobConfiguration.getDestinationTable();
 
-        logger.debug("Creating snapshot of {} to {}", jobConfiguration.getSourceTables(), destinationTableId);
+        var rDryRun = runContext.render(this.dryRun).as(Boolean.class).orElse(false);
 
-        var isDryRun = runContext.render(this.dryRun).as(Boolean.class).orElse(false);
+        if (Boolean.TRUE.equals(rDryRun)) {
+            logger.debug("Executing dry run validation for snapshot of {} to {}", jobConfiguration.getSourceTables(), destinationTableId);
+
+            for (var sourceTable : jobConfiguration.getSourceTables()) {
+                var baseSourceTableId = sourceTable.getProject() != null
+                    ? TableId.of(sourceTable.getProject(), sourceTable.getDataset(), sourceTable.getTable().replaceAll("@.*", ""))
+                    : TableId.of(sourceTable.getDataset(), sourceTable.getTable().replaceAll("@.*", ""));
+
+                var table = connection.getTable(baseSourceTableId);
+                if (table == null || !table.exists()) {
+                    throw new IllegalArgumentException("Source table '" + baseSourceTableId + "' does not exist");
+                }
+            }
+
+            var destTable = connection.getTable(destinationTableId);
+            if (destTable != null && destTable.exists()) {
+                throw new IllegalArgumentException("Destination snapshot table '" + destinationTableId + "' already exists");
+            }
+
+            return Output.builder()
+                .projectId(destinationTableId.getProject())
+                .datasetId(destinationTableId.getDataset())
+                .tableId(destinationTableId.getTable())
+                .build();
+        }
+
+        logger.debug("Creating snapshot of {} to {}", jobConfiguration.getSourceTables(), destinationTableId);
 
         var snapshotJob = this.waitForJob(
             logger,
@@ -214,7 +225,7 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
                     .build(),
                 logger
             ),
-            isDryRun,
+            false,
             runContext,
             connection
         );
@@ -229,28 +240,24 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
             .tableId(destinationTableId.getTable())
             .jobId(snapshotJob.getJobId() != null ? snapshotJob.getJobId().getJob() : null);
 
-        if (Boolean.TRUE.equals(isDryRun)) {
-            return output.build();
-        }
-
         var table = connection.getTable(destinationTableId);
         if (table != null) {
             Table.Builder updateBuilder = null;
 
-            if (this.description != null) {
-                var rDescription = runContext.render(this.description);
-                if (rDescription != null) {
-                    updateBuilder = table.toBuilder().setDescription(rDescription);
+            if (this.tableDescription != null) {
+                var rTableDescription = runContext.render(this.tableDescription).as(String.class).orElse(null);
+                if (rTableDescription != null) {
+                    updateBuilder = table.toBuilder().setDescription(rTableDescription);
                 }
             }
 
             if (this.expirationDuration != null && table.getExpirationTime() == null) {
-                var duration = runContext.render(this.expirationDuration).as(Duration.class).orElse(null);
-                if (duration != null) {
+                var rExpirationDuration = runContext.render(this.expirationDuration).as(Duration.class).orElse(null);
+                if (rExpirationDuration != null) {
                     if (updateBuilder == null) {
                         updateBuilder = table.toBuilder();
                     }
-                    updateBuilder.setExpirationTime(Instant.now().plus(duration).toEpochMilli());
+                    updateBuilder.setExpirationTime(Instant.now().plus(rExpirationDuration).toEpochMilli());
                 }
             }
 
@@ -258,17 +265,7 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
                 table = connection.update(updateBuilder.build());
             }
 
-            var snapshotTime = (Instant) null;
-            if (table.getDefinition() instanceof SnapshotTableDefinition snapshotDefinition && snapshotDefinition.getSnapshotTime() != null) {
-                try {
-                    snapshotTime = Instant.parse(snapshotDefinition.getSnapshotTime());
-                } catch (Exception ignored) {
-                    // fallback to creation time
-                }
-            }
-            if (snapshotTime == null && table.getCreationTime() != null) {
-                snapshotTime = Instant.ofEpochMilli(table.getCreationTime());
-            }
+            var snapshotTime = parseSnapshotTime(table, logger);
 
             output
                 .projectId(table.getTableId().getProject() != null ? table.getTableId().getProject() : destinationTableId.getProject())
@@ -284,45 +281,45 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
     }
 
     protected CopyJobConfiguration jobConfiguration(RunContext runContext) throws IllegalVariableEvaluationException {
-        var defaultProject = this.projectId != null ? runContext.render(this.projectId).as(String.class).orElse(null) : null;
-        var srcProject = this.sourceProject != null ? runContext.render(this.sourceProject).as(String.class).orElse(defaultProject) : defaultProject;
-        var destProject = this.destinationProject != null ? runContext.render(this.destinationProject).as(String.class).orElse(defaultProject) : defaultProject;
+        var rProjectId = this.projectId != null ? runContext.render(this.projectId).as(String.class).orElse(null) : null;
+        var rSourceProject = this.sourceProject != null ? runContext.render(this.sourceProject).as(String.class).orElse(rProjectId) : rProjectId;
+        var rDestinationProject = this.destinationProject != null ? runContext.render(this.destinationProject).as(String.class).orElse(rProjectId) : rProjectId;
 
-        var srcDataset = runContext.render(this.sourceDataset).as(String.class).orElseThrow(() -> new IllegalArgumentException("sourceDataset cannot be empty"));
-        var srcTable = runContext.render(this.sourceTable).as(String.class).orElseThrow(() -> new IllegalArgumentException("sourceTable cannot be empty"));
-        var destDataset = this.destinationDataset != null ? runContext.render(this.destinationDataset).as(String.class).orElse(srcDataset) : srcDataset;
-        var snapTable = runContext.render(this.snapshotTable).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotTable cannot be empty"));
+        var rSourceDataset = runContext.render(this.sourceDataset).as(String.class).orElseThrow(() -> new IllegalArgumentException("sourceDataset cannot be empty"));
+        var rSourceTable = runContext.render(this.sourceTable).as(String.class).orElseThrow(() -> new IllegalArgumentException("sourceTable cannot be empty"));
+        var rDestinationDataset = this.destinationDataset != null ? runContext.render(this.destinationDataset).as(String.class).orElse(rSourceDataset) : rSourceDataset;
+        var rSnapshotTable = runContext.render(this.snapshotTable).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotTable cannot be empty"));
 
-        var sourceTableWithDecorator = srcTable;
+        var sourceTableWithDecorator = rSourceTable;
         if (this.snapshotTimestamp != null) {
-            var timestamp = runContext.render(this.snapshotTimestamp).as(Instant.class).orElse(null);
-            if (timestamp != null) {
-                sourceTableWithDecorator = srcTable + "@" + timestamp.toEpochMilli();
+            var rSnapshotTimestamp = runContext.render(this.snapshotTimestamp).as(Instant.class).orElse(null);
+            if (rSnapshotTimestamp != null) {
+                sourceTableWithDecorator = rSourceTable + "@" + rSnapshotTimestamp.toEpochMilli();
             }
         }
 
-        var sourceTableId = srcProject != null
-            ? TableId.of(srcProject, srcDataset, sourceTableWithDecorator)
-            : TableId.of(srcDataset, sourceTableWithDecorator);
+        var sourceTableId = rSourceProject != null
+            ? TableId.of(rSourceProject, rSourceDataset, sourceTableWithDecorator)
+            : TableId.of(rSourceDataset, sourceTableWithDecorator);
 
-        var destinationTableId = destProject != null
-            ? TableId.of(destProject, destDataset, snapTable)
-            : TableId.of(destDataset, snapTable);
+        var destinationTableId = rDestinationProject != null
+            ? TableId.of(rDestinationProject, rDestinationDataset, rSnapshotTable)
+            : TableId.of(rDestinationDataset, rSnapshotTable);
 
         var builder = CopyJobConfiguration.newBuilder(destinationTableId, sourceTableId)
             .setOperationType("SNAPSHOT");
 
         if (this.expirationDuration != null) {
-            var duration = runContext.render(this.expirationDuration).as(Duration.class).orElse(null);
-            if (duration != null) {
-                builder.setDestinationExpirationTime(Instant.now().plus(duration).toString());
+            var rExpirationDuration = runContext.render(this.expirationDuration).as(Duration.class).orElse(null);
+            if (rExpirationDuration != null) {
+                builder.setDestinationExpirationTime(Instant.now().plus(rExpirationDuration).toString());
             }
         }
 
         if (this.jobTimeout != null) {
-            var timeout = runContext.render(this.jobTimeout).as(Duration.class).orElse(null);
-            if (timeout != null) {
-                builder.setJobTimeoutMs(timeout.toMillis());
+            var rJobTimeout = runContext.render(this.jobTimeout).as(Duration.class).orElse(null);
+            if (rJobTimeout != null) {
+                builder.setJobTimeoutMs(rJobTimeout.toMillis());
             }
         }
 
@@ -338,6 +335,20 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
         return builder.build();
     }
 
+    private Instant parseSnapshotTime(Table table, Logger logger) {
+        if (table.getDefinition() instanceof SnapshotTableDefinition snapshotDefinition && snapshotDefinition.getSnapshotTime() != null) {
+            try {
+                return Instant.parse(snapshotDefinition.getSnapshotTime());
+            } catch (DateTimeParseException e) {
+                logger.debug("Failed to parse snapshot time '{}'", snapshotDefinition.getSnapshotTime(), e);
+            }
+        }
+        if (table.getCreationTime() != null) {
+            return Instant.ofEpochMilli(table.getCreationTime());
+        }
+        return null;
+    }
+
     private String[] tags(JobStatistics.CopyStatistics stats, Job queryJob) {
         var tags = new ArrayList<String>();
         if (queryJob.getJobId() != null) {
@@ -350,17 +361,17 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
                 tags.add(queryJob.getJobId().getLocation());
             }
         }
-        return tags.toArray(new String[0]);
+        return tags.toArray(String[]::new);
     }
 
     private void metrics(RunContext runContext, JobStatistics.CopyStatistics stats, Job queryJob) {
         var tags = this.tags(stats, queryJob);
-
         if (stats.getNumChildJobs() != null) {
             runContext.metric(Counter.of("num.child.jobs", stats.getNumChildJobs(), tags));
         }
-
-        runContext.metric(Timer.of("duration", Duration.ofMillis(stats.getEndTime() - stats.getStartTime()), tags));
+        if (stats.getEndTime() != null && stats.getStartTime() != null) {
+            runContext.metric(Timer.of("duration", Duration.ofMillis(stats.getEndTime() - stats.getStartTime()), tags));
+        }
     }
 
     @Builder

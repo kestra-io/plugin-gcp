@@ -26,6 +26,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -50,7 +51,7 @@ class CreateSnapshotTest {
             .sourceTable(Property.ofValue("source_table"))
             .destinationDataset(Property.ofValue("dest_dataset"))
             .snapshotTable(Property.ofValue("snapshot_table"))
-            .description("Snapshot for audit")
+            .tableDescription(Property.ofValue("Snapshot for audit"))
             .expirationDuration(Property.ofValue(Duration.ofDays(7)))
             .build();
 
@@ -116,6 +117,9 @@ class CreateSnapshotTest {
 
     @Test
     void runDryRun() throws Exception {
+        var sourceTableId = TableId.of(project, dataset, "source_table");
+        var destTableId = TableId.of(project, dataset, "snapshot_dryrun_table");
+
         var task = CreateSnapshot.builder()
             .id("create-snapshot-dryrun_" + IdUtils.create())
             .type(CreateSnapshot.class.getName())
@@ -131,29 +135,82 @@ class CreateSnapshotTest {
         var connection = mock(BigQuery.class);
         doReturn(connection).when(spy).connection(any());
 
-        var job = mock(Job.class);
-        var jobId = JobId.of(project, "kestra_snapshot_dryrun_job");
-        when(job.getJobId()).thenReturn(jobId);
-
-        var status = mock(JobStatus.class);
-        when(status.getState()).thenReturn(JobStatus.State.DONE);
-        when(status.getError()).thenReturn(null);
-        when(job.getStatus()).thenReturn(status);
-
-        when(connection.create(any(JobInfo.class))).thenReturn(job);
-        when(connection.getJob(jobId)).thenReturn(job);
+        var sourceTable = mock(Table.class);
+        when(sourceTable.exists()).thenReturn(true);
+        when(connection.getTable(sourceTableId)).thenReturn(sourceTable);
+        when(connection.getTable(destTableId)).thenReturn(null);
 
         var runContext = TestsUtils.mockRunContext(MAIN_TENANT, runContextFactory, spy, ImmutableMap.of());
         var output = spy.run(runContext);
 
-        assertThat(output.getJobId(), is("kestra_snapshot_dryrun_job"));
+        assertThat(output.getJobId(), nullValue());
         assertThat(output.getProjectId(), is(project));
         assertThat(output.getDatasetId(), is(dataset));
         assertThat(output.getTableId(), is("snapshot_dryrun_table"));
         assertThat(output.getSnapshotTime(), nullValue());
         assertThat(output.getExpirationTime(), nullValue());
 
-        verify(connection, never()).getTable(any(TableId.class));
+        verify(connection, times(1)).getTable(sourceTableId);
+        verify(connection, times(1)).getTable(destTableId);
+        verify(connection, never()).create(any(JobInfo.class));
+    }
+
+    @Test
+    void runDryRunFailsWhenSourceTableDoesNotExist() throws Exception {
+        var task = CreateSnapshot.builder()
+            .id("create-snapshot-dryrun-fail-src_" + IdUtils.create())
+            .type(CreateSnapshot.class.getName())
+            .projectId(Property.ofValue(project))
+            .sourceDataset(Property.ofValue(dataset))
+            .sourceTable(Property.ofValue("missing_source"))
+            .snapshotTable(Property.ofValue("snapshot_dryrun_table"))
+            .dryRun(Property.ofValue(true))
+            .build();
+
+        var spy = Mockito.spy(task);
+
+        var connection = mock(BigQuery.class);
+        doReturn(connection).when(spy).connection(any());
+        when(connection.getTable(any(TableId.class))).thenReturn(null);
+
+        var runContext = TestsUtils.mockRunContext(MAIN_TENANT, runContextFactory, spy, ImmutableMap.of());
+        assertThrows(IllegalArgumentException.class, () -> spy.run(runContext));
+
+        verify(connection, never()).create(any(JobInfo.class));
+    }
+
+    @Test
+    void runDryRunFailsWhenDestinationTableAlreadyExists() throws Exception {
+        var sourceTableId = TableId.of(project, dataset, "source_table");
+        var destTableId = TableId.of(project, dataset, "existing_snapshot");
+
+        var task = CreateSnapshot.builder()
+            .id("create-snapshot-dryrun-fail-dest_" + IdUtils.create())
+            .type(CreateSnapshot.class.getName())
+            .projectId(Property.ofValue(project))
+            .sourceDataset(Property.ofValue(dataset))
+            .sourceTable(Property.ofValue("source_table"))
+            .snapshotTable(Property.ofValue("existing_snapshot"))
+            .dryRun(Property.ofValue(true))
+            .build();
+
+        var spy = Mockito.spy(task);
+
+        var connection = mock(BigQuery.class);
+        doReturn(connection).when(spy).connection(any());
+
+        var sourceTable = mock(Table.class);
+        when(sourceTable.exists()).thenReturn(true);
+        when(connection.getTable(sourceTableId)).thenReturn(sourceTable);
+
+        var destTable = mock(Table.class);
+        when(destTable.exists()).thenReturn(true);
+        when(connection.getTable(destTableId)).thenReturn(destTable);
+
+        var runContext = TestsUtils.mockRunContext(MAIN_TENANT, runContextFactory, spy, ImmutableMap.of());
+        assertThrows(IllegalArgumentException.class, () -> spy.run(runContext));
+
+        verify(connection, never()).create(any(JobInfo.class));
     }
 
     @Test
@@ -183,7 +240,7 @@ class CreateSnapshotTest {
             .sourceTable(Property.ofValue(baseTableName))
             .snapshotTable(Property.ofValue(snapshotTableName))
             .expirationDuration(Property.ofValue(Duration.ofDays(2)))
-            .description("Live test snapshot")
+            .tableDescription(Property.ofValue("Live test snapshot"))
             .build();
 
         runContext = TestsUtils.mockRunContext(runContextFactory, snapshot, ImmutableMap.of());

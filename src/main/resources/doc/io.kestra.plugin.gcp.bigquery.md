@@ -7,8 +7,9 @@ This sub-package provides tasks to run queries, load data, export data, manage d
 ## Authentication
 
 All tasks inherit GCP authentication properties from the common GCP plugin structure (`io.kestra.plugin.gcp.shared.AbstractTask`). You can authenticate using:
-- A service account JSON key via the `serviceAccount` property (e.g. `serviceAccount: "{{ secret('GCP_SERVICE_ACCOUNT_JSON') }}"`).
+- A service account JSON key via the `serviceAccount` property (e.g. `serviceAccount: "{{ secret('GCP_SERVICE_ACCOUNT_JSON') }}"`), stored safely using [Kestra Secrets](https://kestra.io/docs/concepts/secret).
 - Service account impersonation via `impersonatedServiceAccount`.
+- Default authentication across flows using [Plugin Defaults](https://kestra.io/docs/workflow-components/plugin-defaults).
 - Environment-provided credentials (e.g. `GOOGLE_APPLICATION_CREDENTIALS`).
 - Workload Identity or Compute Engine metadata IAM credentials when running inside Google Cloud (GKE, GCE).
 
@@ -25,7 +26,7 @@ Creates an instantaneous, zero-cost point-in-time table snapshot. Table snapshot
 - `snapshotTable`: Name of the snapshot table to create.
 - `expirationDuration`: TTL duration from now until the snapshot table automatically expires (e.g., `P7D`, `P30D`). Expired snapshots are automatically purged by BigQuery with no manual cleanup required.
 - `snapshotTimestamp`: Point-in-time timestamp (BigQuery Time Travel) to capture historical table state (within the 7-day time travel window).
-- `description`: Friendly description for the snapshot table.
+- `tableDescription`: Friendly description for the snapshot table.
 - **Outputs**: `projectId`, `datasetId`, `tableId`, `snapshotTime`, `expirationTime`, `totalRows`, `totalBytes`, `jobId`.
 
 ```yaml
@@ -41,7 +42,7 @@ tasks:
     destinationDataset: analytics_snapshots
     snapshotTable: "customer_orders_snap_{{ execution.startDate | date('yyyyMMdd') }}"
     expirationDuration: P7D
-    description: "Daily automated pre-ETL snapshot"
+    tableDescription: "Daily automated pre-ETL snapshot"
 ```
 
 ### Query
@@ -55,6 +56,12 @@ Exports BigQuery table data to Google Cloud Storage files.
 
 ### Copy
 Copies tables, clones tables, or creates snapshots between datasets or tables.
+
+### CopyPartitions
+Copies specific table partitions between partitioned BigQuery tables.
+
+### DeletePartitions
+Deletes specific partitions from a partitioned BigQuery table.
 
 ### StorageWrite
 Streams rows with high throughput using the BigQuery Storage Write API.
