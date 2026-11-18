@@ -51,7 +51,7 @@ abstract class AbstractGenerativeAi extends AbstractTask {
 
     @Schema(
         title = "Model ID",
-        description = "Vertex model name (e.g., gemini-1.5-flash); defaults to gemini-pro"
+        description = "Vertex model name (e.g., gemini-3.8-flash); defaults to gemini-pro"
     )
     @PluginProperty(dynamic = true, group = "advanced")
     @Builder.Default

@@ -2,7 +2,7 @@
 
 Google Cloud Vertex AI is a fully-managed machine learning platform that allows you to train, deploy, and customize ML models and AI applications.
 
-This sub-package provides tasks to generate completions and vector embeddings using foundation models (such as `text-embedding-005` and `gemini-1.5-flash`), deploy custom jobs, and interact with Vertex AI generative services.
+This sub-package provides tasks to generate completions and vector embeddings using foundation models (such as `text-embedding-005` and `gemini-3.8-flash`), deploy custom jobs, and interact with Vertex AI generative services.
 
 ## Authentication
 
