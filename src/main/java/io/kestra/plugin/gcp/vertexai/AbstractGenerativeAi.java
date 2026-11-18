@@ -1,6 +1,7 @@
 package io.kestra.plugin.gcp.vertexai;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.*;
@@ -135,17 +136,34 @@ abstract class AbstractGenerativeAi extends AbstractTask {
     }
 
     // common response objects
-    public record Prediction(SafetyAttributes safetyAttributes, CitationMetadata citationMetadata, String content) {
+    public record Prediction(
+        @Schema(title = "Safety attributes and moderation details")
+        SafetyAttributes safetyAttributes,
+
+        @Schema(title = "Citation metadata for the generated content")
+        CitationMetadata citationMetadata,
+
+        @Schema(
+            title = "Generated text content; null when the candidate was blocked by safety or moderation filters (see safetyAttributes.blocked)"
+        )
+        String content
+    ) {
         public static Prediction of(Candidate candidate) {
+            var parts = candidate.getContent().getPartsList();
+            var content = parts.isEmpty() ? null : parts.stream().map(Part::getText).collect(Collectors.joining());
+
             return new Prediction(
-                SafetyAttributes.of(candidate.getSafetyRatingsList()),
+                SafetyAttributes.of(candidate.getSafetyRatingsList(), candidate.getFinishReason()),
                 CitationMetadata.of(candidate.getCitationMetadata()),
-                candidate.getContent().getParts(0).getText()
+                content
             );
         }
     }
 
-    public record CitationMetadata(List<Citation> citations) {
+    public record CitationMetadata(
+        @Schema(title = "List of citation sources")
+        List<Citation> citations
+    ) {
         public static CitationMetadata of(com.google.cloud.vertexai.api.CitationMetadata citationMetadata) {
             return new CitationMetadata(
                 citationMetadata.getCitationsList().stream().map(citation -> new Citation(List.of(citation.getTitle()))).toList()
@@ -153,15 +171,36 @@ abstract class AbstractGenerativeAi extends AbstractTask {
         }
     }
 
-    public record Citation(List<String> citations) {
+    public record Citation(
+        @Schema(title = "Citation source titles")
+        List<String> citations
+    ) {
     }
 
-    public record SafetyAttributes(List<Float> scores, List<String> categories, Boolean blocked) {
-        public static SafetyAttributes of(List<SafetyRating> safetyRatingsList) {
+    public record SafetyAttributes(
+        @Schema(title = "Severity scores for each safety category")
+        List<Float> scores,
+
+        @Schema(title = "Safety categories evaluated for the response")
+        List<String> categories,
+
+        @Schema(
+            title = "Whether the response was blocked by safety filters or moderation reasons (SAFETY, RECITATION, BLOCKLIST, PROHIBITED_CONTENT, SPII, MODEL_ARMOR)"
+        )
+        Boolean blocked
+    ) {
+        static SafetyAttributes of(List<SafetyRating> safetyRatingsList, Candidate.FinishReason finishReason) {
+            var isBlockedByFinishReason = finishReason == Candidate.FinishReason.SAFETY
+                || finishReason == Candidate.FinishReason.RECITATION
+                || finishReason == Candidate.FinishReason.BLOCKLIST
+                || finishReason == Candidate.FinishReason.PROHIBITED_CONTENT
+                || finishReason == Candidate.FinishReason.SPII
+                || finishReason == Candidate.FinishReason.MODEL_ARMOR;
+
             return new SafetyAttributes(
-                safetyRatingsList.stream().map(safetyRating -> safetyRating.getSeverityScore()).toList(),
+                safetyRatingsList.stream().map(SafetyRating::getSeverityScore).toList(),
                 safetyRatingsList.stream().map(safetyRating -> safetyRating.getCategory().name()).toList(),
-                safetyRatingsList.stream().anyMatch(safetyRating -> safetyRating.getBlocked())
+                isBlockedByFinishReason || safetyRatingsList.stream().anyMatch(SafetyRating::getBlocked)
             );
         }
     }
