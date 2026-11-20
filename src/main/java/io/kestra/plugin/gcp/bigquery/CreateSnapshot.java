@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+
 import com.google.cloud.bigquery.*;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
@@ -19,8 +21,6 @@ import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-
-import org.slf4j.Logger;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -110,7 +110,7 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
             GCP project ID containing the source table; defaults to projectId
             """
     )
-    @PluginProperty(group = "advanced")
+    @PluginProperty(group = "source")
     private Property<String> sourceProject;
 
     @Schema(
@@ -174,6 +174,12 @@ public class CreateSnapshot extends AbstractBigquery implements RunnableTask<Cre
     @PluginProperty(group = "advanced")
     private Property<Map<String, String>> labels;
 
+    @Schema(
+        title = "Dry run",
+        description = """
+            If true, checks that the source table exists and the snapshot table does not, then returns the resolved IDs without creating anything
+            """
+    )
     @Builder.Default
     @PluginProperty(group = "advanced")
     private Property<Boolean> dryRun = Property.ofValue(false);

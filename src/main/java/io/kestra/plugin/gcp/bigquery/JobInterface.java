@@ -30,7 +30,7 @@ public interface JobInterface {
     @Schema(
         title = "Dry run",
         description = """
-            If true, validates the job without creating or updating tables
+            If true, validates the job and returns statistics without running it
             """
     )
     @PluginProperty(group = "advanced")
