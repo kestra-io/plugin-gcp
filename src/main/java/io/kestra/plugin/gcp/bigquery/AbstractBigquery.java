@@ -288,7 +288,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
                     var jobId = job != null ? job.getJobId() : lastJobId.get();
 
                     if (isInterrupted(exception)) {
-                        throw this.interruptedFailure(logger, jobId, exception);
+                        throw this.interruptedFailure(logger, jobId, exception, InterruptPhase.WAITING);
                     }
 
                     List<BigQueryError> errors = null;
@@ -432,7 +432,7 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
     }
 
     /** The client wraps an interrupt in a BigQueryException carrying no error list, so match on the cause chain. */
-    private static boolean isInterrupted(Throwable throwable) {
+    static boolean isInterrupted(Throwable throwable) {
         for (int depth = 0; throwable != null && depth < MAX_CAUSE_DEPTH; throwable = throwable.getCause(), depth++) {
             if (throwable instanceof InterruptedException) {
                 return true;
@@ -442,18 +442,33 @@ abstract public class AbstractBigquery extends AbstractTask implements WorkerJob
         return false;
     }
 
+    enum InterruptPhase {
+        WAITING,
+        FETCHING
+    }
+
     /**
      * Deliberately not a retryable reason: an interrupted thread cannot make progress. Names the job,
      * which outlives the task unless the kill already cancelled it.
      */
-    private BigQueryException interruptedFailure(Logger logger, JobId jobId, Throwable cause) {
+    BigQueryException interruptedFailure(Logger logger, JobId jobId, Throwable cause, InterruptPhase phase) {
         Thread.currentThread().interrupt();
 
-        var message = "Interrupted while waiting for BigQuery job"
-            + (jobId != null ? " '" + jobId.getJob() + "'" : "")
-            + (this.isCancelled.get()
-                ? ", the job was cancelled."
-                : ". The job was not cancelled and may still be running on BigQuery.");
+        var message = switch (phase) {
+            case WAITING -> "Interrupted while waiting for BigQuery job"
+                + (jobId != null ? " '" + jobId.getJob() + "'" : "")
+                + (this.isCancelled.get()
+                    ? ", the job was cancelled."
+                    : ". The job was not cancelled and may still be running on BigQuery.");
+            case FETCHING -> "Interrupted while fetching results for BigQuery job"
+                + (jobId != null ? " '" + jobId.getJob() + "'" : "")
+                + (this.isCancelled.get()
+                    ? ". The job completed on BigQuery; the task was killed while reading its results."
+                    : ". The job completed successfully on BigQuery, but retrieving its results was interrupted.")
+                + " The statement has already run: read the results of job"
+                + (jobId != null ? " '" + jobId.getJob() + "'" : "")
+                + " instead of re-running the task, which would execute it again.";
+        };
 
         logger.warn(message, cause);
 
