@@ -11,10 +11,11 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.*;
+import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.TargetOS;
 import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.scripts.exec.AbstractExecScript;
 import io.kestra.plugin.scripts.exec.scripts.models.DockerOptions;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
@@ -27,13 +28,17 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
-@ToString
+// callSuper = false: the inherited env has no @ToString.Exclude, keeps rendered secrets out
+@ToString(callSuper = false)
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
 @Schema(
     title = "Run gcloud commands in a task runner",
-    description = "Executes one or more `gcloud` commands via the configured task runner (Docker by default with image `google/cloud-sdk`). Supports injecting a service account key and project ID into env vars and collecting output files."
+    description = """
+        Executes one or more `gcloud` commands via the configured task runner (Docker by default with image `google/cloud-sdk`). Supports injecting a service account key and project ID into env vars and collecting output files. Values set in `env` override those variables.
+        The inherited `warningOnStdErr` and `runner` properties are ignored. The deprecated `docker` option only applies on Kestra 1.3, use `taskRunner`.
+        """
 )
 @Plugin(
     examples = {
@@ -113,7 +118,7 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
+public class GCloudCLI extends AbstractExecScript implements RunnableTask<ScriptOutput> {
     private static final String DEFAULT_IMAGE = "google/cloud-sdk";
 
     @Schema(
@@ -121,6 +126,7 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
         description = "Full JSON key content written to a temp file and wired to `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE`"
     )
     @PluginProperty(secret = true, group = "connection")
+    @ToString.Exclude
     protected Property<String> serviceAccount;
 
     @Schema(
@@ -132,19 +138,15 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
 
     @Schema(
         title = "Commands",
-        description = "Shell commands executed with `/bin/sh -c`; rendered before execution"
+        description = """
+            Shell commands executed through the `interpreter` (`/bin/sh -c` by default), rendered before execution.
+            """
     )
     @NotNull
     @PluginProperty(group = "main")
     protected Property<List<String>> commands;
 
-    @Schema(
-        title = "Additional environment variables",
-        description = "Merged into the task environment after project/service account vars"
-    )
-    @PluginProperty(group = "execution")
-    protected Property<Map<String, String>> env;
-
+    // Kept here: core has no docker property from 2.0, flows using it would fail validation
     @Schema(
         title = "Docker options (deprecated)",
         description = "Deprecated; use `taskRunner` instead"
@@ -170,41 +172,33 @@ public class GCloudCLI extends Task implements RunnableTask<ScriptOutput>, Names
     @PluginProperty(group = "execution")
     private Property<String> containerImage = Property.ofValue(DEFAULT_IMAGE);
 
-    @PluginProperty(group = "source")
-    private NamespaceFiles namespaceFiles;
-
-    @PluginProperty(group = "source")
-    private Object inputFiles;
-
     @Schema(
-        title = "Output files",
-        description = "Paths to copy from the task runtime back to internal storage after execution"
+        title = "Fail fast on the first failing command",
+        description = """
+            If true, `set -e` is prepended to the script, so the first failing line in `beforeCommands` or `commands` stops the run.
+            Defaults to false, so a failing line does not stop the run.
+            """
     )
-    @PluginProperty(group = "destination")
-    private Property<List<String>> outputFiles;
+    @Builder.Default
+    @PluginProperty(group = "execution")
+    protected Property<Boolean> failFast = Property.ofValue(false);
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
+        var commands = this.commands(runContext)
+            .withInterpreter(this.getInterpreter())
+            .withBeforeCommands(this.getBeforeCommands())
+            .withBeforeCommandsWithOptions(true)
+            .withCommands(this.commands);
 
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
-
-        CommandsWrapper commands = new CommandsWrapper(runContext)
-            .withWarningOnStdErr(true)
-            .withDockerOptions(injectDefaults(getDocker()))
-            .withTaskRunner(this.taskRunner)
-            .withContainerImage(runContext.render(this.containerImage).as(String.class).orElseThrow())
-            .withInterpreter(Property.ofValue(List.of("/bin/sh", "-c")))
-            .withCommands(this.commands)
-            .withNamespaceFiles(namespaceFiles)
-            .withInputFiles(inputFiles)
-            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles);
-
+        // getEnv returns the credentials then the user env, replaces the map commands() set (immutable for Property.ofValue)
         return commands
-            .addEnv(this.getEnv(runContext, commands))
+            .withEnv(this.getEnv(runContext, commands))
             .run();
     }
 
-    private DockerOptions injectDefaults(DockerOptions original) {
+    @Override
+    protected DockerOptions injectDefaults(RunContext runContext, DockerOptions original) {
         if (original == null) {
             return null;
         }
