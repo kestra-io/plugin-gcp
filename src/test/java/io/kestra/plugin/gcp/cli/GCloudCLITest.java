@@ -106,9 +106,11 @@ class GCloudCLITest {
             .id(IdUtils.create())
             .type(GCloudCLI.class.getName())
             .commands(Property.ofValue(List.of("gcloud version")))
+            .serviceAccount(Property.ofValue("super-secret-key"))
             .env(Property.ofValue(Map.of("SECRET_KEY", "super-secret-value")))
             .build();
 
         assertThat(task.toString(), not(containsString("super-secret-value")));
+        assertThat(task.toString(), not(containsString("super-secret-key")));
     }
 }

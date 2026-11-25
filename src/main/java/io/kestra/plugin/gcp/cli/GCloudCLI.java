@@ -36,7 +36,7 @@ import lombok.experimental.SuperBuilder;
 @Schema(
     title = "Run gcloud commands in a task runner",
     description = """
-        Executes one or more `gcloud` commands via the configured task runner (Docker by default with image `google/cloud-sdk`). Supports injecting a service account key and project ID into env vars and collecting output files.
+        Executes one or more `gcloud` commands via the configured task runner (Docker by default with image `google/cloud-sdk`). Supports injecting a service account key and project ID into env vars and collecting output files. Values set in `env` override those variables.
         The inherited `warningOnStdErr` and `runner` properties are ignored. The deprecated `docker` option only applies on Kestra 1.3, use `taskRunner`.
         """
 )
@@ -126,6 +126,7 @@ public class GCloudCLI extends AbstractExecScript implements RunnableTask<Script
         description = "Full JSON key content written to a temp file and wired to `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE`"
     )
     @PluginProperty(secret = true, group = "connection")
+    @ToString.Exclude
     protected Property<String> serviceAccount;
 
     @Schema(
