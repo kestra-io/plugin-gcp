@@ -11,12 +11,15 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.core.runner.Process;
 import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
 
 import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 @KestraTest
 class GCloudCLITest {
@@ -59,5 +62,53 @@ class GCloudCLITest {
         assertThat(runOutput.getVars().get("cliCredentials"), is(serviceAccount));
         assertThat(runOutput.getVars().get("projectId"), is(projectId));
         assertThat(runOutput.getVars().get("customEnv"), is(envValue));
+    }
+
+    @Test
+    void userEnvOverridesTheProjectAndTheKeyStillReachesTheProcess() throws Exception {
+        var task = GCloudCLI.builder()
+            .id(IdUtils.create())
+            .type(GCloudCLI.class.getName())
+            .taskRunner(Process.instance())
+            .projectId(Property.ofValue("from-project-id"))
+            .serviceAccount(Property.ofValue("someServiceAccount"))
+            .env(Property.ofValue(Map.of("CLOUDSDK_CORE_PROJECT", "from-env")))
+            .commands(
+                Property.ofValue(
+                    List.of(
+                        "echo \"::{\\\"outputs\\\":{\\\"project\\\":\\\"$CLOUDSDK_CORE_PROJECT\\\",\\\"key\\\":\\\"$(cat $GOOGLE_APPLICATION_CREDENTIALS)\\\"}}::\""
+                    )
+                )
+            )
+            .build();
+
+        var output = task.run(TestsUtils.mockRunContext(runContextFactory, task, Map.of()));
+
+        assertThat(output.getVars().get("project"), is("from-env"));
+        assertThat(output.getVars().get("key"), is("someServiceAccount"));
+    }
+
+    @Test
+    void failingLineDoesNotStopTheRunByDefault() throws Exception {
+        var task = GCloudCLI.builder()
+            .id(IdUtils.create())
+            .type(GCloudCLI.class.getName())
+            .taskRunner(Process.instance())
+            .commands(Property.ofValue(List.of("false", "echo ok")))
+            .build();
+
+        assertThat(task.run(TestsUtils.mockRunContext(runContextFactory, task, Map.of())).getExitCode(), is(0));
+    }
+
+    @Test
+    void toStringDoesNotExposeEnvSecrets() {
+        var task = GCloudCLI.builder()
+            .id(IdUtils.create())
+            .type(GCloudCLI.class.getName())
+            .commands(Property.ofValue(List.of("gcloud version")))
+            .env(Property.ofValue(Map.of("SECRET_KEY", "super-secret-value")))
+            .build();
+
+        assertThat(task.toString(), not(containsString("super-secret-value")));
     }
 }
