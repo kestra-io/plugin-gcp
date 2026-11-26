@@ -364,9 +364,15 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
             {
                 try {
                     return queryJob.getQueryResults();
-                } catch (com.google.cloud.bigquery.BigQueryException e) {
-                    // Re-reading a finished job's results has no side effect, so the client's verdict stands.
-                    throw new BigQueryException(BigQueryService.errorsOf(e), e, e.isRetryable());
+                } catch (Exception e) {
+                    if (Thread.currentThread().isInterrupted() || isInterrupted(e)) {
+                        throw this.interruptedFailure(logger, queryJob.getJobId(), e, InterruptPhase.FETCHING);
+                    }
+                    if (e instanceof com.google.cloud.bigquery.BigQueryException bqException) {
+                        // Re-reading a finished job's results has no side effect, so the client's verdict stands.
+                        throw new BigQueryException(BigQueryService.errorsOf(bqException), bqException, bqException.isRetryable());
+                    }
+                    throw e;
                 }
             });
 
@@ -374,29 +380,36 @@ public class Query extends AbstractJob implements RunnableTask<Query.Output>, Qu
 
             runContext.metric(Counter.of("total.rows", result.getTotalRows(), tags));
 
-            if (FetchType.STORE.equals(fetchTypeRendered)) {
-                Map.Entry<URI, Long> store = this.storeResult(result, runContext);
+            try {
+                if (FetchType.STORE.equals(fetchTypeRendered)) {
+                    var store = this.storeResult(result, runContext);
 
-                runContext.metric(Counter.of("fetch.rows", store.getValue(), tags));
-                output
-                    .uri(store.getKey())
-                    .size(store.getValue());
+                    runContext.metric(Counter.of("fetch.rows", store.getValue(), tags));
+                    output
+                        .uri(store.getKey())
+                        .size(store.getValue());
 
-            } else {
-                List<Map<String, Object>> fetch = this.fetchResult(result);
-
-                if (result.getTotalRows() > fetch.size()) {
-                    throw new IllegalStateException("Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows());
-                }
-
-                runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
-                output.size((long) fetch.size());
-
-                if (FetchType.FETCH.equals(fetchTypeRendered)) {
-                    output.rows(fetch);
                 } else {
-                    output.row(fetch.size() > 0 ? fetch.get(0) : ImmutableMap.of());
+                    var fetch = this.fetchResult(result);
+
+                    if (result.getTotalRows() > fetch.size()) {
+                        throw new IllegalStateException("Invalid fetch rows, got " + fetch.size() + ", expected " + result.getTotalRows());
+                    }
+
+                    runContext.metric(Counter.of("fetch.rows", fetch.size(), tags));
+                    output.size((long) fetch.size());
+
+                    if (FetchType.FETCH.equals(fetchTypeRendered)) {
+                        output.rows(fetch);
+                    } else {
+                        output.row(!fetch.isEmpty() ? fetch.getFirst() : ImmutableMap.of());
+                    }
                 }
+            } catch (Exception e) {
+                if (Thread.currentThread().isInterrupted() || isInterrupted(e)) {
+                    throw this.interruptedFailure(logger, queryJob.getJobId(), e, InterruptPhase.FETCHING);
+                }
+                throw e;
             }
         }
 

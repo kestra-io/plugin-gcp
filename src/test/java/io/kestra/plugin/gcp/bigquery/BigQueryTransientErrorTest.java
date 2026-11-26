@@ -14,13 +14,18 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobId;
+import com.google.cloud.bigquery.JobStatistics;
 import com.google.cloud.bigquery.JobStatus;
+import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.TableId;
+import com.google.cloud.bigquery.TableResult;
 import com.google.common.collect.ImmutableMap;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.core.utils.TestsUtils;
 
 import dev.failsafe.FailsafeException;
@@ -191,6 +196,121 @@ class BigQueryTransientErrorTest {
 
         assertThat(failure.getErrors().getFirst().getMessage(), containsString("the job was cancelled"));
         assertThat(failure.getErrors().getFirst().getMessage(), not(containsString("may still be running")));
+    }
+
+    @Test
+    void shouldNameTheJobAndRestoreInterruptWhenQueryResultsFetchIsInterrupted() throws Exception {
+        var job = terminalJob("job_fetch_interrupted", "US", null);
+        Mockito.when(job.getQueryResults()).thenAnswer(invocation -> {
+            throw new com.google.cloud.bigquery.BigQueryException(0, "java.lang.InterruptedException", new InterruptedException());
+        });
+
+        var queryTask = completedQueryTask(job);
+        var runContext = TestsUtils.mockRunContext(runContextFactory, queryTask, ImmutableMap.of());
+
+        var failsafeException = assertThrows(
+            FailsafeException.class,
+            () -> queryTask.run(runContext)
+        );
+
+        assertThat(failsafeException.getCause(), instanceOf(BigQueryException.class));
+        var failure = (BigQueryException) failsafeException.getCause();
+
+        assertThat(failure.isRetryable(), is(false));
+        assertThat(failure.getErrors(), hasSize(1));
+        assertThat(failure.getErrors().getFirst().getReason(), is("interrupted"));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("'job_fetch_interrupted'"));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("The job completed successfully on BigQuery, but retrieving its results was interrupted"));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("The statement has already run: read the results of job 'job_fetch_interrupted' instead of re-running the task"));
+        assertThat(Thread.currentThread().isInterrupted(), is(true));
+        Mockito.verify(job, Mockito.times(1)).getQueryResults();
+    }
+
+    @Test
+    void shouldReportTaskWasKilledWhileReadingResultsWhenKilledDuringFetch() throws Exception {
+        var job = terminalJob("job_fetch_killed", "US", null);
+        Mockito.when(job.getQueryResults()).thenAnswer(invocation -> {
+            throw new com.google.cloud.bigquery.BigQueryException(0, "java.lang.InterruptedException", new InterruptedException());
+        });
+
+        var queryTask = completedQueryTask(job);
+        queryTask.kill();
+
+        var runContext = TestsUtils.mockRunContext(runContextFactory, queryTask, ImmutableMap.of());
+
+        var failsafeException = assertThrows(
+            FailsafeException.class,
+            () -> queryTask.run(runContext)
+        );
+
+        assertThat(failsafeException.getCause(), instanceOf(BigQueryException.class));
+        var failure = (BigQueryException) failsafeException.getCause();
+
+        assertThat(failure.isRetryable(), is(false));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("The job completed on BigQuery; the task was killed while reading its results."));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("The statement has already run: read the results of job 'job_fetch_killed' instead of re-running the task"));
+        assertThat(failure.getErrors().getFirst().getMessage(), not(containsString("the job was cancelled")));
+        assertThat(Thread.currentThread().isInterrupted(), is(true));
+    }
+
+    @Test
+    void shouldRestoreInterruptWhenResultRowIterationIsInterrupted() throws Exception {
+        var job = terminalJob("job_iterate_interrupted", "US", null);
+        var tableResult = Mockito.mock(TableResult.class);
+        Mockito.when(tableResult.getTotalRows()).thenReturn(1L);
+        Mockito.when(tableResult.iterateAll()).thenAnswer(invocation -> {
+            throw new RuntimeException("Page iteration interrupted", new InterruptedException());
+        });
+        Mockito.when(job.getQueryResults()).thenReturn(tableResult);
+
+        var queryTask = completedQueryTask(job);
+        var runContext = TestsUtils.mockRunContext(runContextFactory, queryTask, ImmutableMap.of());
+
+        var failure = assertThrows(
+            BigQueryException.class,
+            () -> queryTask.run(runContext)
+        );
+
+        assertThat(failure.isRetryable(), is(false));
+        assertThat(failure.getErrors().getFirst().getReason(), is("interrupted"));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("'job_iterate_interrupted'"));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("The job completed successfully on BigQuery, but retrieving its results was interrupted"));
+        assertThat(failure.getErrors().getFirst().getMessage(), containsString("The statement has already run: read the results of job 'job_iterate_interrupted' instead of re-running the task"));
+        assertThat(Thread.currentThread().isInterrupted(), is(true));
+    }
+
+    private Query completedQueryTask(Job job) throws Exception {
+        var stats = Mockito.mock(JobStatistics.QueryStatistics.class);
+        Mockito.when(stats.getStatementType()).thenReturn(JobStatistics.QueryStatistics.StatementType.SELECT);
+        Mockito.when(job.getStatistics()).thenReturn(stats);
+
+        var config = Mockito.mock(QueryJobConfiguration.class);
+        Mockito.when(config.getDestinationTable()).thenReturn(TableId.of("project", "dataset", "table"));
+        Mockito.when(job.getConfiguration()).thenReturn(config);
+
+        var connection = Mockito.mock(BigQuery.class);
+        Mockito.when(connection.getJob(job.getJobId())).thenReturn(job);
+
+        var queryTask = Mockito.spy(Query.builder()
+            .id(IdUtils.create())
+            .type(Query.class.getName())
+            .sql(Property.ofValue("SELECT 1"))
+            .fetch(true)
+            .retryAuto(
+                Exponential.builder()
+                    .type("exponential")
+                    .interval(Duration.ofMillis(10))
+                    .maxInterval(Duration.ofMillis(50))
+                    .maxDuration(Duration.ofSeconds(5))
+                    .maxAttempts(3)
+                    .build()
+            )
+            .build());
+
+        Mockito.doReturn(connection).when(queryTask).connection(Mockito.any());
+        Mockito.doReturn(job).when(queryTask).waitForJob(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        return queryTask;
     }
 
     /**
@@ -629,7 +749,7 @@ class BigQueryTransientErrorTest {
     }
 
     /** A job already in a terminal state, carrying {@code error} (null for a clean success). */
-    private Job terminalJob(String id, BigQueryError error) {
+    private Job terminalJob(String id, String location, BigQueryError error) {
         var status = Mockito.mock(JobStatus.class);
         Mockito.when(status.getError()).thenReturn(error);
         // Left null deliberately: handleErrors() collects getError() AND getExecutionErrors(),
@@ -638,10 +758,18 @@ class BigQueryTransientErrorTest {
         Mockito.when(status.getState()).thenReturn(JobStatus.State.DONE);
 
         var job = Mockito.mock(Job.class);
-        Mockito.when(job.getJobId()).thenReturn(JobId.of("project", id));
+        Mockito.when(job.getJobId()).thenReturn(
+            location != null
+                ? JobId.newBuilder().setProject("project").setLocation(location).setJob(id).build()
+                : JobId.of("project", id)
+        );
         Mockito.when(job.getStatus()).thenReturn(status);
 
         return job;
+    }
+
+    private Job terminalJob(String id, BigQueryError error) {
+        return terminalJob(id, null, error);
     }
 
     private Query task() {
