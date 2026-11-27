@@ -170,16 +170,7 @@ public class SpannerService {
             case STRING:
                 return row.getString(columnName);
             case JSON:
-                String jsonVal = row.getJson(columnName);
-                try {
-                    return JacksonMapper.toObject(jsonVal);
-                } catch (JsonProcessingException e) {
-                    throw new IllegalArgumentException(
-                        "Invalid JSON in column '%s': %s. Check the JSON value stored in this column."
-                            .formatted(columnName, e.getOriginalMessage()),
-                        e
-                    );
-                }
+                return parseJson(row.getJson(columnName), columnName);
             case BYTES:
                 return row.getBytes(columnName).toByteArray();
             case TIMESTAMP:
@@ -209,8 +200,14 @@ public class SpannerService {
                 return row.getBigDecimalList(columnName);
             case STRING:
                 return row.getStringList(columnName);
+            case BYTES:
+                return row.getBytesList(columnName).stream()
+                    .map(b -> b == null ? null : b.toByteArray())
+                    .toList();
             case JSON:
-                return row.getJsonList(columnName);
+                return row.getJsonList(columnName).stream()
+                    .map(json -> parseJson(json, columnName))
+                    .toList();
             case TIMESTAMP:
                 return row.getTimestampList(columnName).stream()
                     .map(t -> t == null ? null : t.toSqlTimestamp().toInstant())
@@ -225,6 +222,21 @@ public class SpannerService {
                     .toList();
             default:
                 return row.getValue(columnName).toString();
+        }
+    }
+
+    private static Object parseJson(String json, String columnName) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return JacksonMapper.toObject(json);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(
+                "Invalid JSON in column '%s': %s. Check the JSON value stored in this column."
+                    .formatted(columnName, e.getOriginalMessage()),
+                e
+            );
         }
     }
 }
