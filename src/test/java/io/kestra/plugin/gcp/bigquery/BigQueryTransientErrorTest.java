@@ -14,6 +14,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobId;
+import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.JobStatistics;
 import com.google.cloud.bigquery.JobStatus;
 import com.google.cloud.bigquery.QueryJobConfiguration;
@@ -147,6 +148,41 @@ class BigQueryTransientErrorTest {
         assertThat(failure.getMessage(), containsString("The service is currently unavailable."));
         assertThat(failure.getCause(), is(unavailable));
         assertThat(submissions.get(), is(1));
+    }
+
+    @Test
+    void shouldAdoptTheOriginalJobWhenCreateFailsWithABackendError() throws Exception {
+        var task = task();
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, ImmutableMap.of());
+
+        var jobInfo = JobInfo.newBuilder(QueryJobConfiguration.of("SELECT 1"))
+            .setJobId(JobId.of("project", "job_backend_error"))
+            .build();
+
+        var existing = Mockito.mock(Job.class);
+        Mockito.when(existing.getJobId()).thenReturn(jobInfo.getJobId());
+        Mockito.when(existing.getStatistics()).thenReturn(Mockito.mock(JobStatistics.QueryStatistics.class));
+        var finished = terminalJob("job_backend_error", null);
+
+        var connection = Mockito.mock(BigQuery.class);
+        Mockito.when(connection.create(jobInfo))
+            .thenThrow(
+                new com.google.cloud.bigquery.BigQueryException(
+                    500, "Retrying may solve the problem.", new BigQueryError("backendError", null, "Retrying may solve the problem.")
+                )
+            )
+            .thenReturn(existing);
+        Mockito.when(connection.getJob(jobInfo.getJobId())).thenReturn(finished);
+
+        var job = task.waitForJob(
+            runContext.logger(),
+            () -> BigQueryService.createOrAdoptJob(connection, jobInfo, runContext.logger()),
+            runContext,
+            connection
+        );
+
+        assertThat(job.getJobId().getJob(), is("job_backend_error"));
+        Mockito.verify(connection, Mockito.times(2)).create(Mockito.any(JobInfo.class));
     }
 
     @Test
