@@ -30,6 +30,16 @@ class SpannerServiceJsonTest {
         assertThat(exception.getMessage(), containsString("Check the JSON value stored in this column."));
     }
 
+    @Test
+    void shouldRejectInvalidJsonInArrayWithColumnContext() {
+        var row = Struct.newBuilder().set("payload_array").to(Value.jsonArray(List.of("{\"valid\":1}", "{invalid"))).build();
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> SpannerService.rowToMap(row));
+
+        assertThat(exception.getMessage(), containsString("Invalid JSON in column 'payload_array'"));
+        assertThat(exception.getMessage(), containsString("Check the JSON value stored in this column."));
+    }
+
     @ParameterizedTest
     @MethodSource("jsonValues")
     void shouldDeserializeJsonValues(String json, Object expected) {
