@@ -506,6 +506,36 @@ class TriggerTest extends AbstractFlociGcpTest {
         assertThat(storage.get(bucket, unrelatedName), notNullValue());
     }
 
+    @Test
+    void shouldApplyMaxFilesAfterStateFiltering() throws Exception {
+        String base = "trigger/max-files/" + IdUtils.create() + "/";
+        cleanupPrefixes.add("tasks/gcp/upload/" + base);
+
+        Trigger trigger = Trigger.builder()
+            .id(TriggerTest.class.getSimpleName() + IdUtils.create())
+            .type(Trigger.class.getName())
+            .from(Property.ofValue("gs://" + bucket + "/tasks/gcp/upload/" + base))
+            .maxFiles(Property.ofValue(2))
+            .build();
+
+        testUtils.upload(base + "a");
+        testUtils.upload(base + "b");
+        testUtils.upload(base + "c");
+
+        Map.Entry<ConditionContext, io.kestra.core.models.triggers.Trigger> context = TestsUtils.mockTrigger(runContextFactory, trigger);
+
+        assertThat(triggeredNames(evaluateAndTrackStorage(trigger, context.getKey(), context.getValue())), contains(endsWith("/a.yml"), endsWith("/b.yml")));
+        assertThat(triggeredNames(evaluateAndTrackStorage(trigger, context.getKey(), context.getValue())), contains(endsWith("/c.yml")));
+        assertThat(evaluateAndTrackStorage(trigger, context.getKey(), context.getValue()).isPresent(), is(false));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> triggeredNames(Optional<Execution> execution) {
+        assertThat(execution.isPresent(), is(true));
+        var blobs = (List<Map<String, Object>>) execution.get().getTrigger().getVariables().get("blobs");
+        return blobs.stream().map(blob -> (String) blob.get("name")).toList();
+    }
+
     private Optional<Execution> evaluateAndTrackStorage(
         Trigger trigger,
         ConditionContext conditionContext,
