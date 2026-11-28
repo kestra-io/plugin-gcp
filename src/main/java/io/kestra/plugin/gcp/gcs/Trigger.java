@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -157,7 +158,7 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
     @Schema(
         title = "Max files",
         description = """
-            The maximum number of files to retrieve at once
+            The maximum number of files to process per evaluation. The remaining new or updated files are processed on later evaluations.
             """
     )
     @Builder.Default
@@ -178,15 +179,21 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             .filter(Property.ofValue(Filter.FILES))
             .listingType(listingType)
             .regExp(regExp)
-            .maxFiles(maxFiles)
             .build();
 
-        var blobs = listTask.run(runContext).getBlobs();
-        if (blobs.isEmpty()) {
-            return Optional.empty();
-        }
-
         try (Storage connection = listTask.connection(runContext)) {
+            var rFrom = AbstractGcs.encode(runContext, runContext.render(from).as(String.class).orElse(null));
+            var rRegExp = runContext.render(regExp).as(String.class).orElse(null);
+            var rMaxFiles = runContext.render(maxFiles).as(Integer.class).orElse(25);
+
+            // No limit on the listing: maxFiles applies to the files that fire, after comparing them with the state.
+            var blobs = StreamSupport.stream(listTask.iterator(connection, rFrom, runContext), false)
+                .filter(blob -> listTask.filter(blob, rRegExp, Filter.FILES))
+                .toList();
+            if (blobs.isEmpty()) {
+                return Optional.empty();
+            }
+
             var rOn = runContext.render(on).as(On.class).orElse(On.CREATE_OR_UPDATE);
             var rStateKey = runContext.render(stateKey).as(String.class).orElse(defaultKey(context.getNamespace(), context.getFlowId(), id));
             var rStateTtl = runContext.render(stateTtl).as(Duration.class);
@@ -196,24 +203,44 @@ public class Trigger extends AbstractTrigger implements PollingTriggerInterface,
             var actionBlobs = new ArrayList<Blob>();
             var toFireCandidates = new ArrayList<Candidate>();
 
+            var skipped = 0;
+
             for (var blob : blobs) {
                 var uri = "gs://" + blob.getBucket() + "/" + blob.getName();
-                var meta = connection.get(BlobId.of(blob.getBucket(), blob.getName()));
                 var version = String
-                    .format("generation:%d_metageneration:%d", Objects.requireNonNullElse(meta.getGeneration(), 0L), Objects.requireNonNullElse(meta.getMetageneration(), 0L));
+                    .format("generation:%d_metageneration:%d", Objects.requireNonNullElse(blob.getGeneration(), 0L), Objects.requireNonNullElse(blob.getMetageneration(), 0L));
 
-                Instant modifiedAt = Optional.ofNullable(meta.getUpdateTimeOffsetDateTime())
+                Instant modifiedAt = Optional.ofNullable(blob.getUpdateTimeOffsetDateTime())
                     .map(OffsetDateTime::toInstant)
                     .orElse(Instant.now());
 
                 var candidate = StatefulTriggerService.Entry.candidate(uri, version, modifiedAt);
+                var previous = state.get(uri);
                 var update = computeAndUpdateState(state, candidate, rOn);
 
                 if (update.fire()) {
+                    if (toFireCandidates.size() >= rMaxFiles) {
+                        // Over the limit: restore the previous state so the file fires on a later evaluation.
+                        if (previous == null) {
+                            state.remove(uri);
+                        } else {
+                            state.put(uri, previous);
+                        }
+                        skipped++;
+                        continue;
+                    }
+
                     var changeType = update.isNew() ? ChangeType.CREATE : ChangeType.UPDATE;
-                    actionBlobs.add(blob);
-                    toFireCandidates.add(new Candidate(blob, changeType));
+                    var output = Blob.of(blob);
+                    actionBlobs.add(output);
+                    toFireCandidates.add(new Candidate(output, changeType));
                 }
+            }
+
+            if (skipped > 0) {
+                runContext.logger().warn(
+                    "{} files exceeded the maxFiles limit ({}); they will be processed on a later evaluation.", skipped, rMaxFiles
+                );
             }
 
             if (toFireCandidates.isEmpty()) {
